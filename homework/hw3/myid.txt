@@ -1,3 +1,0 @@
-name: Reem Mor
-age: 32
-phone number: 0526775754

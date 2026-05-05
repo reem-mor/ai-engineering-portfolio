@@ -1,10 +1,8 @@
 ## Re'em Mor
-## ID:311117774
-## Lecture 3 - Python Advanced Homework
-## Date of submission: 2026-05-05
+## ID: 311117774
 
 
-# QUESTION1 + QUESTION2
+# QUESTION 1
 
 class Vehicle:
     def __init__(self, name, max_speed, mileage):
@@ -13,25 +11,27 @@ class Vehicle:
         self.mileage = mileage
 
 
-vehicle1 = Vehicle("Toyota", 180, 25000)
+vehicle1 = Vehicle("Toyota Corolla", 180, 120000)
+print(vehicle1.name, vehicle1.max_speed, vehicle1.mileage)
 
+
+# QUESTION 2
 
 class Bus(Vehicle):
     pass
 
 
-bus1 = Bus("School Bus", 120, 80000)
-
-print(vehicle1.name, vehicle1.max_speed, vehicle1.mileage)
+bus1 = Bus("Mercedes Bus", 140, 300000)
 print(bus1.name, bus1.max_speed, bus1.mileage)
 
 
-# QUESTION3
+# QUESTION 3
 
 class MyString:
     def __init__(self):
         self.text = ""
 
+    # Read a string from the user.
     def get_String(self):
         self.text = input("Enter a string: ")
 
@@ -39,23 +39,27 @@ class MyString:
         print(self.text.upper())
 
 
-obj = MyString()
-obj.get_String()
-obj.print_String()
+string_obj = MyString()
+string_obj.get_String()
+string_obj.print_String()
 
 
-# QUESTION4
+# QUESTION 4
 
+# Write identification information into a text file.
 with open("my_id.txt", "w") as file:
-    file.write("name: Reem Mor\n")
+    file.write("name: Reem\n")
+    file.write("last name: Mor\n")
     file.write("age: 32\n")
     file.write("phone number: 0526775754\n")
 
+# Print the file content to check that it was written correctly.
+with open("my_id.txt", "r") as file:
+    print(file.read())
 
+# QUESTION 5
 
-# QUESTION5
-
-def count_words_in_file(file_path):
+def count_word_frequency(file_path):
     word_count = {}
 
     with open(file_path, "r") as file:
@@ -67,31 +71,28 @@ def count_words_in_file(file_path):
     return word_count
 
 
-result = count_words_in_file("my_id.txt")
-print(result)
+print(count_word_frequency("my_id.txt"))
 
 
-# QUESTION6
+# QUESTION 6
 
-def find_longest_word(file_path):
+def longest_label_in_file(file_path):
     with open(file_path, "r") as file:
-        words = file.read().split()
+        lines = file.readlines()
 
-    longest_word = ""
+    longest_label = ""
 
-    for word in words:
-        if len(word) > len(longest_word):
-            longest_word = word
+    for line in lines:
+        label = line.split(":")[0].strip()
+        if len(label) > len(longest_label):
+            longest_label = label
 
-    return longest_word
-
-
-result = find_longest_word("my_id.txt")
-print(result)
+    return longest_label
 
 
+print(longest_label_in_file("my_id.txt"))
 
-# QUESTION7
+# QUESTION 7
 
 def sum_list(numbers):
     total = 0
@@ -105,9 +106,7 @@ def sum_list(numbers):
 print(sum_list([1, 2, 3, 4, 5]))
 
 
-
-
-# QUESTION8
+# QUESTION 8
 
 def multiply_list(numbers):
     result = 1
@@ -118,12 +117,12 @@ def multiply_list(numbers):
     return result
 
 
-print(multiply_list([1, 2, 3, 4]))
+print(multiply_list([1, 2, 3, 4, 5]))
 
 
-# QUESTION9
+# QUESTION 9
 
-def find_min_value(numbers):
+def min_list(numbers):
     min_value = numbers[0]
 
     for num in numbers:
@@ -133,14 +132,12 @@ def find_min_value(numbers):
     return min_value
 
 
-print(find_min_value([8, 3, 12, 1, 6]))
+print(min_list([8, 3, 12, 1, 6]))
 
 
+# QUESTION 10
 
-
-# QUESTION10
-
-def count_letters(text):
+def count_upper_lower(text):
     upper_count = 0
     lower_count = 0
 
@@ -150,45 +147,46 @@ def count_letters(text):
         elif char.islower():
             lower_count += 1
 
-    return {"uppercase": upper_count, "lowercase": lower_count}
+    print(f"Upper case letters: {upper_count}")
+    print(f"Lower case letters: {lower_count}")
 
 
-result = count_letters("Hello World")
-print(result)
+count_upper_lower("Hello World")
 
 
-# QUESTION11
-
-import numpy as np
-
-arr = np.arange(10)
-print(arr)
-
-
-# QUESTION12
+# QUESTION 11
 
 import numpy as np
 
-arr = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
-odd_arr = arr[arr % 2 != 0]
-
-print(odd_arr)
+numbers = np.arange(10)
+print(numbers)
 
 
+# QUESTION 12
+
+arr = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+# Extract odd numbers without using loops.
+odd_numbers = arr[arr % 2 != 0]
+
+print(odd_numbers)
 
 
-# QUESTION13
+# QUESTION 13
 
 import numpy as np
 
-arr = np.eye(5)
-arr[arr > 0] = -1
+eye_array = np.eye(5)
 
-print(arr)
+# Replace all values greater than 0 with -1, without loops.
+eye_array[eye_array > 0] = -1
+
+print(eye_array)
 
 
-# QUESTION14
+# QUESTION 14
 
+# Recursive function to calculate a to the power of b.
 def power(a, b):
     if b == 0:
         return 1
@@ -197,9 +195,7 @@ def power(a, b):
 
 print(power(3, 2))
 
-
-
-# QUESTION15
+# QUESTION 15
 
 class Stack:
     def __init__(self):
@@ -217,36 +213,34 @@ class Stack:
         return len(self.items) == 0
 
 
-class py_solution:
-    def is_valid_parenthese(self, text):
-        stack = Stack()
-        pairs = {
-            ')': '(',
-            '}': '{',
-            ']': '['
-        }
-        valid_chars = set("(){}[]")
+# Check if the brackets are closed in the correct order.
+def is_valid_parentheses(text):
+    stack = Stack()
+    pairs = {
+        ")": "(",
+        "}": "{",
+        "]": "["
+    }
+    valid_chars = set("(){}[]")
 
-        for char in text:
-            if char not in valid_chars:
+    for char in text:
+        if char not in valid_chars:
+            return False
+
+        if char in "({[":
+            stack.push(char)
+        else:
+            if stack.is_empty() or stack.pop() != pairs[char]:
                 return False
 
-            if char in "({[":
-                stack.push(char)
-            else:
-                if stack.is_empty() or stack.pop() != pairs[char]:
-                    return False
-
-        return stack.is_empty()
+    return stack.is_empty()
 
 
-solution = py_solution()
-
-print(solution.is_valid_parenthese("()"))
-print(solution.is_valid_parenthese("()[]{}"))
-print(solution.is_valid_parenthese("[)"))
-print(solution.is_valid_parenthese("({[)]"))
-print(solution.is_valid_parenthese("{{{"))
-print(solution.is_valid_parenthese(""))
-print(solution.is_valid_parenthese("({[]})"))
-print(solution.is_valid_parenthese("abc"))
+print(is_valid_parentheses("()"))
+print(is_valid_parentheses("()[]{}"))
+print(is_valid_parentheses("[)"))
+print(is_valid_parentheses("({[)]"))
+print(is_valid_parentheses("{{{"))
+print(is_valid_parentheses(""))
+print(is_valid_parentheses("({[]})"))
+print(is_valid_parentheses("abc"))
