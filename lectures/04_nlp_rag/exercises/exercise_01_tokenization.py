@@ -1,0 +1,32 @@
+import nltk
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
+
+
+def tokenize(text: str) -> list[str]:
+    """Lowercase, alpha-only tokens."""
+    return [t.lower() for t in word_tokenize(text) if t.isalpha()]
+
+
+def common_word_count(s1: str, s2: str) -> int:
+    return len(set(tokenize(s1)) & set(tokenize(s2)))
+
+
+def percentage_overlap(s1: str, s2: str) -> float:
+    t1 = set(tokenize(s1))
+    t2 = set(tokenize(s2))
+    if not (t1 | t2):
+        return 0.0
+    return len(t1 & t2) / len(t1 | t2) * 100.0
+
+
+if __name__ == "__main__":
+    a = "Natural language processing is fun!"
+    b = "I find processing natural language quite enjoyable."
+
+    print("Tokens A:", tokenize(a))
+    print("Tokens B:", tokenize(b))
+    print("Shared count:", common_word_count(a, b))
+    print(f"Overlap %: {percentage_overlap(a, b):.1f}%")
