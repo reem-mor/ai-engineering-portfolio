@@ -1,0 +1,21 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments — never copy these in
+venv/
+.venv/
+env/
+
+# Git history
+.git/
+.gitignore
+
+# Sensitive files — keep secrets out of the image
+.env
+*.env
+
+# Jupyter notebooks 
+*.ipynb
