@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import health, query
+from app.api.routes import health, knowledge, query
 from app.config import get_settings
 from app.core.rag_pipeline import init_pipeline
 from app.core.retriever import init_retriever
@@ -95,6 +95,7 @@ else:
 
 app.include_router(health.router, prefix="", tags=["health"])
 app.include_router(query.router, prefix="/api", tags=["rag"])
+app.include_router(knowledge.router, prefix="/api", tags=["knowledge"])
 
 
 @app.get("/", include_in_schema=False, response_model=None)

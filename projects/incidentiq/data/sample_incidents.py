@@ -1896,179 +1896,238 @@ SOPS: list[dict] = [
 REAL_REFERENCES: list[dict] = [
     {
         "id": "REF-001",
-        "title": "Google SRE Book — Incident Management Chapter Summary",
-        "source": "Google SRE Book (sre.google/sre-book)",
+        "title": "Google SRE Book — Incident Management Principles",
+        "source": "sre.google/sre-book",
         "document_type": "reference",
         "category": "SRE Methodology",
-        "tags": ["sre", "incident-management", "google", "postmortem"],
+        "tags": ["sre", "incident-management", "postmortem", "google"],
         "content": (
-            "Google's Site Reliability Engineering defines incident management as a "
-            "structured response to service disruptions. Key principles: "
-            "1) Incident Command: Designate a single Incident Commander (IC) responsible "
-            "for coordination, not technical resolution. "
-            "2) Operational Work vs Incident Response: Engineers should spend no more than "
-            "50% of time on operational/toil work. "
-            "3) Postmortem Culture: Blameless postmortems focus on systemic causes, not "
-            "individual fault. Required for all P1 incidents. "
-            "4) Error Budgets: Each service has an error budget based on SLO. When budget "
-            "is exhausted, reliability work takes priority. "
-            "5) Toil Reduction: Automate repetitive operational tasks to reduce MTTR and "
-            "free engineers for higher-value work. "
-            "MTTR Impact: Teams following this framework report 40-60% reduction in mean "
-            "time to resolution."
+            "Google SRE incident management framework: "
+            "Incident Commander (IC): Single person coordinates response, not technical "
+            "work. Separates diagnosis from coordination. "
+            "Blameless Postmortems: Required for all P1 incidents. Focus on systemic "
+            "causes not individual fault. "
+            "Error Budgets: SLO-based budget. When exhausted, reliability work takes "
+            "priority over features. "
+            "On-Call Handoff: Structured handoff every 8-12 hours. Document current "
+            "state, open issues, and next steps. "
+            "Communication: Update stakeholders every 15 minutes on P1. Use dedicated "
+            "incident channel (Slack/Teams). "
+            "MTTR Impact: Teams following SRE framework report 40-60% reduction in mean "
+            "time to resolution. "
+            "Key commands during incident: "
+            "- Declare incident immediately when SLO threatened. "
+            "- Open incident channel: #inc-YYYYMMDD-description. "
+            "- Assign IC, Tech Lead, Communications Lead roles. "
+            "- Run postmortem within 48 hours of resolution."
         ),
-        "mttr_impact": "40-60% reduction",
+        "mttr_impact": "40-60% MTTR reduction",
         "key_concepts": [
             "incident command",
             "blameless postmortem",
             "error budget",
             "SLO",
-            "toil reduction",
+            "on-call handoff",
         ],
     },
     {
         "id": "REF-002",
-        "title": "AWS Well-Architected Framework — Reliability Pillar",
-        "source": "AWS Documentation (docs.aws.amazon.com)",
+        "title": "AWS Well-Architected — Reliability & Incident Response",
+        "source": "docs.aws.amazon.com/wellarchitected",
         "document_type": "reference",
         "category": "Cloud Infrastructure",
-        "tags": ["aws", "reliability", "well-architected", "cloud"],
+        "tags": ["aws", "reliability", "cloud", "well-architected"],
         "content": (
-            "The AWS Well-Architected Reliability Pillar defines best practices for "
-            "building resilient cloud infrastructure: "
-            "1) Automatic Recovery: Use CloudWatch alarms and Auto Scaling to recover "
-            "automatically without human intervention. "
-            "2) Test Recovery Procedures: Use chaos engineering (AWS Fault Injection "
-            "Simulator) to validate recovery procedures. "
-            "3) Scale Horizontally: Replace large resources with multiple smaller "
-            "resources to reduce single points of failure. "
-            "4) Stop Guessing Capacity: Use Auto Scaling to match supply with demand "
-            "automatically. "
-            "5) Manage Change Through Automation: Use CloudFormation/CDK for "
-            "infrastructure changes to reduce human error. "
-            "Common Incident Patterns: "
-            "- EC2 instance failure: Use ASG with multi-AZ deployment. "
-            "- RDS failover: Enable Multi-AZ, test failover monthly. "
-            "- S3 data issues: Enable versioning and cross-region replication. "
-            "- IAM permission errors: Use IAM Access Analyzer proactively."
+            "AWS reliability incident patterns and responses: "
+            "EC2 Instance Failure: "
+            "- Detection: CloudWatch StatusCheckFailed alarm. "
+            "- Auto-recovery: Enable EC2 Auto Recovery. "
+            "- Command: aws ec2 describe-instance-status --instance-ids <id>. "
+            "- Verify ASG health: aws autoscaling describe-auto-scaling-groups. "
+            "RDS Failover: "
+            "- Detection: RDS event: DB instance failover started. "
+            "- Multi-AZ failover takes 60-120 seconds automatically. "
+            "- Check: aws rds describe-db-instances --db-instance-identifier <id>. "
+            "- Force failover: aws rds reboot-db-instance --force-failover. "
+            "S3 Availability Issues: "
+            "- Check bucket policy: aws s3api get-bucket-policy --bucket <name>. "
+            "- Check ACL: aws s3api get-bucket-acl --bucket <name>. "
+            "- Enable versioning: aws s3api put-bucket-versioning. "
+            "IAM Permission Denied: "
+            "- Check policy: aws iam simulate-principal-policy. "
+            "- Use IAM Access Analyzer to find missing permissions. "
+            "- Temporary: Add inline policy for emergency access. "
+            "ECS/EKS Pod Issues: "
+            "- Check tasks: aws ecs list-tasks --cluster <name>. "
+            "- Describe task: aws ecs describe-tasks --tasks <id>. "
+            "- Force new deployment: aws ecs update-service --force-new-deployment. "
+            "Automated recovery reduces MTTR by 70-90% vs manual intervention."
         ),
-        "mttr_impact": "Automated recovery reduces MTTR by 70-90%",
+        "mttr_impact": "70-90% MTTR reduction with automation",
         "key_concepts": [
-            "auto scaling",
-            "multi-AZ",
-            "chaos engineering",
-            "CloudWatch",
-            "infrastructure as code",
+            "EC2 recovery",
+            "RDS failover",
+            "S3 policy",
+            "IAM analyzer",
+            "ECS deployment",
         ],
     },
     {
         "id": "REF-003",
-        "title": "Kubernetes Production Incident Patterns",
-        "source": "CNCF SIG Observability + community post-mortems",
+        "title": "Kubernetes Production Incident Patterns — CNCF",
+        "source": "CNCF SIG Observability community post-mortems",
         "document_type": "reference",
         "category": "Kubernetes",
-        "tags": ["kubernetes", "k8s", "production", "patterns", "cncf"],
+        "tags": ["kubernetes", "k8s", "production", "cncf", "pods"],
         "content": (
-            "Common Kubernetes production incident patterns and resolutions. "
-            "OOMKilled Incidents: Root cause is memory limits set too low or memory leak "
-            "in app. Detection: kubectl get events | grep OOMKill. Resolution: increase "
-            "memory limits, add VPA, fix memory leak. Prevention: set requests=limits "
-            "for memory in production. "
-            "CrashLoopBackOff Incidents: Root cause is application startup failure, "
-            "missing config, dependency unavailable. Detection: kubectl describe pod "
-            "<name> | grep -A5 Events. Resolution: check logs via kubectl logs <pod> "
-            "--previous. Prevention: add readiness/liveness probes and init containers. "
-            "Node NotReady Incidents: Root cause is kubelet failure, disk pressure, or "
-            "network partition. Detection: kubectl get nodes, kubectl describe node "
-            "<name>. Resolution: SSH to node and check kubelet via systemctl status "
-            "kubelet. Prevention: node auto-repair (GKE), node monitoring alerts. "
-            "etcd Performance Issues: Root cause is high latency or disk I/O saturation. "
-            "Detection: etcdctl endpoint health, check etcd metrics. Resolution: defrag "
-            "etcd, move to SSD, reduce snapshot frequency. "
-            "MTTR benchmarks: P1 K8s incidents average 23 minutes with documented "
-            "runbooks vs 67 minutes without."
+            "Kubernetes production incident patterns: "
+            "Safe pods to redeploy without data loss (stateless): "
+            "- API gateway pods, frontend pods, worker pods. "
+            "- Microservice pods with no local state. "
+            "- Command: kubectl rollout restart deployment/<name>. "
+            "Pods requiring caution before redeploy (stateful): "
+            "- Database pods (PostgreSQL, MySQL, MongoDB). "
+            "- Kafka broker pods, ZooKeeper pods. "
+            "- Redis primary pods (check replication before restart). "
+            "- Always verify PVC is healthy before restarting stateful pods. "
+            "Critical disk paths impacting business: "
+            "- /var/lib/etcd — Kubernetes cluster state, NEVER fill this. "
+            "- /var/lib/kubelet — Pod runtime data. "
+            "- /var/log — Log accumulation, set up log rotation. "
+            "- Database data directories (/var/lib/postgresql/data). "
+            "- Kafka log directories (/var/kafka-logs). "
+            "OOMKilled response: "
+            "- kubectl describe pod <name> | grep -A5 OOMKilled. "
+            "- Check memory usage: kubectl top pod <name>. "
+            "- Increase limit: kubectl set resources deployment <name> "
+            "--limits=memory=512Mi. "
+            "CrashLoopBackOff response: "
+            "- kubectl logs <pod> --previous (see last crash logs). "
+            "- kubectl describe pod <name> (check events section). "
+            "- Common causes: missing ConfigMap, missing Secret, dependency not ready, "
+            "application bug. "
+            "Node pressure response: "
+            "- kubectl describe node <name> | grep -A10 Conditions. "
+            "- Disk pressure: df -h on node, clear old images: crictl rmi --prune. "
+            "- Memory pressure: kubectl drain <node> --ignore-daemonsets. "
+            "MTTR: Documented K8s runbooks reduce resolution time by 65%."
         ),
-        "mttr_impact": "Runbooks reduce K8s incident MTTR by 65%",
+        "mttr_impact": "65% MTTR reduction with runbooks",
         "key_concepts": [
+            "safe redeploy",
+            "stateful pods",
             "OOMKilled",
             "CrashLoopBackOff",
-            "etcd",
-            "kubelet",
             "node pressure",
+            "etcd disk",
         ],
     },
     {
         "id": "REF-004",
-        "title": "PostgreSQL Performance Incident Runbook — Community",
+        "title": "Database Incident Runbook — PostgreSQL & MySQL",
         "source": "PostgreSQL Wiki + pganalyze.com documentation",
         "document_type": "reference",
         "category": "Database",
-        "tags": ["postgresql", "database", "performance", "runbook"],
+        "tags": ["postgresql", "mysql", "database", "performance", "runbook"],
         "content": (
-            "PostgreSQL incident response reference guide. "
-            "Connection Pool Exhaustion: Check via SELECT count(*), state FROM "
-            "pg_stat_activity GROUP BY state; check max connections via SHOW "
-            "max_connections; kill idle connections via SELECT pg_terminate_backend(pid) "
-            "FROM pg_stat_activity WHERE state = 'idle' AND query_start < NOW() - "
-            "INTERVAL '10 minutes'; long term: deploy PgBouncer connection pooler. "
-            "Lock Contention and Deadlocks: find blocking queries via SELECT pid, query, "
-            "wait_event_type, wait_event FROM pg_stat_activity WHERE wait_event IS NOT "
-            "NULL; kill blocker via SELECT pg_cancel_backend(<pid>); enable deadlock "
-            "logging by setting log_lock_waits = on. "
-            "Replication Lag: check lag via SELECT now() - "
-            "pg_last_xact_replay_timestamp(); check slot lag via SELECT slot_name, "
+            "Database incident response — critical commands: "
+            "PostgreSQL connection pool exhaustion: "
+            "- Check connections: SELECT count(*), state FROM pg_stat_activity GROUP BY "
+            "state;. "
+            "- Show max: SHOW max_connections;. "
+            "- Kill idle >10min: SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+            "WHERE state='idle' AND query_start < NOW() - INTERVAL '10 minutes';. "
+            "- Deploy PgBouncer for connection pooling. "
+            "PostgreSQL lock contention: "
+            "- Find blockers: SELECT pid, query, wait_event_type FROM pg_stat_activity "
+            "WHERE wait_event IS NOT NULL;. "
+            "- Cancel query: SELECT pg_cancel_backend(<pid>);. "
+            "- Kill session: SELECT pg_terminate_backend(<pid>);. "
+            "PostgreSQL replication lag: "
+            "- Check lag: SELECT now() - pg_last_xact_replay_timestamp() AS lag;. "
+            "- Check slots: SELECT slot_name, "
             "pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) FROM "
-            "pg_replication_slots; resolution: check replica disk I/O and network "
-            "bandwidth. "
-            "Slow Queries: enable shared_preload_libraries = 'pg_stat_statements'; find "
-            "slow queries via SELECT query, mean_exec_time, calls FROM "
-            "pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10; add missing "
-            "indexes by using EXPLAIN ANALYZE on slow queries."
+            "pg_replication_slots;. "
+            "MySQL slow queries: "
+            "- Enable slow log: SET GLOBAL slow_query_log = ON;. "
+            "- Show processlist: SHOW FULL PROCESSLIST;. "
+            "- Kill query: KILL QUERY <thread_id>;. "
+            "- Check InnoDB status: SHOW ENGINE INNODB STATUS;. "
+            "Critical business-impacting queues and disks: "
+            "- PostgreSQL WAL directory: fills fast during high write load. "
+            "- MySQL binary log directory: monitor size continuously. "
+            "- Tablespace usage: SELECT * FROM information_schema.tables ORDER BY "
+            "data_length DESC LIMIT 10;. "
+            "APM tools for database monitoring: "
+            "- Datadog APM: monitors query latency, connection pools. "
+            "- New Relic: database transaction tracing. "
+            "- pganalyze: PostgreSQL-specific performance insights. "
+            "- Percona Monitoring: MySQL/PostgreSQL metrics."
         ),
-        "mttr_impact": "Documented SQL runbooks reduce DB MTTR by 50%",
+        "mttr_impact": "50% faster DB incident resolution",
         "key_concepts": [
             "pg_stat_activity",
-            "connection pooling",
+            "connection pool",
             "replication lag",
-            "deadlock",
-            "PgBouncer",
+            "lock contention",
+            "APM",
         ],
     },
     {
         "id": "REF-005",
-        "title": "Kafka Operations Runbook — Confluent Documentation",
-        "source": "Confluent Documentation (docs.confluent.io)",
+        "title": "Kafka & Message Queue Operations Runbook",
+        "source": "Confluent Documentation + Apache Kafka docs",
         "document_type": "reference",
         "category": "Message Queue",
-        "tags": ["kafka", "confluent", "consumer-lag", "operations"],
+        "tags": ["kafka", "rabbitmq", "queue", "consumer-lag", "operations"],
         "content": (
-            "Apache Kafka operational incident guide. "
-            "Consumer Lag Investigation: check lag via kafka-consumer-groups.sh "
-            "--bootstrap-server <broker>:9092 --describe --group <group-id>; find slow "
-            "consumers by looking for LAG column greater than 100000; check consumer "
-            "throughput via kafka-consumer-perf-test.sh; resolution: scale consumer "
-            "instances, check GC pauses, increase max.poll.records. "
-            "Broker Issues: check broker health via kafka-broker-api-versions.sh "
-            "--bootstrap-server <broker>:9092; find under-replicated partitions via "
-            "kafka-topics.sh --describe --under-replicated-partitions; resolution: "
-            "check disk space, network, and restart broker gracefully. "
-            "Topic Partition Imbalance: check via kafka-topics.sh --describe --topic "
-            "<topic>; rebalance via kafka-preferred-replica-election.sh; prevention: "
-            "set auto.leader.rebalance.enable=true. "
-            "Dead Letter Queue (DLQ) Handling: inspect DLQ messages via "
-            "kafka-console-consumer.sh --topic <dlq-topic> --from-beginning "
-            "--max-messages 10; identify poison messages by checking message headers "
-            "for error info; resolution: fix consumer logic, replay from DLQ after fix. "
-            "MTTR data: Kafka incidents with documented runbooks resolve 3x faster than "
-            "undocumented ones."
+            "Kafka and message queue incident response: "
+            "Critical Kafka commands: "
+            "- Check consumer lag: kafka-consumer-groups.sh --bootstrap-server "
+            "<broker>:9092 --describe --group <group-id>. "
+            "- List all groups: kafka-consumer-groups.sh --bootstrap-server "
+            "<broker>:9092 --list. "
+            "- Check under-replicated: kafka-topics.sh --describe "
+            "--under-replicated-partitions --bootstrap-server <broker>:9092. "
+            "- Reset consumer offset (emergency): kafka-consumer-groups.sh "
+            "--bootstrap-server <broker>:9092 --group <group-id> --reset-offsets "
+            "--to-latest --topic <topic> --execute. "
+            "Business-critical Kafka topics to monitor: "
+            "- payment-events: Any lag here directly impacts revenue. "
+            "- order-processing: Lag causes order delays. "
+            "- inventory-updates: Lag causes overselling. "
+            "- notification-events: Lag causes delayed alerts. "
+            "- audit-log: Must never lose messages. "
+            "Safe Kafka operations (can do without approval): "
+            "- Restart consumer group members (stateless consumers). "
+            "- Increase partition count on non-key topics. "
+            "- Add consumer group members to reduce lag. "
+            "Requires approval before executing: "
+            "- Reset consumer offsets (data loss risk). "
+            "- Delete topics (permanent data loss). "
+            "- Reduce replication factor. "
+            "- Change topic retention policy. "
+            "RabbitMQ critical queues: "
+            "- Check queue depth: rabbitmqctl list_queues name messages. "
+            "- Check consumers: rabbitmqctl list_consumers. "
+            "- Purge safe queue: rabbitmqctl purge_queue <queue-name>. "
+            "APM tools for queue monitoring: "
+            "- Datadog: Kafka consumer lag dashboards. "
+            "- Confluent Control Center: built-in Kafka monitoring. "
+            "- CloudWatch: MSK (Managed Kafka) metrics. "
+            "- Grafana + Prometheus: JMX metrics from Kafka brokers. "
+            "Key business-impacting disks for Kafka: "
+            "- /var/kafka-logs: Primary data directory, monitor continuously. "
+            "- Retention policy: Ensure disk is 3x current data size minimum. "
+            "MTTR: 3x faster resolution with documented Kafka runbooks."
         ),
-        "mttr_impact": "3x faster resolution with documented runbooks",
+        "mttr_impact": "3x faster resolution",
         "key_concepts": [
             "consumer lag",
-            "dead letter queue",
-            "partition rebalance",
+            "offset reset",
             "under-replicated",
-            "kafka-consumer-groups",
+            "business-critical topics",
+            "APM monitoring",
         ],
     },
 ]

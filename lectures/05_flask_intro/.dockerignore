@@ -1,0 +1,28 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+.env
+.env.*
+
+# IDE / OS
+.idea
+.vscode
+*.swp
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker (optional — avoids invalidating cache if only these change)
+Dockerfile*
+.dockerignore
+
+# Docs not copied into image (optional)
+README.md

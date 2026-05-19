@@ -68,6 +68,10 @@ class SourceDocument(BaseModel):
     rank: int = Field(
         ..., ge=1, description="1-based rank within the retrieved result set."
     )
+    chunk_text: str = Field(
+        default="",
+        description="Verbatim retrieved chunk text — used by clients to render expandable previews.",
+    )
 
 
 class RAGResponse(BaseModel):

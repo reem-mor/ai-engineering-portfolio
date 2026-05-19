@@ -194,6 +194,7 @@ def _to_source_document(result: dict[str, Any]) -> SourceDocument:
         document_type=str(meta.get("document_type", "unknown")),
         relevance_score=clamped_score,
         rank=int(result.get("rank", 1)),
+        chunk_text=str(result.get("chunk_text", "")),
     )
 
 
