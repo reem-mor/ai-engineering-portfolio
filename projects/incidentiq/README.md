@@ -154,44 +154,50 @@ http://localhost:8000/health    # Health probe
 
 ## Docker Setup
 
-### Build the image
+**Recommended:** use `docker compose` (reads `.env`, restart policy, health checks). Raw `docker` commands are listed below as an alternative.
+
+### Prerequisites
+
+```powershell
+copy .env.example .env
+# Set OPENAI_API_KEY=sk-... in .env (never commit this file)
+```
+
+### Compose (recommended)
+
+```bash
+docker compose up -d --build    # build image + start in background
+docker compose ps             # status and health
+docker compose logs -f          # tail logs
+docker compose down             # stop and remove container
+```
+
+Open http://localhost:8000 (or the host port from `APP_PORT` in `.env`).
+
+### Raw Docker (alternative)
+
+Build:
 
 ```bash
 docker build -t incidentiq .
 ```
 
-### Run the container
+Run:
 
 ```bash
 docker run -d --name incidentiq-app -p 8000:8000 --env-file .env incidentiq
 ```
 
-### Verify it is running
+Verify / logs / health / stop:
 
 ```bash
 docker ps --filter name=incidentiq-app
-```
-
-### Check logs
-
-```bash
 docker logs incidentiq-app
-```
-
-### Check health
-
-```powershell
 docker inspect incidentiq-app --format "{{.State.Health.Status}}"
+docker stop incidentiq-app && docker rm incidentiq-app
 ```
 
-### Stop and remove
-
-```bash
-docker stop incidentiq-app
-docker rm incidentiq-app
-```
-
-**Note on image size.** The image is ~3.2 GB, dominated by the CUDA-enabled PyTorch wheels pulled in transitively by `sentence-transformers`. Pinning a CPU-only torch build (`torch==2.x+cpu` from the PyTorch CPU wheel index) reduces this to roughly 800 MB. It is left as a future optimisation rather than baked in here to keep the dependency story portable.
+**Image size.** The Dockerfile uses a multi-stage build and installs **CPU-only** PyTorch (`download.pytorch.org/whl/cpu`) before `sentence-transformers`, keeping the image near ~1 GB instead of ~9 GB with default CUDA wheels. Production deps live in `requirements-prod.txt`; `requirements.txt` also includes pytest for local development.
 
 ---
 
@@ -359,9 +365,7 @@ uvicorn app.main:app --reload --port 8000
 5. For Docker, rebuild and relaunch (the index is baked into the image at build time):
 
 ```bash
-docker build -t incidentiq .
-docker stop incidentiq-app && docker rm incidentiq-app
-docker run -d --name incidentiq-app -p 8000:8000 --env-file .env incidentiq
+docker compose up -d --build
 ```
 
 ---
@@ -418,7 +422,7 @@ Expected:
 
 ### What Could Be Improved
 
-- **Image size (~3.2 GB).** Driven by transitive CUDA-enabled torch wheels. Pinning a CPU-only torch build at the top of `requirements.txt` would cut the image to roughly 800 MB and shave most of the cold-start install time in CI.
+- **Image size was ~9 GB before CPU-only torch.** The multi-stage Dockerfile now pins CPU PyTorch and uses a venv copy into the runtime stage; further gains would come from distroless or stripping test wheels from the venv.
 - **Confidence scoring is coarse.** The L2 → score → band mapping (`high` / `medium` / `low` / `none`) was tuned on a handful of queries. With a real eval set we should calibrate the thresholds against labelled relevance judgements rather than eyeballing them.
 - **30 incidents is a starter corpus, not a production one.** A real NOC ingests dozens of incidents per week. To stay useful past month one the system needs a continuous ingestion path from PagerDuty / OpsGenie / Jira and a re-embed scheduler — not a one-shot script.
 - **No authentication on the API.** `/api/query` is wide open. In production it needs at minimum an API key per service, ideally OAuth2 with per-team scopes so a payments engineer cannot read SRE-only runbooks.
@@ -482,10 +486,12 @@ incidentiq/
 ├── .dockerignore
 ├── .env.example                      # Template env file (no secrets)
 ├── .gitignore
-├── Dockerfile                        # python:3.11-slim, non-root user, healthcheck
+├── docker-compose.yml                # Recommended deploy: env_file, restart, healthcheck
+├── Dockerfile                        # Multi-stage: CPU torch, FAISS bake, non-root runtime
 ├── pytest.ini                        # pytest config + asyncio mode
 ├── README.md                         # This file
-└── requirements.txt                  # Pinned top-level dependencies
+├── requirements-prod.txt             # Docker/production deps (no pytest)
+└── requirements.txt                  # Local dev deps (includes pytest)
 ```
 
 ---

@@ -43,7 +43,9 @@ class EmbeddingModel:
 
         _logger.info("Loading embedding model: %s", self._model_name)
         start: float = time.perf_counter()
-        self._model: SentenceTransformer = SentenceTransformer(self._model_name)
+        self._model: SentenceTransformer = SentenceTransformer(
+            self._model_name, device="cpu"
+        )
         elapsed: float = time.perf_counter() - start
         self._dimension: int
         if hasattr(self._model, "get_embedding_dimension"):

@@ -13,7 +13,9 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='24' height='24' rx='6' fill='%23020617' stroke='none'/%3E%3Cpath d='M12 4 5 8v5c0 4 3 6.5 7 7.5 4-1 7-3.5 7-7.5V8l-7-4z'/%3E%3Cpath d='M9.5 12h5'/%3E%3Cpath d='M12 9.5v5'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="preload" href="/static/style.css?v=2" as="style" />
+    <link rel="preload" href="/static/app.js?v=2" as="script" />
+    <link rel="stylesheet" href="/static/style.css?v=2" />
   </head>
   <body>
     <a class="skip-link" href="#query-input">Skip to query input</a>
@@ -321,6 +323,6 @@
          ──────────────────────────────────────────────────────────────── -->
     <div id="toast" class="toast" hidden></div>
 
-    <script src="/static/app.js" defer></script>
+    <script src="/static/app.js?v=2" defer></script>
   </body>
 </html>

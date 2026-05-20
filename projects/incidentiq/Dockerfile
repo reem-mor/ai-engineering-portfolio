@@ -1,46 +1,59 @@
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
+# Multi-stage build: builder installs deps + bakes FAISS index; runtime is slim + non-root.
 
-# Install system dependencies
+# ---- builder: compile deps, download embedding model, build knowledge base ----
+FROM python:3.11-slim AS builder
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Layer caching: copy requirements first, install before code
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    HF_HOME=/app/.cache/huggingface \
+    SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence-transformers \
+    PIP_NO_CACHE_DIR=1
 
-# Copy application code
+# CPU-only PyTorch first — avoids ~3GB of CUDA wheels from sentence-transformers
+COPY requirements-prod.txt .
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements-prod.txt
+
 COPY . .
 
-# Pre-build the FAISS knowledge base inside the image
-# This means the index is baked in — no runtime build needed
-# OPENAI_API_KEY is injected inline (single-RUN scope only) to satisfy
-# Pydantic Settings validation. The embedder uses sentence-transformers,
-# not OpenAI — so this placeholder never reaches a real API call.
-# It is NOT persisted as an image ENV layer; the real key is supplied
-# at runtime via --env-file.
+# Placeholder satisfies pydantic-settings at build time; real key comes from .env at runtime
 RUN OPENAI_API_KEY=build-time-placeholder-not-a-secret \
     python scripts/build_knowledge_base.py
 
-# Expose application port
-EXPOSE 8000
+# ---- runtime: no build tools, non-root user, baked index + model cache ----
+FROM python:3.11-slim AS runtime
 
-# Docker health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser --disabled-password --gecos "" appuser
 
-# Never run as root in production
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+WORKDIR /app
 
-# Environment defaults (secrets passed at runtime via --env-file)
-ENV PYTHONUNBUFFERED=1 \
+ENV PATH="/opt/venv/bin:$PATH" \
+    HF_HOME=/app/.cache/huggingface \
+    SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence-transformers \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000
 
-# Launch application
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /app /app
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

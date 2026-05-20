@@ -27,6 +27,9 @@ venv/
 .uvicorn.log
 .uvicorn.err.log
 
+# Rebuilt inside the image — avoid stale host index
+knowledge_base/
+
 # Test files (not needed in production image)
 tests/
 

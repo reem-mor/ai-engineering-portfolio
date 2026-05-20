@@ -13,6 +13,7 @@ from threading import Lock
 from typing import Any
 
 from app.config import get_settings
+from app.utils.agent_debug import agent_log
 from app.core.llm_client import get_llm_client
 from app.core.retriever import get_retriever
 from app.models.schemas import QueryRequest, RAGResponse, SourceDocument
@@ -47,6 +48,11 @@ _NO_RESULTS_ANSWER: str = (
     "No relevant incidents or SOPs found for your query. "
     "Please rephrase or escalate to your team lead."
 )
+_LOW_RELEVANCE_ANSWER: str = (
+    "I don't have enough information in the knowledge base to answer this question. "
+    "Please escalate to your team lead."
+)
+_MIN_LLM_RELEVANCE_SCORE: float = 0.4
 _QUERY_LOG_LIMIT: int = 50
 
 
@@ -122,6 +128,36 @@ class RAGPipeline:
                 model_used=self._settings.OPENAI_MODEL,
             )
 
+        top_score: float = float(raw_results[0].get("score", 0.0))
+        if top_score < _MIN_LLM_RELEVANCE_SCORE:
+            confidence = _confidence_band(top_score)
+            sources = [_to_source_document(r) for r in raw_results]
+            elapsed_ms = _elapsed_ms(start)
+            # #region agent log
+            agent_log(
+                "rag_pipeline.py:query",
+                "llm_skipped_low_relevance",
+                {"top_score": top_score, "confidence": confidence, "elapsed_ms": elapsed_ms},
+                "C",
+            )
+            # #endregion
+            self._logger.info(
+                "RAG skipped LLM (low relevance): query=%r top_score=%.3f confidence=%s elapsed_ms=%d",
+                query_preview,
+                top_score,
+                confidence,
+                elapsed_ms,
+            )
+            return RAGResponse(
+                answer=_LOW_RELEVANCE_ANSWER,
+                sources=sources,
+                retrieved_count=len(sources),
+                confidence=confidence,
+                query=request.question,
+                processing_time_ms=elapsed_ms,
+                model_used=self._settings.OPENAI_MODEL,
+            )
+
         context_string: str = _build_context(raw_results)
         user_prompt: str = (
             "Context from knowledge base:\n"
@@ -135,7 +171,6 @@ class RAGPipeline:
             user_prompt=user_prompt,
         )
 
-        top_score: float = float(raw_results[0].get("score", 0.0))
         confidence: str = _confidence_band(top_score)
 
         sources: list[SourceDocument] = [

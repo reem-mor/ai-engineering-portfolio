@@ -1,0 +1,13 @@
+# Production dependencies (Docker image). torch is installed separately as CPU-only.
+fastapi
+uvicorn[standard]
+faiss-cpu
+sentence-transformers
+openai
+pydantic
+pydantic-settings
+python-dotenv
+numpy
+httpx
+jinja2
+python-multipart

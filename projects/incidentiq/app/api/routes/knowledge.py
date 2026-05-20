@@ -12,7 +12,10 @@ from typing import Any
 
 from fastapi import APIRouter
 
+import time
+
 from app.core.retriever import get_retriever
+from app.utils.agent_debug import agent_log
 from app.utils.logger import get_logger
 from data.sample_incidents import (
     get_incidents,
@@ -26,15 +29,12 @@ _logger = get_logger(__name__)
 _SEVERITY_ORDER: dict[str, int] = {"P1": 0, "P2": 1, "P3": 2}
 
 
-@router.get(
-    "/incidents",
-    tags=["knowledge"],
-    summary="All incidents grouped by severity (P1 → P2 → P3)",
-)
-async def list_incidents() -> dict[str, list[dict[str, Any]]]:
-    """Return incidents grouped by severity, sorted ascending by mttr_minutes within each group."""
+def _group_incidents(
+    incidents: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Group incident dicts by severity for the browse panel."""
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for inc in get_incidents():
+    for inc in incidents:
         sev: str = str(inc.get("severity", "")).upper()
         if sev not in _SEVERITY_ORDER:
             continue
@@ -46,15 +46,55 @@ async def list_incidents() -> dict[str, list[dict[str, Any]]]:
                 "mttr_minutes": int(inc.get("mttr_minutes", 0)),
             }
         )
-
     for sev in grouped:
         grouped[sev].sort(key=lambda r: (r["mttr_minutes"], r["id"]))
-
-    payload: dict[str, list[dict[str, Any]]] = {
+    return {
         "P1": grouped.get("P1", []),
         "P2": grouped.get("P2", []),
         "P3": grouped.get("P3", []),
     }
+
+
+def _build_stats_payload(incidents: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compute sidebar stats from a single incidents pass."""
+    sops: list[dict[str, Any]] = get_sops()
+    references: list[dict[str, Any]] = get_references()
+    severity_buckets: dict[str, list[int]] = defaultdict(list)
+    categories: set[str] = set()
+    for inc in incidents:
+        sev: str = str(inc.get("severity", "")).upper()
+        if sev in _SEVERITY_ORDER:
+            severity_buckets[sev].append(int(inc.get("mttr_minutes", 0)))
+        categories.add(str(inc.get("category", "Unknown")))
+    p1_mttrs: list[int] = severity_buckets.get("P1", [])
+    p2_mttrs: list[int] = severity_buckets.get("P2", [])
+    try:
+        index_stats: dict[str, Any] = get_retriever().get_index_stats()
+        total_vectors: int = int(index_stats.get("total_vectors", 0))
+    except RuntimeError:
+        total_vectors = 0
+    return {
+        "total_incidents": len(incidents),
+        "total_sops": len(sops),
+        "total_references": len(references),
+        "total_vectors": total_vectors,
+        "p1_incidents": len(p1_mttrs),
+        "p2_incidents": len(p2_mttrs),
+        "p3_incidents": len(severity_buckets.get("P3", [])),
+        "categories": sorted(categories),
+        "avg_mttr_p1_minutes": round(sum(p1_mttrs) / len(p1_mttrs)) if p1_mttrs else 0,
+        "avg_mttr_p2_minutes": round(sum(p2_mttrs) / len(p2_mttrs)) if p2_mttrs else 0,
+    }
+
+
+@router.get(
+    "/incidents",
+    tags=["knowledge"],
+    summary="All incidents grouped by severity (P1 → P2 → P3)",
+)
+async def list_incidents() -> dict[str, list[dict[str, Any]]]:
+    """Return incidents grouped by severity, sorted ascending by mttr_minutes within each group."""
+    payload = _group_incidents(get_incidents())
     _logger.info(
         "Incidents listed: p1=%d p2=%d p3=%d",
         len(payload["P1"]),
@@ -119,45 +159,46 @@ async def list_resources() -> list[dict[str, Any]]:
 
 
 @router.get(
+    "/bootstrap",
+    tags=["knowledge"],
+    summary="Single payload for UI startup (stats, incidents, SOPs, resources)",
+)
+async def bootstrap() -> dict[str, Any]:
+    """Return all sidebar/browse data in one round trip for faster first paint."""
+    start = time.perf_counter()
+    incidents_raw = get_incidents()
+    incidents_payload = _group_incidents(incidents_raw)
+    payload = {
+        "stats": _build_stats_payload(incidents_raw),
+        "incidents": incidents_payload,
+        "sops": await list_sops(),
+        "resources": await list_resources(),
+    }
+    elapsed_ms = int((time.perf_counter() - start) * 1000)
+    # #region agent log
+    agent_log(
+        "knowledge.py:bootstrap",
+        "bootstrap_built",
+        {
+            "elapsed_ms": elapsed_ms,
+            "incident_passes": 1,
+            "p1": len(incidents_payload["P1"]),
+            "vectors": payload["stats"]["total_vectors"],
+        },
+        "D",
+    )
+    # #endregion
+    return payload
+
+
+@router.get(
     "/stats",
     tags=["knowledge"],
     summary="Knowledge base statistics for the left-sidebar stats bar",
 )
 async def stats() -> dict[str, Any]:
     """Aggregate counts and MTTR averages across the seed corpus and live FAISS index."""
-    incidents: list[dict[str, Any]] = get_incidents()
-    sops: list[dict[str, Any]] = get_sops()
-    references: list[dict[str, Any]] = get_references()
-
-    severity_buckets: dict[str, list[int]] = defaultdict(list)
-    categories: set[str] = set()
-    for inc in incidents:
-        sev: str = str(inc.get("severity", "")).upper()
-        if sev in _SEVERITY_ORDER:
-            severity_buckets[sev].append(int(inc.get("mttr_minutes", 0)))
-        categories.add(str(inc.get("category", "Unknown")))
-
-    p1_mttrs: list[int] = severity_buckets.get("P1", [])
-    p2_mttrs: list[int] = severity_buckets.get("P2", [])
-
-    try:
-        index_stats: dict[str, Any] = get_retriever().get_index_stats()
-        total_vectors: int = int(index_stats.get("total_vectors", 0))
-    except RuntimeError:
-        total_vectors = 0
-
-    payload: dict[str, Any] = {
-        "total_incidents": len(incidents),
-        "total_sops": len(sops),
-        "total_references": len(references),
-        "total_vectors": total_vectors,
-        "p1_incidents": len(p1_mttrs),
-        "p2_incidents": len(p2_mttrs),
-        "p3_incidents": len(severity_buckets.get("P3", [])),
-        "categories": sorted(categories),
-        "avg_mttr_p1_minutes": round(sum(p1_mttrs) / len(p1_mttrs)) if p1_mttrs else 0,
-        "avg_mttr_p2_minutes": round(sum(p2_mttrs) / len(p2_mttrs)) if p2_mttrs else 0,
-    }
+    payload: dict[str, Any] = _build_stats_payload(get_incidents())
     _logger.info(
         "Stats: vectors=%d incidents=%d sops=%d refs=%d p1=%d p2=%d p3=%d",
         payload["total_vectors"],

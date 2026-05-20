@@ -6,16 +6,19 @@
 "use strict";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 const MAX_QUESTION_LENGTH = 500;
 const MIN_QUESTION_LENGTH = 3;
 const CHAR_WARN = 400;
 const CHAR_CRIT = 480;
 const MAX_RECENT_QUERIES = 5;
 const RECENT_QUERIES_KEY = "iiq.recent.v1";
+const ASSET_VERSION = "2";
+const BOOTSTRAP_CACHE_KEY = "iiq.bootstrap.v2";
+const BOOTSTRAP_CACHE_TTL_MS = 60_000;
 const STATS_REFRESH_MS = 60_000;
 const HEALTH_REFRESH_MS = 30_000;
-const PRESET_AUTOSUBMIT_DELAY_MS = 300;
+const PRESET_AUTOSUBMIT_DELAY_MS = 150;
 const ERROR_AUTODISMISS_MS = 5_000;
 const SOURCE_PREVIEW_CHARS = 300;
 const VIEWPORT_DESKTOP = 1024;
@@ -204,6 +207,96 @@ async function apiGet(path, signal) {
   return res.json();
 }
 
+function readBootstrapCache() {
+  try {
+    const raw = sessionStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.data || Date.now() - parsed.t > BOOTSTRAP_CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeBootstrapCache(data) {
+  try {
+    sessionStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify({ t: Date.now(), data }));
+  } catch { /* quota / private mode */ }
+}
+
+function applyBootstrap(data) {
+  if (!data) return;
+  if (data.stats) {
+    state.stats = data.stats;
+    renderStats(data.stats);
+    renderSeverityChipCounts(data.stats);
+    el["loading-vector-count"].textContent = String(data.stats.total_vectors ?? 64);
+  }
+  if (data.sops) {
+    state.sops = data.sops;
+    renderSOPBrowser(data.sops);
+  }
+  if (data.incidents) {
+    state.incidents = data.incidents;
+    renderIncidentBrowser(data.incidents);
+  }
+  if (data.resources) {
+    state.resources = data.resources;
+    renderResources(data.resources);
+  }
+}
+
+function debugLog(location, message, data, hypothesisId) {
+  // #region agent log
+  fetch("http://127.0.0.1:7343/ingest/c2d45c21-7b99-4fcd-9cae-c1134bf94229", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9dab18" },
+    body: JSON.stringify({
+      sessionId: "9dab18",
+      location,
+      message,
+      data,
+      hypothesisId,
+      timestamp: Date.now(),
+      runId: "pre-fix",
+    }),
+  }).catch(() => {});
+  // #endregion
+}
+
+async function loadBootstrap({ useCache = true } = {}) {
+  const t0 = performance.now();
+  if (useCache) {
+    const cached = readBootstrapCache();
+    if (cached) {
+      applyBootstrap(cached);
+      debugLog("app.js:loadBootstrap", "bootstrap_cache_hit", { ms: Math.round(performance.now() - t0) }, "B");
+      apiGet("/api/bootstrap").then((fresh) => {
+        writeBootstrapCache(fresh);
+        applyBootstrap(fresh);
+        debugLog("app.js:loadBootstrap", "bootstrap_swr_refresh_ok", { ms: Math.round(performance.now() - t0) }, "B");
+      }).catch((err) => {
+        console.warn("[IncidentIQ] bootstrap refresh failed:", err);
+        debugLog("app.js:loadBootstrap", "bootstrap_swr_refresh_fail", { err: String(err) }, "B");
+      });
+      return;
+    }
+  }
+  try {
+    const data = await apiGet("/api/bootstrap");
+    writeBootstrapCache(data);
+    applyBootstrap(data);
+    debugLog("app.js:loadBootstrap", "bootstrap_network_ok", { ms: Math.round(performance.now() - t0), vectors: data?.stats?.total_vectors }, "D");
+  } catch (err) {
+    console.warn("[IncidentIQ] bootstrap fetch failed:", err);
+    el["stats-list"].innerHTML = `<li class="stats-row stats-row--loading">Stats unavailable.</li>`;
+    el["sop-browser"].innerHTML = `<p class="browse-empty">SOPs unavailable.</p>`;
+    el["incident-browser"].innerHTML = `<p class="browse-empty">Incidents unavailable.</p>`;
+    el["resource-list"].innerHTML = `<p class="browse-empty">Resources unavailable.</p>`;
+  }
+}
+
 async function loadStats() {
   try {
     const data = await apiGet("/api/stats");
@@ -213,36 +306,6 @@ async function loadStats() {
     el["loading-vector-count"].textContent = String(data.total_vectors ?? 64);
   } catch (err) {
     console.warn("[IncidentIQ] stats fetch failed:", err);
-  }
-}
-
-async function loadSOPs() {
-  try {
-    state.sops = await apiGet("/api/sops");
-    renderSOPBrowser(state.sops);
-  } catch (err) {
-    console.warn("[IncidentIQ] sops fetch failed:", err);
-    el["sop-browser"].innerHTML = `<p class="browse-empty">SOPs unavailable.</p>`;
-  }
-}
-
-async function loadIncidents() {
-  try {
-    state.incidents = await apiGet("/api/incidents");
-    renderIncidentBrowser(state.incidents);
-  } catch (err) {
-    console.warn("[IncidentIQ] incidents fetch failed:", err);
-    el["incident-browser"].innerHTML = `<p class="browse-empty">Incidents unavailable.</p>`;
-  }
-}
-
-async function loadResources() {
-  try {
-    state.resources = await apiGet("/api/resources");
-    renderResources(state.resources);
-  } catch (err) {
-    console.warn("[IncidentIQ] resources fetch failed:", err);
-    el["resource-list"].innerHTML = `<p class="browse-empty">Resources unavailable.</p>`;
   }
 }
 
@@ -289,7 +352,17 @@ async function callQuery(question, severityFilter) {
     err.body = body;
     throw err;
   }
+  const serverMs = parseServerTimingMs(res.headers.get("X-Processing-Time"));
+  if (serverMs != null && body && typeof body === "object") {
+    body.processing_time_ms = serverMs;
+  }
   return body;
+}
+
+function parseServerTimingMs(header) {
+  if (!header) return null;
+  const m = /^(\d+)ms$/i.exec(String(header).trim());
+  return m ? Number(m[1]) : null;
 }
 
 // ─── RENDER: STATS ────────────────────────────────────────────────────────
@@ -707,7 +780,7 @@ async function submitQuery() {
     } else if (err?.status) {
       showError(`Unexpected error (HTTP ${err.status}).`);
     } else {
-      showError("Cannot connect to server. Make sure the server is running on port 8000.");
+      showError("Cannot connect to the server. Check that IncidentIQ is running and reachable.");
     }
   } finally {
     state.currentAbort = null;
@@ -1257,9 +1330,9 @@ async function init() {
   syncTimerButtons();
   startClock();
 
-  await Promise.allSettled([loadStats(), loadSOPs(), loadIncidents(), loadResources(), probeHealth()]);
+  await Promise.allSettled([loadBootstrap(), probeHealth()]);
 
-  state.statsTimer  = window.setInterval(loadStats, STATS_REFRESH_MS);
+  state.statsTimer  = window.setInterval(() => loadBootstrap({ useCache: false }), STATS_REFRESH_MS);
   state.healthTimer = window.setInterval(probeHealth, HEALTH_REFRESH_MS);
 }
 

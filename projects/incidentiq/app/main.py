@@ -13,14 +13,17 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from starlette.staticfiles import StaticFiles
+from starlette.types import Scope
 
 from app.api.routes import health, knowledge, query
 from app.config import get_settings
 from app.core.rag_pipeline import init_pipeline
 from app.core.retriever import init_retriever
 from app.models.schemas import ErrorResponse
+from app.utils.agent_debug import agent_log
 from app.utils.logger import get_logger
 
 _PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
@@ -29,6 +32,30 @@ _INDEX_HTML: Path = _STATIC_DIR / "index.html"
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+_CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
+_CACHE_REVALIDATE = "public, max-age=0, must-revalidate"
+
+
+class CachedStaticFiles(StaticFiles):
+    """Version-aware cache: fingerprinted assets are immutable; others revalidate."""
+
+    async def get_response(self, path: str, scope: Scope):
+        response = await super().get_response(path, scope)
+        if path.endswith((".css", ".js", ".svg", ".ico")):
+            query = scope.get("query_string", b"").decode("utf-8", errors="ignore")
+            versioned = "v=" in query
+            cache_policy = _CACHE_IMMUTABLE if versioned else _CACHE_REVALIDATE
+            response.headers["Cache-Control"] = cache_policy
+            # #region agent log
+            agent_log(
+                "main.py:CachedStaticFiles.get_response",
+                "static_cache_policy",
+                {"path": path, "query": query, "versioned": versioned, "cache": cache_policy},
+                "A",
+            )
+            # #endregion
+        return response
 
 
 @asynccontextmanager
@@ -76,16 +103,18 @@ app: FastAPI = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Processing-Time"],
 )
 
 if _STATIC_DIR.is_dir():
-    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+    app.mount("/static", CachedStaticFiles(directory=_STATIC_DIR), name="static")
     logger.info("Static files mounted: path=%s", _STATIC_DIR)
 else:
     logger.warning(
@@ -108,7 +137,11 @@ async def root() -> FileResponse | JSONResponse:
         docs and health endpoints.
     """
     if _INDEX_HTML.is_file() and _INDEX_HTML.stat().st_size > 0:
-        return FileResponse(path=_INDEX_HTML, media_type="text/html")
+        return FileResponse(
+            path=_INDEX_HTML,
+            media_type="text/html",
+            headers={"Cache-Control": "no-cache, must-revalidate"},
+        )
     return JSONResponse(
         content={
             "message": "IncidentIQ API",
