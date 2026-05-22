@@ -1,46 +1,40 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app \
+    PORT=8000
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Layer caching: copy requirements first, install before code
+# Copy dependency metadata first for Docker layer caching.
 COPY requirements.txt .
 
-# CPU-only PyTorch keeps the image much smaller than CUDA wheels
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir -r requirements.txt
+# CPU-only PyTorch keeps the image much smaller than CUDA wheels.
+RUN python -m pip install --upgrade pip \
+    && python -m pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu \
+    && python -m pip install -r requirements.txt
 
-# Copy application code
 COPY . .
 
-# Pre-build the FAISS knowledge base inside the image
+# Build the FAISS index at image build time without embedding a real API key.
 RUN OPENAI_API_KEY=build-time-placeholder-not-a-secret \
     python scripts/build_knowledge_base.py
 
-# Expose application port
-EXPOSE 8000
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app
+USER appuser
 
-# Docker health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -fsS http://127.0.0.1:${PORT:-8000}/health || exit 1
 
-# Never run as root in production
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+EXPOSE 8000
 
-# Environment defaults
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
-
-# Launch application
-# Bind 0.0.0.0 inside the container so host port mapping (127.0.0.1:8000→8000) works.
-# HEALTHCHECK above uses 127.0.0.1 (in-container loopback). Do not bind uvicorn to
-# 127.0.0.0 only — that would reject traffic from the Docker bridge network.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Bind 0.0.0.0 inside the container so host port mapping and Render routing work.
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

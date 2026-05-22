@@ -1,17 +1,30 @@
-# Secrets — never in image
+# Secrets - never in image
 .env
+.env.*
+!.env.example
 
 # Python artifacts
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 *.egg-info/
 .eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Virtual environments
 venv/
 .venv/
+env/
+
+# Generated indexes are rebuilt during Docker image build
+knowledge_base/faiss_index/
+*.faiss
+*.pkl
 
 # Git
 .git/
@@ -21,14 +34,18 @@ venv/
 .cursor/
 .cursorrules
 .claude/
+.idea/
+.vscode/
 
 # Logs
 *.log
 .uvicorn.log
 .uvicorn.err.log
 
-# Test files (not needed in production image)
+# Test-only files
 tests/
+requirements-dev.txt
+pytest.ini
 
 # Documentation
 *.md

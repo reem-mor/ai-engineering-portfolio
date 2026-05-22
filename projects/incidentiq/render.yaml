@@ -4,9 +4,27 @@ services:
     env: docker
     plan: free
     rootDir: projects/incidentiq
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: OPENAI_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      - key: LLM_FALLBACK_ENABLED
+        value: "true"
+      - key: EMBEDDING_MODEL
+        value: all-MiniLM-L6-v2
+      - key: FAISS_INDEX_PATH
+        value: knowledge_base/faiss_index
+      - key: TOP_K_RESULTS
+        value: "5"
+      - key: MAX_TOKENS
+        value: "1000"
+      - key: REQUEST_TIMEOUT_SECONDS
+        value: "45"

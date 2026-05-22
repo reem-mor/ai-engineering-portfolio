@@ -1,17 +1,18 @@
-# IncidentIQ — Cursor Rules
+# IncidentIQ - Cursor Rules
 
-- Project: IncidentIQ RAG Application
+- Project: IncidentIQ RAG Application homework submission.
 - Working directory: C:\dev\amdocs-ai-course\projects\incidentiq\
-- Always use pathlib.Path for ALL file paths (Windows compatible)
-- Never hardcode secrets — use .env via pydantic-settings only
-- Type hints required on every function and method signature
-- Docstrings required on every class and public method
-- No print() anywhere in production code — use logger exclusively
-- No bare except: — always catch specific exceptions
-- No magic numbers — use constants from config.py
-- Async for all I/O-bound operations (LLM calls, file reads)
+- Keep secrets out of git and Docker images. Use .env locally, Render secret env vars in production, and .env.example for placeholders only.
+- Keep the Dockerfile in this project root and preserve Docker best practices: slim official base image, requirements copied before source, no embedded keys, EXPOSE 8000, and a CMD that starts FastAPI.
+- Use pathlib.Path for file paths so the project works on Windows and Linux containers.
+- Type hints are required on every function and method signature.
+- Docstrings are required on classes and public methods.
+- Use structured logging through app.utils.logger; do not use print() in production code.
+- Catch specific exceptions; do not use bare except.
+- Keep RAG answers grounded in retrieved FAISS context and handle empty or irrelevant queries explicitly.
 - FAISS index path: knowledge_base/faiss_index/
 - Embedding model: all-MiniLM-L6-v2
-- LLM: OpenAI gpt-4o-mini primary; Gemini gemini-2.0-flash fallback
+- LLM: OpenAI gpt-4o-mini primary; Gemini gemini-2.0-flash fallback when configured.
 - Document ingestion: TXT, PDF, DOCX, XLSX from data/documents/
-- Stack: FastAPI + FAISS + sentence-transformers + OpenAI + Gemini + Docker
+- Tests must run with pytest using pytest.ini.
+- Stack: FastAPI + FAISS + sentence-transformers + OpenAI + Gemini + Docker + Render.
