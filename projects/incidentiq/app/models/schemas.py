@@ -72,6 +72,10 @@ class SourceDocument(BaseModel):
         default="",
         description="Verbatim retrieved chunk text — used by clients to render expandable previews.",
     )
+    source_file: str = Field(
+        default="",
+        description="Original filename when the chunk was ingested from data/documents/.",
+    )
 
 
 class RAGResponse(BaseModel):
@@ -119,7 +123,15 @@ class HealthResponse(BaseModel):
         ..., ge=0, description="Total vectors currently in the FAISS index."
     )
     embedding_model: str = Field(..., description="Sentence-transformer model identifier.")
-    llm_model: str = Field(..., description="OpenAI chat model identifier.")
+    llm_model: str = Field(..., description="Primary OpenAI chat model identifier.")
+    llm_fallback_model: str = Field(
+        default="",
+        description="Gemini model identifier used when OpenAI fallback is triggered.",
+    )
+    llm_fallback_available: bool = Field(
+        default=False,
+        description="True when Gemini fallback is configured and enabled.",
+    )
     version: str = Field(..., description="Application semantic version string.")
 
     @field_validator("status")

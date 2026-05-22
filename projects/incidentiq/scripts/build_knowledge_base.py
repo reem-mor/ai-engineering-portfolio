@@ -26,6 +26,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from app.config import get_settings  # noqa: E402
+from app.core.document_loader import load_documents_from_folder  # noqa: E402
 from app.core.embedder import get_embedding_model  # noqa: E402
 from app.utils.logger import get_logger  # noqa: E402
 from data.sample_incidents import get_all_documents  # noqa: E402
@@ -143,6 +144,19 @@ def format_reference_chunk(ref: dict[str, Any]) -> str:
     return " ".join(part for part in parts if part)
 
 
+def merge_document_sources(
+    python_documents: list[dict[str, Any]],
+    file_documents: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge Python corpus and file corpus, preferring file records on id collision."""
+    merged: dict[str, dict[str, Any]] = {}
+    for doc in python_documents:
+        merged[str(doc["id"])] = doc
+    for doc in file_documents:
+        merged[str(doc["id"])] = doc
+    return list(merged.values())
+
+
 def _classify_document(doc: dict[str, Any]) -> str:
     """Return the document type tag for `doc`: 'incident', 'reference', or 'sop'.
 
@@ -242,8 +256,11 @@ def build_index(documents: list[dict[str, Any]], output_path: Path) -> None:
 
     for doc in documents:
         doc_type: str = _classify_document(doc)
-        if doc_type == "incident":
-            formatted: str = format_incident_chunk(doc)
+        source_file: str = str(doc.get("source_file", ""))
+        if "text" in doc and doc.get("text"):
+            formatted = str(doc["text"]).strip()
+        elif doc_type == "incident":
+            formatted = format_incident_chunk(doc)
         elif doc_type == "reference":
             formatted = format_reference_chunk(doc)
         else:
@@ -257,18 +274,19 @@ def build_index(documents: list[dict[str, Any]], output_path: Path) -> None:
         default_category: str = "SOP" if doc_type == "sop" else "Reference"
         for chunk_index, chunk in enumerate(doc_chunks):
             chunks.append(chunk)
-            metadata.append(
-                {
-                    "id": doc["id"],
-                    "title": doc.get("title", ""),
-                    "severity": doc.get("severity", "N/A"),
-                    "category": doc.get("category", default_category),
-                    "tags": list(doc.get("tags", [])),
-                    "document_type": doc_type,
-                    "chunk_index": chunk_index,
-                    "chunk_text": chunk,
-                }
-            )
+            entry: dict[str, Any] = {
+                "id": doc["id"],
+                "title": doc.get("title", ""),
+                "severity": doc.get("severity", "N/A"),
+                "category": doc.get("category", default_category),
+                "tags": list(doc.get("tags", [])),
+                "document_type": doc_type,
+                "chunk_index": chunk_index,
+                "chunk_text": chunk,
+            }
+            if source_file:
+                entry["source_file"] = source_file
+            metadata.append(entry)
 
     if not chunks:
         raise ValueError("No chunks were produced from the provided documents.")
@@ -304,7 +322,15 @@ def build_index(documents: list[dict[str, Any]], output_path: Path) -> None:
 def _main() -> int:
     """Entry point: load documents, build the index, log summary, return exit code."""
     try:
-        documents: list[dict[str, Any]] = get_all_documents()
+        python_documents: list[dict[str, Any]] = get_all_documents()
+        file_documents: list[dict[str, Any]] = load_documents_from_folder()
+        documents = merge_document_sources(python_documents, file_documents)
+        _logger.info(
+            "Merged corpus: python=%d files=%d total=%d",
+            len(python_documents),
+            len(file_documents),
+            len(documents),
+        )
         settings = get_settings()
         output_path: Path = settings.faiss_index_path
         output_path.mkdir(parents=True, exist_ok=True)

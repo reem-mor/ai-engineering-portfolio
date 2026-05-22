@@ -6,7 +6,7 @@
 "use strict";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = window.location.origin;
 const MAX_QUESTION_LENGTH = 500;
 const MIN_QUESTION_LENGTH = 3;
 const CHAR_WARN = 400;
@@ -15,37 +15,53 @@ const MAX_RECENT_QUERIES = 5;
 const RECENT_QUERIES_KEY = "iiq.recent.v1";
 const STATS_REFRESH_MS = 60_000;
 const HEALTH_REFRESH_MS = 30_000;
-const PRESET_AUTOSUBMIT_DELAY_MS = 300;
 const ERROR_AUTODISMISS_MS = 5_000;
 const SOURCE_PREVIEW_CHARS = 300;
 const VIEWPORT_DESKTOP = 1024;
 
-// ─── PRESETS ──────────────────────────────────────────────────────────────
+// ─── PRESETS (6 real corpus scenarios — ids match sample_incidents.py) ───
 const PRESETS = Object.freeze([
   {
-    icon: kubernetesIcon(),
+    docType: "incident",
+    docId: "INC-006",
     severity: "P1",
     text: "What are the triage steps for a P1 Kubernetes pod crash loop?",
+    icon: kubernetesIcon(),
   },
   {
-    icon: dbIcon(),
+    docType: "incident",
+    docId: "INC-001",
     severity: "P1",
     text: "How do I resolve PostgreSQL connection pool exhaustion?",
+    icon: dbIcon(),
   },
   {
-    icon: queueIcon(),
-    severity: "P2",
+    docType: "sop",
+    docId: "SOP-MQ-001",
+    severity: "P1",
     text: "What is the SOP for Kafka consumer lag incidents?",
+    icon: queueIcon(),
   },
   {
-    icon: networkIcon(),
-    severity: "P2",
+    docType: "incident",
+    docId: "INC-016",
+    severity: "P1",
     text: "We are seeing 5xx errors spiking on our API gateway, what do I do?",
+    icon: networkIcon(),
   },
   {
-    icon: cloudIcon(),
+    docType: "incident",
+    docId: "INC-027",
     severity: "P2",
-    text: "How do I handle an AWS IAM permission denied error in CI/CD?",
+    text: "How do I handle a GCP IAM permission denied error in CI/CD?",
+    icon: cloudIcon(),
+  },
+  {
+    docType: "incident",
+    docId: "INC-012",
+    severity: "P1",
+    text: "How do I troubleshoot internal DNS resolution failures?",
+    icon: networkIcon(),
   },
 ]);
 
@@ -101,17 +117,23 @@ const state = {
   currentAbort: null,
   recentQueries: [],
   timer: { seconds: 0, running: false, intervalId: null, resolvedAt: null },
-  clockTimer: null,
   statsTimer: null,
   healthTimer: null,
   errorTimer: null,
   lastResponse: null,
+  health: null,
+  queryCancelled: false,
+  queryGeneration: 0,
   activeTab: "search",
   stats: null,
   incidents: null,
   sops: null,
   resources: null,
   incidentsExpanded: false,
+  modalResourceRef: null,
+  modalContext: null,
+  detailCache: new Map(),
+  recentIncidents: [],
 };
 
 // ─── DOM REFS ─────────────────────────────────────────────────────────────
@@ -123,13 +145,14 @@ function $(id) {
 }
 function cacheDom() {
   const ids = [
-    "layout","status-dot","live-clock","active-incident-count",
+    "layout","status-dot","p1-incident-count",
     "stats-list","sop-browser","incident-browser","incident-show-more",
     "resource-list","apm-tools",
     "severity-chips","chip-count-all","chip-count-p1","chip-count-p2","chip-count-p3",
     "query-form","query-input","char-count","char-counter","submit-btn","clear-btn",
     "print-btn","copy-summary-btn",
     "presets-section","preset-grid",
+    "latest-incidents-section","latest-incidents-list",
     "loading-panel","loading-vector-count","cancel-btn",
     "error-banner","error-message","info-banner","info-message",
     "answer-panel","confidence-badge","answer-stats",
@@ -204,6 +227,28 @@ async function apiGet(path, signal) {
   return res.json();
 }
 
+async function loadBootstrap() {
+  try {
+    const data = await apiGet("/api/bootstrap");
+    state.stats = data.stats;
+    state.incidents = data.incidents;
+    state.sops = data.sops;
+    state.resources = data.resources;
+    state.recentIncidents = data.recent_incidents || [];
+    renderStats(data.stats);
+    renderSeverityChipCounts(data.stats);
+    el["loading-vector-count"].textContent = String(data.stats?.total_vectors ?? 64);
+    renderSOPBrowser(data.sops);
+    renderIncidentBrowser(data.incidents);
+    renderResources(data.resources);
+    renderLatestIncidents(state.recentIncidents);
+  } catch (err) {
+    console.warn("[IncidentIQ] bootstrap fetch failed, falling back to individual endpoints:", err);
+    await loadStats();
+    await Promise.all([loadSOPs(), loadIncidents(), loadResources()]);
+  }
+}
+
 async function loadStats() {
   try {
     const data = await apiGet("/api/stats");
@@ -249,20 +294,42 @@ async function loadResources() {
 async function probeHealth() {
   try {
     const body = await apiGet("/health");
+    state.health = body;
     const ok = body?.status === "healthy" && body?.faiss_index_loaded;
     setStatusDot(ok ? "healthy" : "degraded");
+    return body;
   } catch {
+    state.health = null;
     setStatusDot("degraded");
+    return null;
   }
+}
+
+async function showHealthDetails() {
+  const body = state.health ?? await probeHealth();
+  if (!body) {
+    showError("Cannot reach backend. Check that the server is running.");
+    return;
+  }
+  const lines = [
+    `Status: ${body.status}`,
+    `FAISS index: ${body.faiss_index_loaded ? "loaded" : "not loaded"}`,
+    `Documents indexed: ${body.total_documents_indexed ?? "—"}`,
+    `LLM: ${body.llm_model ?? "—"}`,
+    `Version: ${body.version ?? "—"}`,
+  ];
+  showInfo(lines.join(" · "), true);
 }
 
 function setStatusDot(kind) {
   const dot = el["status-dot"];
   dot.classList.remove("status-dot--healthy","status-dot--degraded","status-dot--unknown");
   dot.classList.add(`status-dot--${kind}`);
-  dot.title = kind === "healthy" ? "All systems operational"
-            : kind === "degraded" ? "Backend unreachable"
-            : "Checking…";
+  const label = kind === "healthy" ? "All systems operational"
+              : kind === "degraded" ? "Backend degraded or unreachable"
+              : "Checking system status";
+  dot.title = `${label} — click for details`;
+  dot.setAttribute("aria-label", `${label} — click for details`);
 }
 
 async function callQuery(question, severityFilter) {
@@ -301,10 +368,16 @@ function renderStats(stats) {
     `<li class="stats-row">🟠 P2: <strong>${stats.p2_incidents}</strong> incidents</li>`,
     `<li class="stats-row">🟡 P3: <strong>${stats.p3_incidents}</strong> incidents</li>`,
     `<li class="stats-row">📚 <strong>${stats.total_sops}</strong> SOPs indexed</li>`,
+    `<li class="stats-row">📄 <strong>${stats.file_documents_indexed || 0}</strong> file documents</li>`,
     `<li class="stats-row">⚡ Avg P1 MTTR: <strong>${stats.avg_mttr_p1_minutes} min</strong></li>`,
     `<li class="stats-row">🧠 <strong>${stats.total_vectors}</strong> vectors indexed</li>`,
   ];
   list.innerHTML = rows.join("");
+  updateHeaderP1Count(stats);
+}
+
+function updateHeaderP1Count(stats) {
+  el["p1-incident-count"].textContent = String(stats?.p1_incidents ?? 0);
 }
 
 function renderSeverityChipCounts(stats) {
@@ -358,7 +431,7 @@ function makeSOPRow(sop) {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".browse-item.is-sop.is-active").forEach((n) => n.classList.remove("is-active"));
     btn.classList.add("is-active");
-    populateAndSubmit(`What is the SOP for ${sop.title}?`);
+    void openKnowledgeModal("sop", sop.id);
   });
   return btn;
 }
@@ -408,7 +481,7 @@ function makeIncidentRow(inc, sev) {
     </div>
   `;
   btn.addEventListener("click", () => {
-    populateAndSubmit(`How do I resolve ${inc.title}?`);
+    void openKnowledgeModal("incident", inc.id);
   });
   return btn;
 }
@@ -550,23 +623,111 @@ function renderPresets() {
 }
 
 function handlePresetClick(btn, preset) {
-  if (state.isLoading) return;
-  el["query-input"].value = preset.text;
-  updateCharCount();
-  updateSubmitState();
-  updateClearVisibility();
   document.querySelectorAll(".preset-btn.is-clicked").forEach((n) => n.classList.remove("is-clicked"));
   btn.classList.add("is-clicked");
   window.setTimeout(() => btn.classList.remove("is-clicked"), 200);
-  btn.classList.add("is-submitting");
-  const label = btn.querySelector(".preset-text");
-  const original = label?.textContent ?? "";
-  if (label) label.textContent = "Submitting…";
-  window.setTimeout(() => {
-    if (label) label.textContent = original;
-    btn.classList.remove("is-submitting");
-    submitQuery();
-  }, PRESET_AUTOSUBMIT_DELAY_MS);
+  void openKnowledgeModal(preset.docType, preset.docId, preset.text);
+}
+
+function renderLatestIncidents(rows) {
+  const section = el["latest-incidents-section"];
+  const root = el["latest-incidents-list"];
+  root.innerHTML = "";
+  if (!Array.isArray(rows) || rows.length === 0) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  const frag = document.createDocumentFragment();
+  rows.forEach((inc) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "latest-incident-btn";
+    btn.innerHTML = `
+      <span class="severity-badge is-${(inc.severity || "p3").toLowerCase()}">${escapeHtml(inc.severity || "P3")}</span>
+      <span class="latest-incident-text">
+        <span class="latest-incident-id">${escapeHtml(inc.id)}</span>
+        <span class="latest-incident-title">${escapeHtml(truncate(inc.title, 52))}</span>
+      </span>
+      <span class="latest-incident-meta">⏱ ${inc.mttr_minutes}m · ${escapeHtml(inc.category || "")}</span>
+    `;
+    btn.addEventListener("click", () => {
+      void openKnowledgeModal("incident", inc.id);
+    });
+    frag.appendChild(btn);
+  });
+  root.appendChild(frag);
+}
+
+async function fetchKnowledgeDetail(type, id) {
+  const cacheKey = `${type}:${id}`;
+  if (state.detailCache.has(cacheKey)) {
+    return state.detailCache.get(cacheKey);
+  }
+  const path = type === "sop" ? `/api/sops/${encodeURIComponent(id)}` : `/api/incidents/${encodeURIComponent(id)}`;
+  const detail = await apiGet(path);
+  state.detailCache.set(cacheKey, detail);
+  return detail;
+}
+
+function renderListSection(title, items) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  const lis = items.map((item, idx) => `<li><span class="detail-step-num">${idx + 1}.</span> ${escapeHtml(String(item))}</li>`).join("");
+  return `<section class="detail-block"><h4>${escapeHtml(title)}</h4><ol class="detail-list">${lis}</ol></section>`;
+}
+
+function renderIncidentDetailHtml(inc) {
+  return `
+    <div class="detail-meta">
+      <span class="severity-badge is-${(inc.severity || "p3").toLowerCase()}">${escapeHtml(inc.severity)}</span>
+      <span class="pill-mini">${escapeHtml(inc.id)}</span>
+      <span class="pill-mini">${escapeHtml(inc.category)}</span>
+      <span class="pill-mini">⏱ ${inc.mttr_minutes} min MTTR</span>
+      ${inc.sop_reference ? `<span class="pill-mini">SOP: ${escapeHtml(inc.sop_reference)}</span>` : ""}
+    </div>
+    <section class="detail-block"><h4>Description</h4><p>${escapeHtml(inc.description)}</p></section>
+    ${renderListSection("Triage Steps", inc.triage_steps)}
+    <section class="detail-block"><h4>Root Cause</h4><p>${escapeHtml(inc.root_cause)}</p></section>
+    ${renderListSection("Resolution Steps", inc.resolution_steps)}
+    ${inc.lessons_learned ? `<section class="detail-block"><h4>Lessons Learned</h4><p>${escapeHtml(inc.lessons_learned)}</p></section>` : ""}
+  `;
+}
+
+function renderSOPDetailHtml(sop) {
+  return `
+    <div class="detail-meta">
+      <span class="severity-badge is-${(sop.severity_trigger || "na").toLowerCase()}">${escapeHtml(sop.severity_trigger)}</span>
+      <span class="pill-mini">${escapeHtml(sop.id)}</span>
+      <span class="pill-mini">v${escapeHtml(sop.version || "1.0")}</span>
+      <span class="pill-mini">${escapeHtml(sop.owner)}</span>
+    </div>
+    <section class="detail-block"><h4>Applicability</h4><p>${escapeHtml(sop.applicability)}</p></section>
+    ${renderListSection("Runbook Steps", sop.steps)}
+    ${sop.escalation_path ? `<section class="detail-block"><h4>Escalation</h4><p>${escapeHtml(sop.escalation_path)}</p></section>` : ""}
+  `;
+}
+
+async function openKnowledgeModal(type, id, suggestedQuery) {
+  try {
+    const detail = await fetchKnowledgeDetail(type, id);
+    const title = detail.title || id;
+    const askQuery = suggestedQuery
+      || (type === "sop"
+        ? `What is the SOP for ${title}?`
+        : `How do I resolve ${id} ${title}?`);
+    state.modalResourceRef = null;
+    state.modalContext = { type, id, askQuery, title };
+    el["modal-title"].textContent = `${id} — ${title}`;
+    el["modal-body"].innerHTML = type === "sop"
+      ? renderSOPDetailHtml(detail)
+      : renderIncidentDetailHtml(detail);
+    el["modal-ask-btn"].textContent = "Ask IncidentIQ about this";
+    el["modal-backdrop"].hidden = false;
+    if (window.innerWidth < VIEWPORT_DESKTOP) setActiveTab("search");
+  } catch (err) {
+    console.warn("[IncidentIQ] detail fetch failed:", err);
+    showError(`Could not load ${type} ${id}. Please try again.`);
+  }
 }
 
 // ─── SEVERITY CHIPS ───────────────────────────────────────────────────────
@@ -647,8 +808,13 @@ function setLoading(isLoading) {
   el["loading-panel"].hidden = !isLoading;
   el["presets-section"].hidden = isLoading;
   el["query-input"].disabled = isLoading;
-  el["submit-btn"].disabled = isLoading || el["submit-btn"].disabled;
   el["severity-chips"].querySelectorAll(".chip").forEach((c) => c.toggleAttribute("disabled", isLoading));
+
+  if (isLoading) {
+    el["submit-btn"].disabled = true;
+  } else {
+    updateSubmitState();
+  }
 
   const steps = el["loading-panel"].querySelectorAll(".loading-step");
   steps.forEach((s) => s.classList.remove("is-active","is-done"));
@@ -669,7 +835,6 @@ function setLoading(isLoading) {
   } else {
     if (state._loadingTimers) state._loadingTimers.forEach((t) => clearTimeout(t));
     state._loadingTimers = [];
-    updateSubmitState();
   }
 }
 
@@ -686,18 +851,22 @@ async function submitQuery() {
   }
   hideBanners();
   el["answer-panel"].hidden = true;
+  state.queryCancelled = false;
+  const generation = ++state.queryGeneration;
   setLoading(true);
 
   try {
     const data = await callQuery(question, state.severityFilter);
+    if (generation !== state.queryGeneration) return;
     setLoading(false);
     state.lastResponse = data;
     saveRecentQuery(question, data?.confidence, Array.isArray(data?.sources) ? data.sources.length : 0);
     renderAnswer(data);
   } catch (err) {
+    if (generation !== state.queryGeneration) return;
     setLoading(false);
     if (err?.name === "AbortError") {
-      showInfo("Query cancelled.", true);
+      if (!state.queryCancelled) showInfo("Query cancelled.", true);
       return;
     }
     if (err?.status === 422) {
@@ -707,10 +876,10 @@ async function submitQuery() {
     } else if (err?.status) {
       showError(`Unexpected error (HTTP ${err.status}).`);
     } else {
-      showError("Cannot connect to server. Make sure the server is running on port 8000.");
+      showError("Cannot connect to server. Make sure the backend is running.");
     }
   } finally {
-    state.currentAbort = null;
+    if (generation === state.queryGeneration) state.currentAbort = null;
   }
 }
 
@@ -725,7 +894,7 @@ function renderAnswer(data) {
 
   const ms = Number(data?.processing_time_ms ?? 0);
   const sources = Array.isArray(data?.sources) ? data.sources : [];
-  el["answer-stats"].textContent = `⚡ ${formatSecs(ms)} · ${sources.length} sources`;
+  el["answer-stats"].textContent = `⚡ ${formatSecs(ms)} · ${sources.length} sources · ${data?.model_used || "—"}`;
 
   el["answer-body"].innerHTML = renderAnswerMarkdown(data?.answer ?? "");
   wireAnswerCopyButtons();
@@ -740,7 +909,6 @@ function renderAnswer(data) {
   el["sources-toggle"].setAttribute("aria-expanded", window.innerWidth >= VIEWPORT_DESKTOP ? "true" : "false");
   el["sources-list"].hidden = !(window.innerWidth >= VIEWPORT_DESKTOP);
   updateClearVisibility();
-  bumpActiveIncidentCounter();
 
   if (conf === "none") {
     showInfo(data?.answer || "No grounded answer was returned. Try rephrasing or escalate to your team lead.");
@@ -870,6 +1038,7 @@ function renderSources(sources) {
     const docClass = dt === "sop" ? "is-sop" : dt === "reference" ? "is-ref" : `is-${sev.toLowerCase()}`;
 
     const preview = truncate(String(src.chunk_text || ""), SOURCE_PREVIEW_CHARS) || "(no preview available)";
+    const sourceFile = src.source_file ? `<span class="source-file">📎 ${escapeHtml(src.source_file)}</span>` : "";
 
     const li = document.createElement("li");
     li.className = `source-card ${cls}`;
@@ -885,6 +1054,7 @@ function renderSources(sources) {
             <span class="severity-badge is-${sev.toLowerCase()}">${escapeHtml(sev)}</span>
           </div>
           <h4 class="source-title">${escapeHtml(src.title || "Untitled")}</h4>
+          ${sourceFile}
         </div>
         <div class="source-head-right">${pct}%</div>
       </div>
@@ -897,7 +1067,14 @@ function renderSources(sources) {
     li.querySelector(".source-head").addEventListener("click", () => toggleSourceExpand(li));
     li.querySelector(".source-ask-btn").addEventListener("click", (ev) => {
       ev.stopPropagation();
-      populateAndSubmit(`Tell me more about ${src.title}`);
+      const sid = String(src.id || "").toUpperCase();
+      if (sid.startsWith("INC-")) {
+        void openKnowledgeModal("incident", sid);
+      } else if (sid.startsWith("SOP-")) {
+        void openKnowledgeModal("sop", sid);
+      } else {
+        populateAndSubmit(`Tell me more about ${src.title}`);
+      }
     });
     frag.appendChild(li);
   });
@@ -1118,24 +1295,24 @@ function renderRecentQueries() {
   list.appendChild(frag);
 }
 
-// ─── ACTIVE INCIDENT COUNTER ──────────────────────────────────────────────
-function bumpActiveIncidentCounter() {
-  const cur = Number(el["active-incident-count"].textContent || "0");
-  el["active-incident-count"].textContent = String(cur + 1);
-}
-
 // ─── MODAL ────────────────────────────────────────────────────────────────
 function openResourceModal(ref) {
+  state.modalContext = {
+    type: "resource",
+    id: ref.id,
+    askQuery: `Tell me more about ${ref.title}`,
+    title: ref.title,
+  };
+  state.modalResourceRef = ref;
   el["modal-title"].textContent = ref.title || "Resource";
   el["modal-body"].textContent = ref.content || "(no content)";
-  el["modal-ask-btn"].onclick = () => {
-    closeModal();
-    populateAndSubmit(`Tell me more about ${ref.title}`);
-  };
+  el["modal-ask-btn"].textContent = "Ask IncidentIQ about this";
   el["modal-backdrop"].hidden = false;
 }
 function closeModal() {
   el["modal-backdrop"].hidden = true;
+  state.modalResourceRef = null;
+  state.modalContext = null;
 }
 
 // ─── TABS (mobile) ────────────────────────────────────────────────────────
@@ -1145,6 +1322,11 @@ function setActiveTab(tab) {
   el["bottom-nav"].querySelectorAll(".bn-btn").forEach((b) => {
     b.classList.toggle("is-active", b.dataset.tab === tab);
   });
+  if (tab === "resources") {
+    window.requestAnimationFrame(() => {
+      document.getElementById("key-resources-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 }
 
 function wireBottomNav() {
@@ -1163,17 +1345,6 @@ function populateAndSubmit(text) {
   updateClearVisibility();
   if (window.innerWidth < VIEWPORT_DESKTOP) setActiveTab("search");
   submitQuery();
-}
-
-// ─── CLOCK ────────────────────────────────────────────────────────────────
-function startClock() {
-  const tick = () => { el["live-clock"].textContent = formatHHMMSS(secondsOfDay()); };
-  tick();
-  state.clockTimer = window.setInterval(tick, 1000);
-}
-function secondsOfDay() {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
 }
 
 // ─── WIRING ───────────────────────────────────────────────────────────────
@@ -1208,8 +1379,16 @@ function wireEvents() {
   el["copy-answer-btn"].addEventListener("click", copyAnswer);
 
   el["cancel-btn"].addEventListener("click", () => {
-    if (state.currentAbort) state.currentAbort.abort();
+    if (!state.currentAbort && !state.isLoading) return;
+    state.queryCancelled = true;
+    state.queryGeneration += 1;
+    state.currentAbort?.abort();
+    state.currentAbort = null;
+    setLoading(false);
+    showInfo("Query cancelled.", true);
   });
+
+  el["status-dot"].addEventListener("click", () => { void showHealthDetails(); });
 
   el["sources-toggle"].addEventListener("click", () => {
     const expanded = el["sources-toggle"].getAttribute("aria-expanded") === "true";
@@ -1225,6 +1404,12 @@ function wireEvents() {
   el["recent-clear-btn"].addEventListener("click", clearRecentQueries);
 
   el["modal-close"].addEventListener("click", closeModal);
+  el["modal-ask-btn"].addEventListener("click", () => {
+    const ctx = state.modalContext;
+    if (!ctx?.askQuery) return;
+    closeModal();
+    populateAndSubmit(ctx.askQuery);
+  });
   el["modal-backdrop"].addEventListener("click", (ev) => {
     if (ev.target === el["modal-backdrop"]) closeModal();
   });
@@ -1255,9 +1440,9 @@ async function init() {
   updateClearVisibility();
   renderTimer();
   syncTimerButtons();
-  startClock();
 
-  await Promise.allSettled([loadStats(), loadSOPs(), loadIncidents(), loadResources(), probeHealth()]);
+  await loadBootstrap();
+  await probeHealth();
 
   state.statsTimer  = window.setInterval(loadStats, STATS_REFRESH_MS);
   state.healthTimer = window.setInterval(probeHealth, HEALTH_REFRESH_MS);

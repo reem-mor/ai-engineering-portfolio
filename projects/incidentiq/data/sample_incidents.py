@@ -2154,3 +2154,45 @@ def get_sops() -> list[dict]:
 def get_references() -> list[dict]:
     """Return real-world reference records only."""
     return REAL_REFERENCES
+
+
+def get_incident_by_id(incident_id: str) -> dict | None:
+    """Return a single incident by id, or None if not found."""
+    needle = incident_id.strip().upper()
+    for inc in INCIDENTS:
+        if str(inc.get("id", "")).upper() == needle:
+            return inc
+    return None
+
+
+def get_sop_by_id(sop_id: str) -> dict | None:
+    """Return a single SOP by id, or None if not found."""
+    needle = sop_id.strip().upper()
+    for sop in SOPS:
+        if str(sop.get("id", "")).upper() == needle:
+            return sop
+    return None
+
+
+def get_recent_incidents(limit: int = 4) -> list[dict]:
+    """Return the highest-numbered incidents (proxy for latest in the corpus)."""
+    if limit < 1:
+        return []
+
+    def _inc_num(inc: dict) -> int:
+        raw = str(inc.get("id", "")).upper().removeprefix("INC-")
+        return int(raw) if raw.isdigit() else 0
+
+    ranked = sorted(INCIDENTS, key=_inc_num, reverse=True)
+    rows: list[dict] = []
+    for inc in ranked[:limit]:
+        rows.append(
+            {
+                "id": str(inc.get("id", "")),
+                "title": str(inc.get("title", "")),
+                "severity": str(inc.get("severity", "")).upper(),
+                "category": str(inc.get("category", "Unknown")),
+                "mttr_minutes": int(inc.get("mttr_minutes", 0)),
+            }
+        )
+    return rows

@@ -1,6 +1,6 @@
 # IncidentIQ — Enterprise Incident Intelligence Platform
 
-![Python](https://img.shields.io/badge/Python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green) ![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-orange) ![Docker](https://img.shields.io/badge/Docker-Containerized-blue) ![Tests](https://img.shields.io/badge/Tests-21_passed-brightgreen) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Python](https://img.shields.io/badge/Python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green) ![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-orange) ![Docker](https://img.shields.io/badge/Docker-Containerized-blue) ![Tests](https://img.shields.io/badge/Tests-29_passed-brightgreen) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 IncidentIQ is a RAG-powered enterprise incident management assistant that helps on-call engineers and NOC teams resolve incidents faster. By combining semantic vector search (FAISS) with LLM reasoning (GPT-4o-mini), it surfaces the most relevant SOPs, runbooks, and past incident resolutions in seconds — directly reducing Mean Time To Resolution (MTTR).
 
@@ -67,7 +67,9 @@ flowchart TD
 | Web Framework       | FastAPI 0.100+            | Async REST API with OpenAPI docs                |
 | Vector Database     | FAISS (`faiss-cpu`)       | Semantic similarity search (IndexFlatL2)        |
 | Embedding Model     | `all-MiniLM-L6-v2`        | Text → 384-dim dense vectors                    |
-| LLM                 | GPT-4o-mini (OpenAI)      | Context-grounded answer generation              |
+| LLM (primary)       | GPT-4o-mini (OpenAI)      | Context-grounded answer generation              |
+| LLM (fallback)      | Gemini 2.0 Flash          | Automatic fallback on OpenAI transient failures |
+| Document ingestion  | TXT, PDF, DOCX, XLSX      | Build-time loading from `data/documents/`       |
 | Frontend            | Vanilla HTML / CSS / JS   | Zero-dependency dark-theme UI                   |
 | Containerization    | Docker (`python:3.11-slim`) | Portable, reproducible deployment             |
 | Testing             | pytest + pytest-asyncio   | Unit and integration tests                      |
@@ -79,12 +81,35 @@ flowchart TD
 
 ## Knowledge Base
 
-The corpus is hand-curated to mirror what a real on-call rotation actually deals with. It contains:
+The corpus combines a structured Python seed with multi-format file ingestion:
+
+- **Structured seed** — [`data/sample_incidents.py`](data/sample_incidents.py): 30 incidents, 10 SOPs, 5 references (powers `/api/incidents`, `/api/sops`, `/api/resources`).
+- **File ingestion** — [`data/documents/`](data/documents/): real incident content in **TXT, PDF, DOCX, and XLSX** formats, loaded at build time by [`app/core/document_loader.py`](app/core/document_loader.py).
+
+Supported file types:
+
+| Extension | Loader | Sample file |
+| --------- | ------ | ----------- |
+| `.txt`    | UTF-8 read | `INC-001_postgres_pool_exhaustion.txt` |
+| `.pdf`    | `pypdf` page extraction | `INC-006_pod_crashloop.pdf` |
+| `.docx`   | `python-docx` paragraphs | `SOP-MQ-001_kafka_consumer_lag.docx` |
+| `.xlsx`   | `openpyxl` row flattening | `incident_register.xlsx` |
+
+Regenerate sample files from the Python corpus:
+
+```bash
+python scripts/export_corpus_to_files.py
+python scripts/build_knowledge_base.py
+```
+
+When the same document `id` exists in both sources, the **file version wins** during FAISS indexing. Metadata records include `source_file` when ingested from disk so the UI can show file provenance.
+
+The hand-curated corpus mirrors what a real on-call rotation actually deals with. It contains:
 
 - **30 incident records** spanning 6 operational categories. Each record carries an `id` (e.g. `INC-014`), `title`, `severity` (P1 / P2 / P3), `category`, `tags`, full `description`, ordered `triage_steps`, `root_cause`, ordered `resolution_steps`, `sop_reference`, `mttr_minutes`, `lessons_learned`, and `related_incidents`.
 - **10 SOP / runbook documents** (`SOP-001` … `SOP-010`) covering the most common incident classes — connection pool exhaustion, pod CrashLoopBackOff, DNS resolution failures, load-balancer health-check failures, Kafka consumer lag, AWS resource limits, and more.
 
-**Chunking strategy.** Each document is rendered into a single dense "primary" chunk that concatenates description + triage + root cause + resolution. When that primary chunk exceeds ~512 tokens it is split at the next logical section boundary (`Lessons Learned` and `Tags` are pushed into a second chunk) so semantic boundaries are preserved instead of being cut mid-sentence. With 40 source documents this yields **64 vectors total** in the index.
+**Chunking strategy.** Each document is rendered into a single dense "primary" chunk that concatenates description + triage + root cause + resolution. File-based documents use their extracted plain text directly. When that primary chunk exceeds ~512 tokens it is split at the next logical section boundary (`Lessons Learned` and `Tags` are pushed into a second chunk) so semantic boundaries are preserved instead of being cut mid-sentence. With 45+ source documents this yields **70 vectors total** in the index.
 
 **Embedding & index.** All chunks are embedded with `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions). The index is a FAISS `IndexFlatL2` — exact L2 distance, no approximation — which is fast enough for tens of thousands of vectors on CPU and trivial to reason about during incident review.
 
@@ -127,10 +152,12 @@ pip install -r requirements.txt
 
 ```powershell
 copy .env.example .env
-# Edit .env and set OPENAI_API_KEY=sk-...
+# Edit .env and set OPENAI_API_KEY=sk-... and GEMINI_API_KEY=...
 ```
 
-5. **Build the knowledge base** (embeds the 40 source docs and writes the FAISS index)
+`GEMINI_API_KEY` enables automatic fallback when OpenAI hits transient errors (rate limits, timeouts, 5xx). The app runs with OpenAI only if Gemini is not configured.
+
+5. **Build the knowledge base** (embeds Python corpus + `data/documents/` and writes the FAISS index)
 
 ```bash
 python scripts/build_knowledge_base.py
@@ -154,41 +181,47 @@ http://localhost:8000/health    # Health probe
 
 ## Docker Setup
 
-### Build the image
-
-```bash
-docker build -t incidentiq .
-```
-
-### Run the container
-
-```bash
-docker run -d --name incidentiq-app -p 8000:8000 --env-file .env incidentiq
-```
-
-### Verify it is running
-
-```bash
-docker ps --filter name=incidentiq-app
-```
-
-### Check logs
-
-```bash
-docker logs incidentiq-app
-```
-
-### Check health
+Recommended: **Docker Compose** (build, env, healthcheck, localhost-only host binding).
 
 ```powershell
+cd projects/incidentiq
+copy .env.example .env   # set OPENAI_API_KEY=sk-...
+docker compose up --build -d
+```
+
+Open http://localhost:8000 and hard-refresh (`Ctrl+Shift+R`) after rebuilds.
+
+### Host binding: `127.0.0.1` vs `0.0.0.0`
+
+| Layer | Binding | Why |
+| ----- | ------- | --- |
+| **Your browser** | `http://localhost:8000` | You access the app on your machine |
+| **Docker Compose ports** | `127.0.0.1:8000:8000` | Only localhost on the host can reach the container (best practice for local demo) |
+| **uvicorn inside container** | `0.0.0.0:8000` | Required so Docker's port forward can reach the process |
+| **HEALTHCHECK** | `http://127.0.0.1:8000/health` | In-container loopback probe |
+
+Do **not** change uvicorn to `--host 127.0.0.1` inside Docker — port mapping would fail.
+
+### Verify
+
+```powershell
+docker compose ps
+docker compose logs -f
+curl.exe http://127.0.0.1:8000/health
 docker inspect incidentiq-app --format "{{.State.Health.Status}}"
 ```
 
-### Stop and remove
+### Stop
+
+```powershell
+docker compose down
+```
+
+### Manual build (without Compose)
 
 ```bash
-docker stop incidentiq-app
-docker rm incidentiq-app
+docker build -t incidentiq .
+docker run -d --name incidentiq-app -p 127.0.0.1:8000:8000 --env-file .env --restart unless-stopped incidentiq
 ```
 
 **Note on image size.** The image is ~3.2 GB, dominated by the CUDA-enabled PyTorch wheels pulled in transitively by `sentence-transformers`. Pinning a CPU-only torch build (`torch==2.x+cpu` from the PyTorch CPU wheel index) reduces this to roughly 800 MB. It is left as a future optimisation rather than baked in here to keep the dependency story portable.
@@ -210,6 +243,8 @@ Response:
   "total_documents_indexed": 64,
   "embedding_model": "all-MiniLM-L6-v2",
   "llm_model": "gpt-4o-mini",
+  "llm_fallback_model": "gemini-2.0-flash",
+  "llm_fallback_available": true,
   "version": "1.0.0"
 }
 ```
@@ -386,13 +421,14 @@ Overall: PASSED
 ### Unit & integration tests
 
 ```bash
+pip install -r requirements-dev.txt
 pytest tests/ -v --tb=short
 ```
 
 Expected:
 
 ```text
-============================= 21 passed in X.XXs =============================
+============================= 29 passed in X.XXs =============================
 ```
 
 ### Test coverage
@@ -402,7 +438,9 @@ Expected:
 | `tests/test_retriever.py`  | 7     | FAISS load, stats, retrieval ranking, metadata fields, irrelevant-query rejection, top-K    |
 | `tests/test_rag_pipeline.py` | 7   | Pipeline init, valid `RAGResponse` shape, confidence='none' for irrelevant, severity filter, Pydantic validation (min/max length, blank) |
 | `tests/test_api.py`        | 7     | `/health` shape, `/api/query` happy path, 422s for short/long/missing body, `X-Processing-Time` header, root route |
-| **Total**                  | **21** | Retriever + pipeline + API surface                                                       |
+| `tests/test_document_loader.py` | 5 | TXT/PDF/DOCX/XLSX ingestion from `data/documents/` |
+| `tests/test_llm_fallback.py` | 3   | OpenAI primary path, Gemini fallback, no-fallback re-raise |
+| **Total**                  | **29** | Retriever + pipeline + API + ingestion + LLM fallback |
 
 ---
 
@@ -414,7 +452,8 @@ Expected:
 - **Pydantic V2 caught edge cases for free.** `min_length=3`, `max_length=500`, and a `field_validator` that rejects whitespace-only questions meant the empty-string and 600-character cases (Phase 9 tests #8 and #10) never reached the pipeline. The 422 response is automatic.
 - **A score threshold beat a prompt instruction.** Asking the LLM to "say you don't know" is unreliable; gating on the L2 distance of the top result is deterministic. That is what makes "What is the weather in Paris today?" return `confidence="none"` in 118 ms with zero OpenAI cost.
 - **FastAPI lifespan kept startup honest.** Loading FAISS, the embedder, and the OpenAI client exactly once during `lifespan` startup — and logging a single `IncidentIQ ready` line — means cold starts are visible, warm requests are fast, and there is no race between the first request and the first model load.
-- **The 4-section system prompt produces consistent, scannable answers.** Forcing every response into **Assessment → Triage Steps → Resolution Steps → Escalation** means an on-call engineer always knows where to look first. Across all five live test queries the format held without drift.
+- **Dual LLM resilience.** OpenAI (`gpt-4o-mini`) handles all queries first; transient failures automatically fall back to Gemini (`gemini-2.0-flash`) when configured, with `model_used` surfaced in every response.
+- **Multi-format ingestion.** PDF, DOCX, TXT, and XLSX files under `data/documents/` are indexed alongside the Python corpus, with `source_file` provenance in retrieval metadata.
 
 ### What Could Be Improved
 
@@ -449,8 +488,9 @@ incidentiq/
 │   │       └── query.py              # POST /api/query — RAG entrypoint + X-Processing-Time
 │   ├── core/
 │   │   ├── __init__.py
+│   │   ├── document_loader.py        # TXT/PDF/DOCX/XLSX ingestion
 │   │   ├── embedder.py               # SentenceTransformer wrapper (singleton, lazy-loaded)
-│   │   ├── llm_client.py             # AsyncOpenAI client + retry-on-transient-failure
+│   │   ├── llm_client.py             # OpenAI + Gemini fallback chain
 │   │   ├── retriever.py              # FAISS IndexFlatL2 retriever (singleton)
 │   │   └── rag_pipeline.py           # Orchestration: retrieve → augment → generate
 │   ├── models/
@@ -460,7 +500,8 @@ incidentiq/
 │       ├── __init__.py
 │       └── logger.py                 # Structured key-value logger
 ├── data/
-│   └── sample_incidents.py           # 30 incidents + 10 SOPs (source of truth)
+│   ├── sample_incidents.py           # 30 incidents + 10 SOPs (structured browse API)
+│   └── documents/                    # TXT, PDF, DOCX, XLSX ingestion sources
 ├── frontend/
 │   └── static/
 │       ├── index.html                # Single-page UI
@@ -468,15 +509,17 @@ incidentiq/
 │       └── app.js                    # Query submission, severity filter, sources panel
 ├── knowledge_base/
 │   └── faiss_index/
-│       ├── index.faiss               # Serialized IndexFlatL2 (384-dim, 64 vectors)
-│       └── metadata.json             # Per-chunk metadata (id, title, severity, category, text)
+│       ├── index.faiss               # Serialized IndexFlatL2 (384-dim, 70 vectors)
+│       └── metadata.json             # Per-chunk metadata (id, title, severity, source_file)
 ├── scripts/
 │   ├── build_knowledge_base.py       # Embed + index + persist (idempotent)
-│   ├── phase5_validate.py            # Retrieval sanity checks
-│   └── test_queries.py               # Phase 9 end-to-end runner (10 cases)
+│   ├── export_corpus_to_files.py     # Regenerate multi-format sample documents
+│   └── test_queries.py               # End-to-end runner (10 cases)
 ├── tests/
 │   ├── __init__.py
 │   ├── test_api.py                   # 7 tests — FastAPI surface
+│   ├── test_document_loader.py       # 5 tests — file ingestion
+│   ├── test_llm_fallback.py          # 3 tests — OpenAI/Gemini chain
 │   ├── test_rag_pipeline.py          # 7 tests — pipeline & validation
 │   └── test_retriever.py             # 7 tests — FAISS retriever
 ├── .dockerignore
@@ -485,8 +528,29 @@ incidentiq/
 ├── Dockerfile                        # python:3.11-slim, non-root user, healthcheck
 ├── pytest.ini                        # pytest config + asyncio mode
 ├── README.md                         # This file
-└── requirements.txt                  # Pinned top-level dependencies
+├── requirements.txt                  # Production dependencies
+├── requirements-dev.txt              # Dev/test dependencies (pytest)
 ```
+
+---
+
+## Homework Submission Checklist
+
+- [x] Source code clean and documented (`README.md`, typed Python, structured logging)
+- [x] `Dockerfile` at project root with CPU-only PyTorch for smaller images
+- [x] Architecture explanation (mermaid diagram + component table above)
+- [x] 6 preset scenarios tied to real corpus ids (INC-001, INC-006, SOP-MQ-001, …)
+- [x] Latest incidents quick-browse below presets
+- [x] Browse buttons open full incident/SOP detail modals before RAG query
+- [x] `docker-compose.yml` with localhost host binding and healthcheck
+- [x] Multi-format knowledge base: TXT, PDF, DOCX, XLSX under `data/documents/`
+- [x] FAISS vector index with sentence-transformer embeddings
+- [x] RAG pipeline with grounded answers and edge-case handling
+- [x] Web UI with query input, loading states, sources panel, error handling
+- [x] OpenAI + Gemini dual-LLM (primary/fallback)
+- [x] Docker container accessible at `http://localhost:8000`
+- [x] No secrets committed (`.env` gitignored; keys via environment variables)
+- [x] `pytest tests/ -v` — 29 passed
 
 ---
 

@@ -130,6 +130,7 @@ class FAISSRetriever:
                         "category": meta.get("category", "SOP"),
                         "tags": list(meta.get("tags", [])),
                         "document_type": meta.get("document_type", "unknown"),
+                        "source_file": meta.get("source_file", ""),
                     },
                 }
             )
@@ -152,6 +153,22 @@ class FAISSRetriever:
             "total_vectors": int(self._index.ntotal),
             "dimension": self._dimension,
             "index_type": self._index_type,
+        }
+
+    def get_ingestion_stats(self) -> dict[str, Any]:
+        """Summarise indexed documents, including file-based ingestion counts."""
+        by_extension: dict[str, int] = {}
+        file_documents: set[str] = set()
+        for meta in self._metadata:
+            source_file = str(meta.get("source_file", "")).strip()
+            if not source_file:
+                continue
+            file_documents.add(source_file)
+            ext = Path(source_file).suffix.lower().lstrip(".")
+            by_extension[ext] = by_extension.get(ext, 0) + 1
+        return {
+            "file_documents_indexed": len(file_documents),
+            "file_chunks_by_extension": by_extension,
         }
 
 

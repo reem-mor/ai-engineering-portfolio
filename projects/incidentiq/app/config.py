@@ -6,6 +6,7 @@ configuration is parsed exactly once per process and reused across all callers.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -35,6 +36,18 @@ class Settings(BaseSettings):
         default="gpt-4o-mini",
         description="OpenAI chat model identifier used by the LLM client.",
     )
+    GEMINI_API_KEY: str | None = Field(
+        default=None,
+        description="Google Gemini API key used as the fallback LLM provider.",
+    )
+    GEMINI_MODEL: str = Field(
+        default="gemini-2.0-flash",
+        description="Gemini model identifier used when OpenAI fallback is triggered.",
+    )
+    LLM_FALLBACK_ENABLED: bool = Field(
+        default=True,
+        description="When true, retryable OpenAI failures fall back to Gemini if configured.",
+    )
     EMBEDDING_MODEL: str = Field(
         default="all-MiniLM-L6-v2",
         description="Sentence-transformer model used to embed text into dense vectors.",
@@ -59,7 +72,7 @@ class Settings(BaseSettings):
         default=8000,
         ge=1,
         le=65535,
-        description="Default local TCP port. Hosted platforms should use PORT.",
+        description="Default local TCP port when PORT is not set by the host.",
     )
     REQUEST_TIMEOUT_SECONDS: float = Field(
         default=45.0,
@@ -82,6 +95,14 @@ class Settings(BaseSettings):
         return raw if raw.is_absolute() else _PROJECT_ROOT / raw
 
     @property
+    def listen_port(self) -> int:
+        """Return the TCP port the server should bind to."""
+        port_raw = os.environ.get("PORT", "").strip()
+        if port_raw.isdigit():
+            return int(port_raw)
+        return self.APP_PORT
+
+    @property
     def openai_api_key_required(self) -> str:
         """Return a validated OpenAI API key for runtime LLM calls."""
         key = (self.OPENAI_API_KEY or "").strip()
@@ -91,6 +112,25 @@ class Settings(BaseSettings):
                 "Set it in your environment or deployment secret manager."
             )
         return key
+
+    @property
+    def gemini_api_key_required(self) -> str:
+        """Return a validated Gemini API key for fallback LLM calls."""
+        key = (self.GEMINI_API_KEY or "").strip()
+        if not key or key == "your_gemini_api_key_here":
+            raise RuntimeError(
+                "GEMINI_API_KEY is required for Gemini fallback. "
+                "Set it in your environment or deployment secret manager."
+            )
+        return key
+
+    @property
+    def llm_fallback_available(self) -> bool:
+        """True when fallback is enabled and a usable Gemini key is configured."""
+        if not self.LLM_FALLBACK_ENABLED:
+            return False
+        key = (self.GEMINI_API_KEY or "").strip()
+        return bool(key) and key != "your_gemini_api_key_here"
 
 
 @lru_cache(maxsize=1)

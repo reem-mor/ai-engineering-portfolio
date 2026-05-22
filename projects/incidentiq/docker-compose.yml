@@ -1,0 +1,24 @@
+# IncidentIQ — local Docker deployment (homework / demo)
+#
+# Host binding: 127.0.0.1:8000 restricts access to your machine only.
+# Inside the container, uvicorn binds 0.0.0.0:8000 so Docker port mapping works.
+# Health checks use 127.0.0.1 inside the container (loopback probe).
+
+services:
+  incidentiq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: incidentiq:latest
+    container_name: incidentiq-app
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s

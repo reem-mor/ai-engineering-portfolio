@@ -12,6 +12,6 @@
 - Async for all I/O-bound operations (LLM calls, file reads)
 - FAISS index path: knowledge_base/faiss_index/
 - Embedding model: all-MiniLM-L6-v2
-- LLM: OpenAI gpt-4o-mini via async client
-- After each phase verify code is complete before continuing
-- Stack: FastAPI + FAISS + sentence-transformers + OpenAI + Docker
+- LLM: OpenAI gpt-4o-mini primary; Gemini gemini-2.0-flash fallback
+- Document ingestion: TXT, PDF, DOCX, XLSX from data/documents/
+- Stack: FastAPI + FAISS + sentence-transformers + OpenAI + Gemini + Docker

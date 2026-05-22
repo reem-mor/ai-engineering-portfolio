@@ -130,10 +130,12 @@ class RAGPipeline:
             "Provide a structured response based only on the above context."
         )
 
-        answer: str = await self._llm_client.generate(
+        llm_result = await self._llm_client.generate(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=user_prompt,
         )
+        answer: str = llm_result.text
+        model_used: str = llm_result.model_used
 
         top_score: float = float(raw_results[0].get("score", 0.0))
         confidence: str = _confidence_band(top_score)
@@ -159,7 +161,7 @@ class RAGPipeline:
             confidence=confidence,
             query=request.question,
             processing_time_ms=elapsed_ms,
-            model_used=self._settings.OPENAI_MODEL,
+            model_used=model_used,
         )
 
 
@@ -195,6 +197,7 @@ def _to_source_document(result: dict[str, Any]) -> SourceDocument:
         relevance_score=clamped_score,
         rank=int(result.get("rank", 1)),
         chunk_text=str(result.get("chunk_text", "")),
+        source_file=str(meta.get("source_file", "")),
     )
 
 

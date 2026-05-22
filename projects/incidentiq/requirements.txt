@@ -3,12 +3,12 @@ uvicorn[standard]
 faiss-cpu
 sentence-transformers
 openai
+google-genai
 pydantic
 pydantic-settings
-python-dotenv
 numpy
 httpx
-jinja2
-python-multipart
-pytest
-pytest-asyncio
+pypdf
+python-docx
+openpyxl
+fpdf2

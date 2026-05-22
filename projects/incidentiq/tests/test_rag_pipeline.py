@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.core.llm_client import LLMResult
 from app.core.rag_pipeline import RAGPipeline, init_pipeline
 from app.core.retriever import init_retriever
 from app.models.schemas import QueryRequest, RAGResponse
@@ -31,7 +32,10 @@ async def test_query_returns_rag_response(pipeline: RAGPipeline) -> None:
         pipeline._llm_client,
         "generate",
         new_callable=AsyncMock,
-        return_value="## Assessment\nTest answer.\n## Triage Steps\n1. Step one.",
+        return_value=LLMResult(
+            text="## Assessment\nTest answer.\n## Triage Steps\n1. Step one.",
+            model_used="gpt-4o-mini",
+        ),
     ):
         request = QueryRequest(
             question="How do I handle kubernetes pod crash loop?"
@@ -68,7 +72,10 @@ async def test_severity_filter_applied(pipeline: RAGPipeline) -> None:
         pipeline._llm_client,
         "generate",
         new_callable=AsyncMock,
-        return_value="## Assessment\nFiltered answer.",
+        return_value=LLMResult(
+            text="## Assessment\nFiltered answer.",
+            model_used="gpt-4o-mini",
+        ),
     ):
         request_filtered = QueryRequest(
             question="How do I handle a kubernetes incident?",

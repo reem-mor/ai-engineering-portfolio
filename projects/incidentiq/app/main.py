@@ -55,7 +55,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     logger.info("RAG pipeline initialized")
 
     logger.info(
-        "IncidentIQ ready \u2014 listening on port %d", settings.APP_PORT
+        "IncidentIQ ready \u2014 listening on port %d", settings.listen_port
     )
 
     try:
