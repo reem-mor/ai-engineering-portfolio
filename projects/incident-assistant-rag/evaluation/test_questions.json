@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "type": "rag_chat",
+    "question": "What should I check when users cannot log in after deployment?",
+    "expected_sources": [
+      "auth_service_runbook.md",
+      "deployment_failure_sop.docx"
+    ],
+    "expected_keywords": [
+      "logs",
+      "deployment",
+      "health",
+      "environment"
+    ],
+    "expected_behavior": "Should recommend checking auth-service logs, health, recent deployments, environment variables, and database connection."
+  },
+  {
+    "id": 2,
+    "type": "rag_chat",
+    "question": "What should I do if payment requests are slow and users report timeout?",
+    "expected_sources": [
+      "payment_service_latency.txt"
+    ],
+    "expected_keywords": [
+      "payment",
+      "timeout",
+      "queue",
+      "provider"
+    ],
+    "expected_behavior": "Should mention payment-service logs, external provider status, queue size, database latency, and escalation for payment risk."
+  },
+  {
+    "id": 3,
+    "type": "rag_chat",
+    "question": "How should I investigate database locks?",
+    "expected_sources": [
+      "database_locks_runbook.pdf"
+    ],
+    "expected_keywords": [
+      "database",
+      "locks",
+      "sessions",
+      "queries"
+    ],
+    "expected_behavior": "Should mention active sessions, blocked queries, blocking process, migrations, and DBA escalation."
+  },
+  {
+    "id": 4,
+    "type": "incident_reasoning",
+    "question": "Many users cannot log in after the latest production deployment.",
+    "affected_service": "auth-service",
+    "environment": "production",
+    "expected_sources": [
+      "auth_service_runbook.md",
+      "deployment_failure_sop.docx"
+    ],
+    "expected_keywords": [
+      "High",
+      "logs",
+      "deployment",
+      "escalate"
+    ],
+    "expected_behavior": "Should classify severity as High and recommend checking auth logs, deployment logs, health endpoint, and escalation."
+  },
+  {
+    "id": 5,
+    "type": "irrelevant_question",
+    "question": "What is the best restaurant in Tokyo?",
+    "expected_sources": [],
+    "expected_keywords": [
+      "knowledge base",
+      "not contain",
+      "enough information"
+    ],
+    "expected_behavior": "Should say the knowledge base does not contain enough information and should not invent an answer."
+  }
+]

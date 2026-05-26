@@ -1,0 +1,27 @@
+API Gateway 5xx Runbook
+
+Overview
+The API Gateway routes external requests to internal upstream services. A 5xx spike can indicate an upstream service failure, routing issue, deployment problem, or rate limit misconfiguration.
+
+Symptoms
+- API Gateway returns HTTP 500, 502, 503, or 504.
+- Users report production errors.
+- Upstream service unavailable alerts fire.
+- Gateway logs show timeout, connection refused, or no healthy upstream.
+
+First Checks
+1. Check gateway health endpoint.
+2. Check API Gateway logs for upstream service errors.
+3. Identify the affected route and upstream service.
+4. Check recent deployment to gateway or upstream service.
+5. Check routing configuration.
+6. Check rate limit and throttling rules.
+7. Check upstream service health and pod readiness.
+
+Safe Actions
+- Do not disable rate limits globally without approval.
+- Do not route traffic to unhealthy upstream services.
+- If only one upstream service is failing, isolate the route and escalate to the service owner.
+
+Escalation
+If 5xx errors affect many production users, classify as High severity. If all routes are failing or the product is unavailable, classify as Critical and escalate to the incident commander.

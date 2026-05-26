@@ -1,0 +1,35 @@
+Payment Service Latency Runbook
+
+Overview
+The payment-service handles payment authorization, provider communication, payment status updates, and payment retry processing. Payment latency or timeout issues can affect revenue and user trust.
+
+Common Symptoms
+- Payment requests are slow.
+- Users report payment timeout.
+- Payment API returns HTTP 500 or 504.
+- Payment status remains pending.
+- Queue size grows quickly.
+- External payment provider status page reports degradation.
+
+First Checks
+1. Check payment-service logs for timeout errors.
+2. Check external provider status page.
+3. Check queue size and retry backlog.
+4. Check database latency for payment status writes.
+5. Check recent deployments to payment-service or API gateway.
+6. Verify that duplicate charge protection is enabled.
+
+Important Metrics
+- Payment API p95 latency.
+- Provider response time.
+- Payment queue size.
+- Failed payment count.
+- Duplicate charge alerts.
+
+Safe Actions
+- Do not manually retry payments without checking duplicate charge risk.
+- Do not disable idempotency keys.
+- Pause aggressive retry workers if the provider is degraded.
+
+Escalation
+If payment failures affect production users or duplicate charge risk exists, classify the incident as Critical and escalate to the payments team, backend team, and incident commander.
