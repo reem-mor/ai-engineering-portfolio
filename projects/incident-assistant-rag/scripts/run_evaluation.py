@@ -9,6 +9,10 @@ BACKEND_ROOT = PROJECT_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
+from dotenv import load_dotenv
+
+load_dotenv(BACKEND_ROOT / ".env")
+
 from app.core.config import settings
 from app.rag.embeddings import FakeEmbeddingProvider, OpenAIEmbeddingProvider
 from app.rag.faiss_store import FaissVectorStore
@@ -38,11 +42,24 @@ def _use_offline_mode() -> bool:
     return not key or key.startswith("sk-test-placeholder")
 
 
+def _index_matches_live_mode() -> bool:
+    index_path = settings.faiss_index_dir / settings.faiss_index_file
+    metadata_path = settings.faiss_index_dir / settings.faiss_metadata_file
+    if not index_path.is_file() or not metadata_path.is_file():
+        return False
+    store = FaissVectorStore()
+    store.load()
+    return store.embedding_dimensions == settings.embedding_dimensions
+
+
 def ensure_sample_index(offline: bool) -> None:
     index_path = settings.faiss_index_dir / settings.faiss_index_file
     metadata_path = settings.faiss_index_dir / settings.faiss_metadata_file
     if index_path.is_file() and metadata_path.is_file() and not offline:
-        return
+        if _index_matches_live_mode():
+            return
+        index_path.unlink(missing_ok=True)
+        metadata_path.unlink(missing_ok=True)
 
     if offline:
         provider = FakeEmbeddingProvider(dimensions=OFFLINE_EMBED_DIM)

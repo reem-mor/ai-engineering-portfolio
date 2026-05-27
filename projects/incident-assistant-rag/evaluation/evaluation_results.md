@@ -15,13 +15,13 @@ Actual sources: ['auth_service_runbook.md', 'deployment_failure_sop.docx', 'inci
 
 Missing keywords: []
 
-When users cannot log in after deployment, you should check the following:
+You should check the following:
 
 1. Check the auth-service health endpoint.
 2. Check auth-service logs for authentication errors.
 3. Check recent deployments and release notes.
 4. Verify environment variables related to JWT_SECRET, AUTH_DB_URL, and TOKEN_ISSUER.
-5. Check database connectivity from the auth-service.
+5. Check database connectivity from auth-service.
 6. Confirm that token expiration settings were not changed.
 
 ## Test 2 - PASS
@@ -36,16 +36,7 @@ Actual sources: ['incident_examples.csv', 'monitoring_alerts.md', 'payment_servi
 
 Missing keywords: []
 
-If payment requests are slow and users report timeout, you should take the following actions:
-
-1. Check payment-service logs for timeout errors.
-2. Check the external provider status page for any reported issues.
-3. Check the queue size and retry backlog.
-4. Check database latency for payment status writes.
-5. Verify that duplicate charge protection is enabled.
-6. If the situation is critical, escalate to the payments team and other relevant teams. 
-
-Make sure to avoid manually retrying payments without checking for duplicate charge risk.
+Check the payment-service logs for timeout errors, verify the external provider status page, check the queue size and retry backlog, and assess database latency for payment status writes. If the issue persists, consider checking recent deployments to the payment-service or API gateway, and ensure that duplicate charge protection is enabled. If payment failures affect production users or duplicate charge risk exists, classify the incident as Critical and escalate to the payments team.
 
 ## Test 3 - PASS
 

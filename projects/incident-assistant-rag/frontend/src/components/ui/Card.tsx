@@ -5,14 +5,15 @@ export type CardProps = {
   eyebrow?: string;
   actions?: ReactNode;
   padded?: boolean;
+  classNameExtra?: string;
   children: ReactNode;
 };
 
-export function Card({ title, eyebrow, actions, padded = false, children }: CardProps) {
+export function Card({ title, eyebrow, actions, padded = false, classNameExtra = "", children }: CardProps) {
   const hasHead = eyebrow !== undefined || title !== undefined || actions !== undefined;
 
   return (
-    <section className={`card${padded ? " card--pad" : ""}`}>
+    <section className={`card${padded ? " card--pad" : ""}${classNameExtra ? ` ${classNameExtra}` : ""}`.trim()}>
       {hasHead ? (
         <div className="card__header">
           <div>

@@ -6,14 +6,15 @@ IncidentIQ uses a clean full-stack architecture. The frontend is a React TypeScr
 
 ## React Frontend
 
-The frontend provides four main pages:
+The frontend provides five main pages:
 
+- Dashboard (operations overview and quick actions)
 - Knowledge Base
-- RAG Chat
+- RAG Chat (Incident Assistant RAG)
 - Incident Analysis
 - Upload
 
-It shows loading states, validation errors, retrieved sources, confidence, and used-context status.
+It shows loading states, validation errors, retrieved sources, confidence, and used-context status. Trust UI distinguishes grounded answers from knowledge-base refusals and labels incident sections as runbook-backed vs generic triage when `used_context` is false.
 
 ## FastAPI Backend
 

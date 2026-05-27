@@ -1,14 +1,21 @@
 import { useState, type FormEvent } from "react";
 import { askChat } from "../api";
 import type { ChatResponse } from "../types/chat";
+import { ChatResultPanel } from "../components/chat/ChatResultPanel";
 import { Alert } from "../components/ui/Alert";
-import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { EmptyStatePanel } from "../components/ui/EmptyStatePanel";
+import { GroupedExampleQuestions } from "../components/ui/GroupedExampleQuestions";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import { SourceCard } from "../components/ui/SourceCard";
+import { CHAT_QUESTION_GROUPS } from "../content/opsCopy";
 import { clampTopK } from "../utils/clampTopK";
-import { confidenceBadgeClass } from "../utils/badgeStyles";
+
+const EMPTY_STEPS = [
+  "Index sample or uploaded documents on the Knowledge Base page.",
+  "Ask operational questions about triage, escalation, ownership, or runbooks.",
+  "Answers use only retrieved context—weak matches show as No match with guidance to re-index.",
+] as const;
 
 export function ChatPage() {
   const [question, setQuestion] = useState("");
@@ -17,9 +24,8 @@ export function ChatPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!question.trim()) {
+  async function submitQuestion(q: string) {
+    if (!q.trim()) {
       setError("Please enter a question.");
       return;
     }
@@ -27,110 +33,95 @@ export function ChatPage() {
     setError("");
     setResult(null);
     try {
-      setResult(await askChat({ question, top_k: topK }));
+      setResult(await askChat({ question: q, top_k: topK }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to ask question.");
+      setError(err instanceof Error ? err.message : "Failed to send question.");
     } finally {
       setIsLoading(false);
     }
   }
 
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    await submitQuestion(question);
+  }
+
+  const showEmpty = !result && !isLoading && !error;
+
   return (
     <div className="page-stack">
-      <header className="page-header-block">
-        <h1 className="page-title">RAG assistant</h1>
-        <p className="page-description">Ask operational questions grounded in the indexed incident knowledge base.</p>
+      <header className="page-header-block page-header-block--module">
+        <p className="page-module-tag">RAG workspace</p>
+        <h1 className="page-title">RAG Chat</h1>
+        <p className="page-description">
+          Grounded operational Q&A for NOC and DevOps: triage, escalation paths, runbooks, and service ownership. Answers
+          cite indexed evidence—or refuse when nothing reliable matches.
+        </p>
       </header>
 
       <div className="two-col-chat">
-        <Card eyebrow="Input" title="Question" padded>
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <div>
-              <label className="lbl" htmlFor="chat-q">
-                Question
-              </label>
-              <textarea
-                id="chat-q"
-                className="textarea"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="What should I check when users cannot log in after deployment?"
+        <div className="chat-query-pane">
+          <Card eyebrow="Query" title="Ask the knowledge base" padded>
+            <form className="form-grid" onSubmit={handleSubmit}>
+              <div>
+                <label className="lbl" htmlFor="chat-q">
+                  Question
+                </label>
+                <textarea
+                  id="chat-q"
+                  className="textarea"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="What should I check when users cannot log in after deployment?"
+                />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="chat-k">
+                  Top K results
+                </label>
+                <input
+                  id="chat-k"
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={topK}
+                  onChange={(e) => setTopK(clampTopK(e.target.value))}
+                />
+              </div>
+              <GroupedExampleQuestions
+                groups={CHAT_QUESTION_GROUPS}
+                disabled={isLoading}
+                onSelect={(text) => {
+                  setQuestion(text);
+                  void submitQuestion(text);
+                }}
               />
-            </div>
-            <div>
-              <label className="lbl" htmlFor="chat-k">
-                Top K results
-              </label>
-              <input
-                id="chat-k"
-                className="input"
-                type="number"
-                min={1}
-                max={10}
-                value={topK}
-                onChange={(e) => setTopK(clampTopK(e.target.value))}
-              />
-            </div>
-            <Button type="submit" variant="primary" loading={isLoading}>
-              Send to model
-            </Button>
-          </form>
-        </Card>
+              <Button type="submit" variant="primary" loading={isLoading}>
+                Ask with RAG
+              </Button>
+            </form>
+          </Card>
+        </div>
 
-        <div>
-          {isLoading ? <LoadingSpinner label="Retrieving context" /> : null}
+        <div className="chat-results-pane">
+          {showEmpty ? (
+            <EmptyStatePanel
+              title="Start with an indexed knowledge base"
+              description="IncidentIQ does not answer from general knowledge. Build the FAISS index first, then ask operational questions grounded in your runbooks and SOPs."
+              steps={EMPTY_STEPS}
+            />
+          ) : null}
+
+          {isLoading ? <LoadingSpinner label="Retrieving context and generating answer" /> : null}
 
           {error ? (
-            <>
-              <Alert variant="error" title="Assistant unavailable">{error}</Alert>
-              {error.includes("FAISS index") ? <p className="hint-text">Open Knowledge Base and index documents first.</p> : null}
-            </>
+            <Alert variant="error" title="Request failed">
+              {error}
+            </Alert>
           ) : null}
 
-          {result ? (
-            <section className="card assistant-pane" aria-label="Assistant response">
-              <div className="assistant-banner">
-                <span>Grounded answer</span>
-                <span style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
-                  <Badge paletteClass={confidenceBadgeClass(result.confidence)}>Confidence · {result.confidence}</Badge>
-                  <Badge variant={result.used_context ? "success" : "warning"}>
-                    Context · {result.used_context ? "Grounded" : "No match"}
-                  </Badge>
-                </span>
-              </div>
-              <div className="card__body">
-                <p style={{ marginTop: 0, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{result.answer}</p>
-
-                {result.sources.length > 0 ? (
-                  <div>
-                    <p className="card__eyebrow" style={{ marginBottom: 8 }}>
-                      Source files
-                    </p>
-                    <div className="meta-row-wrap">
-                      {result.sources.map((s) => (
-                        <span key={s} className="chip-muted">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <h3 className="card__title" style={{ marginTop: 20 }}>
-                  Retrieved context
-                </h3>
-                {result.retrieved_chunks.length === 0 ? (
-                  <p className="hint-text">No relevant chunks were retrieved.</p>
-                ) : (
-                  <div className="page-stack">
-                    {result.retrieved_chunks.map((source) => (
-                      <SourceCard key={source.chunk_id} source={source} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-          ) : null}
+          {result ? <ChatResultPanel result={result} /> : null}
         </div>
       </div>
     </div>

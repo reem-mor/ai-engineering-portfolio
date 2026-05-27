@@ -1,128 +1,133 @@
 import { useCallback, useEffect, useState } from "react";
 import { getHealth, listSampleDocuments, listUploadedDocuments } from "../api";
-import type { HealthResponse } from "../types/health";
-import { MetricCard } from "../components/ui/MetricCard";
+import { OpsStatusStrip } from "../components/dashboard/OpsStatusStrip";
+import { CapabilityCard } from "../components/ui/CapabilityCard";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import { Alert } from "../components/ui/Alert";
+import {
+  PRODUCT_CAPABILITIES,
+  PRODUCT_TAGLINE,
+  WORKSPACE_MODULES,
+} from "../content/opsCopy";
 import { readRagIndexSession } from "../utils/ragIndexSession";
 
+const WORKSPACE_NAV: Record<string, string> = {
+  chat: "chat",
+  incident: "incident",
+  knowledge: "knowledge",
+};
+
 export type DashboardPageProps = {
-  onNavigate: (pageId: string) => void;
+  onNavigate: (id: string) => void;
 };
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [health, setHealth] = useState<string | null>(null);
   const [sampleCount, setSampleCount] = useState<number | null>(null);
   const [uploadedCount, setUploadedCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const sessionIndex = readRagIndexSession();
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
     try {
-      const [h, s, u] = await Promise.all([getHealth(), listSampleDocuments(), listUploadedDocuments()]);
-      setHealth(h);
-      setSampleCount(s.file_count);
-      setUploadedCount(u.file_count);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load dashboard data.");
+      const [h, samples, uploaded] = await Promise.all([
+        getHealth(),
+        listSampleDocuments(),
+        listUploadedDocuments(),
+      ]);
+      setHealth(h.status);
+      setSampleCount(samples.files.length);
+      setUploadedCount(uploaded.files.length);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load dashboard data.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  const ragMeta = readRagIndexSession();
+    void refresh();
+  }, [refresh]);
 
   return (
-    <div className="page-stack">
-      <header className="page-header-block">
-        <h1 className="page-title">Operations overview</h1>
-        <p className="page-description">
-          Incident intelligence status for the connected backend. RAG index reflects the last successful indexing run in{" "}
-          <strong>this browser session</strong>—rebuild from Knowledge Base if you rotate the environment or clear session data.
-        </p>
+    <div className="page-stack page-stack--dashboard">
+      <header className="command-hero command-hero--panel">
+        <div className="command-hero__content">
+          <p className="command-hero__kicker">Operations command center</p>
+          <h1 className="page-title page-title--hero">IncidentIQ</h1>
+          <p className="command-hero__lead">{PRODUCT_TAGLINE}</p>
+          <p className="hint-text command-hero__note">
+            Amdocs AI Engineer course project — local RAG over runbooks and incident docs. Answers are tied to your
+            indexed knowledge base, not general chat.
+          </p>
+        </div>
+        <div className="command-hero__actions">
+          <button type="button" className="workspace-card__link workspace-card__link--cta" onClick={() => onNavigate("knowledge")}>
+            Index knowledge base
+          </button>
+          <button type="button" className="workspace-card__link" onClick={() => onNavigate("chat")}>
+            Open RAG Chat
+          </button>
+        </div>
       </header>
 
-      {error ? (
-        <Alert variant="error" title="Dashboard data partial or unavailable">
-          {error}
-        </Alert>
+      {isLoading ? <LoadingSpinner label="Checking API and document lists" /> : null}
+      {loadError ? (
+        <p className="hint-text" role="alert">
+          {loadError}
+        </p>
       ) : null}
 
-      {loading ? <LoadingSpinner label="Loading telemetry" /> : null}
+      <OpsStatusStrip
+        health={health}
+        sampleCount={sampleCount}
+        uploadedCount={uploadedCount}
+        sessionIndex={sessionIndex}
+        isLoading={isLoading}
+      />
 
-      {!loading ? (
-        <>
-          <section className="dash-metrics" aria-label="Key metrics">
-            <MetricCard
-              label="Backend status"
-              value={health?.status === "ok" ? "OK" : health?.status ?? "—"}
-              sub={health ? `${health.service} · v${health.version} · ${health.environment}` : undefined}
-              badgeLabel={health?.status === "ok" ? "Live" : health ? "Check" : undefined}
-              badgeVariant={health?.status === "ok" ? "success" : "warning"}
-            />
-            <MetricCard
-              label="Sample documents"
-              value={sampleCount ?? "—"}
-              sub="Files on disk in the sample corpus"
-            />
-            <MetricCard
-              label="Uploaded documents"
-              value={uploadedCount ?? "—"}
-              sub="User-uploaded corpus"
-            />
-            <MetricCard
-              label="RAG index (session)"
-              value={ragMeta ? `${ragMeta.indexedFileCount}` : "—"}
-              sub={
-                ragMeta
-                  ? `Last build: ${new Date(ragMeta.indexedAt).toLocaleString()} (${ragMeta.kind})`
-                  : "Not indexed in this session"
-              }
-              badgeLabel={ragMeta ? "Indexed" : "Idle"}
-              badgeVariant={ragMeta ? "success" : "warning"}
-            />
-          </section>
+      <section className="capability-grid" aria-label="Product capabilities">
+        {PRODUCT_CAPABILITIES.map((item) => (
+          <CapabilityCard key={item.tag} item={item} />
+        ))}
+      </section>
 
-          <Card eyebrow="Workflow" title="Quick actions" padded>
-            <p className="hint-text" style={{ marginTop: 0 }}>
-              Jump to common runbook steps without changing API routes.
-            </p>
-            <div className="dash-quick__actions">
-              <Button variant="primary" onClick={() => onNavigate("knowledge")}>
-                Open knowledge base
-              </Button>
-              <Button variant="secondary" onClick={() => onNavigate("chat")}>
-                RAG assistant
-              </Button>
-              <Button variant="secondary" onClick={() => onNavigate("incident")}>
-                Incident analysis
-              </Button>
-              <Button variant="secondary" onClick={() => onNavigate("upload")}>
-                Upload document
-              </Button>
-            </div>
-          </Card>
+      <Card eyebrow="Workspace" title="Operational modules" padded classNameExtra="workspace-modules-card">
+        <div className="workspace-grid">
+          {WORKSPACE_MODULES.map((mod) => (
+            <article key={mod.id} className="workspace-card">
+              <h3 className="workspace-card__title">{mod.title}</h3>
+              <p className="workspace-card__summary">{mod.summary}</p>
+              {mod.id === "trust" ? (
+                <p className="hint-text workspace-card__meta">
+                  See <code className="inline-code">evaluation/evaluation_results.md</code> for scripted pass/fail metrics.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="workspace-card__link"
+                  onClick={() => onNavigate(WORKSPACE_NAV[mod.id] ?? "dashboard")}
+                >
+                  {mod.action}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      </Card>
 
-          {health ? (
-            <Card eyebrow="Connectivity" title="Database capability" padded>
-              <p style={{ marginTop: 0 }} className="hint-text">
-                Optional persistence for chat history when enabled in the backend profile.
-              </p>
-              <p style={{ marginBottom: 0, fontFamily: "var(--font-mono)", fontSize: "0.9375rem", fontWeight: 600 }}>
-                history DB: {health.database_enabled ? "enabled" : "disabled"}
-              </p>
-            </Card>
-          ) : null}
-        </>
-      ) : null}
+      <Card eyebrow="Demo path" title="Suggested grading flow" padded>
+        <ol className="list-checks demo-path-list">
+          <li>Knowledge Base → index sample documents.</li>
+          <li>RAG Chat → ask a runbook question; confirm sources and grounded badge.</li>
+          <li>Ask an irrelevant question (e.g. restaurant in Tokyo) → Context · No match.</li>
+          <li>Incident Analysis → run a demo scenario; review P1–P4 and generic vs runbook labels.</li>
+        </ol>
+      </Card>
     </div>
   );
 }

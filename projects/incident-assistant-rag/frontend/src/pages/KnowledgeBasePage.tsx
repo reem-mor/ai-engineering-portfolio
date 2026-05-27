@@ -6,7 +6,9 @@ import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import { writeRagIndexSession } from "../utils/ragIndexSession";
+import { PipelineSteps } from "../components/ui/PipelineSteps";
+import { SUPPORTED_FILE_TYPES } from "../content/opsCopy";
+import { readRagIndexSession, writeRagIndexSession } from "../utils/ragIndexSession";
 import { fileTypeLabel } from "../utils/fileTypeLabel";
 
 function badgeVariantForFile(filename: string): "info" | "neutral" | "warning" {
@@ -22,6 +24,8 @@ export function KnowledgeBasePage() {
   const [indexResult, setIndexResult] = useState<DocumentIndexResponse | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const sessionIndex = readRagIndexSession();
 
   const loadFiles = useCallback(async () => {
     setIsLoading(true);
@@ -64,33 +68,62 @@ export function KnowledgeBasePage() {
 
   return (
     <div className="page-stack">
-      <header className="page-header-block">
+      <header className="page-header-block page-header-block--module">
+        <p className="page-module-tag">Knowledge pipeline</p>
         <h1 className="page-title">Knowledge base</h1>
         <p className="page-description">
-          Build the FAISS index before using RAG Chat or Incident Analysis. Indexing creates embeddings and stores searchable vectors
-          for the incident corpus.
+          Source of truth for IncidentIQ. Ingest runbooks, SOPs, and incident artifacts before RAG Chat or Incident
+          Analysis can return grounded answers.
         </p>
       </header>
 
-      <Card
-        eyebrow="Indexing"
-        title="Build or refresh vectors"
-        padded
-        actions={
-          <>
-            <Button type="button" variant="primary" loading={isLoading} compact onClick={() => void runIndex("sample")}>
-              Index sample documents
-            </Button>
-            <Button type="button" variant="secondary" loading={isLoading} compact onClick={() => void runIndex("uploaded")}>
-              Index uploaded documents
-            </Button>
-          </>
-        }
-      >
-        <p className="hint-text" style={{ marginTop: 0 }}>
-          Each run replaces the searchable index for the corresponding corpus snapshot.
-        </p>
-      </Card>
+      <Alert variant="info" title="Index before chat">
+        Complete indexing here first. Until FAISS is built, chat and incident routes return a FAISS-not-found error from
+        the API.
+      </Alert>
+
+      <section className="kb-pipeline-panel">
+        <Card eyebrow="Pipeline" title="How documents become searchable" padded classNameExtra="kb-pipeline-card">
+          <PipelineSteps />
+          <p className="hint-text">
+            Indexed vectors are stored under <code className="inline-code">data/faiss_index/</code> on the backend host.
+          </p>
+        </Card>
+
+        <Card eyebrow="Indexing" title="Build or refresh vectors" padded classNameExtra="kb-index-card">
+          <div className="kb-index-panel">
+            <div className="kb-index-panel__copy">
+              <p className="hint-text meta-row-wrap--flush">
+                Each run replaces the searchable index for the selected corpus. Re-index after adding new uploads on the
+                Upload page.
+              </p>
+              <div className="meta-row-wrap meta-row-wrap--flush">
+                {SUPPORTED_FILE_TYPES.map((t) => (
+                  <Badge key={t} variant="info">
+                    {t}
+                  </Badge>
+                ))}
+              </div>
+              {sessionIndex ? (
+                <p className="hint-text kb-index-panel__session">
+                  Last index in this browser session: <strong>{sessionIndex.indexedFileCount}</strong> files (
+                  {sessionIndex.kind}) at {new Date(sessionIndex.indexedAt).toLocaleString()}.
+                </p>
+              ) : (
+                <p className="hint-text kb-index-panel__session">No index recorded in this session yet.</p>
+              )}
+            </div>
+            <div className="kb-index-panel__actions">
+              <Button type="button" variant="primary" loading={isLoading} compact onClick={() => void runIndex("sample")}>
+                Index sample documents
+              </Button>
+              <Button type="button" variant="secondary" loading={isLoading} compact onClick={() => void runIndex("uploaded")}>
+                Index uploaded documents
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </section>
 
       {isLoading ? <LoadingSpinner label="Talking to ingestion pipeline" /> : null}
 
@@ -99,7 +132,9 @@ export function KnowledgeBasePage() {
           <Alert variant="error" title="Request failed">
             {error}
           </Alert>
-          {error.includes("FAISS") ? <p className="hint-text">Ensure the backend can access its data directories and rebuild the index here.</p> : null}
+          {error.includes("FAISS") ? (
+            <p className="hint-text">Ensure the backend can access its data directories and rebuild the index here.</p>
+          ) : null}
         </>
       ) : null}
 
@@ -112,16 +147,14 @@ export function KnowledgeBasePage() {
       <div className="kb-two-col">
         <Card eyebrow="Corpus" title="Sample documents" padded>
           {sampleFiles.length === 0 && !isLoading ? <p className="hint-text">No sample documents found.</p> : null}
-          {sampleFiles.length > 0 ? (
-            <DocumentTable rows={sampleFiles} badgeVariant={badgeVariantForFile} />
-          ) : null}
+          {sampleFiles.length > 0 ? <DocumentTable rows={sampleFiles} badgeVariant={badgeVariantForFile} /> : null}
         </Card>
 
         <Card eyebrow="Corpus" title="Uploaded documents" padded>
-          {uploadedFiles.length === 0 && !isLoading ? <p className="hint-text">No uploaded documents found.</p> : null}
-          {uploadedFiles.length > 0 ? (
-            <DocumentTable rows={uploadedFiles} badgeVariant={badgeVariantForFile} />
+          {uploadedFiles.length === 0 && !isLoading ? (
+            <p className="hint-text">No uploaded documents yet. Use Upload to add files, then index uploaded documents.</p>
           ) : null}
+          {uploadedFiles.length > 0 ? <DocumentTable rows={uploadedFiles} badgeVariant={badgeVariantForFile} /> : null}
         </Card>
       </div>
     </div>

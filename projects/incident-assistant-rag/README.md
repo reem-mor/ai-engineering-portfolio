@@ -1,8 +1,12 @@
 # IncidentIQ — Incident Assistant RAG Application
 
-IncidentIQ is a full-stack Retrieval-Augmented Generation (RAG) web application for **technical incident operations**. It helps NOC, DevOps, and support engineers query runbooks, upload incident documents, and receive **grounded** answers with visible sources—without inventing procedures when the knowledge base does not support a question.
+IncidentIQ is a full-stack Retrieval-Augmented Generation (RAG) web application for **technical incident operations**, built for the **Amdocs AI Engineer course** (RAG Application homework). It helps NOC, DevOps, and support engineers query runbooks, upload incident documents, and receive **grounded** answers with visible sources—without inventing procedures when the knowledge base does not support a question.
 
 **Repository:** `C:\dev\amdocs-ai-course\projects\incident-assistant-rag`
+
+## Course context
+
+This project demonstrates a complete RAG pipeline (ingestion → FAISS → retrieval → grounded LLM), a React operations UI, Docker deployment, pytest coverage, and a five-question evaluation harness—including an **irrelevant** question to prove hallucination controls.
 
 ## What I Built (Homework Alignment)
 
@@ -112,6 +116,17 @@ flowchart TD
 | **Proof** | Eval question 5 (irrelevant) — see [`evaluation/evaluation_results.md`](evaluation/evaluation_results.md) |
 
 **Example irrelevant question:** “What is the best restaurant in Tokyo?” → knowledge-base refusal, no sources, `used_context: false`.
+
+**UI behavior (IncidentIQ):** Operations-focused React UI—not a generic chat skin.
+
+- **Dashboard:** Command-center overview, capability cards (grounded answers, FAISS, incident reasoning, source transparency), workspace links, and live API document counts (session index is browser-only, labeled).
+- **RAG Chat:** Grouped example questions (triage, escalation, ownership, priority, runbooks), trust banners (grounded / no match / low confidence), and evidence-style source cards with score warnings.
+- **Incident Analysis:** Triage report layout with **P1–P4** badges; sections labeled **From runbooks** vs **Generic triage** when retrieval does not match.
+- **Knowledge Base:** Five-step pipeline (upload → chunk → embed → FAISS → query) and “index before chat” guidance.
+
+Weak answers are never styled as authoritative: **Context · No match** plus guidance to add SOPs/runbooks and re-index.
+
+**Severity display:** Incident Analysis maps Critical/High/Medium/Low to **P1–P4** badges for NOC-style readability (display only; API unchanged).
 
 ## Knowledge Base Design
 

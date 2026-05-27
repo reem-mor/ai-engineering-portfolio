@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { analyzeIncident } from "../api";
 import type { IncidentAnalysisResponse } from "../types/incident";
+import { IncidentReportView } from "../components/incident/IncidentReportView";
 import { Alert } from "../components/ui/Alert";
-import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { ExampleQuestionChips } from "../components/ui/ExampleQuestionChips";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
-import { SourceCard } from "../components/ui/SourceCard";
+import { DEMO_INCIDENT_SCENARIOS } from "../content/opsCopy";
 import { clampTopK } from "../utils/clampTopK";
-import { confidenceBadgeClass, severityBadgeClass } from "../utils/badgeStyles";
 
 export function IncidentAnalyzePage() {
   const [description, setDescription] = useState("");
@@ -19,10 +19,9 @@ export function IncidentAnalyzePage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (description.trim().length < 10) {
-      setError("Please enter a useful incident description.");
+  async function runAnalysis(desc: string) {
+    if (desc.trim().length < 10) {
+      setError("Please enter a useful incident description (at least 10 characters).");
       return;
     }
     setIsLoading(true);
@@ -31,7 +30,7 @@ export function IncidentAnalyzePage() {
     try {
       setResult(
         await analyzeIncident({
-          description,
+          description: desc,
           affected_service: affectedService || undefined,
           environment: environment || undefined,
           top_k: topK,
@@ -44,139 +43,114 @@ export function IncidentAnalyzePage() {
     }
   }
 
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    await runAnalysis(description);
+  }
+
   return (
     <div className="page-stack">
-      <header className="page-header-block">
+      <header className="page-header-block page-header-block--module">
+        <p className="page-module-tag">Triage workspace</p>
         <h1 className="page-title">Incident analysis</h1>
         <p className="page-description">
-          Generate a structured operational report with severity classification, evidence-seeking checks, and escalation guidance grounded
-          in the knowledge base.
+          Structured triage report for on-call and NOC: severity with P1–P4 mapping, checks, escalation, and evidence.
+          Runbook-backed sections are labeled; heuristic sections appear as generic triage when retrieval does not match.
         </p>
       </header>
 
-      <Card eyebrow="Intake" title="Incident parameters" padded>
-        <form className="form-grid" onSubmit={handleSubmit}>
-          <div>
-            <label className="lbl" htmlFor="inc-desc">
-              Incident description
-            </label>
-            <textarea
-              id="inc-desc"
-              className="textarea"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Many users cannot log in after the latest production deployment."
-            />
-          </div>
-          <div>
-            <label className="lbl" htmlFor="inc-svc">
-              Affected service
-            </label>
-            <input
-              id="inc-svc"
-              className="input"
-              value={affectedService}
-              onChange={(e) => setAffectedService(e.target.value)}
-              placeholder="auth-service"
-            />
-          </div>
-          <div>
-            <label className="lbl" htmlFor="inc-env">
-              Environment
-            </label>
-            <input id="inc-env" className="input" value={environment} onChange={(e) => setEnvironment(e.target.value)} placeholder="production" />
-          </div>
-          <div>
-            <label className="lbl" htmlFor="inc-k">
-              Top K results
-            </label>
-            <input id="inc-k" className="input" type="number" min={1} max={10} value={topK} onChange={(e) => setTopK(clampTopK(e.target.value))} />
-          </div>
-          <Button type="submit" variant="primary" loading={isLoading}>
-            Generate incident report
-          </Button>
-        </form>
-      </Card>
-
-      {isLoading ? <LoadingSpinner label="Correlating telemetry and runbooks" /> : null}
-
-      {error ? <Alert variant="error" title="Analysis failed">{error}</Alert> : null}
-
-      {result ? <IncidentReport response={result} /> : null}
-    </div>
-  );
-}
-
-function IncidentReport({ response }: { response: IncidentAnalysisResponse }) {
-  return (
-    <div className="report-section">
-      <Card
-        eyebrow="Executive readout"
-        title="Incident summary"
-        padded
-        actions={
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
-            <Badge paletteClass={severityBadgeClass(response.severity)}>Severity · {response.severity}</Badge>
-            <Badge paletteClass={confidenceBadgeClass(response.confidence)}>Confidence · {response.confidence}</Badge>
-            <Badge variant={response.used_context ? "success" : "warning"}>Context · {response.used_context ? "Grounded" : "No match"}</Badge>
-          </div>
-        }
-      >
-        <p style={{ marginTop: 0, whiteSpace: "pre-wrap", lineHeight: 1.65, fontSize: "1.02rem" }}>{response.incident_summary}</p>
-
-        {response.sources.length > 0 ? (
-          <div>
-            <p className="card__eyebrow" style={{ marginBottom: 8 }}>
-              Referenced filenames
-            </p>
-            <div className="meta-row-wrap">
-              {response.sources.map((s) => (
-                <span key={s} className="chip-muted">
-                  {s}
-                </span>
-              ))}
+      <div className="incident-workspace">
+        <Card eyebrow="Intake" title="Incident parameters" padded classNameExtra="incident-intake-card">
+          <form className="form-grid" onSubmit={handleSubmit}>
+            <div>
+              <label className="lbl" htmlFor="inc-desc">
+                Incident description
+              </label>
+              <textarea
+                id="inc-desc"
+                className="textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Many users cannot log in after the latest production deployment."
+              />
             </div>
-          </div>
-        ) : null}
-      </Card>
+            <ExampleQuestionChips
+              label="Demo scenarios"
+              questions={DEMO_INCIDENT_SCENARIOS}
+              disabled={isLoading}
+              onSelect={(text) => {
+                setDescription(text);
+                void runAnalysis(text);
+              }}
+            />
+            <div className="form-grid form-grid--inline">
+              <div>
+                <label className="lbl" htmlFor="inc-svc">
+                  Affected service
+                </label>
+                <input
+                  id="inc-svc"
+                  className="input"
+                  value={affectedService}
+                  onChange={(e) => setAffectedService(e.target.value)}
+                  placeholder="auth-service"
+                />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="inc-env">
+                  Environment
+                </label>
+                <input
+                  id="inc-env"
+                  className="input"
+                  value={environment}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                  placeholder="production"
+                />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="inc-k">
+                  Top K results
+                </label>
+                <input
+                  id="inc-k"
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={topK}
+                  onChange={(e) => setTopK(clampTopK(e.target.value))}
+                />
+              </div>
+            </div>
+            <Button type="submit" variant="primary" loading={isLoading}>
+              Generate incident report
+            </Button>
+          </form>
+        </Card>
 
-      <Card eyebrow="Diagnostics" title="Likely causes" padded>
-        <ul className="list-checks">{response.likely_causes.map((item) => (
-          <li key={item}>{item}</li>
-        ))}</ul>
-      </Card>
+        <div className="incident-report-pane">
+          {isLoading ? <LoadingSpinner label="Correlating runbooks and generating triage report" /> : null}
 
-      <Card eyebrow="Procedure" title="Recommended checks" padded>
-        <ul className="list-checks">{response.recommended_checks.map((item) => (
-          <li key={item}>{item}</li>
-        ))}</ul>
-      </Card>
+          {error ? (
+            <Alert variant="error" title="Analysis failed">
+              {error}
+            </Alert>
+          ) : null}
 
-      <Card eyebrow="Gaps" title="Missing information" padded>
-        <ul className="list-checks">{response.missing_information.map((item) => (
-          <li key={item}>{item}</li>
-        ))}</ul>
-      </Card>
+          {result ? <IncidentReportView response={result} /> : null}
 
-      <Card eyebrow="Action" title="Next best action" padded>
-        <p style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{response.next_best_action}</p>
-      </Card>
-
-      <Card eyebrow="Routing" title="Escalation recommendation" padded>
-        <p style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{response.escalation_recommendation}</p>
-      </Card>
-
-      <Card eyebrow="Evidence" title="Retrieved sources" padded>
-        {response.retrieved_chunks.length === 0 ? (
-          <p className="hint-text">No relevant sources were retrieved.</p>
-        ) : (
-          <div className="page-stack">
-            {response.retrieved_chunks.map((source) => (
-              <SourceCard key={source.chunk_id} source={source} />
-            ))}
-          </div>
-        )}
-      </Card>
+          {!result && !isLoading && !error ? (
+            <section className="empty-state empty-state--compact" aria-label="Awaiting incident intake">
+              <h2 className="empty-state__title">No triage report yet</h2>
+              <p className="empty-state__desc">
+                Submit an incident description or pick a demo scenario. The report will show P1–P4 priority, confidence,
+                and runbook evidence when retrieval succeeds.
+              </p>
+            </section>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

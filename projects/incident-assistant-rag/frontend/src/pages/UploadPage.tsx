@@ -43,7 +43,8 @@ export function UploadPage() {
 
   return (
     <div className="page-stack">
-      <header className="page-header-block">
+      <header className="page-header-block page-header-block--module">
+        <p className="page-module-tag">Ingestion lane</p>
         <h1 className="page-title">Document upload</h1>
         <p className="page-description">
           Add artifacts to the upload corpus before indexing them alongside internal runbooks. Allowed types: MD · TXT · CSV · PDF · DOCX (max{" "}
@@ -80,10 +81,10 @@ export function UploadPage() {
 
       {result ? (
         <Alert variant="success" title="Upload received">
-          <p style={{ margin: "0 0 8px" }}>
+          <p className="alert__body alert__body--spaced">
             Stored as <strong>{result.saved_as}</strong> ({result.size_bytes.toLocaleString()} bytes).
           </p>
-          <p style={{ margin: 0 }} className="hint-text">
+          <p className="hint-text alert__body flush">
             Original filename: {result.filename} · Pipeline status: {result.status}
             {result.content_type ? <> · MIME: {result.content_type}</> : null}
           </p>

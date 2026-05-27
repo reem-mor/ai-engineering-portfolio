@@ -86,8 +86,8 @@ export function Sidebar({ items, activeId, onSelect, environmentHint = "NOC dash
         <svg className="sidebar__logo" width={36} height={36} viewBox="0 0 40 40" aria-hidden>
           <defs>
             <linearGradient id="iqg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#38bdf8" />
-              <stop offset="100%" stopColor="#0ea5e9" />
+              <stop offset="0%" stopColor="#22d3ee" />
+              <stop offset="100%" stopColor="#0891b2" />
             </linearGradient>
           </defs>
           <rect x={4} y={4} width={32} height={32} rx={8} fill="url(#iqg)" />
@@ -95,7 +95,8 @@ export function Sidebar({ items, activeId, onSelect, environmentHint = "NOC dash
         </svg>
         <div className="sidebar__brand-block">
           <h1 className="sidebar__title">IncidentIQ</h1>
-          <p className="sidebar__tagline">RAG assistant</p>
+          <p className="sidebar__tagline">Operations knowledge assistant</p>
+          <p className="sidebar__product-line">Incident Assistant RAG</p>
         </div>
       </div>
 
