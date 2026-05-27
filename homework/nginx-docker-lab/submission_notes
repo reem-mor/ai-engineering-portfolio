@@ -1,0 +1,21 @@
+# Submission Notes
+
+## What to include
+
+- Screenshots of the required validation steps.
+- GitHub repository link in the email body.
+- Clear subject line using the course submission format.
+
+## Screenshot checklist
+
+- EC2 instance is running.
+- Docker is installed successfully.
+- `docker ps` shows the Nginx container.
+- The Nginx welcome page opens in the browser.
+- EC2 instance is terminated after cleanup.
+
+## Best practice
+
+- Keep screenshot names clear and consistent.
+- Do not commit secrets or private keys.
+- Keep the email short, professional, and friendly.
