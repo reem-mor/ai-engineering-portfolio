@@ -31,6 +31,12 @@ class Retriever:
         if top_k <= 0:
             raise ValueError("top_k must be positive.")
 
+        if (
+            not self.vector_store.index_path.exists()
+            or not self.vector_store.metadata_path.exists()
+        ):
+            raise FileNotFoundError("FAISS index is not loaded.")
+
         query_embedding = self.embedding_provider.embed_text(clean_question)
 
         if not query_embedding:

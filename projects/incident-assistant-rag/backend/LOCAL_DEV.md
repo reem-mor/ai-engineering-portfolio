@@ -67,10 +67,13 @@ Copy [`.env.example`](.env.example) → `.env` in **this folder** (same folder a
 
 
 ```env
-
 OPENAI_API_KEY=sk-...your-real-key...
-
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=1536
+ANSWER_MODEL=gpt-4o-mini
 ```
+
+After changing embedding model or dimensions, re-index sample documents before chat or evaluation (see README).
 
 
 

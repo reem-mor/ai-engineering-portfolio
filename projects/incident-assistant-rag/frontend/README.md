@@ -9,7 +9,7 @@ npm run build
 
 Uses **`tsc --noEmit`** then **`vite build`**. Backend CORS allows `http://localhost:5173` and `http://127.0.0.1:5173` (see FastAPI middleware). Prefer opening the dev UI at **http://localhost:5173**.
 
-Copy [`.env.example`](.env.example) to `.env` if your API base URL is not `http://localhost:8000/api`.
+Copy [`.env.example`](.env.example) to `.env` only if your API base URL is not `http://localhost:8000/api`. OpenAI keys and models stay in [`../backend/.env`](../backend/.env) — the frontend never calls OpenAI directly.
 
 ## Dev
 

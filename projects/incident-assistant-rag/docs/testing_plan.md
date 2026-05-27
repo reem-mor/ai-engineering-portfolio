@@ -2,7 +2,7 @@
 
 ## Unit Tests
 
-Unit tests cover document loading, cleaning, chunking, embeddings, FAISS, prompt building, RAG pipeline, severity classification, incident reasoning, and API validation.
+Unit tests cover document loading (including sample PDF, DOCX, and CSV), cleaning, chunking, embeddings, FAISS, prompt building, RAG pipeline, severity classification, incident reasoning, API validation, chat integration with a built index, and document indexing routes.
 
 ## API Tests
 

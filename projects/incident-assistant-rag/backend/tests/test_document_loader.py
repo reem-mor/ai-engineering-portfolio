@@ -2,8 +2,11 @@ from pathlib import Path
 
 import pytest
 
+from app.core.config import settings
 from app.core.exceptions import EmptyDocumentError, UnsupportedFileTypeError
 from app.rag.document_loader import DocumentLoader
+
+SAMPLE_DOCS_DIR = settings.sample_documents_dir
 
 
 def test_loader_loads_text_file(tmp_path: Path):
@@ -43,3 +46,28 @@ def test_loader_reads_csv_with_headers(tmp_path: Path):
     path.write_text("col_a,col_b\n1,2\n", encoding="utf-8")
     out = DocumentLoader().load(path)
     assert "col_a" in out and "2" in out
+
+
+def test_loader_reads_sample_pdf():
+    path = SAMPLE_DOCS_DIR / "database_locks_runbook.pdf"
+    if not path.is_file():
+        pytest.skip("sample PDF not present in data/sample_documents")
+    text = DocumentLoader().load(path)
+    assert "database" in text.lower()
+    assert "lock" in text.lower()
+
+
+def test_loader_reads_sample_docx():
+    path = SAMPLE_DOCS_DIR / "deployment_failure_sop.docx"
+    if not path.is_file():
+        pytest.skip("sample DOCX not present in data/sample_documents")
+    text = DocumentLoader().load(path)
+    assert "deployment" in text.lower()
+
+
+def test_loader_reads_sample_csv():
+    path = SAMPLE_DOCS_DIR / "incident_examples.csv"
+    if not path.is_file():
+        pytest.skip("sample CSV not present in data/sample_documents")
+    text = DocumentLoader().load(path)
+    assert len(text.strip()) > 0

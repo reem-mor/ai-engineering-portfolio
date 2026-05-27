@@ -38,7 +38,34 @@ python -m pytest tests --collect-only -q
 
 ## How many tests?
 
-The `tests/` tree targets **80+** collected items. Use `--collect-only` for the exact count.
+The `tests/` tree currently has **90** collected items (including PDF/DOCX loader, chat/index integration, and document index route tests). Use `--collect-only` for the exact count.
+
+Additional modules:
+
+- `tests/test_chat_integration.py` — happy-path chat and missing FAISS index
+- `tests/test_document_index_routes.py` — `index-samples` / `index-uploaded`
+- `tests/test_document_loader.py` — sample PDF, DOCX, and CSV fixtures
+
+## Evaluation runner
+
+From project root (with `PYTHONPATH=backend`):
+
+```powershell
+$env:PYTHONPATH = '<repo>\projects\incident-assistant-rag\backend'
+python scripts/run_evaluation.py
+```
+
+Writes `evaluation/evaluation_results.json` and `evaluation/evaluation_results.md`. Without a real `OPENAI_API_KEY`, the script uses offline fake embeddings and generators and rebuilds the sample index automatically.
+
+## After changing embedding settings
+
+If you change `EMBEDDING_MODEL` or `EMBEDDING_DIMENSIONS` in `backend/.env`, remove `data/faiss_index/incidentiq.index` and `incidentiq_metadata.json`, then index again before chat or evaluation:
+
+```powershell
+# From UI: Knowledge Base → Index Sample Documents
+# Or API:
+curl -X POST http://localhost:8000/api/documents/index-samples
+```
 
 ## Collection errors
 
