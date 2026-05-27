@@ -35,8 +35,14 @@ class DocumentService:
         self.loader = loader or DocumentLoader()
         self.cleaner = cleaner or TextCleaner()
         self.chunker = chunker or TextChunker()
-        self.embedding_provider = embedding_provider or OpenAIEmbeddingProvider()
+        self._embedding_provider = embedding_provider
         self.vector_store = vector_store or FaissVectorStore()
+
+    @property
+    def embedding_provider(self) -> BaseEmbeddingProvider:
+        if self._embedding_provider is None:
+            self._embedding_provider = OpenAIEmbeddingProvider()
+        return self._embedding_provider
 
     def extract_and_clean(self, file_path: Path) -> str:
         if not file_path.exists():

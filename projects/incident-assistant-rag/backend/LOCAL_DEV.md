@@ -100,6 +100,30 @@ Check: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health), [ht
 
 
 
+## 3b. Frontend (Vite)
+
+
+
+From **`...\incident-assistant-rag\frontend`**:
+
+
+
+```powershell
+
+npm run dev
+
+```
+
+
+
+Open the UI at **[http://localhost:5173](http://localhost:5173)** (recommended). **`http://127.0.0.1:5173`** also works—the backend CORS list includes both hostnames.
+
+
+
+If the dashboard shows **Failed to fetch**, you usually opened `127.0.0.1` before CORS was updated, or the API is not running. Confirm **`/api/health`** responds, then hard-refresh the browser.
+
+
+
 ## 4. Pytest
 
 
