@@ -1,5 +1,0 @@
-filename,path,exists
-docker-nginx-running.png,output/nginx-docker-lab/screenshots/docker-nginx-running.png,True
-ec2-running.png,output/nginx-docker-lab/screenshots/ec2-running.png,True
-ec2-terminated.png,output/nginx-docker-lab/screenshots/ec2-terminated.png,True
-nginx-browser.png,output/nginx-docker-lab/screenshots/nginx-browser.png,True
