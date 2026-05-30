@@ -1,131 +1,224 @@
-# Lecture 06 — Flask Advanced & RAG Web App
+# Lecture 06 - SQLite, Advanced Flask, and RAG Web App
 
 **Slides:** [`resources/lecture05_flask_advanced.pdf`](../../resources/lecture05_flask_advanced.pdf)
 
 ---
 
-## Topics Covered
+## Overview
 
-- Flask REST API design: `jsonify()`, HTTP status codes, error responses
-- SQLite with the `sqlite3` standard library (no ORM)
-- Thread-local database connections (`threading.local`)
-- Background initialisation with `threading.Thread`
-- CRUD operations over REST: sessions and messages
-- The `RAGEngine` class: encapsulated state, `initialise()`, `retrieve()`, `answer()`
-- FAISS index inside a long-lived in-memory object
-- Polling pattern for async startup: `GET /api/status`
-- Frontend: vanilla JS fetch, session management, typing indicator, toast notifications
-- Secret management: environment variables via `.env` / `os.environ`
+This lecture connects database persistence, Flask web development, and Retrieval-Augmented Generation into one practical application flow.
+
+The first part focuses on SQLite with Python and Flask. The second part applies these ideas to a RAG web app with persistent chat sessions, a REST API, FAISS retrieval, LLM generation, and a browser interface.
 
 ---
 
-## Key Concepts You Must Know
+## Topics Covered
 
-### REST API Design
+- SQLite as a lightweight embedded database.
+- Connecting to SQLite with Python `sqlite3`.
+- Creating tables with SQL.
+- Inserting, selecting, updating, and fetching records.
+- Parameterized SQL statements with `?` placeholders.
+- Viewing SQLite data with DB Browser for SQLite.
+- Flask integration with SQLite.
+- Rendering database rows in HTML with Jinja loops.
+- SQLAlchemy and Flask-Migrate concepts.
+- REST API design with Flask and JSON responses.
+- SQLite-backed conversation memory.
+- Background RAG initialization.
+- Hugging Face embeddings.
+- FAISS vector search.
+- Gemini response generation.
+- Vanilla JavaScript frontend with async `fetch()` calls.
 
-| Method | Path | Action |
-|--------|------|--------|
-| GET | `/api/sessions` | List all sessions |
-| POST | `/api/sessions` | Create new session |
-| GET | `/api/sessions/<id>` | Get session + messages |
-| PATCH | `/api/sessions/<id>` | Rename session |
-| DELETE | `/api/sessions/<id>` | Delete session |
-| POST | `/api/sessions/<id>/messages` | Send a chat message |
-| GET | `/api/status` | RAG engine readiness |
+---
 
-Rules followed here:
-- Use nouns for resource paths, not verbs.
-- POST returns `201 Created`; successful DELETE returns `{"ok": True}`.
-- Missing resource returns `404`; bad input returns `400`; engine not ready returns `503`.
+## SQLite Architecture
 
-### SQLite without ORM
+```mermaid
+flowchart LR
+  Python[Python App] --> Connect[sqlite3.connect]
+  Connect --> DB[(SQLite database file)]
+  Python --> Cursor[Cursor Object]
+  Cursor --> Create[CREATE TABLE]
+  Cursor --> Insert[INSERT]
+  Cursor --> Select[SELECT]
+  Cursor --> Update[UPDATE]
+  Select --> Fetch[fetchall]
+  Fetch --> Python
+```
+
+---
+
+## Flask + SQLite Flow
+
+```mermaid
+flowchart TB
+  Browser[Browser] --> Index[index.html]
+  Index -->|Join Form| Join[join.html]
+  Join -->|POST form data| Flask[Flask App]
+  Flask --> SQLite[(database.db)]
+  SQLite --> Participants[participants.html]
+  Participants -->|Jinja table loop| Browser
+```
+
+---
+
+## RAG Web App Architecture
+
+```mermaid
+flowchart LR
+  User[User] --> UI[Chat UI]
+  UI --> API[Flask REST API]
+  API --> Memory[(SQLite Sessions and Messages)]
+  API --> Engine[RAG Engine]
+  Engine --> Docs[Text Documents]
+  Docs --> Chunks[Sentence Chunks]
+  Chunks --> Embeddings[Hugging Face Embeddings]
+  Embeddings --> FAISS[(FAISS Index)]
+  Engine --> FAISS
+  FAISS --> Context[Retrieved Context]
+  Context --> LLM[Gemini]
+  LLM --> Answer[Grounded Answer]
+  Answer --> UI
+```
+
+---
+
+## Project Structure
+
+```text
+06_flask_advanced_rag/
+├── app.py                  # Flask routes and REST API
+├── database.py             # SQLite session and message memory
+├── rag_engine.py           # RAG loading, embedding, retrieval, generation
+├── rag_example.py          # Original script kept for reference
+├── requirements.txt
+├── chat.db                 # Local generated SQLite database, gitignored in production
+├── data/
+│   └── Risk Analysis Report.txt
+├── templates/
+│   └── index.html
+└── static/
+    ├── css/
+    │   └── style.css
+    └── js/
+        └── app.js
+```
+
+---
+
+## SQLite Key Concepts
+
+### Create a Connection
 
 ```python
 import sqlite3
-import threading
 
-_local = threading.local()   # per-thread connection storage
-
-def get_connection():
-    conn = getattr(_local, "conn", None)
-    if conn is None:
-        conn = sqlite3.connect("chat.db", check_same_thread=False)
-        conn.row_factory = sqlite3.Row   # rows accessible by column name
-        conn.execute("PRAGMA foreign_keys = ON;")
-        _local.conn = conn
-    return conn
+conn = sqlite3.connect("database.db")
+cursor = conn.cursor()
 ```
 
-Why per-thread? Flask may handle concurrent requests in different threads; SQLite connections are not safe to share across threads without the WAL journal mode.
+If the database file does not exist, SQLite creates it automatically.
 
-### Background Initialisation Pattern
+### Create a Table
 
-RAG startup (downloading NLTK, computing embeddings) takes 10–60 s. Blocking the server would timeout the first request.
+```python
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS participants (
+        name TEXT,
+        email TEXT,
+        city TEXT,
+        country TEXT,
+        phone TEXT
+    )
+    """
+)
+conn.commit()
+```
+
+### Insert Data Safely
+
+Use placeholders instead of string formatting:
+
+```python
+cursor.execute(
+    "INSERT INTO participants VALUES (?, ?, ?, ?, ?)",
+    (name, email, city, country, phone),
+)
+conn.commit()
+```
+
+### Fetch Data
+
+```python
+cursor.execute("SELECT * FROM participants")
+rows = cursor.fetchall()
+```
+
+---
+
+## REST API Surface
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/status` | Check if the RAG engine is ready |
+| `GET` | `/api/sessions` | List chat sessions |
+| `POST` | `/api/sessions` | Create a new chat session |
+| `GET` | `/api/sessions/<session_id>` | Load a session with messages |
+| `PATCH` | `/api/sessions/<session_id>` | Rename a session |
+| `DELETE` | `/api/sessions/<session_id>` | Delete a session |
+| `POST` | `/api/sessions/<session_id>/messages` | Send a question and receive an answer |
+
+---
+
+## Conversation Memory
+
+The RAG app stores chat history in SQLite.
+
+```text
+sessions
+├── id
+├── title
+├── created_at
+└── updated_at
+
+messages
+├── id
+├── session_id
+├── role
+├── content
+├── context_json
+└── created_at
+```
+
+This allows the application to preserve conversations across restarts and use recent messages as context for follow-up questions.
+
+---
+
+## Background Initialization Pattern
+
+Embedding documents can take time. To avoid blocking the first page load, the app initializes the RAG engine in a background thread.
 
 ```python
 def _start_background_init():
     database.init_db()
-    thread = threading.Thread(target=_initialise_engine_background, daemon=True)
+    thread = threading.Thread(
+        target=_initialise_engine_background,
+        daemon=True,
+        name="rag-init",
+    )
     thread.start()
-
-_start_background_init()   # called at module import time
 ```
 
-The frontend polls `GET /api/status` every 1.5 s until `ready: true`.
+The frontend polls:
 
-### RAGEngine Architecture
-
-```python
-class RAGEngine:
-    chunks: list[str]         # sentence-level text corpus
-    sources: list[str]        # filename for each chunk
-    index: faiss.IndexFlatIP  # in-memory vector index
-    ready: bool
-    status: str               # human-readable phase string
-    progress: dict            # {"current": N, "total": M}
-
-    def initialise(self) -> None: ...    # load → embed → index
-    def retrieve(self, query, k) -> list[dict]: ...
-    def ask_gemini(self, context, question, history) -> str: ...
-    def answer(self, question, history, k) -> dict: ...
+```text
+GET /api/status
 ```
 
-The engine is created once at module level and initialised in a background thread. All Flask routes interact with the same instance.
-
-### Environment Variables
-
-Never commit API keys. Provide a `.env.example` and load from environment:
-
-```python
-import os
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-HF_TOKEN       = os.environ.get("HF_TOKEN", "")
-```
-
-For local development, create a `.env` file (gitignored) and load it:
-```bash
-pip install python-dotenv
-```
-```python
-from dotenv import load_dotenv
-load_dotenv()
-```
-
-### Conversation History in the Prompt
-
-The LLM has no memory between API calls. To simulate multi-turn conversation, include previous turns in every prompt:
-
-```
-Conversation so far:
-User: What are the top risks?
-Assistant: The top risks are R-01, R-02, R-03...
-
-Context retrieved from documents:
-<FAISS top-k chunks>
-
-User's latest question:
-Who is responsible for R-02?
-```
+When the engine is ready, the input box is enabled.
 
 ---
 
@@ -133,43 +226,72 @@ Who is responsible for R-02?
 
 ```bash
 cd lectures/06_flask_advanced_rag
+python -m venv .venv
+```
 
-# 1. Set API keys
-cp .env.example .env
-# Edit .env with real keys
+Windows:
 
-# 2. Add corpus
-mkdir -p data
-cp ../04_nlp_rag/data/risk_analysis_report.txt data/
-
-# 3. Install dependencies
+```powershell
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# 4. Run
 python app.py
-# Open http://127.0.0.1:5000/
+```
+
+macOS / Linux:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000/
 ```
 
 ---
 
 ## Exercises
 
-### Exercise 1 — Source Attribution
-The `retrieve()` method already returns `source` (filename) and `score` per chunk.
-Add source attribution to the rendered message in the frontend: show which file each answer was derived from.
+### Exercise 1 - Add Source Attribution
 
-### Exercise 2 — Add a GET /api/sessions/<id>/messages Endpoint
-Currently sessions return messages embedded in `GET /api/sessions/<id>`.
-Add a dedicated `GET /api/sessions/<id>/messages` route that returns only the message list.
-This is better REST design and allows paginating messages independently.
+Display the retrieved source file and score for each answer in the frontend.
 
-### Exercise 3 — Rate Limiting
-Add a simple in-memory counter that limits each session to 20 messages.
-Return `429 Too Many Requests` when the limit is exceeded.
+### Exercise 2 - Add a Dedicated Messages Endpoint
 
-### Exercise 4 — Add Document Upload
-Add a `POST /api/documents` endpoint that accepts a `.txt` file upload (`request.files`),
-saves it to `data/`, and triggers a re-initialisation of the RAG engine.
+Create:
+
+```text
+GET /api/sessions/<session_id>/messages
+```
+
+It should return only the messages for that session.
+
+### Exercise 3 - Add Rate Limiting
+
+Limit each session to 20 messages and return:
+
+```text
+429 Too Many Requests
+```
+
+when the limit is exceeded.
+
+### Exercise 4 - Add Document Upload
+
+Create:
+
+```text
+POST /api/documents
+```
+
+It should accept a `.txt` file, save it into `data/`, and rebuild the RAG index.
+
+### Exercise 5 - Improve Secret Management
+
+Move API keys into environment variables and provide a `.env.example` file.
 
 ---
 
@@ -177,8 +299,21 @@ saves it to `data/`, and triggers a re-initialisation of the RAG engine.
 
 | Mistake | Fix |
 |---------|-----|
-| `sqlite3.ProgrammingError: Cannot operate on a closed database` | Use per-thread connections, not a global one |
-| App freezes on startup | Move heavy init to a background thread; poll `/api/status` |
-| FAISS index is `None` when first request arrives | Check `engine.ready` before processing; return `503` if not ready |
-| `os.environ.get("KEY")` returns `None` | Check key is exported in your shell or `.env` loaded |
-| CSS/JS not updating in browser | Hard-refresh (`Ctrl+Shift+R`) or disable browser cache in DevTools |
+| SQLite connection errors | Use one connection per thread or open connections inside functions |
+| App freezes on startup | Move heavy RAG initialization into a background thread |
+| FAISS index is empty | Confirm documents exist in `data/` and chunking produced text |
+| API key committed accidentally | Rotate the key, remove it from git history if needed, and use `.env` |
+| Frontend sends before engine is ready | Disable input until `/api/status` returns `ready: true` |
+| Browser shows old CSS/JS | Hard refresh or disable cache in DevTools |
+
+---
+
+## What This Lecture Demonstrates
+
+- SQLite persistence in Python.
+- Flask form and database integration.
+- REST API design.
+- Persistent chat memory.
+- RAG pipeline engineering.
+- Background indexing and status polling.
+- Practical full-stack AI prototype development.
