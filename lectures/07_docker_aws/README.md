@@ -1,46 +1,171 @@
-# Lecture 07 — Docker & AWS Deployment
+# Lecture 07 - Docker and AWS EC2 Deployment
 
 **Slides:** [`resources/lecture06_docker_aws.pdf`](../../resources/lecture06_docker_aws.pdf)
 
 ---
 
-## Topics Covered
+## Overview
 
-- Docker concepts: image, container, layer, registry
-- Writing a `Dockerfile` for a Python/Flask app
-- Core Docker commands: `build`, `run`, `ps`, `stop`, `exec`, `logs`
-- `docker-compose` for multi-container setups
-- Environment variables in containers: `-e` flag vs `.env` file
-- AWS fundamentals: EC2, S3, Elastic Beanstalk (EB)
-- Deploying a containerised Flask app to AWS EB
-- Health check endpoints and their role in AWS/ECS
-- IAM basics: least-privilege access for deployment
+This lecture moves from local Python and Flask development into containerization and basic cloud deployment.
+
+The goal is to understand why Docker solves environment problems, how images and containers work, how to build and run a containerized application, and how to validate a simple deployment on an Ubuntu EC2 instance using Docker and Nginx.
 
 ---
 
-## Key Concepts You Must Know
+## Topics Covered
 
-### Docker Fundamentals
+- Docker introduction and motivation.
+- Virtual machines vs Docker containers.
+- Docker images and containers.
+- Docker volumes and networks.
+- Dockerfile basics.
+- Building custom images.
+- Running and managing containers.
+- Inspecting containers and logs.
+- Removing containers and images safely.
+- Running an Ubuntu bash container.
+- Running an Nginx container.
+- AWS EC2 instance setup.
+- SSH access to Ubuntu EC2.
+- Installing Docker Engine on EC2.
+- Security Groups for SSH and HTTP.
+- Browser validation through public IP.
 
-| Term | Meaning |
-|------|---------|
-| **Image** | Read-only blueprint (built from a `Dockerfile`) |
-| **Container** | Running instance of an image |
-| **Layer** | One instruction in the `Dockerfile` — cached for fast rebuilds |
-| **Registry** | Storage for images — Docker Hub, AWS ECR, GitHub Packages |
+---
 
+## Docker Concepts
+
+| Term | Meaning | Example |
+|------|---------|---------|
+| Image | Read-only recipe for a container | `nginx`, `python:3.12-slim` |
+| Container | Running instance of an image | `docker run nginx` |
+| Dockerfile | Instructions for building an image | `FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD` |
+| Volume | Persistent/shared storage for containers | `-v ./data:/app/data` |
+| Network | Communication layer between containers | Docker bridge network |
+| Registry | Place where images are stored | Docker Hub, AWS ECR |
+
+---
+
+## Virtual Machines vs Containers
+
+```mermaid
+flowchart TB
+  subgraph VM[Virtual Machine Model]
+    Host1[Host OS] --> Hypervisor[Hypervisor]
+    Hypervisor --> Guest1[Guest OS + App 1]
+    Hypervisor --> Guest2[Guest OS + App 2]
+  end
+
+  subgraph Docker[Docker Container Model]
+    Host2[Host OS] --> DockerEngine[Docker Engine]
+    DockerEngine --> Container1[App 1 + Bins Libs]
+    DockerEngine --> Container2[App 2 + Bins Libs]
+  end
 ```
-Dockerfile  →  docker build  →  Image  →  docker run  →  Container
+
+Containers are lighter than full virtual machines because they share the host operating system kernel instead of running a full guest OS per application.
+
+---
+
+## Docker Lifecycle
+
+```mermaid
+flowchart LR
+  Dockerfile[Dockerfile] --> Build[docker build]
+  Build --> Image[Docker Image]
+  Image --> Run[docker run]
+  Run --> Container[Running Container]
+  Container --> Logs[docker logs]
+  Container --> Exec[docker exec]
+  Container --> Stop[docker stop]
+  Stop --> Remove[docker rm]
 ```
 
-### Minimal Flask Dockerfile
+---
+
+## Essential Docker Commands
+
+### Verify Docker
+
+```bash
+docker --version
+docker info
+```
+
+### Run Hello World
+
+```bash
+docker run hello-world
+```
+
+### List Containers
+
+```bash
+docker ps
+docker ps -a
+```
+
+### Start an Ubuntu Bash Container
+
+```bash
+docker run -it --name linux-container ubuntu bash
+```
+
+Exit container:
+
+```bash
+exit
+```
+
+Restart and enter again:
+
+```bash
+docker start linux-container
+docker exec -it linux-container bash
+```
+
+### List Images
+
+```bash
+docker images
+```
+
+### Remove Container and Image
+
+```bash
+docker stop <container_name_or_id>
+docker rm <container_name_or_id>
+docker rmi <image_name_or_id>
+```
+
+---
+
+## Volumes
+
+Volumes allow a container to use files from the host machine.
+
+```bash
+docker run -it --name linux-container-2 \
+  -v "$(pwd):/my-data" \
+  ubuntu bash
+```
+
+Inside the container:
+
+```bash
+cd /my-data
+ls
+```
+
+---
+
+## Minimal Flask Dockerfile
 
 ```dockerfile
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy dependencies first — layer cache reuse on code-only changes
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -51,139 +176,184 @@ EXPOSE 5000
 CMD ["python", "app.py"]
 ```
 
-Key practices:
-- Use slim/alpine base images to reduce attack surface and image size.
-- Copy `requirements.txt` and install **before** copying application code — this caches the pip install layer.
-- Never bake secrets into the image. Pass them as environment variables at runtime.
-
-### Essential Docker Commands
+Build and run:
 
 ```bash
-# Build
-docker build -t my-rag-app .
-
-# Run (detached, port mapping, env var)
-docker run -d -p 5000:5000 \
-  -e GEMINI_API_KEY=your-key \
-  -e HF_TOKEN=your-token \
-  --name rag-app \
-  my-rag-app
-
-# Inspect
-docker ps                         # list running containers
-docker logs rag-app               # view stdout/stderr
-docker exec -it rag-app bash      # open a shell inside the container
-
-# Stop / remove
-docker stop rag-app
-docker rm rag-app
+docker build -t flask-demo .
+docker run -p 5000:5000 --name flask-demo flask-demo
 ```
 
-### docker-compose
+Open:
 
-Useful when your app needs multiple services (e.g. app + database + cache).
-
-```yaml
-# docker-compose.yml
-services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - HF_TOKEN=${HF_TOKEN}
-    volumes:
-      - ./data:/app/data       # persist uploaded documents
-    restart: unless-stopped
+```text
+http://127.0.0.1:5000
 ```
+
+---
+
+## Nginx Container Lab
+
+Run Nginx locally:
 
 ```bash
-docker compose up -d      # start in background
-docker compose down       # stop and remove containers
-docker compose logs -f    # tail logs
+docker run -d --name nginx-demo -p 8080:80 nginx
 ```
 
-### AWS Core Services
+Validate:
 
-| Service | Use in this course |
-|---------|--------------------|
-| **EC2** | Virtual machine — full control, manual deployment |
-| **S3** | Object storage — store models, datasets, static files |
-| **Elastic Beanstalk** | PaaS — deploy a ZIP or Docker container, AWS manages load balancer + auto-scaling |
-| **ECR** | Private Docker registry — store your images for ECS/EB |
-| **IAM** | Identity & Access Management — create deployment roles with least privilege |
+```text
+http://127.0.0.1:8080
+```
 
-### Deploying to Elastic Beanstalk (Docker platform)
+Check logs:
 
 ```bash
-# 1. Install EB CLI
-pip install awsebcli
-
-# 2. Initialise EB application
-eb init -p docker my-rag-app
-
-# 3. Create environment and deploy
-eb create rag-prod --envvars GEMINI_API_KEY=...,HF_TOKEN=...
-
-# 4. Subsequent deploys
-eb deploy
-
-# 5. Open in browser
-eb open
+docker logs nginx-demo
 ```
 
-### Health Check Endpoint
+Stop and remove:
 
-AWS EB / ECS expects a health check URL (default `GET /`) that returns `200 OK`.
-Add a dedicated endpoint to avoid false alarms:
-
-```python
-@app.route("/health")
-def health():
-    return {"status": "ok", "engine_ready": engine.ready}, 200
+```bash
+docker stop nginx-demo
+docker rm nginx-demo
 ```
 
-### Environment Variables in Production
+---
 
-Never store secrets in source code or Docker images:
-1. Use AWS Parameter Store or Secrets Manager for sensitive values.
-2. For EB: set via `eb setenv` or the EB console.
-3. For local Docker: use a `.env` file with `docker run --env-file .env`.
+## AWS EC2 + Docker + Nginx Architecture
+
+```mermaid
+flowchart LR
+  User[Browser] -->|HTTP :80| SG[Security Group]
+  Admin[Local Terminal] -->|SSH :22| SG
+  SG --> EC2[Ubuntu EC2 Instance]
+  EC2 --> Docker[Docker Engine]
+  Docker --> Nginx[Nginx Container]
+  Nginx --> Welcome[Nginx Welcome Page]
+```
+
+---
+
+## AWS EC2 Lab Flow
+
+### 1. Launch EC2
+
+Recommended for this lab:
+
+- Ubuntu Server.
+- Free tier instance type when possible.
+- Key pair for SSH.
+- Security Group allowing:
+  - SSH `22` from your IP.
+  - HTTP `80` from the internet for browser validation.
+
+### 2. Connect with SSH
+
+```bash
+ssh -i your-key.pem ubuntu@<EC2_PUBLIC_IP>
+```
+
+### 3. Install Docker on Ubuntu
+
+```bash
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker ubuntu
+```
+
+Reconnect after adding the user to the Docker group.
+
+### 4. Validate Docker
+
+```bash
+docker --version
+docker run hello-world
+```
+
+### 5. Run Nginx on Port 80
+
+```bash
+docker run -d --name nginx-web -p 80:80 nginx
+```
+
+### 6. Validate from Browser
+
+```text
+http://<EC2_PUBLIC_IP>
+```
+
+Expected result:
+
+```text
+Welcome to nginx!
+```
+
+### 7. Cleanup
+
+```bash
+docker stop nginx-web
+docker rm nginx-web
+docker image rm nginx
+```
+
+Terminate the EC2 instance from the AWS console when the lab is complete.
+
+---
+
+## Best Practices
+
+- Use `.dockerignore` to avoid copying virtual environments, cache folders, logs, and secrets into images.
+- Copy `requirements.txt` before the application code to improve Docker layer caching.
+- Do not store secrets in Dockerfiles or source code.
+- Use environment variables for runtime configuration.
+- Keep exposed ports clear and documented.
+- Check `docker logs` first when a container exits.
+- Restrict SSH access in AWS Security Groups to your own IP when possible.
+- Stop or terminate AWS resources after the lab to avoid unnecessary cost.
 
 ---
 
 ## Exercises
 
-### Exercise 1 — Dockerise the RAG App
-Write a `Dockerfile` for `lectures/06_flask_advanced_rag/`.
-- Base image: `python:3.12-slim`
-- Install from `requirements.txt`
-- Expose port 5000
-- Pass `GEMINI_API_KEY` and `HF_TOKEN` via `-e` at runtime (not baked in)
+### Exercise 1 - Dockerize a Flask App
+
+Create a `Dockerfile` for a Flask application and run it on port `5000`.
 
 ```bash
-docker build -t rag-app .
-docker run -p 5000:5000 -e GEMINI_API_KEY=... -e HF_TOKEN=... rag-app
+docker build -t flask-demo .
+docker run -p 5000:5000 flask-demo
 ```
 
-### Exercise 2 — docker-compose with Volume
-Add a `docker-compose.yml` that:
-- Mounts `./data` from the host into `/app/data` inside the container
-- Reads `.env` for secrets (`env_file: .env`)
-- Restarts the container automatically on crash
+### Exercise 2 - Add `.dockerignore`
 
-### Exercise 3 — Health Check Route
-Add `GET /health` to the RAG Flask app that returns:
-```json
-{"status": "ok", "engine_ready": true, "chunks": 42}
+Exclude:
+
+```text
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.pytest_cache/
 ```
-Return `503` if the engine is not yet ready.
 
-### Exercise 4 — Multi-Stage Build
-Rewrite the Dockerfile using a multi-stage build to reduce the final image size:
-- Stage 1 (`builder`): install all dependencies including build tools
-- Stage 2 (`runtime`): copy only the installed packages and app code
+### Exercise 3 - Run Nginx on EC2
+
+Launch an Ubuntu EC2 instance, install Docker, run Nginx, open HTTP port 80, and validate the welcome page from the browser.
+
+### Exercise 4 - Document the Deployment
+
+Add screenshots for:
+
+- EC2 instance running.
+- SSH connection.
+- Docker installed.
+- Nginx container running.
+- Browser access through public IP.
+- Cleanup confirmation.
 
 ---
 
@@ -191,8 +361,22 @@ Rewrite the Dockerfile using a multi-stage build to reduce the final image size:
 
 | Mistake | Fix |
 |---------|-----|
-| `COPY . .` before `pip install` | Reinstalls deps on every code change — put pip install first |
-| Port not accessible | Check `EXPOSE` in Dockerfile AND `-p host:container` in `docker run` |
-| Secrets baked into image | Use `--env-file` or `-e` at runtime; never `ENV SECRET=...` in Dockerfile |
-| Container exits immediately | Check `docker logs <name>` — often an uncaught exception at startup |
-| `PermissionError` on volume mount | The app user inside the container may lack write access — use `chmod` or run as root for development |
+| Browser cannot reach EC2 | Check Security Group allows inbound HTTP port 80 |
+| SSH fails | Confirm key file, username `ubuntu`, public IP, and inbound SSH rule |
+| Docker permission denied | Add user to Docker group and reconnect |
+| Container exits immediately | Run `docker logs <container>` |
+| Port already in use | Stop the existing container or map a different host port |
+| Image cannot be removed | Remove containers that use the image first |
+| Files missing in container | Check `COPY` commands and `.dockerignore` |
+
+---
+
+## What This Lecture Demonstrates
+
+- Docker fundamentals.
+- Container lifecycle management.
+- Building images with Dockerfiles.
+- Running Nginx in a container.
+- Basic AWS EC2 deployment workflow.
+- Security Group configuration.
+- Practical validation and cleanup steps.
