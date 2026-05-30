@@ -1,25 +1,27 @@
-# Course Project
+# Course Projects
 
-Source handout: [`resources/handouts/project_guidelines.pptx`](../resources/handouts/project_guidelines.pptx)
+This folder contains end-to-end AI engineering projects built during the Amdocs AI-Augmented Software Engineering course.
 
-## Overview
+## Projects
 
-The course project is an end-to-end AI-augmented application built over the final weeks of the program. Full requirements, evaluation criteria, and submission deadlines are in the source handout above.
+| Project | Folder | Status | Description |
+|---------|--------|--------|-------------|
+| **IncidentIQ** (capstone) | [`incident-assistant-rag/`](incident-assistant-rag/) | Complete | Full-stack RAG for incident operations — FastAPI, React, FAISS, OpenAI, Docker, 90 pytest tests, evaluation harness |
 
-## Structure
+## Course handouts
 
-Create a subfolder here for your project:
+| Document | Purpose |
+|----------|---------|
+| [`resources/handouts/project_guidelines.pptx`](../resources/handouts/project_guidelines.pptx) | Course project requirements |
+| [`resources/handouts/mid-course-project-guidelines.docx`](../resources/handouts/mid-course-project-guidelines.docx) | Mid-course project guidelines |
+| [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/handouts/rag-application-homework-guidelines.docx) | Full RAG homework specification |
 
-```
-projects/
-└── <your-project-name>/
-    ├── README.md       # project description, setup instructions, decisions made
-    ├── src/            # application source code
-    ├── tests/          # unit / integration tests
-    ├── data/           # sample or test data (no large files in git)
-    └── requirements.txt  # project-specific dependencies (if different from root)
-```
+## Capstone quick link
+
+Setup, architecture, and demo flow are documented in the capstone README (maintained inside that project):
+
+[incident-assistant-rag/README.md](incident-assistant-rag/README.md)
 
 ## Submission
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for submission procedure.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) and [docs/submission-checklist.md](../docs/submission-checklist.md).

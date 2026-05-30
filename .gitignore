@@ -12,6 +12,7 @@ htmlcov/
 
 # Virtual environments
 .venv/
+.venv312/
 venv/
 env/
 
@@ -20,6 +21,11 @@ env/
 .eggs/
 dist/
 build/
+*.tsbuildinfo
+.cache/
+
+# Node.js / frontend
+node_modules/
 *.egg
 
 # Environment variables and secrets

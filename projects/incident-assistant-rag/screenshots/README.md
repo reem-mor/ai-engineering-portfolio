@@ -1,7 +1,8 @@
 # Submission Screenshots
 
-Captures for the RAG Application homework and demo walkthrough. Regenerate UI shots with:
+Submission assets live in this folder **by design** — [`scripts/capture_screenshots.mjs`](../scripts/capture_screenshots.mjs) writes PNGs here. Referenced from [`../README.md`](../README.md) and [`../docs/submission-notes.md`](../docs/submission-notes.md).
 
+Captures for the RAG Application homework and demo walkthrough. Regenerate UI shots with:
 ```powershell
 cd frontend
 npm install -D playwright
@@ -11,6 +12,18 @@ node scripts/capture_screenshots.mjs
 ```
 
 **Prerequisites:** Backend on `http://127.0.0.1:8000`, frontend on `http://localhost:5173`, valid `OPENAI_API_KEY` in `backend/.env`, sample documents indexed (script calls `POST /api/documents/index-samples`).
+
+### Pytest screenshot only (no servers)
+
+Regenerate `11_backend_tests_90_passed_pytest.png` with all **90** test names listed (`pytest -v`). No backend or frontend required.
+
+```powershell
+cd frontend
+npm install
+npx playwright install chromium
+cd ..
+node scripts/capture_screenshots.mjs --pytest-only
+```
 
 | File | What it proves |
 |------|----------------|
