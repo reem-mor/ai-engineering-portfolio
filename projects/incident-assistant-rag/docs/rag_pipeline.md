@@ -29,6 +29,14 @@ Document
 
 ## Query Flow
 
+1. User asks a question (UI or `POST /api/chat`)
+2. Backend receives and validates the request
+3. Query is embedded with the same model used at index time
+4. FAISS returns top-k similar chunks
+5. Chunks below the score threshold are dropped; if none remain, return refusal without LLM
+6. Remaining context is injected into a strict grounded prompt
+7. LLM generates the answer; response includes sources and metadata
+
 ```text
 User question
   -> embed question

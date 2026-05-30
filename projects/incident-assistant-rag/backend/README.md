@@ -1,44 +1,45 @@
-# Incident Assistant RAG — backend
+# Incident Assistant RAG — Backend
 
-Work here: **`.../projects/incident-assistant-rag/backend`** (same folder as `app/`, `data/`, `requirements.txt`).
+FastAPI backend for IncidentIQ. **Full setup:** [`../docs/setup.md`](../docs/setup.md)
 
-## Quick start (Windows + course venv)
+Work in this directory: `projects/incident-assistant-rag/backend` (contains `app/`, `tests/`, `requirements.txt`).
 
-Use **`%USERPROFILE%\amdocs-ai-course\.venv`** so activation paths stay valid even if your username contains an apostrophe.
-
-**Terminal 1 — install deps & API:**
+## Quick start
 
 ```powershell
-Set-Location -LiteralPath '<repo>\projects\incident-assistant-rag\backend\scripts'
-.\dev_local.ps1
-```
-
-**Terminal 2 — confirm localhost:**
-
-```powershell
-Set-Location -LiteralPath '<repo>\projects\incident-assistant-rag\backend\scripts'
-.\check_health.ps1
-```
-
-Alternate **cmd**:
-
-```bat
-<repo>\projects\incident-assistant-rag\backend\scripts\dev_local.cmd
-```
-
-Expected health URL: **`http://127.0.0.1:8000/api/health`** (OpenAPI at **`http://127.0.0.1:8000/docs`**).
-
-Secrets: **`backend\.env`** (copy from [`.env.example`](.env.example)); never commit it.
-
-Manual equivalent:
-
-```powershell
-Set-Location -LiteralPath '<repo>\projects\incident-assistant-rag\backend'
-& (Join-Path $env:USERPROFILE 'amdocs-ai-course\.venv\Scripts\Activate.ps1')
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+copy .env.example .env
+# Set OPENAI_API_KEY in .env
+
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Docs: [`TESTING.md`](TESTING.md), [`LOCAL_DEV.md`](LOCAL_DEV.md).
+- Health: http://127.0.0.1:8000/api/health  
+- Swagger: http://127.0.0.1:8000/docs  
 
-If something still nests `backend/backend/`, run **`python flatten_layout.py`** once from **`backend`** (next to **`data/`**).
+## Helper scripts (optional)
+
+From `backend/scripts/`:
+
+- `dev_local.ps1` — uses course venv at `%USERPROFILE%\amdocs-ai-course\.venv`
+- `check_health.ps1` — curls `/api/health`
+
+## Environment
+
+Copy [`.env.example`](.env.example) → `.env`. OpenAI keys stay here only — never in the frontend.
+
+## Tests
+
+```powershell
+python -m pytest tests -v --tb=short
+```
+
+See [`../TESTING.md`](../TESTING.md) and [`../docs/setup.md`](../docs/setup.md).
+
+## Docs
+
+- [`../README.md`](../README.md) — project overview  
+- [`../docs/architecture.md`](../docs/architecture.md)  
+- [`LOCAL_DEV.md`](LOCAL_DEV.md) — extended local notes  

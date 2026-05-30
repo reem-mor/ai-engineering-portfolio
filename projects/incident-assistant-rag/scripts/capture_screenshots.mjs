@@ -4,6 +4,7 @@
  *
  *   cd frontend && npm install && npx playwright install chromium
  *   node scripts/capture_screenshots.mjs
+ *   node scripts/capture_screenshots.mjs --pytest-only
  */
 
 import { execSync } from "node:child_process";
@@ -230,7 +231,7 @@ async function capturePytest(browser) {
   const python = resolvePython();
   let output = "";
   try {
-    output = execSync(`"${python}" -m pytest tests -q`, {
+    output = execSync(`"${python}" -m pytest tests -v --tb=no`, {
       cwd: path.join(ROOT, "backend"),
       encoding: "utf8",
       env: { ...process.env, PYTHONPATH: path.join(ROOT, "backend") },
@@ -262,10 +263,20 @@ h1{font-family:Segoe UI,sans-serif;color:#4ec9b0;font-size:18px}
   console.log("Saved 11_backend_tests_90_passed_pytest.png");
 }
 
+const pytestOnly = process.argv.includes("--pytest-only");
+
 async function main() {
   fs.mkdirSync(SCREENSHOTS, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
+
+  if (pytestOnly) {
+    await capturePytest(browser);
+    await browser.close();
+    console.log("Done — 11_backend_tests_90_passed_pytest.png in screenshots/");
+    return;
+  }
+
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: 2,

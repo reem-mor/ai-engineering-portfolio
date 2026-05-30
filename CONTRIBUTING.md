@@ -1,8 +1,8 @@
 # Homework Submission Procedure
 
-Source handout: [`resources/handouts/homework_submission_procedure.docx`](resources/handouts/homework_submission_procedure.docx)
+Source handout: `resources/handouts/homework_submission_procedure.docx` *(not yet in repo — add when available from course staff)*
 
-Full procedural details are in the source handout above. The summary below covers the day-to-day workflow.
+The summary below covers the day-to-day workflow. For assignment requirements, see [`resources/handouts/`](resources/handouts/) and each homework folder README.
 
 ## Before You Start
 

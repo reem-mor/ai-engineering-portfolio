@@ -35,6 +35,10 @@ It is structured as a practical engineering portfolio, not just a collection of 
 
 The main goal is to show steady progress from basic Python exercises to a production-minded AI application with architecture, testing, documentation, Docker delivery, and responsible RAG behavior.
 
+**Author:** Reem Mor — [github.com/reem-mor](https://github.com/reem-mor)
+
+**Documentation hub:** [docs/course-summary.md](docs/course-summary.md) · [docs/setup.md](docs/setup.md) · [docs/submission-checklist.md](docs/submission-checklist.md)
+
 ---
 
 ## Featured Project
@@ -207,37 +211,31 @@ flowchart TB
 ```text
 amdocs-ai-course/
 ├── README.md
+├── LICENSE
 ├── CONTRIBUTING.md
 ├── requirements.txt
 │
+├── docs/                          # Course docs, architecture, checklists
+│   ├── course-summary.md
+│   ├── setup.md
+│   ├── docker-aws-notes.md
+│   ├── rag-notes.md
+│   ├── submission-checklist.md
+│   ├── architecture/
+│   ├── screenshots/               # Index only (assets live with HW/projects)
+│   └── diagrams/
+│
 ├── resources/
-│   ├── lecture01.pdf
-│   ├── lecture02.pdf
-│   ├── lecture03.pdf
-│   ├── lecture04_flask_intro.pdf
-│   ├── lecture05_flask_advanced.pdf
-│   ├── lecture06_docker_aws.pdf
-│   └── project_guidelines.pptx
+│   ├── lecture01.pdf … lecture06_docker_aws.pdf
+│   └── handouts/                  # DOCX/PPTX guidelines
 │
-├── lectures/
-│   ├── 01_jupyter_python_basics/
-│   ├── 02_python_intro/
-│   ├── 03_oop_numpy/
-│   ├── 04_nlp_rag/
-│   ├── 05_flask_intro/
-│   ├── 06_flask_advanced_rag/
-│   └── 07_docker_aws/
-│
-├── homework/
-│   ├── hw01/
-│   ├── hw02/
-│   ├── hw03/
-│   └── hw04/
+├── lectures/                      # 01–07 lesson folders
+├── homework/                      # hw01–hw05
+├── exercises/                     # Index to runnable labs
 │
 └── projects/
     ├── README.md
-    ├── incident-assistant-rag/
-    └── incidentiq/
+    └── incident-assistant-rag/    # Capstone (IncidentIQ)
 ```
 
 ---
@@ -265,7 +263,22 @@ flowchart LR
 | 01 | Jupyter notebook basics | [homework/hw01](homework/hw01/) | Markdown, notebook formatting, Python basics |
 | 02 | Python exercises | [homework/hw02](homework/hw02/) | Functions, data structures, NumPy, recursion |
 | 03 | Titanic ticket system | [homework/hw03](homework/hw03/) | Input validation, CLI flow, clean structure, testing mindset |
-| 04 | RAG application | [homework/hw04](homework/hw04/) | Retrieval, generation, app structure, AI workflow |
+| 04 | RAG application | [homework/hw04](homework/hw04/) | Retrieval, generation, app structure, AI workflow (in progress) |
+| 05 | EC2, Docker, Nginx lab | [homework/hw05/nginx-docker-lab](homework/hw05/nginx-docker-lab/) | AWS instance, SSH, container runtime, HTTP validation, screenshots |
+
+---
+
+## Course Handouts
+
+Official assignment briefs in [`resources/handouts/`](resources/handouts/):
+
+| Handout | Used for |
+|---------|----------|
+| [project_guidelines.pptx](resources/handouts/project_guidelines.pptx) | Course project requirements |
+| [mid-course-project-guidelines.docx](resources/handouts/mid-course-project-guidelines.docx) | Mid-course project scope |
+| [rag-application-homework-guidelines.docx](resources/handouts/rag-application-homework-guidelines.docx) | Homework 04 — full RAG app |
+| [ubuntu-ec2-docker-nginx-student-exercise.docx](resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx) | Homework 05 — EC2/Docker/Nginx lab |
+| [bedrock-kb-flask-project-guideline.docx](resources/handouts/bedrock-kb-flask-project-guideline.docx) | Bedrock KB + Flask + EC2 track |
 
 ---
 
@@ -274,7 +287,6 @@ flowchart LR
 | Project | Folder | Description |
 |---------|--------|-------------|
 | IncidentIQ - Incident Assistant RAG | [projects/incident-assistant-rag](projects/incident-assistant-rag/) | Full-stack RAG application for technical incident operations with React, FastAPI, FAISS, OpenAI, Docker, tests, evaluation, and documentation |
-| IncidentIQ prototype | [projects/incidentiq](projects/incidentiq/) | Earlier incident assistant implementation and experimentation workspace |
 
 ---
 
@@ -439,6 +451,20 @@ A reviewer can understand the repository quickly with this flow:
 
 ---
 
+## Learning Outcomes
+
+After working through this repository, a reviewer should see evidence that I can:
+
+- Progress from Python basics to production-style AI application delivery
+- Design and implement RAG pipelines with FAISS, embeddings, and grounded LLM responses
+- Build web UIs with Flask and React and connect them to REST APIs
+- Apply Docker and AWS EC2 concepts in hands-on labs
+- Write tests, document architecture, and present work suitable for course grading and portfolio review
+
+Detailed progression: [docs/architecture/repository-architecture.md](docs/architecture/repository-architecture.md) · [docs/rag-notes.md](docs/rag-notes.md)
+
+---
+
 ## What This Repository Demonstrates
 
 - Python programming fundamentals.
@@ -473,6 +499,8 @@ A reviewer can understand the repository quickly with this flow:
 
 ## License and Usage
 
-This repository is used for course learning, homework submissions, and portfolio demonstration.
+Original code in this repository is licensed under the [MIT License](LICENSE).
+
+Course PDFs, PPTX, and DOCX files in `resources/` are educational materials from the Amdocs training program and are not necessarily covered by MIT.
 
 Do not commit private keys, production credentials, personal secrets, or sensitive data.
