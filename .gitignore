@@ -64,3 +64,8 @@ projects/incident-assistant-rag/data/faiss_index/*
 !projects/incident-assistant-rag/data/processed/.gitkeep
 !projects/incident-assistant-rag/data/chunks/.gitkeep
 !projects/incident-assistant-rag/data/faiss_index/.gitkeep
+
+
+.aws/
+*.pem
+*.key
