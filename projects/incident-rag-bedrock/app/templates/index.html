@@ -1,51 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-  <h1>Ask your <span class="accent">runbooks</span>.</h1>
-  <p class="subtitle">
-    A grounded knowledge copilot for NOC, DevOps, SRE &amp; Support — every answer is built from
-    your own incident documents, with citations and a graceful refusal when nothing matches.
-  </p>
-</section>
-
-<section class="ask-card">
-  <form id="ask-form"
-        hx-post="{{ url_for('main.ask') }}"
-        hx-target="#answer"
-        hx-swap="innerHTML"
-        hx-indicator="#spinner"
-        hx-disabled-elt="#submit-btn">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label for="question" class="visually-hidden">Your incident question</label>
-    <div class="search-row">
-      <input
-        id="question"
-        name="question"
-        type="text"
-        autocomplete="off"
-        maxlength="{{ max_len }}"
-        placeholder="e.g. How do I triage an authentication service incident?"
-        aria-label="Ask an incident question"
-        required>
-      <button id="submit-btn" type="submit" class="primary">
-        <span class="btn-text">Ask</span>
-        <span id="spinner" class="spinner htmx-indicator" aria-hidden="true"></span>
-      </button>
-    </div>
-  </form>
-
-  <div class="examples">
-    <span class="examples-label">Try:</span>
-    {% for q in examples %}
-      <button type="button"
-              class="chip"
-              onclick="document.getElementById('question').value=this.dataset.q; htmx.trigger('#ask-form','submit');"
-              data-q="{{ q }}">{{ q }}</button>
-    {% endfor %}
-  </div>
-</section>
-
-<section id="answer" class="answer-region" aria-live="polite">
-  {# HTMX swaps _answer.html in here #}
-</section>
+{% include "_hero.html" %}
+{% include "_problem.html" %}
+{% include "_mvp_workflow.html" %}
+{% include "_architecture.html" %}
+{% include "_live_kb.html" %}
+{% include "_flow.html" %}
+{% include "_stack.html" %}
+{% include "_deliverables.html" %}
 {% endblock %}

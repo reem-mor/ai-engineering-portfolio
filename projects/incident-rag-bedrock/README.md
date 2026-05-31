@@ -10,7 +10,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-43_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-58_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 <br/>
 
@@ -192,7 +192,7 @@ py -3.12 -m pip install -r requirements.txt
 py -3.12 -m pytest -v
 ```
 
-Expected: **43 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`.
+Expected: **58 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`, `test_validators`.
 
 ---
 
@@ -207,14 +207,14 @@ cd projects/incident-rag-bedrock
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
 
-# Offline unit tests (43/43)
+# Offline unit tests (58/58)
 py -3.12 -m pytest -v
 
 # Live KB smoke test against real Bedrock (5/5)
 py -3.12 scripts/kb_smoke_test.py
 # → evaluation/smoke_results.md
 
-# Regenerate submission screenshots 07, 08, 09, 11, 12
+# Regenerate submission screenshots 07–09, 11–14
 cd scripts && npm install && npx playwright install chromium
 node capture_screenshots.mjs
 ```
@@ -223,25 +223,26 @@ node capture_screenshots.mjs
 
 | Check | Success criteria |
 |---|---|
-| `pytest` | 43/43 pass |
+| `pytest` | 58/58 pass |
 | `kb_smoke_test.py` | 5/5 pass (4 grounded + 1 refusal) |
 | `/health` | HTTP 200 |
-| Screenshots | `07`, `08`, `09`, `11`, `12` in [`screenshots/`](screenshots/) |
+| Screenshots | `07`–`09`, `11`–`14` in [`screenshots/`](screenshots/) |
 
-Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_questions.json`](evaluation/test_questions.json)
+Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_questions.json`](evaluation/test_questions.json) · [`docs/edge_cases.md`](docs/edge_cases.md)
 
 ---
 
 ## 🧪 Test coverage
 
-**43 tests across 4 files**, every one runnable offline:
+**58 tests across 5 files**, every one runnable offline:
 
 | File | Coverage |
 |---|---|
 | `test_health.py` | `/health` returns `{"status":"ok"}` |
 | `test_config.py` | Each required env var missing/blank → `ConfigError`; defaults; numeric coercion |
-| `test_routes.py` | Empty/missing/oversize/exact-max questions; whitespace trim; HTTP method enforcement (GET/POST 405); HTMX partial rendering; **HTML/XSS escaping in question AND answer**; Unicode (Hebrew) question; grounded card; singular vs. plural source count; no-match amber card; Bedrock errors → 502; 404 on unknown route |
-| `test_bedrock_client.py` | `RetrieveAndGenerate` happy path; **throttling, access-denied, validation, resource-not-found, unknown-code** errors mapped to typed `BedrockError`; empty-snippet citations filtered; missing `s3Location.uri` handled; multi-citation-group flattening; fallback answer when KB returns nothing; `to_dict()` contract for the future MCP wrapper |
+| `test_validators.py` | Empty, short, oversize, stopwords-only questions |
+| `test_routes.py` | Validation + JSON `/ask`; workflow triage partial; HTMX partial rendering; **HTML/XSS escaping**; Unicode question; grounded / no-match cards; Bedrock errors → 502; 404 |
+| `test_bedrock_client.py` | `RetrieveAndGenerate` happy path; typed Bedrock errors; citation `source_label`, dedupe, `latency_ms`; `to_dict()` contract |
 
 Tests use `botocore.stub.Stubber` and a fake injected client — **zero real AWS calls in CI**.
 
@@ -257,7 +258,7 @@ Tests use `botocore.stub.Stubber` and a fake injected client — **zero real AWS
 >
 > ❓ "What are the escalation steps for a P1 production outage?"
 
-Irrelevant question → the assistant returns a graceful amber "No matching context" card. No hallucinations.
+Irrelevant question → the assistant returns a graceful amber **Not in knowledge base** card. No hallucinations. See [`docs/edge_cases.md`](docs/edge_cases.md) for validation, workflow, and API edge cases.
 
 ---
 
@@ -273,12 +274,14 @@ Captured into [`screenshots/`](screenshots/):
 | 04 | `04_ec2_instance_running.png` | EC2 console with public DNS |
 | 05 | `05_security_group_rules.png` | SG: SSH from my IP, HTTP from anywhere |
 | 06 | `06_docker_ps_on_ec2.png` | `docker ps` → `Up (healthy)` |
-| 07 | `07_app_homepage_public.png` | App at `http://<public-dns>/` |
-| 08 | `08_app_question_and_answer.png` | Real grounded answer + citations |
-| 09 | `09_app_refusal_or_low_confidence.png` | No-match graceful refusal |
+| 07 | `07_app_homepage_public.png` | Lovable-style hero, sticky nav, Live KB section |
+| 08 | `08_app_question_and_answer.png` | Grounded answer + citation labels (basename, not raw S3) |
+| 09 | `09_app_refusal_or_low_confidence.png` | **Not in knowledge base** refusal |
 | 10 | `10_cleanup_console.png` | AWS console after teardown |
-| 11 | `11_pytest_43_passed.png` | `pytest` — 43/43 passed |
+| 11 | `11_pytest_43_passed.png` | `pytest` output (58 tests) |
 | 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 5/5 PASS |
+| 13 | `13_mvp_workflow.png` | MVP alert console + live Bedrock triage result |
+| 14 | `14_architecture.png` | Interactive architecture panel (S3 → KB → Flask) |
 
 ---
 
@@ -315,31 +318,53 @@ python scripts/build_corpus.py
 
 Upload to S3 (after the bucket exists):
 ```bash
-BUCKET=<your-kb-bucket> ./infra/upload_docs_to_s3.sh
+BUCKET=reem-amdocs-ai-artifacts-3331 ./infra/upload_docs_to_s3.sh
+# → s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
 ```
 
 Then click **Sync** on the Bedrock KB data source. Detail: [`data/sample_documents/README.md`](data/sample_documents/README.md).
 
 ---
 
+## 📋 Submission checklist (assignment)
+
+| Required item | Location |
+|---|---|
+| **Topic chosen** | Incident Operations — NOC / SRE runbooks and playbooks |
+| **Documents used** | 10 files in [`data/sample_documents/`](data/sample_documents/) (MD, TXT, CSV, DOCX, PDF) |
+| **S3 bucket + prefix** | `s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/` |
+| **Bedrock KB ID** | `RBTJM6NIG9` — see [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md) |
+| **How the app works** | Corpus → S3 sync → Bedrock KB ingest → Flask `POST /ask` → boto3 `retrieve_and_generate` → grounded answer + citations |
+| **Code** | [`wsgi.py`](wsgi.py), [`app/`](app/), [`requirements.txt`](requirements.txt), [`Dockerfile`](Dockerfile) |
+| **Screenshots** | All 14 PNGs in [`screenshots/`](screenshots/) — see table below |
+| **Public URL** | Filled in after EC2 launch — see [Public URL used during testing](#-public-url-used-during-testing) |
+| **Cleanup note** | Filled in after teardown — see [Cleanup confirmation](#-cleanup-confirmation) |
+
+**End-to-end chain:** documents → Bedrock Knowledge Base → Flask + boto3 → Docker → EC2 → public access → cleanup.
+
+---
+
 ## 🧹 Cleanup confirmation
 
-> **All AWS resources created for this project were deleted on _YYYY-MM-DD_:**
-> EC2 instance `incident-rag-demo` (terminated), security group `incident-rag-sg`,
-> Bedrock Knowledge Base `incident-ops-kb`, OpenSearch Serverless collection +
-> policies, S3 bucket `incident-rag-kb-<...>`, IAM role `incident-rag-ec2-role`
-> and the Bedrock-managed KB execution role.
-> Cost Explorer confirms no ongoing charges.
+> **Demo EC2 resources deleted on 2026-05-31:**
+> EC2 instance `i-03d3c5a59e849e5cf` (`incident-rag-demo`, terminated),
+> security group `sg-0b405b6a42325979e` (`incident-rag-sg`),
+> IAM instance profile `incident-rag-ec2-profile`,
+> IAM role `incident-rag-ec2-role` (inline Bedrock + ECR policy removed first).
 
-Full procedure: [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
+**Retained for course reuse:** Bedrock Knowledge Base `RBTJM6NIG9`, S3 bucket `reem-amdocs-ai-artifacts-3331` (prefix `projects/incident-rag-bedrock/data/sample_documents/`), ECR image `incident-rag-bedrock:demo`.
+
+Full log: [`docs/cleanup_log.md`](docs/cleanup_log.md) · procedure: [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
 
 ---
 
 ## 🌐 Public URL used during testing
 
 ```
-http://<EC2_PUBLIC_DNS>/   ← fill in after launch, screenshot, then TEAR DOWN
+http://ec2-100-53-32-194.compute-1.amazonaws.com/
 ```
+
+Used for screenshots `04`–`09` (homepage, grounded Q&A, refusal). Instance terminated immediately after capture.
 
 ---
 

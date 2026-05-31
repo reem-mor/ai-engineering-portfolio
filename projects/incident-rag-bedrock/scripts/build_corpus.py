@@ -88,7 +88,7 @@ def write_auth_runbook_md() -> None:
         Post in `#incident-auth` every 15 minutes with: current error rate,
         actions taken, ETA, customer impact estimate.
     """)
-    (OUT_DIR / "auth_service_runbook.md").write_text(content)
+    (OUT_DIR / "auth_service_runbook.md").write_text(content, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ def write_db_runbook_md() -> None:
           recovery window — failover takes ~3 minutes and drops in-flight
           transactions.
     """)
-    (OUT_DIR / "database_connectivity_runbook.md").write_text(content)
+    (OUT_DIR / "database_connectivity_runbook.md").write_text(content, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ def write_monitoring_md() -> None:
         Silences must always include a Jira ticket reference and an expiry of
         at most 24 hours. Open-ended silences are forbidden.
     """)
-    (OUT_DIR / "monitoring_alerts_reference.md").write_text(content)
+    (OUT_DIR / "monitoring_alerts_reference.md").write_text(content, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -241,7 +241,7 @@ def write_apigw_txt() -> None:
         Do not delete deployment stages to "reset" the gateway. This severs all
         custom domain mappings and triggers a much larger incident.
     """)
-    (OUT_DIR / "api_gateway_5xx_runbook.txt").write_text(content)
+    (OUT_DIR / "api_gateway_5xx_runbook.txt").write_text(content, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -291,7 +291,7 @@ def write_payment_txt() -> None:
         Customer-facing status page MUST be updated within 10 minutes of declaring
         a payment incident. Use the "Payments degraded" template.
     """)
-    (OUT_DIR / "payment_service_latency_runbook.txt").write_text(content)
+    (OUT_DIR / "payment_service_latency_runbook.txt").write_text(content, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

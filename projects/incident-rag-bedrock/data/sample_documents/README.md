@@ -43,7 +43,7 @@ Output lands in this directory. The script is checked in so the corpus is reprod
 
 ## Out-of-corpus questions (deliberate failure mode)
 
-The assistant should **refuse** with the "No matching context" amber card for questions like:
+The assistant should **refuse** with the **Not in knowledge base** amber card for questions like:
 
 - "What's the best pasta recipe?"
 - "Who won the World Cup in 2022?"

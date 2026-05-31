@@ -31,5 +31,11 @@
     "id": 5,
     "question": "What is the best restaurant in Tokyo?",
     "expect_grounded": false
+  },
+  {
+    "id": 6,
+    "question": "what is the",
+    "expect_validation_error": true,
+    "expected_reason": "stopwords_only"
   }
 ]

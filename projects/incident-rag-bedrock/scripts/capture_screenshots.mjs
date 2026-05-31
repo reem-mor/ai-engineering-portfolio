@@ -1,5 +1,5 @@
 /**
- * Capture submission screenshots for incident-rag-bedrock (07, 08, 09, 11, 12).
+ * Capture submission screenshots for incident-rag-bedrock.
  *
  * Prereqs:
  *   docker compose up --build -d   → http://localhost:8080
@@ -52,8 +52,14 @@ p{margin:0.25em 0}.table{font-size:12px;color:#c9d1d9}
 </style></head><body>${lines.join("\n")}</body></html>`;
 }
 
+async function waitForHtmx(page) {
+  await page.waitForFunction(() => typeof htmx !== "undefined", undefined, { timeout: 15_000 });
+}
+
 async function captureHomepage(page) {
   await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.waitForSelector(".topnav", { timeout: 15_000 });
   await page.waitForSelector("#ask-form", { timeout: 15_000 });
   await page.waitForTimeout(500);
   await page.screenshot({
@@ -64,33 +70,79 @@ async function captureHomepage(page) {
 }
 
 async function submitQuestion(page, question) {
+  await page.locator("#live-kb").scrollIntoViewIfNeeded();
   await page.locator("#question").fill(question);
-  await page.locator("#submit-btn").click();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/ask") && r.request().method() === "POST",
+      { timeout: 120_000 },
+    ),
+    page.locator("#submit-btn").click(),
+  ]);
+  if (!response.ok()) {
+    throw new Error(`/ask failed with HTTP ${response.status()}`);
+  }
 }
 
 async function captureGroundedAnswer(page) {
   await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
   await submitQuestion(page, "How do I triage an authentication service incident?");
-  await page.locator(".badge-grounded").waitFor({ timeout: 120_000 });
-  await page.locator(".citation-list").waitFor({ timeout: 120_000 });
+  await page.locator("#answer .badge-grounded").waitFor({ timeout: 5_000 });
+  await page.locator("#answer .citation-list").waitFor({ timeout: 5_000 });
   await page.waitForTimeout(800);
   await page.screenshot({
     path: path.join(SCREENSHOTS, "08_app_question_and_answer.png"),
-    fullPage: true,
+    fullPage: false,
   });
-  console.log("Saved 08_app_question_and_answer.png");
+  console.log("Saved 08_app_question_and_answer.png (Live KB + citation labels)");
 }
 
 async function captureRefusal(page) {
   await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
   await submitQuestion(page, "What is the best restaurant in Tokyo?");
-  await page.locator(".badge-nomatch").waitFor({ timeout: 120_000 });
+  await page.locator("#answer .badge-nomatch").waitFor({ timeout: 5_000 });
   await page.waitForTimeout(800);
   await page.screenshot({
     path: path.join(SCREENSHOTS, "09_app_refusal_or_low_confidence.png"),
-    fullPage: true,
+    fullPage: false,
   });
   console.log("Saved 09_app_refusal_or_low_confidence.png");
+}
+
+async function captureMvpWorkflow(page) {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.locator("#mvp").scrollIntoViewIfNeeded();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/workflow/triage") && r.request().method() === "POST",
+      { timeout: 120_000 },
+    ),
+    page.locator("#workflow-submit").click(),
+  ]);
+  if (!response.ok()) {
+    throw new Error(`/workflow/triage failed with HTTP ${response.status()}`);
+  }
+  await page.locator("#workflow-result .workflow-result").waitFor({ timeout: 5_000 });
+  await page.waitForTimeout(800);
+  await page.locator("#mvp").screenshot({
+    path: path.join(SCREENSHOTS, "13_mvp_workflow.png"),
+  });
+  console.log("Saved 13_mvp_workflow.png");
+}
+
+async function captureArchitecture(page) {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.locator("#architecture").scrollIntoViewIfNeeded();
+  await page.locator('[data-arch-block="documents"]').click();
+  await page.waitForTimeout(400);
+  await page.locator("#architecture").screenshot({
+    path: path.join(SCREENSHOTS, "14_architecture.png"),
+  });
+  console.log("Saved 14_architecture.png");
 }
 
 async function capturePytest(browser) {
@@ -111,7 +163,7 @@ body{font-family:Consolas,Monaco,monospace;background:#0c0c0c;color:#cccccc;padd
 pre{white-space:pre-wrap;font-size:14px;line-height:1.45}
 h1{font-family:Segoe UI,sans-serif;color:#4ec9b0;font-size:18px}
 </style></head><body>
-<h1>pytest — incident-rag-bedrock (43 tests)</h1>
+<h1>pytest — incident-rag-bedrock</h1>
 <pre>${output.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>
 </body></html>`;
   const htmlPath = path.join(SCREENSHOTS, "_pytest_preview.html");
@@ -170,12 +222,14 @@ async function main() {
   await captureHomepage(page);
   await captureGroundedAnswer(page);
   await captureRefusal(page);
+  await captureMvpWorkflow(page);
+  await captureArchitecture(page);
   await page.close();
 
   await capturePytest(browser);
   await captureSmokeResults(browser);
   await browser.close();
-  console.log("Done — screenshots 07, 08, 09, 11, 12 in screenshots/");
+  console.log("Done — screenshots 07–09, 11–14 in screenshots/");
 }
 
 main().catch((err) => {

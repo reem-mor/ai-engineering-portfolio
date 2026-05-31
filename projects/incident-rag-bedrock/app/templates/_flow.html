@@ -1,0 +1,47 @@
+<section id="flow" class="section">
+  <div class="section-inner">
+    <h2 class="section-title">End-to-end flow</h2>
+    <div class="flow-steps">
+      <article class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div>
+          <strong>Collect runbooks &amp; incident history</strong>
+          <p>PDF, MD, TXT, CSV, DOCX uploaded to S3 for the Knowledge Base data source.</p>
+          <p class="flow-step-tech">S3 sync · multi-format corpus</p>
+        </div>
+      </article>
+      <article class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div>
+          <strong>Build the Bedrock Knowledge Base</strong>
+          <p>Bedrock chunks, embeds, and indexes documents for retrieval at query time.</p>
+          <p class="flow-step-tech">Bedrock KB + vector index</p>
+        </div>
+      </article>
+      <article class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div>
+          <strong>Flask triage UI (boto3)</strong>
+          <p>On-call asks a question; Flask calls RetrieveAndGenerate and renders answer + citations.</p>
+          <p class="flow-step-tech">POST /ask · HTMX partials · JSON API</p>
+        </div>
+      </article>
+      <article class="flow-step">
+        <div class="flow-step-num">04</div>
+        <div>
+          <strong>Containerize with Docker</strong>
+          <p>Same image on laptop, CI, and EC2 — no environment drift.</p>
+          <p class="flow-step-tech">docker compose · port 8080</p>
+        </div>
+      </article>
+      <article class="flow-step">
+        <div class="flow-step-num">05</div>
+        <div>
+          <strong>Deploy to EC2 &amp; demo</strong>
+          <p>Public URL for reviewers and on-call smoke tests, then cleanup to avoid cost.</p>
+          <p class="flow-step-tech">Security group · curl smoke · screenshots</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

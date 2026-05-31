@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Auth",
+    "question": "What should I check first when users cannot log in after a deployment?"
+  },
+  {
+    "label": "Auth",
+    "question": "How do I triage an authentication service incident?"
+  },
+  {
+    "label": "Database",
+    "question": "Which runbook should I follow for database connectivity issues?"
+  },
+  {
+    "label": "Escalation",
+    "question": "What are the escalation steps for a P1 production outage?"
+  },
+  {
+    "label": "Health",
+    "question": "Summarize the standard health-check checklist before resolving an incident."
+  }
+]
