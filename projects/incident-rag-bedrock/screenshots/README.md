@@ -13,8 +13,9 @@ cd projects/incident-rag-bedrock
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
 
-# 2. Live KB smoke test (5/5)
+# 2. Live KB smoke test (5/6) + Q&A showcase markdown
 py -3.12 scripts/kb_smoke_test.py
+# → evaluation/smoke_results.md, evaluation/qa_showcase.md
 
 # 3. Unit tests + UI screenshots
 cd scripts
@@ -31,10 +32,15 @@ node capture_screenshots.mjs --pytest-only
 | `07_app_homepage_public.png` | Full-page homepage with hero + sticky nav |
 | `08_app_question_and_answer.png` | Auth triage question → `.badge-grounded` + `.citation-list` with labels |
 | `09_app_refusal_or_low_confidence.png` | Tokyo restaurant question → `.badge-nomatch` |
-| `11_pytest_43_passed.png` | Rendered `py -3.12 -m pytest -v` output (58 tests) |
-| `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` (5/5 PASS) |
+| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (73 tests) |
+| `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` (5/6 PASS) |
 | `13_mvp_workflow.png` | `#mvp` section after **Run triage** → grounded workflow result |
 | `14_architecture.png` | `#architecture` with Documents block selected |
+| `15_document_upload_success.png` | `#document-upload` after successful S3 upload (+ sync if enabled) |
+| `16_document_upload_validation.png` | Upload form — client validation (missing file) |
+| `17_document_upload_type_rejected.png` | Upload form — unsupported `.exe` rejected |
+| `18_dataset_corpus.png` | Rendered corpus catalog from `data/sample_documents/README.md` |
+| `19_sample_questions_answers.png` | Rendered `evaluation/qa_showcase.md` (3 grounded + 1 refusal) |
 
 ## Manual captures (AWS Console / EC2)
 

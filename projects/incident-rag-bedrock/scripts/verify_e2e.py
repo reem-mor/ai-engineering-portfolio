@@ -108,7 +108,7 @@ def main() -> int:
     try:
         _, html = session.get("/")
         record("CSRF token loaded", bool(session.csrf))
-        for marker in ('id="mvp"', 'id="architecture"', 'id="live-kb"', "IncidentIQ", "topnav"):
+        for marker in ('id="mvp"', 'id="architecture"', 'id="document-upload"', 'id="live-kb"', "IncidentIQ", "topnav"):
             record(f"Homepage contains {marker!r}", marker in html)
     except Exception as exc:
         record("GET /", False, str(exc))

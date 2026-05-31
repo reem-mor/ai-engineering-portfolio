@@ -19,6 +19,8 @@ _FRIENDLY = {
     "ValidationException": "The Bedrock request was rejected as invalid. Try a shorter question.",
     "ResourceNotFoundException": "The configured Knowledge Base or model could not be found.",
     "ServiceQuotaExceededException": "A Bedrock service quota was exceeded.",
+    "NoSuchBucket": "The configured S3 bucket does not exist.",
+    "AccessDenied": "S3 denied the upload. Check bucket policy and IAM PutObject permissions.",
 }
 
 

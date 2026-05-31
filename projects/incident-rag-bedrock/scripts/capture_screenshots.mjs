@@ -40,16 +40,60 @@ function markdownToSimpleHtml(md) {
   const lines = escaped.split("\n").map((line) => {
     if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
     if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
+    if (line.startsWith("### ")) return `<h3>${line.slice(4)}</h3>`;
     if (line.startsWith("|")) return `<p class="table">${line}</p>`;
+    if (line.trim() === "---") return `<hr class="divider"/>`;
     if (line.trim() === "") return "<br/>";
+    if (line.startsWith("- ")) return `<p class="bullet">${line}</p>`;
+    if (line.startsWith("**")) return `<p class="strong">${line}</p>`;
     return `<p>${line}</p>`;
   });
   return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <style>
-body{font-family:Consolas,Monaco,monospace;background:#0f1419;color:#e6edf3;padding:32px;max-width:960px;margin:0 auto;line-height:1.5}
-h1{color:#58a6ff}h2{color:#7ee787;margin-top:1.5em}
-p{margin:0.25em 0}.table{font-size:12px;color:#c9d1d9}
+body{font-family:Segoe UI,Consolas,Monaco,monospace;background:#0f1419;color:#e6edf3;padding:32px;max-width:980px;margin:0 auto;line-height:1.5}
+h1{color:#58a6ff;font-size:22px}h2{color:#7ee787;margin-top:1.25em;font-size:17px}h3{color:#d2a8ff;font-size:14px}
+p{margin:0.25em 0}.table{font-size:12px;color:#c9d1d9;font-family:Consolas,Monaco,monospace}
+.bullet{margin-left:0.5em;color:#c9d1d9}.strong{color:#f0f6fc}.divider{border:none;border-top:1px solid #30363d;margin:1em 0}
+.meta{color:#8b949e;font-size:13px;margin-bottom:1em}
 </style></head><body>${lines.join("\n")}</body></html>`;
+}
+
+function extractCorpusMarkdown() {
+  const readmePath = path.join(ROOT, "data", "sample_documents", "README.md");
+  const raw = fs.readFileSync(readmePath, "utf8");
+  const start = raw.indexOf("## Format coverage");
+  const end = raw.indexOf("## Out-of-corpus questions");
+  if (start === -1 || end === -1) {
+    throw new Error("Could not slice corpus tables from data/sample_documents/README.md");
+  }
+  const s3 =
+    "s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/";
+  return `# Knowledge Base Corpus — Incident Operations
+
+- **S3 prefix:** \`${s3}\`
+- **Documents:** 10 files across MD, TXT, CSV, DOCX, PDF
+
+${raw.slice(start, end).trim()}
+`;
+}
+
+async function screenshotMarkdownFile(browser, mdPath, outputName, missingMessage) {
+  if (!fs.existsSync(mdPath)) {
+    throw new Error(missingMessage);
+  }
+  const md = fs.readFileSync(mdPath, "utf8");
+  const htmlPath = path.join(SCREENSHOTS, `_preview_${outputName}.html`);
+  fs.writeFileSync(htmlPath, markdownToSimpleHtml(md));
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
+  await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
+  await page.waitForTimeout(500);
+  await page.screenshot({
+    path: path.join(SCREENSHOTS, outputName),
+    fullPage: true,
+  });
+  await page.close();
+  fs.unlinkSync(htmlPath);
+  console.log(`Saved ${outputName}`);
 }
 
 async function waitForHtmx(page) {
@@ -145,6 +189,72 @@ async function captureArchitecture(page) {
   console.log("Saved 14_architecture.png");
 }
 
+async function captureUploadSuccess(page) {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.locator("#document-upload").scrollIntoViewIfNeeded();
+  const samplePath = path.join(ROOT, "data", "sample_documents", "api_gateway_5xx_runbook.txt");
+  if (!fs.existsSync(samplePath)) {
+    console.warn("Skipping 15 — sample txt missing");
+    return;
+  }
+  await page.locator("#document").setInputFiles(samplePath);
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/documents/upload") && r.request().method() === "POST",
+      { timeout: 120_000 },
+    ),
+    page.locator("#upload-submit").click(),
+  ]);
+  if (!response.ok()) {
+    console.warn(`Skipping 15 — upload returned HTTP ${response.status()}`);
+    return;
+  }
+  await page.locator("#upload-result .upload-result--success").waitFor({ timeout: 5_000 });
+  await page.waitForTimeout(500);
+  await page.locator("#document-upload").screenshot({
+    path: path.join(SCREENSHOTS, "15_document_upload_success.png"),
+  });
+  console.log("Saved 15_document_upload_success.png");
+}
+
+async function captureUploadValidation(page) {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.locator("#document-upload").scrollIntoViewIfNeeded();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.evaluate(() => {
+    const input = document.getElementById("document");
+    if (input) input.removeAttribute("required");
+  });
+  await page.locator("#upload-submit").click();
+  await page.waitForTimeout(400);
+  await page.locator("#document-upload").screenshot({
+    path: path.join(SCREENSHOTS, "16_document_upload_validation.png"),
+  });
+  console.log("Saved 16_document_upload_validation.png (client validation)");
+}
+
+async function captureUploadError(page) {
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await waitForHtmx(page);
+  await page.locator("#document-upload").scrollIntoViewIfNeeded();
+  const badFile = path.join(SCREENSHOTS, "_bad_upload.exe");
+  fs.writeFileSync(badFile, "fake");
+  try {
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator("#document").setInputFiles(badFile);
+    await page.locator("#upload-submit").click();
+    await page.waitForTimeout(500);
+    await page.locator("#document-upload").screenshot({
+      path: path.join(SCREENSHOTS, "17_document_upload_type_rejected.png"),
+    });
+    console.log("Saved 17_document_upload_type_rejected.png");
+  } finally {
+    fs.unlinkSync(badFile);
+  }
+}
+
 async function capturePytest(browser) {
   const python = resolvePython312();
   let output = "";
@@ -172,32 +282,46 @@ h1{font-family:Segoe UI,sans-serif;color:#4ec9b0;font-size:18px}
   await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
   await page.waitForTimeout(300);
   await page.screenshot({
-    path: path.join(SCREENSHOTS, "11_pytest_43_passed.png"),
+    path: path.join(SCREENSHOTS, "11_pytest_passed.png"),
     fullPage: true,
   });
   await page.close();
   fs.unlinkSync(htmlPath);
-  console.log("Saved 11_pytest_43_passed.png");
+  console.log("Saved 11_pytest_passed.png");
 }
 
 async function captureSmokeResults(browser) {
-  const mdPath = path.join(ROOT, "evaluation", "smoke_results.md");
-  if (!fs.existsSync(mdPath)) {
-    throw new Error("evaluation/smoke_results.md missing — run scripts/kb_smoke_test.py first");
-  }
-  const md = fs.readFileSync(mdPath, "utf8");
-  const htmlPath = path.join(SCREENSHOTS, "_smoke_preview.html");
+  await screenshotMarkdownFile(
+    browser,
+    path.join(ROOT, "evaluation", "smoke_results.md"),
+    "12_kb_smoke_evaluation.png",
+    "evaluation/smoke_results.md missing — run scripts/kb_smoke_test.py first",
+  );
+}
+
+async function captureCorpusCatalog(browser) {
+  const md = extractCorpusMarkdown();
+  const htmlPath = path.join(SCREENSHOTS, "_corpus_preview.html");
   fs.writeFileSync(htmlPath, markdownToSimpleHtml(md));
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
   await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(400);
   await page.screenshot({
-    path: path.join(SCREENSHOTS, "12_kb_smoke_evaluation.png"),
+    path: path.join(SCREENSHOTS, "18_dataset_corpus.png"),
     fullPage: true,
   });
   await page.close();
   fs.unlinkSync(htmlPath);
-  console.log("Saved 12_kb_smoke_evaluation.png");
+  console.log("Saved 18_dataset_corpus.png");
+}
+
+async function captureQaShowcase(browser) {
+  await screenshotMarkdownFile(
+    browser,
+    path.join(ROOT, "evaluation", "qa_showcase.md"),
+    "19_sample_questions_answers.png",
+    "evaluation/qa_showcase.md missing — run scripts/kb_smoke_test.py first",
+  );
 }
 
 const pytestOnly = process.argv.includes("--pytest-only");
@@ -209,7 +333,7 @@ async function main() {
   if (pytestOnly) {
     await capturePytest(browser);
     await browser.close();
-    console.log("Done — 11_pytest_43_passed.png");
+    console.log("Done — 11_pytest_passed.png");
     return;
   }
 
@@ -224,12 +348,17 @@ async function main() {
   await captureRefusal(page);
   await captureMvpWorkflow(page);
   await captureArchitecture(page);
+  await captureUploadValidation(page);
+  await captureUploadError(page);
+  await captureUploadSuccess(page);
   await page.close();
 
   await capturePytest(browser);
   await captureSmokeResults(browser);
+  await captureCorpusCatalog(browser);
+  await captureQaShowcase(browser);
   await browser.close();
-  console.log("Done — screenshots 07–09, 11–14 in screenshots/");
+  console.log("Done — screenshots 07–09, 11–19 in screenshots/");
 }
 
 main().catch((err) => {

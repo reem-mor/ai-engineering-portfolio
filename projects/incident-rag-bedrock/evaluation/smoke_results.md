@@ -1,12 +1,12 @@
 # Bedrock KB Smoke Test Results
 
-- **Run at:** 2026-05-31 11:03:13 UTC
+- **Run at:** 2026-05-31 11:27:27 UTC
 - **Score:** 5/6 PASS
 
 | # | Question | Grounded | Citations | Status |
 |---|----------|----------|-----------|--------|
 | 1 | How do I triage an authentication service incident? | True | 1 | **PASS** |
-| 2 | Which runbook should I follow for database connectivity issues? | True | 1 | **PASS** |
+| 2 | Which runbook should I follow for database connectivity issues? | True | 2 | **PASS** |
 | 3 | What are the escalation steps for a P1 production outage? | True | 1 | **PASS** |
 | 4 | What should I check first when users cannot log in after a deployment? | False | 0 | **FAIL** |
 | 5 | What is the best restaurant in Tokyo? | False | 0 | **PASS** |
@@ -21,8 +21,8 @@
 
 ### 2. Which runbook should I follow for database connectivity issues?
 - Status: **PASS**
-- Grounded: `True` · Citations: `1`
-- Answer preview: Based on the search results, you should follow the "Database Connectivity Runbook" for database connectivity issues. This runbook provides guidance on handling issues related to PostgreSQL primary and replicas, as well as Redis session/cach
+- Grounded: `True` · Citations: `2`
+- Answer preview: Based on the search results, you should follow the `database_connectivity_runbook.md` for database connectivity issues. This runbook is specifically designed to address issues related to database connectivity, such as applications logging "
 
 ### 3. What are the escalation steps for a P1 production outage?
 - Status: **PASS**
