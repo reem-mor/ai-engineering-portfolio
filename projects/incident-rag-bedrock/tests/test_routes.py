@@ -30,7 +30,9 @@ def test_index_includes_design_tokens(client):
     assert "neon-ring-rag" in html
     assert 'id="architecture"' in html
     assert 'id="live-kb"' in html
-    assert "form-textarea" in html
+    assert 'id="system-guide"' in html
+    assert "data-open-guide" in html
+    assert "workflow-stages" in html
 
 
 # ─── /ask — input validation ─────────────────────────────────────────────────
@@ -303,6 +305,8 @@ def test_workflow_triage_renders_result(client, fake_bedrock):
     assert response.status_code == 200
     assert b"api_gateway_5xx_runbook.txt" in response.data
     assert b"Check logs" in response.data
+    assert b"Recommendation:" in response.data
+    assert b"Impact avoided" in response.data
 
 
 def test_unknown_route_returns_404(client):

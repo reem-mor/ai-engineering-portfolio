@@ -169,7 +169,7 @@ async function captureMvpWorkflow(page) {
   if (!response.ok()) {
     throw new Error(`/workflow/triage failed with HTTP ${response.status()}`);
   }
-  await page.locator("#workflow-result .workflow-result").waitFor({ timeout: 5_000 });
+  await page.locator("#workflow-result .kb-match-panel").waitFor({ timeout: 5_000 });
   await page.waitForTimeout(800);
   await page.locator("#mvp").screenshot({
     path: path.join(SCREENSHOTS, "13_mvp_workflow.png"),
