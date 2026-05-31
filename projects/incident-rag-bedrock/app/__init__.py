@@ -29,4 +29,14 @@ def create_app(config: Config | None = None) -> Flask:
     from app.routes import bp as main_bp
     app.register_blueprint(main_bp)
 
+    @app.context_processor
+    def inject_ui_context():
+        cfg = app.config
+        arn = getattr(cfg, "BEDROCK_MODEL_ARN", "") or ""
+        model_label = arn.rsplit("/", 1)[-1] if arn else "Bedrock model"
+        return {
+            "model_label": model_label,
+            "kb_id": getattr(cfg, "BEDROCK_KB_ID", ""),
+        }
+
     return app

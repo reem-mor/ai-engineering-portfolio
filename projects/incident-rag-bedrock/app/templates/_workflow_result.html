@@ -1,0 +1,66 @@
+{% if error %}
+  <article class="answer-card error workflow-result">
+    <header class="answer-header">
+      <span class="badge badge-error">⚠ Triage error</span>
+    </header>
+    <p class="answer-body">{{ error }}</p>
+  </article>
+{% elif result %}
+  <article class="answer-card {% if result.grounded %}grounded{% else %}no-match{% endif %} workflow-result">
+    <header class="answer-header">
+      {% if result.grounded %}
+        <span class="badge badge-grounded">✓ KB matched</span>
+      {% else %}
+        <span class="badge badge-nomatch">∅ No KB match</span>
+      {% endif %}
+      <span class="answer-meta">{{ result.latency_ms }} ms</span>
+    </header>
+
+    <p><strong>Matched runbook:</strong>
+      {{ result.matched_runbook or "No runbook matched" }}
+    </p>
+
+    <p style="margin-top:0.75rem"><strong>Suggested actions</strong></p>
+    {% if actions %}
+      <ul class="action-list">
+        {% for action in actions %}
+          <li>{{ action }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="answer-body">{{ result.answer }}</p>
+    {% endif %}
+
+    {% set decision = effective_decision or (alert.decision if alert else 'escalate') %}
+    <span class="decision-badge decision-{{ decision|replace('_', '-') }}">
+      {% if decision == 'auto-resolve' %}Auto-resolve
+      {% elif decision == 'tier1-resolve' %}Resolve at Tier-1
+      {% else %}Escalate (prepared){% endif %}
+    </span>
+    <p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted-foreground)">
+      {{ effective_reason or (alert.decision_reason if alert else '') }}
+    </p>
+
+    {% if alert %}
+    <div class="stats-row">
+      <span>Baseline MTTR: <span class="stat-value">{{ alert.baseline_min }} min</span></span>
+      <span>Assisted MTTR: <span class="stat-value">{{ alert.assisted_min }} min</span></span>
+      <span>Est. savings: <span class="stat-value">{{ alert.baseline_min - alert.assisted_min }} min</span></span>
+    </div>
+    {% endif %}
+
+    {% if result.citations %}
+      <section class="citations">
+        <h3 class="citations-title">Citations</h3>
+        <ol class="citation-list">
+          {% for c in result.citations %}
+            <li class="citation-card">
+              <div class="citation-head"><span>#{{ c.index }}</span><span>{{ c.source_label }}</span></div>
+              <p class="citation-snippet">{{ c.snippet[:220] }}{% if c.snippet|length > 220 %}…{% endif %}</p>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}
+  </article>
+{% endif %}

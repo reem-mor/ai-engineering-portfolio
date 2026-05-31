@@ -42,16 +42,91 @@ def test_ask_oversize_question_returns_400(client, fake_bedrock):
     response = client.post("/ask", data={"question": "x" * (MAX_QUESTION_LEN + 1)})
     assert response.status_code == 400
     assert b"too long" in response.data
-    assert fake_bedrock.calls == []  # client must not be hit
+    assert fake_bedrock.calls == []
+
+
+def test_ask_stopwords_only_returns_400(client, fake_bedrock):
+    response = client.post("/ask", data={"question": "what is the"})
+    assert response.status_code == 400
+    assert b"searchable keywords" in response.data
+    assert fake_bedrock.calls == []
+
+
+def test_ask_short_question_returns_400(client, fake_bedrock):
+    response = client.post("/ask", data={"question": "ab"})
+    assert response.status_code == 400
+    assert b"at least 3 characters" in response.data
+    assert fake_bedrock.calls == []
 
 
 def test_ask_exact_max_length_is_accepted(client, fake_bedrock):
     fake_bedrock.next_response = RagAnswer(
-        answer="ok", citations=[], session_id="s", grounded=False,
+        answer="ok", citations=[], session_id="s", grounded=False, latency_ms=1,
     )
     response = client.post("/ask", data={"question": "x" * MAX_QUESTION_LEN})
     assert response.status_code == 200
     assert len(fake_bedrock.calls) == 1
+
+
+def test_ask_json_success(client, fake_bedrock):
+    fake_bedrock.next_response = RagAnswer(
+        answer="Restart the auth pod.",
+        citations=[
+            Citation(
+                snippet="Restart auth pod.",
+                source_uri="s3://kb/auth_runbook.md",
+                source_label="auth_runbook.md",
+                index=1,
+            ),
+        ],
+        session_id="sess-1",
+        grounded=True,
+        latency_ms=42,
+        matched_runbook="auth_runbook.md",
+    )
+    response = client.post(
+        "/ask?format=json",
+        json={"question": "How do I fix auth?"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["grounded"] is True
+    assert data["latency_ms"] == 42
+    assert data["citations"][0]["source_label"] == "auth_runbook.md"
+
+
+def test_ask_json_validation_error(client, fake_bedrock):
+    response = client.post(
+        "/ask?format=json",
+        json={"question": "ab"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["ok"] is False
+    assert data["reason"] == "short_question"
+    assert fake_bedrock.calls == []
+
+
+def test_ask_htmx_returns_html_even_with_json_accept(client, fake_bedrock):
+    fake_bedrock.next_response = RagAnswer(
+        answer="Restart the auth pod.",
+        citations=[],
+        session_id="sess-1",
+        grounded=True,
+        latency_ms=10,
+    )
+    response = client.post(
+        "/ask",
+        data={"question": "How do I fix auth?"},
+        headers={"HX-Request": "true", "Accept": "application/json, text/html"},
+    )
+    assert response.status_code == 200
+    assert "text/html" in response.content_type
+    assert b"answer-card" in response.data
+    assert response.get_json() is None
 
 
 def test_ask_trims_surrounding_whitespace(client, fake_bedrock):
@@ -100,17 +175,17 @@ def test_ask_grounded_answer_pluralizes_sources(client, fake_bedrock):
         ],
         session_id="s", grounded=True,
     )
-    response = client.post("/ask", data={"question": "?"})
+    response = client.post("/ask", data={"question": "How triage multiple sources?"})
     assert b"3 sources" in response.data
 
 
 def test_ask_grounded_answer_singular_source(client, fake_bedrock):
     fake_bedrock.next_response = RagAnswer(
         answer="x",
-        citations=[Citation(snippet="only one", source_uri="s3://kb/a.md")],
+        citations=[Citation(snippet="only one", source_uri="s3://kb/a.md", source_label="a.md")],
         session_id="s", grounded=True,
     )
-    response = client.post("/ask", data={"question": "?"})
+    response = client.post("/ask", data={"question": "How triage auth issue?"})
     assert b"1 source" in response.data
     assert b"1 sources" not in response.data
 
@@ -127,7 +202,7 @@ def test_ask_no_match_renders_amber_card(client, fake_bedrock):
     )
     response = client.post("/ask", data={"question": "best pasta recipe?"})
     assert response.status_code == 200
-    assert b"No matching context" in response.data
+    assert b"Not in knowledge base" in response.data
 
 
 # ─── /ask — error mapping ────────────────────────────────────────────────────
@@ -196,6 +271,29 @@ def test_health_post_not_allowed(client):
 
 
 # ─── /404 ────────────────────────────────────────────────────────────────────
+
+
+def test_workflow_triage_renders_result(client, fake_bedrock):
+    fake_bedrock.next_response = RagAnswer(
+        answer="- Check logs\n- Roll back deploy",
+        citations=[
+            Citation(
+                snippet="rollback steps",
+                source_uri="s3://kb/api_gateway_5xx_runbook.txt",
+                source_label="api_gateway_5xx_runbook.txt",
+            ),
+        ],
+        session_id="s",
+        grounded=True,
+        matched_runbook="api_gateway_5xx_runbook.txt",
+    )
+    response = client.post(
+        "/workflow/triage",
+        data={"alert_id": "A-2042", "question": "What should I do for API 5xx errors?"},
+    )
+    assert response.status_code == 200
+    assert b"api_gateway_5xx_runbook.txt" in response.data
+    assert b"Check logs" in response.data
 
 
 def test_unknown_route_returns_404(client):

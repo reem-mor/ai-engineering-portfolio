@@ -11,12 +11,19 @@
       "Resource": "arn:aws:bedrock:us-east-1:329597159579:knowledge-base/RBTJM6NIG9"
     },
     {
-      "Sid": "BedrockInvokeFoundationModel",
+      "Sid": "BedrockInvokeInferenceProfile",
       "Effect": "Allow",
       "Action": [
-        "bedrock:InvokeModel"
+        "bedrock:GetInferenceProfile",
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
       ],
-      "Resource": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-lite-v1:0"
+      ]
     },
     {
       "Sid": "ReadKnowledgeBaseS3Bucket",
@@ -31,22 +38,15 @@
       ]
     },
     {
-      "Sid": "PullContainerImageFromEcr",
+      "Sid": "EcrPull",
       "Effect": "Allow",
       "Action": [
-        "ecr:GetAuthorizationToken"
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability"
       ],
       "Resource": "*"
-    },
-    {
-      "Sid": "PullIncidentRagBedrockImage",
-      "Effect": "Allow",
-      "Action": [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage"
-      ],
-      "Resource": "arn:aws:ecr:us-east-1:329597159579:repository/incident-rag-bedrock"
     }
   ]
 }

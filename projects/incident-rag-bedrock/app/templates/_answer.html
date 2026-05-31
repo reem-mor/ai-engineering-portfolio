@@ -2,7 +2,7 @@
   <article class="answer-card error">
     <header class="answer-header">
       <span class="badge badge-error">⚠ Error</span>
-      <span class="answer-question">“{{ question }}”</span>
+      {% if question %}<span class="answer-question">“{{ question }}”</span>{% endif %}
     </header>
     <p class="answer-body">{{ error }}</p>
   </article>
@@ -12,9 +12,12 @@
       {% if result.grounded %}
         <span class="badge badge-grounded">✓ Grounded · {{ result.citations|length }} source{{ '' if result.citations|length == 1 else 's' }}</span>
       {% else %}
-        <span class="badge badge-nomatch">∅ No matching context</span>
+        <span class="badge badge-nomatch">∅ Not in knowledge base</span>
       {% endif %}
       <span class="answer-question">“{{ question }}”</span>
+      {% if result.latency_ms is not none %}
+        <span class="answer-meta">{{ result.latency_ms }} ms · {{ model_label|default('Bedrock') }}</span>
+      {% endif %}
     </header>
 
     <p class="answer-body">{{ result.answer }}</p>
@@ -25,11 +28,16 @@
         <ol class="citation-list">
           {% for c in result.citations %}
             <li class="citation-card">
-              <div class="citation-snippet">{{ c.snippet }}</div>
+              <div class="citation-head">
+                <span>#{{ c.index }}</span>
+                <span>{{ c.source_label }}</span>
+              </div>
+              <details>
+                <summary class="citation-snippet">{{ c.snippet[:180] }}{% if c.snippet|length > 180 %}…{% endif %}</summary>
+                <p class="citation-snippet">{{ c.snippet }}</p>
+              </details>
               {% if c.source_uri %}
-                <div class="citation-source" title="{{ c.source_uri }}">
-                  <span aria-hidden="true">📄</span> {{ c.source_uri }}
-                </div>
+                <div class="citation-uri-hint" title="{{ c.source_uri }}">{{ c.source_uri }}</div>
               {% endif %}
             </li>
           {% endfor %}

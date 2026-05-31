@@ -27,8 +27,9 @@ def _keyword_hit(text: str, keywords: list[str]) -> bool:
 
 def _source_hit(citations: list, fragments: list[str]) -> bool:
     uris = " ".join((c.source_uri or "") for c in citations).lower()
+    labels = " ".join(getattr(c, "source_label", "") for c in citations).lower()
     snippets = " ".join(c.snippet for c in citations).lower()
-    blob = f"{uris} {snippets}"
+    blob = f"{uris} {labels} {snippets}"
     return any(frag.lower() in blob for frag in fragments)
 
 
@@ -42,8 +43,34 @@ def run_smoke() -> tuple[int, int, list[dict]]:
     for item in questions:
         qid = item["id"]
         question = item["question"]
-        expect_grounded = item["expect_grounded"]
         failures: list[str] = []
+
+        if item.get("expect_validation_error"):
+            try:
+                client.ask(question)
+                failures.append("expected validation error but ask() succeeded")
+            except BedrockError as exc:
+                expected = item.get("expected_reason")
+                if expected and exc.code != expected:
+                    failures.append(f"reason={exc.code}, expected={expected}")
+            ok = not failures
+            if ok:
+                passed += 1
+            rows.append(
+                {
+                    "id": qid,
+                    "question": question,
+                    "grounded": None,
+                    "citations": 0,
+                    "status": "PASS" if ok else "FAIL",
+                    "failures": failures,
+                    "answer_preview": "",
+                },
+            )
+            print(f"[{'PASS' if ok else 'FAIL'}] #{qid}: {question[:60]}...")
+            continue
+
+        expect_grounded = item["expect_grounded"]
 
         try:
             result = client.ask(question)

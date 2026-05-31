@@ -8,6 +8,7 @@ from botocore.stub import Stubber
 from app.bedrock_client import BedrockRagClient
 from app.config import Config
 from app.errors import BedrockError
+from app.validators import MAX_QUESTION_LEN
 
 
 @pytest.fixture
@@ -59,6 +60,10 @@ def test_ask_parses_grounded_answer(config):
     assert "Roll back" in result.answer
     assert len(result.citations) == 1
     assert result.citations[0].source_uri == "s3://kb/deployment_runbook.md"
+    assert result.citations[0].source_label == "deployment_runbook.md"
+    assert result.citations[0].index == 1
+    assert result.matched_runbook == "deployment_runbook.md"
+    assert result.latency_ms >= 0
     assert result.session_id == "session-abc"
 
 
@@ -84,8 +89,22 @@ def test_ask_rejects_empty_question(config):
 def test_ask_rejects_oversize_question(config):
     client, _ = _make_client_with_stub(config)
     with pytest.raises(BedrockError) as exc:
-        client.ask("x" * 1000)
+        client.ask("x" * (MAX_QUESTION_LEN + 1))
     assert exc.value.code == "oversize_question"
+
+
+def test_ask_rejects_short_question(config):
+    client, _ = _make_client_with_stub(config)
+    with pytest.raises(BedrockError) as exc:
+        client.ask("ab")
+    assert exc.value.code == "short_question"
+
+
+def test_ask_rejects_stopwords_only(config):
+    client, _ = _make_client_with_stub(config)
+    with pytest.raises(BedrockError) as exc:
+        client.ask("what is the")
+    assert exc.value.code == "stopwords_only"
 
 
 def test_ask_translates_throttling_error(config):
@@ -238,6 +257,34 @@ def test_ask_default_message_when_no_answer_and_no_citations(config):
     assert "could not find" in result.answer.lower()
 
 
+def test_ask_dedupes_duplicate_citations(config):
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {
+            "output": {"text": "Answer."},
+            "citations": [
+                {
+                    "retrievedReferences": [
+                        {
+                            "content": {"text": "same chunk text here"},
+                            "location": {"type": "S3", "s3Location": {"uri": "s3://kb/a.md"}},
+                        },
+                        {
+                            "content": {"text": "same chunk text here"},
+                            "location": {"type": "S3", "s3Location": {"uri": "s3://kb/a.md"}},
+                        },
+                    ]
+                }
+            ],
+            "sessionId": "ss",
+        },
+    )
+    with stub:
+        result = client.ask("anything valid here")
+    assert len(result.citations) == 1
+
+
 def test_to_dict_shape(config):
     """RagAnswer.to_dict is the contract the future MCP tool wrapper will consume."""
     client, stub = _make_client_with_stub(config)
@@ -246,12 +293,15 @@ def test_to_dict_shape(config):
         {
             "output": {"text": "ans"},
             "citations": [{"retrievedReferences": [
-                {"content": {"text": "snip"}, "location": {"type": "S3", "s3Location": {"uri": "s3://k/a"}}},
+                {"content": {"text": "snip"}, "location": {"type": "S3", "s3Location": {"uri": "s3://k/a.md"}}},
             ]}],
             "sessionId": "abc",
         },
     )
     with stub:
-        d = client.ask("q").to_dict()
-    assert set(d.keys()) == {"answer", "citations", "session_id", "grounded"}
-    assert d["citations"][0] == {"snippet": "snip", "source_uri": "s3://k/a"}
+        d = client.ask("valid question here").to_dict()
+    assert set(d.keys()) == {
+        "answer", "citations", "session_id", "grounded", "latency_ms", "matched_runbook",
+    }
+    assert d["citations"][0]["source_label"] == "a.md"
+    assert d["citations"][0]["index"] == 1

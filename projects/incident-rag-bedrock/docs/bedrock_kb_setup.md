@@ -12,11 +12,12 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
 
 ## 2. Create the S3 bucket for source documents
 
-1. **S3 → Create bucket**
-   - Name: `incident-rag-kb-<your-initials>-<yyyymmdd>` (must be globally unique)
+1. **S3 → Create bucket** (or reuse an existing course bucket)
+   - Name: e.g. `reem-amdocs-ai-artifacts-3331` (must be globally unique)
    - Region: same as Bedrock (`us-east-1`)
    - Block all public access: ✅ keep enabled
    - Versioning: optional
+   - Object prefix for this project: `projects/incident-rag-bedrock/data/sample_documents/`
 2. **Generate the corpus** (one-time; checked in for reference but easy to rebuild):
    ```bash
    cd projects/incident-rag-bedrock
@@ -25,9 +26,13 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
    ```
    This writes the 10 documents (MD/TXT/CSV/DOCX/PDF) into `data/sample_documents/`.
 
-3. Upload to the bucket:
+3. Upload to the bucket (defaults to prefix `projects/incident-rag-bedrock/data/sample_documents/`):
    ```bash
-   BUCKET=incident-rag-kb-rm-20260601 ./infra/upload_docs_to_s3.sh
+   BUCKET=reem-amdocs-ai-artifacts-3331 ./infra/upload_docs_to_s3.sh
+   ```
+   Verify:
+   ```bash
+   aws s3 ls s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
    ```
 
 ## 3. Enable model access in Bedrock
@@ -49,7 +54,8 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
    - IAM role: **Create and use a new service role** (let Bedrock create one)
 3. **Step 2 — Choose data source**
    - Source: **Amazon S3**
-   - S3 URI: select the bucket created in step 2
+   - S3 URI: select the bucket from step 2
+   - **Inclusion prefix:** `projects/incident-rag-bedrock/data/sample_documents/` (do not ingest the whole bucket)
    - Parsing strategy: **Default**
 4. **Step 3 — Configure embeddings & vector store**
    - Embeddings model: **Titan Text Embeddings V2**
@@ -86,3 +92,9 @@ cp .env.example .env
 ```
 
 You're ready to run the app locally — see the top-level `README.md`.
+
+---
+
+## 8. If you change the S3 inclusion prefix
+
+The Bedrock-managed role `AmazonBedrockS3PolicyForKnowledgeBase_*` must allow `s3:GetObject` on the new prefix. Update that policy (or use [`infra/bedrock_kb_s3_policy.json`](../infra/bedrock_kb_s3_policy.json) as reference), then **Sync** the data source again.

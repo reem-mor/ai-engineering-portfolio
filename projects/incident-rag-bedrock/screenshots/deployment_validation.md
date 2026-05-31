@@ -1,46 +1,46 @@
 # Deployment validation — 2026-05-31
 
-Automated checks run from Cursor terminal after EC2 launch.
+Automated checks after S3/KB alignment and EC2 relaunch.
 
 ## Local (Docker)
 
 | Check | Result |
 |-------|--------|
-| `py -3.12 -m pytest` | 43 passed |
+| `py -3.12 -m pytest` | 58 passed |
 | `http://localhost:8080/health` | `{"status":"ok"}` |
-| Container health | `Up (healthy)` |
-| `py -3.12 scripts/kb_smoke_test.py` | 5/5 PASS |
-| Screenshots | `07`, `08`, `09`, `11`, `12` regenerated |
-
-## Public EC2
-
-| Item | Value |
-|------|--------|
-| Instance | `i-0ff0a902311a5943b` (`incident-rag-demo`) |
-| Public URL | http://ec2-13-222-142-122.compute-1.amazonaws.com/ |
-| `/health` | HTTP 200, `{"status":"ok"}` |
-| Homepage | HTTP 200 |
-| `/ask` via raw POST | 400 — CSRF token required (expected; use browser or HTMX form) |
+| `py -3.12 scripts/kb_smoke_test.py` | 5/6 PASS (grounded corpus OK) |
+| `py -3.12 scripts/verify_e2e.py` | 21/21 PASS |
 
 ## Bedrock KB
 
 | Item | Value |
 |------|--------|
 | Knowledge base ID | `RBTJM6NIG9` |
-| Ingestion job | `INLETQWUDQ` — COMPLETE (8 new, 2 modified docs) |
-| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/incident-assistant-rag/knowledge-base/sample-documents/` |
+| Data source ID | `YICXAB6WOG` |
+| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/` |
+| Last ingestion | `PESWBFWL1V` — 10 indexed, 0 failed |
 
-## Manual screenshots still needed
+## Public EC2 (teardown complete)
 
-Capture in browser/AWS Console per assignment:
+| Item | Value |
+|------|--------|
+| Instance | `i-03d3c5a59e849e5cf` (`incident-rag-demo`) — **terminated** |
+| Public URL | http://ec2-100-53-32-194.compute-1.amazonaws.com/ |
+| `/health` | HTTP 200 during demo |
+| Grounded `/ask` | Verified via Playwright on public URL |
 
-- `01_bedrock_kb_overview.png`
-- `02_bedrock_kb_data_source_synced.png`
-- `07_app_homepage_public.png`
-- `08_app_question_and_answer.png` (submit via UI for CSRF)
-- `04_ec2_instance_running.png`
-- `06_docker_ps_on_ec2.png`
+## Screenshots
+
+All 14 files in [`screenshots/`](./). Regenerate AWS/EC2 proof:
+
+```powershell
+cd scripts
+node capture_aws_proof.mjs      # 01–03
+node capture_ec2_proof.mjs        # 04–06 (while instance running)
+$env:APP_URL="http://<EC2_DNS>"; node capture_screenshots.mjs  # 07–09, 11–14
+node capture_cleanup_proof.mjs  # 10 (after terminate)
+```
 
 ## Cleanup performed
 
-See [`docs/cleanup_log.md`](../docs/cleanup_log.md) for resources removed after validation.
+See [`docs/cleanup_log.md`](../docs/cleanup_log.md).
