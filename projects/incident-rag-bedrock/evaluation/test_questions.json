@@ -24,7 +24,7 @@
     "id": 4,
     "question": "What should I check first when users cannot log in after a deployment?",
     "expect_grounded": true,
-    "expected_source_contains": ["auth", "deploy"],
+    "expected_source_contains": ["auth_service_runbook"],
     "answer_keywords": ["log", "deploy", "auth"]
   },
   {

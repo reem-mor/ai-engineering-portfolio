@@ -6,9 +6,9 @@ Automated checks after S3/KB alignment and EC2 relaunch.
 
 | Check | Result |
 |-------|--------|
-| `py -3.12 -m pytest` | 73 passed |
+| `py -3.12 -m pytest` | 89 passed |
 | `http://localhost:8080/health` | `{"status":"ok"}` |
-| `py -3.12 scripts/kb_smoke_test.py` | 5/6 PASS (grounded corpus OK) |
+| `py -3.12 scripts/kb_smoke_test.py` | 6/6 PASS |
 | `py -3.12 scripts/verify_e2e.py` | 22/22 PASS |
 
 ## Bedrock KB

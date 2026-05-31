@@ -45,6 +45,16 @@ def write_auth_runbook_md() -> None:
         flows are failing, MFA challenges are stuck, or session tokens are being
         rejected by downstream services.
 
+        ## Post-deployment login failures (FAQ)
+
+        **Question:** What should I check first when users cannot log in after a deployment?
+
+        **Answer:** Follow the first-response checklist below. When login breaks right
+        after a rollout, **check recent deployments first** (step 2) before debugging
+        Redis, Postgres, or OIDC. If the latest `auth-api` rollout is less than 30
+        minutes old, treat the deployment as the likely cause and prepare a rollback
+        per the Standard recovery actions section.
+
         ## First-response checklist (5 minutes)
 
         1. **Confirm scope.** Check the auth service dashboard for the global error

@@ -1,11 +1,13 @@
 """Unit tests for BedrockRagClient using botocore Stubber — no real AWS calls."""
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import boto3
 import pytest
 from botocore.stub import Stubber
 
-from app.bedrock_client import BedrockRagClient
+from app.bedrock_client import BedrockRagClient, RAG_GENERATION_PROMPT
 from app.config import Config
 from app.errors import BedrockError
 from app.validators import MAX_QUESTION_LEN
@@ -305,3 +307,21 @@ def test_to_dict_shape(config):
     }
     assert d["citations"][0]["source_label"] == "a.md"
     assert d["citations"][0]["index"] == 1
+
+
+def test_ask_sends_custom_generation_prompt(config):
+    mock_client = MagicMock()
+    mock_client.retrieve_and_generate.return_value = {
+        "output": {"text": "Check recent deployments first."},
+        "citations": [],
+        "sessionId": "sess-gen",
+    }
+    client = BedrockRagClient(config, client=mock_client)
+    client.ask("Users cannot log in after a deployment")
+
+    kwargs = mock_client.retrieve_and_generate.call_args.kwargs
+    kb_cfg = kwargs["retrieveAndGenerateConfiguration"]["knowledgeBaseConfiguration"]
+    gen_cfg = kb_cfg["generationConfiguration"]
+    assert gen_cfg["promptTemplate"]["textPromptTemplate"] == RAG_GENERATION_PROMPT
+    assert gen_cfg["inferenceConfig"]["textInferenceConfig"]["temperature"] == 0.0
+    assert "GlobalDataSource" in gen_cfg["inferenceConfig"]["textInferenceConfig"]["stopSequences"]

@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import io
+from dataclasses import replace
 
 import pytest
 
 from app.errors import BedrockError
-from app.upload_service import UploadResult
+from app.upload_service import DocumentUploadService, UploadResult
 
 
 class _FakeUploadService:
@@ -46,6 +47,53 @@ def upload_client(upload_app):
 
 def _file(name: str, content: bytes):
     return (io.BytesIO(content), name)
+
+
+@pytest.fixture
+def real_upload_app(app, fake_config):
+    cfg = replace(fake_config, MAX_UPLOAD_BYTES=1024)
+    app.extensions["upload_service"] = DocumentUploadService(cfg)
+    return app
+
+
+@pytest.fixture
+def real_upload_client(real_upload_app):
+    return real_upload_app.test_client()
+
+
+def test_upload_missing_file_400(real_upload_client):
+    resp = real_upload_client.post(
+        "/documents/upload?format=json",
+        data={},
+        content_type="multipart/form-data",
+        headers={"Accept": "application/json"},
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["ok"] is False
+    assert data["reason"] == "missing_file"
+
+
+def test_upload_empty_file_400(real_upload_client):
+    resp = real_upload_client.post(
+        "/documents/upload?format=json",
+        data={"document": _file("empty.txt", b"")},
+        content_type="multipart/form-data",
+        headers={"Accept": "application/json"},
+    )
+    assert resp.status_code == 400
+    assert resp.get_json()["reason"] == "empty_file"
+
+
+def test_upload_file_too_large_400(real_upload_client):
+    resp = real_upload_client.post(
+        "/documents/upload?format=json",
+        data={"document": _file("big.txt", b"x" * 2048)},
+        content_type="multipart/form-data",
+        headers={"Accept": "application/json"},
+    )
+    assert resp.status_code == 400
+    assert resp.get_json()["reason"] == "file_too_large"
 
 
 def test_upload_success_html(upload_client, upload_service):
