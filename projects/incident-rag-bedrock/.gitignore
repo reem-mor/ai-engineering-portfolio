@@ -1,4 +1,5 @@
 .env
+.env.production
 .venv/
 __pycache__/
 *.pyc
@@ -9,3 +10,4 @@ htmlcov/
 dist/
 build/
 .DS_Store
+scripts/node_modules/

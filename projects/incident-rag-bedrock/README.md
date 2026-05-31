@@ -138,7 +138,9 @@ incident-rag-bedrock/
 
 ## 🚀 Quickstart (local)
 
-**Prereqs:** Python 3.12+, Docker, AWS account with Bedrock access, AWS CLI configured (`aws configure`).
+See [`docs/development_environment.md`](docs/development_environment.md) for what you can configure from Cursor vs AWS Console / Docker Desktop.
+
+**Prereqs:** Python 3.12+, Docker Desktop (daemon running), AWS account with Bedrock access, AWS CLI configured (`aws configure`).
 
 1. **Stand up the Bedrock Knowledge Base** — follow [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md). Copy the KB ID and the Claude 3 Haiku model ARN.
 
@@ -184,12 +186,53 @@ In short:
 
 ## 🧪 Testing
 
-```bash
-pip install -r requirements.txt
-pytest
+```powershell
+cd projects/incident-rag-bedrock
+py -3.12 -m pip install -r requirements.txt
+py -3.12 -m pytest -v
 ```
 
-What's covered:
+Expected: **43 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`.
+
+---
+
+## ✅ Validation (local + live Bedrock)
+
+End-to-end proof that the sample corpus, KB sync, Flask app, and grounded answers work together.
+
+```powershell
+cd projects/incident-rag-bedrock
+
+# Environment + app
+docker compose up --build -d
+Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
+
+# Offline unit tests (43/43)
+py -3.12 -m pytest -v
+
+# Live KB smoke test against real Bedrock (5/5)
+py -3.12 scripts/kb_smoke_test.py
+# → evaluation/smoke_results.md
+
+# Regenerate submission screenshots 07, 08, 09, 11, 12
+cd scripts && npm install && npx playwright install chromium
+node capture_screenshots.mjs
+```
+
+**Model ARN note:** Legacy Claude 3 Haiku foundation-model IDs may be blocked. Use a Bedrock **inference profile** ARN in `.env` (e.g. `us.amazon.nova-lite-v1:0` or an active Anthropic Haiku profile after completing the use-case form).
+
+| Check | Success criteria |
+|---|---|
+| `pytest` | 43/43 pass |
+| `kb_smoke_test.py` | 5/5 pass (4 grounded + 1 refusal) |
+| `/health` | HTTP 200 |
+| Screenshots | `07`, `08`, `09`, `11`, `12` in [`screenshots/`](screenshots/) |
+
+Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_questions.json`](evaluation/test_questions.json)
+
+---
+
+## 🧪 Test coverage
 
 **43 tests across 4 files**, every one runnable offline:
 
@@ -234,6 +277,8 @@ Captured into [`screenshots/`](screenshots/):
 | 08 | `08_app_question_and_answer.png` | Real grounded answer + citations |
 | 09 | `09_app_refusal_or_low_confidence.png` | No-match graceful refusal |
 | 10 | `10_cleanup_console.png` | AWS console after teardown |
+| 11 | `11_pytest_43_passed.png` | `pytest` — 43/43 passed |
+| 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 5/5 PASS |
 
 ---
 
