@@ -45,7 +45,13 @@
   {% set decision_label = 'Auto-resolve' if decision == 'auto-resolve' else ('Resolve at Tier-1' if decision == 'tier1-resolve' else 'Escalate (prepared)') %}
   <div class="workflow-panel recommendation-panel decision-{{ decision|replace('_', '-') }}">
     <header class="workflow-panel-head">
+      {% if decision == 'escalate' %}
+      <svg class="icon-sm decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      {% elif decision == 'auto-resolve' %}
+      <svg class="icon-sm decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      {% else %}
       <svg class="icon-sm decision-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      {% endif %}
       <span class="recommendation-title">Recommendation: {{ decision_label }}</span>
     </header>
     <p class="workflow-reason">{{ effective_reason or (alert.decision_reason if alert else '') }}</p>

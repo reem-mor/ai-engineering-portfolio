@@ -107,15 +107,21 @@
     const btn = document.getElementById("workflow-submit");
     if (!btn) return;
     const label = btn.querySelector(".btn-label");
-    if (!label) return;
-    label.textContent = triaging ? "Triaging…" : "Run triage";
+    if (label) {
+      label.textContent = triaging ? "Triaging…" : "Run triage";
+    }
+    btn.disabled = Boolean(triaging);
+    btn.setAttribute("aria-busy", triaging ? "true" : "false");
   }
 
   function refreshResolvedUi() {
     const resolved = readResolvedSet();
     document.querySelectorAll(".alert-item").forEach((btn) => {
       const id = btn.dataset.alertId;
-      btn.classList.toggle("is-resolved", Boolean(id && resolved.has(id)));
+      const isResolved = Boolean(id && resolved.has(id));
+      btn.classList.toggle("is-resolved", isResolved);
+      const badge = btn.querySelector(".alert-resolved-badge");
+      if (badge) badge.hidden = !isResolved;
     });
 
     const host = document.querySelector(".workflow-resolve-host");

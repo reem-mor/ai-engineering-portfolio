@@ -3,19 +3,19 @@
     "id": "A-2041",
     "severity": "P2",
     "service": "postgres / prod-db-1",
-    "title": "Database connection pool exhausted",
+    "title": "Postgres CPU > 90% for 5m",
     "fired_at": "14:02 UTC",
-    "source": "CloudWatch · db_connections",
-    "question": "Which runbook should I follow for database connectivity issues?",
+    "source": "CloudWatch · prod-db-cpu",
+    "question": "Postgres CPU is high on prod-db-1 — which runbook should I follow?",
     "matched_runbook": "database_connectivity_runbook.md",
     "actions": [
-      "Verify connection pool metrics and active sessions in the monitoring dashboard",
-      "Follow database_connectivity_runbook.md for pool exhaustion checks",
-      "Review recent deploys and connection string changes",
-      "Escalate to DBA if pool remains saturated after 15 minutes"
+      "Run pg_stat_activity to list long-running queries",
+      "Follow database_connectivity_runbook.md for pool and connectivity checks",
+      "Check for missing indexes (seq_scan vs idx_scan)",
+      "Escalate to DBA if CPU stays above 90% for 15 minutes"
     ],
     "decision": "tier1-resolve",
-    "decision_reason": "Known connectivity runbook with deterministic checks. Tier-1 can execute without paging a DBA.",
+    "decision_reason": "Known runbook with deterministic steps. Tier-1 on-call can resolve without paging a DBA.",
     "baseline_min": 22,
     "assisted_min": 6,
     "impact_per_min": 180
