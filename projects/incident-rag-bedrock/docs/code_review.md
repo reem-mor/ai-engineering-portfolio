@@ -22,6 +22,6 @@ Self-review after adding S3 upload, KB sync option, and expanded test coverage.
 
 ## Verification performed
 
-- `pytest`: 73 passed
+- `pytest`: 89 passed
 - KB data source prefix: `projects/incident-rag-bedrock/data/sample_documents/`
 - Edge cases documented in [`edge_cases.md`](edge_cases.md)

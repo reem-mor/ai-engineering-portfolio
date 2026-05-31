@@ -24,6 +24,15 @@ def test_index_includes_htmx(client):
     assert b"hx-target" in response.data
 
 
+def test_index_includes_design_tokens(client):
+    response = client.get("/")
+    html = response.data.decode()
+    assert "neon-ring-rag" in html
+    assert 'id="architecture"' in html
+    assert 'id="live-kb"' in html
+    assert "form-textarea" in html
+
+
 # ─── /ask — input validation ─────────────────────────────────────────────────
 
 

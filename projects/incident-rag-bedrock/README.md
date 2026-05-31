@@ -10,7 +10,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-73_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-89_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 <br/>
 
@@ -192,7 +192,9 @@ py -3.12 -m pip install -r requirements.txt
 py -3.12 -m pytest -v
 ```
 
-Expected: **73 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`, `test_validators`, `test_upload_*`.
+Expected: **89 passed** across `test_health`, `test_config`, `test_errors`, `test_routes`, `test_bedrock_client`, `test_validators`, `test_upload_*`.
+
+There is **no separate frontend unit test suite** (no Vitest/Jest). UI behavior is covered by server-rendered HTML assertions in `test_routes.py`. Playwright under `scripts/` is used for **manual screenshot capture**, not CI gates.
 
 ---
 
@@ -207,10 +209,10 @@ cd projects/incident-rag-bedrock
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
 
-# Offline unit tests (73/73)
+# Offline unit tests (89/89)
 py -3.12 -m pytest -v
 
-# Live KB smoke test against real Bedrock (5/6 — Q4 deployment-login is flaky)
+# Live KB smoke test against real Bedrock (6/6)
 py -3.12 scripts/kb_smoke_test.py
 # → evaluation/smoke_results.md, evaluation/qa_showcase.md
 
@@ -223,8 +225,8 @@ node capture_screenshots.mjs
 
 | Check | Success criteria |
 |---|---|
-| `pytest` | 73/73 pass |
-| `kb_smoke_test.py` | 5/6 pass (4 grounded + 1 refusal; see `evaluation/smoke_results.md`) |
+| `pytest` | 89/89 pass |
+| `kb_smoke_test.py` | 6/6 pass (4 grounded + 1 refusal + 1 validation) |
 | `/health` | HTTP 200 |
 | Screenshots | `07`–`09`, `11`–`19` in [`screenshots/`](screenshots/) |
 
@@ -234,17 +236,19 @@ Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_q
 
 ## 🧪 Test coverage
 
-**73 tests across 7 files**, every one runnable offline:
+**89 tests across 9 files**, every one runnable offline:
 
 | File | Coverage |
 |---|---|
 | `test_health.py` | `/health` returns `{"status":"ok"}` |
 | `test_config.py` | Each required env var missing/blank → `ConfigError`; defaults; numeric coercion |
+| `test_errors.py` | `translate()` for `ClientError`, `BotoCoreError`, and unknown exceptions |
 | `test_validators.py` | Empty, short, oversize, stopwords-only questions |
-| `test_routes.py` | Validation + JSON `/ask`; workflow triage partial; HTMX partial rendering; **HTML/XSS escaping**; Unicode question; grounded / no-match cards; Bedrock errors → 502; 404 |
+| `test_routes.py` | Validation + JSON `/ask`; workflow triage partial; HTMX partial rendering; **HTML/XSS escaping**; design-token markup on index; Unicode question; grounded / no-match cards; Bedrock errors → 502; 404 |
 | `test_bedrock_client.py` | `RetrieveAndGenerate` happy path; typed Bedrock errors; citation `source_label`, dedupe, `latency_ms`; `to_dict()` contract |
 | `test_upload_validators.py` | Missing file, unsupported type, empty/oversize payload |
-| `test_upload_routes.py` | Upload success HTML/JSON, validation 400, S3 error 502, disabled upload |
+| `test_upload_routes.py` | Upload success HTML/JSON, validation 400 (`missing_file`, `empty_file`, `file_too_large`), S3 error 502, disabled upload |
+| `test_upload_service.py` | S3 `put_object` + optional `start_ingestion_job` via Stubber; `_object_key` timestamp prefix; upload disabled / KB sync not configured |
 
 Tests use `botocore.stub.Stubber` and a fake injected client — **zero real AWS calls in CI**.
 
@@ -280,15 +284,15 @@ Captured into [`screenshots/`](screenshots/):
 | 08 | `08_app_question_and_answer.png` | Grounded answer + citation labels (basename, not raw S3) |
 | 09 | `09_app_refusal_or_low_confidence.png` | **Not in knowledge base** refusal |
 | 10 | `10_cleanup_console.png` | AWS console after teardown |
-| 11 | `11_pytest_passed.png` | `pytest` output (73 tests) |
-| 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 5/6 PASS |
+| 11 | `11_pytest_passed.png` | `pytest` output (89 tests) |
+| 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 6/6 PASS |
 | 13 | `13_mvp_workflow.png` | MVP alert console + live Bedrock triage result |
 | 14 | `14_architecture.png` | Interactive architecture panel (S3 → KB → Flask) |
 | 15 | `15_document_upload_success.png` | Upload section — file saved + optional KB sync |
 | 16 | `16_document_upload_validation.png` | Client validation (missing file) |
 | 17 | `17_document_upload_type_rejected.png` | Unsupported file type blocked |
 | 18 | `18_dataset_corpus.png` | 10-document corpus — formats + topic coverage table |
-| 19 | `19_sample_questions_answers.png` | Live Bedrock Q&A showcase (3 grounded + 1 refusal) |
+| 19 | `19_sample_questions_answers.png` | Live Bedrock Q&A showcase (4 grounded + 1 refusal) |
 
 ---
 

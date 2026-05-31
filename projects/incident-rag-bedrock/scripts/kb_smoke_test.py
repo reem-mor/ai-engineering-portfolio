@@ -170,7 +170,7 @@ def write_results(passed: int, total: int, rows: list[dict]) -> Path:
     return out
 
 
-SHOWCASE_IDS = (1, 2, 3, 5)
+SHOWCASE_IDS = (1, 2, 3, 4, 5)
 
 
 def write_qa_showcase(rows: list[dict]) -> Path:
@@ -183,7 +183,7 @@ def write_qa_showcase(rows: list[dict]) -> Path:
         "",
         f"- **Run at:** {ts}",
         f"- **Corpus:** {s3_prefix}",
-        "- **Cases:** 3 grounded runbook answers + 1 off-topic refusal",
+        "- **Cases:** 4 grounded runbook answers + 1 off-topic refusal",
         "",
     ]
     for row in rows:

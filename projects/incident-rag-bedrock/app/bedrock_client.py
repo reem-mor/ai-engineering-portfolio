@@ -18,6 +18,19 @@ log = logging.getLogger(__name__)
 # Re-export for templates and tests that import from bedrock_client.
 MIN_QUESTION_LEN = 3
 
+# Override Bedrock default prompt (which can nudge models toward tool-style output).
+RAG_GENERATION_PROMPT = """You are IncidentIQ, an NOC assistant. Answer ONLY using the search results below.
+Write plain English runbook steps. Do NOT emit tool calls, JSON, or lines starting with "Action:".
+
+User question:
+$query$
+
+Search results:
+$search_results$
+
+$output_format_instructions$
+"""
+
 
 @dataclass(frozen=True)
 class Citation:
@@ -76,6 +89,19 @@ class BedrockRagClient:
                         "retrievalConfiguration": {
                             "vectorSearchConfiguration": {
                                 "numberOfResults": self._config.BEDROCK_NUM_RESULTS,
+                            },
+                        },
+                        "generationConfiguration": {
+                            "promptTemplate": {
+                                "textPromptTemplate": RAG_GENERATION_PROMPT,
+                            },
+                            "inferenceConfig": {
+                                "textInferenceConfig": {
+                                    "temperature": 0.0,
+                                    "topP": 0.9,
+                                    "maxTokens": 1024,
+                                    "stopSequences": ["Action:", "GlobalDataSource"],
+                                },
                             },
                         },
                     },
