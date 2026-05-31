@@ -1,6 +1,8 @@
 """
 End-to-end verification against a running Flask app (default http://localhost:8080).
 
+Detects SPA vs legacy UI and runs the appropriate checks.
+
 Usage:
     py -3.12 scripts/verify_e2e.py
     APP_URL=http://127.0.0.1:8080 py -3.12 scripts/verify_e2e.py
@@ -28,6 +30,7 @@ class Session:
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
         self.csrf: str | None = None
+        self.spa_mode = False
 
     def get(self, path: str) -> tuple[int, str]:
         req = urllib.request.Request(f"{APP_URL}{path}", method="GET")
@@ -76,6 +79,9 @@ class Session:
         if match:
             self.csrf = match.group(1)
 
+    def detect_ui_mode(self, homepage_html: str) -> None:
+        self.spa_mode = 'id="root"' in homepage_html or "/assets/" in homepage_html
+
 
 def check(name: str, ok: bool, detail: str = "") -> bool:
     tag = "PASS" if ok else "FAIL"
@@ -106,12 +112,32 @@ def main() -> int:
         return 1
 
     try:
-        _, html = session.get("/")
+        status, html = session.get("/")
+        record("GET /", status == 200)
+        session.detect_ui_mode(html)
+        record("UI mode detected", True, "SPA" if session.spa_mode else "legacy")
+    except Exception as exc:
+        record("GET /", False, str(exc))
+        html = ""
+
+    if session.spa_mode:
+        record('SPA root marker id="root"', 'id="root"' in html)
+        try:
+            status, bootstrap_raw = session.get("/api/bootstrap")
+            bootstrap = json.loads(bootstrap_raw) if status == 200 else {}
+            record(
+                "GET /api/bootstrap",
+                status == 200 and bootstrap.get("ok") is True and bootstrap.get("examples"),
+            )
+            if bootstrap.get("csrf_token"):
+                session.csrf = str(bootstrap["csrf_token"])
+                record("CSRF from bootstrap API", True)
+        except Exception as exc:
+            record("GET /api/bootstrap", False, str(exc))
+    else:
         record("CSRF token loaded", bool(session.csrf))
         for marker in ('id="mvp"', 'id="architecture"', 'id="document-upload"', 'id="live-kb"', "IncidentIQ", "topnav"):
             record(f"Homepage contains {marker!r}", marker in html)
-    except Exception as exc:
-        record("GET /", False, str(exc))
 
     found_ext = {p.suffix.lower() for p in CORPUS.iterdir() if p.is_file()}
     for ext in sorted(REQUIRED_EXTENSIONS):
@@ -158,29 +184,44 @@ def main() -> int:
         status == 200 and isinstance(data, dict) and data.get("grounded") is False,
     )
 
-    status, html = session.post_form(
-        "/ask",
-        {"question": "How do I triage an authentication service incident?"},
-        htmx=True,
-    )
-    record(
-        "HTMX /ask returns HTML partial",
-        status == 200 and "badge-grounded" in html,
-    )
-    record("HTMX answer has citation list", "citation-list" in html)
+    if session.spa_mode:
+        status, data = session.post_json(
+            "/api/workflow/triage",
+            {
+                "alert_id": "A-2041",
+                "question": "postgres connection pool exhausted — which runbook applies?",
+            },
+        )
+        record(
+            "SPA workflow triage JSON",
+            status == 200 and isinstance(data, dict) and data.get("ok") is True and data.get("actions"),
+        )
+        record("HTMX /ask skipped", True, "SPA mode uses JSON API only")
+        record("HTMX workflow skipped", True, "SPA mode uses /api/workflow/triage")
+    else:
+        status, html = session.post_form(
+            "/ask",
+            {"question": "How do I triage an authentication service incident?"},
+            htmx=True,
+        )
+        record(
+            "HTMX /ask returns HTML partial",
+            status == 200 and "badge-grounded" in html,
+        )
+        record("HTMX answer has citation list", "citation-list" in html)
 
-    status, html = session.post_form(
-        "/workflow/triage",
-        {
-            "alert_id": "A-2041",
-            "question": "postgres connection pool exhausted — which runbook applies?",
-        },
-        htmx=True,
-    )
-    record(
-        "Workflow triage partial",
-        status == 200 and "workflow-result" in html,
-    )
+        status, html = session.post_form(
+            "/workflow/triage",
+            {
+                "alert_id": "A-2041",
+                "question": "postgres connection pool exhausted — which runbook applies?",
+            },
+            htmx=True,
+        )
+        record(
+            "Workflow triage partial",
+            status == 200 and "workflow-result" in html,
+        )
 
     print(f"\n{passed}/{total} checks passed")
     return 0 if passed == total else 1

@@ -1,6 +1,6 @@
 # Bedrock KB Smoke Test Results
 
-- **Run at:** 2026-05-31 11:41:55 UTC
+- **Run at:** 2026-05-31 19:14:29 UTC
 - **Score:** 6/6 PASS
 
 | # | Question | Grounded | Citations | Status |
@@ -22,7 +22,7 @@
 ### 2. Which runbook should I follow for database connectivity issues?
 - Status: **PASS**
 - Grounded: `True` · Citations: `1`
-- Answer preview: For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address issues related to database connectivity, such as applications logging "connection refused", "too many 
+- Answer preview: For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address problems related to database connectivity, such as applications logging "connection refused", "too man
 
 ### 3. What are the escalation steps for a P1 production outage?
 - Status: **PASS**

@@ -100,10 +100,10 @@ def test_upload_kb_sync_not_configured_after_s3_put(upload_config):
 
     service = DocumentUploadService(cfg, s3_client=s3, bedrock_agent_client=None)
     with s3_stub:
-        with pytest.raises(BedrockError) as exc:
-            service.upload("a.txt", b"data", sync_kb=True)
-    assert exc.value.code == "kb_sync_not_configured"
-    assert "s3://" in exc.value.user_message
+        result = service.upload("a.txt", b"data", sync_kb=True)
+    assert result.sync_started is False
+    assert result.sync_warning
+    assert "s3://" in result.sync_warning
 
 
 def test_upload_maps_s3_client_error(upload_config):

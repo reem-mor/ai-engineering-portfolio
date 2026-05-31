@@ -75,38 +75,41 @@ class BedrockRagClient:
         self._config = config
         self._client = client or boto3.client("bedrock-agent-runtime", region_name=config.AWS_REGION)
 
-    def ask(self, question: str) -> RagAnswer:
+    def ask(self, question: str, *, session_id: str | None = None) -> RagAnswer:
         question = validate_question(question)
         started = time.perf_counter()
-        try:
-            response = self._client.retrieve_and_generate(
-                input={"text": question},
-                retrieveAndGenerateConfiguration={
-                    "type": "KNOWLEDGE_BASE",
-                    "knowledgeBaseConfiguration": {
-                        "knowledgeBaseId": self._config.BEDROCK_KB_ID,
-                        "modelArn": self._config.BEDROCK_MODEL_ARN,
-                        "retrievalConfiguration": {
-                            "vectorSearchConfiguration": {
-                                "numberOfResults": self._config.BEDROCK_NUM_RESULTS,
-                            },
+        request: dict[str, Any] = {
+            "input": {"text": question},
+            "retrieveAndGenerateConfiguration": {
+                "type": "KNOWLEDGE_BASE",
+                "knowledgeBaseConfiguration": {
+                    "knowledgeBaseId": self._config.BEDROCK_KB_ID,
+                    "modelArn": self._config.BEDROCK_MODEL_ARN,
+                    "retrievalConfiguration": {
+                        "vectorSearchConfiguration": {
+                            "numberOfResults": self._config.BEDROCK_NUM_RESULTS,
                         },
-                        "generationConfiguration": {
-                            "promptTemplate": {
-                                "textPromptTemplate": RAG_GENERATION_PROMPT,
-                            },
-                            "inferenceConfig": {
-                                "textInferenceConfig": {
-                                    "temperature": 0.0,
-                                    "topP": 0.9,
-                                    "maxTokens": 1024,
-                                    "stopSequences": ["Action:", "GlobalDataSource"],
-                                },
+                    },
+                    "generationConfiguration": {
+                        "promptTemplate": {
+                            "textPromptTemplate": RAG_GENERATION_PROMPT,
+                        },
+                        "inferenceConfig": {
+                            "textInferenceConfig": {
+                                "temperature": 0.0,
+                                "topP": 0.9,
+                                "maxTokens": 1024,
+                                "stopSequences": ["Action:", "GlobalDataSource"],
                             },
                         },
                     },
                 },
-            )
+            },
+        }
+        if session_id:
+            request["sessionId"] = session_id
+        try:
+            response = self._client.retrieve_and_generate(**request)
         except Exception as exc:  # noqa: BLE001 — funneled through translate()
             log.exception("Bedrock retrieve_and_generate failed")
             raise translate(exc) from exc
