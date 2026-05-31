@@ -32,7 +32,7 @@ node capture_screenshots.mjs --pytest-only
 | `07_app_homepage_public.png` | Full-page homepage with hero + sticky nav |
 | `08_app_question_and_answer.png` | Auth triage question → `.badge-grounded` + `.citation-list` with labels |
 | `09_app_refusal_or_low_confidence.png` | Tokyo restaurant question → `.badge-nomatch` |
-| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (89 tests) |
+| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (102 tests) |
 | `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` (6/6 PASS) |
 | `13_mvp_workflow.png` | `#mvp` section after **Run triage** → grounded workflow result |
 | `14_architecture.png` | `#architecture` with Documents block selected |
