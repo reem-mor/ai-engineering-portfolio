@@ -1,0 +1,31 @@
+incident_id,date,severity,service,root_cause,mttr_minutes,customer_impact
+INC-2025-001,2025-01-08,P1,auth-api,Bad config rollout disabled session cookie,47,100% of users unable to log in for 47 min
+INC-2025-002,2025-01-19,P2,payment-svc,Primary PSP timeout spike,31,12% of charges retried via backup PSP
+INC-2025-003,2025-02-02,P3,api-gateway,Single Lambda integration timeout,18,One customer endpoint slow
+INC-2025-004,2025-02-14,P1,postgres-primary,Disk full from runaway audit log,62,All writes failing for 62 min
+INC-2025-005,2025-02-28,P2,auth-api,MFA SMS provider degraded,25,MFA delivery delayed up to 5 min
+INC-2025-006,2025-03-10,P3,monitoring,Prometheus OOM killed,12,Alerts delayed but not lost
+INC-2025-007,2025-03-22,P1,payment-svc,Duplicate charge bug from custom retry loop,95,0.4% of customers double-charged
+INC-2025-008,2025-04-03,P2,redis-cache,Eviction storm under load,28,Sessions expiring early
+INC-2025-009,2025-04-15,P3,api-gateway,Throttle limit reached for one client,9,One enterprise client rate-limited
+INC-2025-010,2025-04-29,P1,auth-api,OIDC discovery endpoint cached stale keys,73,All OAuth logins failing
+INC-2025-011,2025-05-12,P2,postgres-replica,Replica fell 8 min behind,22,Read-after-write inconsistencies
+INC-2025-012,2025-05-25,P3,deploy-pipeline,CI flakiness blocked release,41,"Deploy delayed, no customer impact"
+INC-2025-013,2025-06-07,P1,api-gateway,Custom domain cert expired,18,All public APIs unreachable
+INC-2025-014,2025-06-20,P2,auth-api,Token signing key rotation race,33,5% of new sessions rejected
+INC-2025-015,2025-07-04,P3,monitoring,Grafana datasource auth expired,7,"Dashboards blank, no real impact"
+INC-2025-016,2025-07-17,P1,payment-svc,"PSP webhook signing key leaked, rotated emergency",56,Webhook ingestion stopped for 56 min
+INC-2025-017,2025-07-30,P2,auth-api,Pod CrashLoop from OOM after JDK upgrade,24,Login error rate 8%
+INC-2025-018,2025-08-11,P3,api-gateway,WAF false-positive blocked one customer,14,Single customer 403s
+INC-2025-019,2025-08-24,P1,postgres-primary,Connection pool exhausted from leaking app,41,All writes failing intermittently
+INC-2025-020,2025-09-06,P2,payment-svc,Currency rate cache stale,36,Wrong currency conversion on 0.2% of orders
+INC-2025-021,2025-09-19,P3,auth-api,MFA email provider rate-limited,11,Email MFA delayed
+INC-2025-022,2025-10-02,P1,redis-cache,"Master node OOM, failover incomplete",39,Sessions invalidated
+INC-2025-023,2025-10-15,P2,api-gateway,Stage variable typo broke routing,19,Beta endpoint 5xx
+INC-2025-024,2025-10-28,P3,monitoring,Alert silence forgotten 6 hours,360,"No customer impact, missed minor alerts"
+INC-2025-025,2025-11-10,P1,auth-api,Bad migration locked users table 4 min,16,"All writes blocked, reads OK"
+INC-2025-026,2025-11-23,P2,payment-svc,Webhook backlog after PSP recovery,47,Order confirmation delayed up to 30 min
+INC-2025-027,2025-12-06,P3,deploy-pipeline,Docker registry quota hit,28,"No customer impact, deploys blocked"
+INC-2025-028,2025-12-19,P1,api-gateway,"DDoS, WAF rate limits insufficient",88,30% of public traffic dropped
+INC-2025-029,2026-01-01,P2,auth-api,New year leap-second clock skew,21,Some tokens marked invalid
+INC-2025-030,2026-01-14,P3,monitoring,Prometheus disk near full,17,No customer impact

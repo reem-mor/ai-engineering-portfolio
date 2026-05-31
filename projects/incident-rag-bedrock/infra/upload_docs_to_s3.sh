@@ -5,15 +5,17 @@ set -euo pipefail
 
 : "${BUCKET:?Set BUCKET env var, e.g. BUCKET=incident-rag-kb-rm-2026}"
 
-SRC="${SRC:-../incident-assistant-rag/data/sample_documents}"
+SRC="${SRC:-./data/sample_documents}"
 
 if [[ ! -d "$SRC" ]]; then
   echo "Source directory not found: $SRC" >&2
+  echo "Run 'python scripts/build_corpus.py' first to generate the corpus." >&2
   exit 1
 fi
 
 aws s3 sync "$SRC" "s3://${BUCKET}/" \
   --exclude ".gitkeep" \
+  --exclude "README.md" \
   --exclude "*.tmp"
 
 echo

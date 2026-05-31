@@ -115,3 +115,143 @@ def test_ask_translates_access_denied(config):
         with pytest.raises(BedrockError) as exc:
             client.ask("anything")
     assert exc.value.code == "AccessDeniedException"
+
+
+def test_ask_translates_resource_not_found(config):
+    client, stub = _make_client_with_stub(config)
+    stub.add_client_error(
+        "retrieve_and_generate",
+        service_error_code="ResourceNotFoundException",
+        service_message="kb missing",
+        http_status_code=404,
+    )
+    with stub, pytest.raises(BedrockError) as exc:
+        client.ask("anything")
+    assert exc.value.code == "ResourceNotFoundException"
+    assert "Knowledge Base" in exc.value.user_message
+
+
+def test_ask_translates_validation_error(config):
+    client, stub = _make_client_with_stub(config)
+    stub.add_client_error(
+        "retrieve_and_generate",
+        service_error_code="ValidationException",
+        service_message="bad request",
+        http_status_code=400,
+    )
+    with stub, pytest.raises(BedrockError) as exc:
+        client.ask("anything")
+    assert exc.value.code == "ValidationException"
+
+
+def test_ask_handles_unknown_error_code(config):
+    client, stub = _make_client_with_stub(config)
+    stub.add_client_error(
+        "retrieve_and_generate",
+        service_error_code="SomeNewException",
+        service_message="weird",
+        http_status_code=500,
+    )
+    with stub, pytest.raises(BedrockError) as exc:
+        client.ask("anything")
+    assert exc.value.code == "SomeNewException"
+    assert exc.value.user_message  # friendly fallback present
+
+
+def test_ask_dedupes_empty_snippet_refs(config):
+    """Citations with empty snippet text should be filtered out."""
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {
+            "output": {"text": "Real answer."},
+            "citations": [
+                {
+                    "retrievedReferences": [
+                        {"content": {"text": "   "}, "location": {"type": "S3", "s3Location": {"uri": "s3://kb/x.md"}}},
+                        {"content": {"text": "Good chunk."}, "location": {"type": "S3", "s3Location": {"uri": "s3://kb/y.md"}}},
+                    ]
+                }
+            ],
+            "sessionId": "ss",
+        },
+    )
+    with stub:
+        result = client.ask("anything")
+    assert len(result.citations) == 1
+    assert result.citations[0].snippet == "Good chunk."
+
+
+def test_ask_handles_missing_source_uri(config):
+    """Bedrock can return references with no S3 location — render snippet only."""
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {
+            "output": {"text": "Answer."},
+            "citations": [
+                {"retrievedReferences": [{"content": {"text": "loose chunk"}, "location": {"type": "S3"}}]},
+            ],
+            "sessionId": "ss",
+        },
+    )
+    with stub:
+        result = client.ask("anything")
+    assert result.grounded is True
+    assert result.citations[0].source_uri is None
+
+
+def test_ask_handles_multi_citation_groups(config):
+    """A single output can include multiple citation groups, each with several refs."""
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {
+            "output": {"text": "Combined answer."},
+            "citations": [
+                {"retrievedReferences": [
+                    {"content": {"text": "from a"}, "location": {"type": "S3", "s3Location": {"uri": "s3://kb/a"}}},
+                    {"content": {"text": "from b"}, "location": {"type": "S3", "s3Location": {"uri": "s3://kb/b"}}},
+                ]},
+                {"retrievedReferences": [
+                    {"content": {"text": "from c"}, "location": {"type": "S3", "s3Location": {"uri": "s3://kb/c"}}},
+                ]},
+            ],
+            "sessionId": "ss",
+        },
+    )
+    with stub:
+        result = client.ask("anything")
+    assert [c.source_uri for c in result.citations] == ["s3://kb/a", "s3://kb/b", "s3://kb/c"]
+
+
+def test_ask_default_message_when_no_answer_and_no_citations(config):
+    """If KB returns truly nothing, we still produce a friendly answer string."""
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {"output": {"text": ""}, "citations": [], "sessionId": "ss"},
+    )
+    with stub:
+        result = client.ask("anything")
+    assert result.grounded is False
+    assert "could not find" in result.answer.lower()
+
+
+def test_to_dict_shape(config):
+    """RagAnswer.to_dict is the contract the future MCP tool wrapper will consume."""
+    client, stub = _make_client_with_stub(config)
+    stub.add_response(
+        "retrieve_and_generate",
+        {
+            "output": {"text": "ans"},
+            "citations": [{"retrievedReferences": [
+                {"content": {"text": "snip"}, "location": {"type": "S3", "s3Location": {"uri": "s3://k/a"}}},
+            ]}],
+            "sessionId": "abc",
+        },
+    )
+    with stub:
+        d = client.ask("q").to_dict()
+    assert set(d.keys()) == {"answer", "citations", "session_id", "grounded"}
+    assert d["citations"][0] == {"snippet": "snip", "source_uri": "s3://k/a"}

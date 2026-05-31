@@ -1,0 +1,44 @@
+API GATEWAY — 5xx STORM RUNBOOK
+===============================
+
+Trigger: AWS API Gateway returns 5xx for more than 10% of requests over
+a 3-minute window, OR the CloudWatch alarm "ApiGateway5xxStorm" fires.
+
+STEP 1 — Identify the failing route
+-----------------------------------
+Open CloudWatch -> API Gateway -> select the stage. Look at the "5XX by
+resource" chart for the last 15 minutes. The top 1-2 routes account for
+most failures in 90% of incidents.
+
+STEP 2 — Decide: gateway issue or backend issue?
+------------------------------------------------
+Compare the gateway 5xx rate with the integration target's own 5xx rate
+(Lambda errors, ECS task errors, or upstream HTTP service).
+  - If backend errors mirror gateway errors -> the backend is the cause,
+    jump to that service's runbook.
+  - If backend is healthy but gateway still 5xxs -> usage plan throttle
+    or integration timeout. Continue to step 3.
+
+STEP 3 — Check throttling
+-------------------------
+API Gateway -> Usage Plans -> verify that no plan is at its throttle
+limit. If a known customer is exceeding their quota, that is expected;
+document and move on.
+
+STEP 4 — Check integration timeout
+----------------------------------
+Default integration timeout is 29 seconds. If backend latency has crept
+above 25 seconds, gateway will return 504. Roll back the backend if a
+recent deploy is suspect, OR scale the backend horizontally.
+
+STEP 5 — Recovery validation
+----------------------------
+After the fix, monitor for 10 minutes:
+  - 5xx rate must drop below 1%
+  - p99 latency must return to baseline
+  - No new alerts firing for the same route
+
+DO NOT
+------
+Do not delete deployment stages to "reset" the gateway. This severs all
+custom domain mappings and triggers a much larger incident.
