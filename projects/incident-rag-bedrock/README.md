@@ -10,7 +10,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-43_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 <br/>
 
@@ -191,11 +191,14 @@ pytest
 
 What's covered:
 
-| Test | What it proves |
+**43 tests across 4 files**, every one runnable offline:
+
+| File | Coverage |
 |---|---|
 | `test_health.py` | `/health` returns `{"status":"ok"}` |
-| `test_routes.py` | Empty / oversize questions → 400; grounded answer renders citations; no-match renders amber card; Bedrock errors → 502 |
-| `test_bedrock_client.py` | `RetrieveAndGenerate` response is parsed correctly; throttling / access-denied / oversize / empty-question paths all map to typed `BedrockError`s |
+| `test_config.py` | Each required env var missing/blank → `ConfigError`; defaults; numeric coercion |
+| `test_routes.py` | Empty/missing/oversize/exact-max questions; whitespace trim; HTTP method enforcement (GET/POST 405); HTMX partial rendering; **HTML/XSS escaping in question AND answer**; Unicode (Hebrew) question; grounded card; singular vs. plural source count; no-match amber card; Bedrock errors → 502; 404 on unknown route |
+| `test_bedrock_client.py` | `RetrieveAndGenerate` happy path; **throttling, access-denied, validation, resource-not-found, unknown-code** errors mapped to typed `BedrockError`; empty-snippet citations filtered; missing `s3Location.uri` handled; multi-citation-group flattening; fallback answer when KB returns nothing; `to_dict()` contract for the future MCP wrapper |
 
 Tests use `botocore.stub.Stubber` and a fake injected client — **zero real AWS calls in CI**.
 
@@ -249,18 +252,28 @@ Captured into [`screenshots/`](screenshots/):
 
 ## 📚 Documents used (Knowledge Base corpus)
 
-Reused from the sibling `incident-assistant-rag` project. Examples:
+**10 documents, 5 formats** — generated reproducibly by [`scripts/build_corpus.py`](scripts/build_corpus.py) and stored under [`data/sample_documents/`](data/sample_documents/).
 
-- `api_gateway_5xx_runbook.txt`
-- `database_locks_runbook.pdf`
-- `deployment_failure_sop.docx`
-- `escalation_policy.md`
-- …additional runbooks under [`../incident-assistant-rag/data/sample_documents/`](../incident-assistant-rag/data/sample_documents/)
+| Format | Count | Files |
+|---|---|---|
+| **MD** | 3 | `auth_service_runbook.md`, `database_connectivity_runbook.md`, `monitoring_alerts_reference.md` |
+| **TXT** | 2 | `api_gateway_5xx_runbook.txt`, `payment_service_latency_runbook.txt` |
+| **CSV** | 1 | `incident_history.csv` (30 past incidents — severity, root cause, MTTR) |
+| **DOCX** | 2 | `deployment_rollback_sop.docx`, `postmortem_template.docx` |
+| **PDF** | 2 | `escalation_policy.pdf`, `on_call_handoff_checklist.pdf` |
 
-Upload to S3 with:
+Build / rebuild the corpus locally:
+```bash
+pip install reportlab python-docx
+python scripts/build_corpus.py
+```
+
+Upload to S3 (after the bucket exists):
 ```bash
 BUCKET=<your-kb-bucket> ./infra/upload_docs_to_s3.sh
 ```
+
+Then click **Sync** on the Bedrock KB data source. Detail: [`data/sample_documents/README.md`](data/sample_documents/README.md).
 
 ---
 

@@ -17,12 +17,18 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
    - Region: same as Bedrock (`us-east-1`)
    - Block all public access: ✅ keep enabled
    - Versioning: optional
-2. Upload the runbook corpus:
+2. **Generate the corpus** (one-time; checked in for reference but easy to rebuild):
    ```bash
    cd projects/incident-rag-bedrock
+   pip install reportlab python-docx
+   python scripts/build_corpus.py
+   ```
+   This writes the 10 documents (MD/TXT/CSV/DOCX/PDF) into `data/sample_documents/`.
+
+3. Upload to the bucket:
+   ```bash
    BUCKET=incident-rag-kb-rm-20260601 ./infra/upload_docs_to_s3.sh
    ```
-   This syncs documents from `../incident-assistant-rag/data/sample_documents/` into the bucket.
 
 ## 3. Enable model access in Bedrock
 
