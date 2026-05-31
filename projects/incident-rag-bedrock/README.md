@@ -328,6 +328,8 @@ Real questions tested against the live Bedrock Knowledge Base (KB ID: `RBTJM6NIG
 
 Full smoke-test output: [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md)
 
+Submission deliverable (dataset + sample Q&A, ready to email): [`docs/teacher_submission_email.md`](docs/teacher_submission_email.md). Dataset card: [`data/sample_documents/README.md`](data/sample_documents/README.md).
+
 ---
 
 ## Screenshots
