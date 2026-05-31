@@ -150,11 +150,28 @@ def workflow_triage():
         ), 502
 
     actions = parse_action_bullets(result.answer)
+    if not actions and alert:
+        fallback = alert.get("actions")
+        if isinstance(fallback, list):
+            actions = [str(a) for a in fallback if str(a).strip()]
+
     effective_decision = alert.get("decision") if alert else None
     effective_reason = alert.get("decision_reason") if alert else None
     if not result.grounded:
         effective_decision = "escalate"
         effective_reason = "Insufficient knowledge-base context — escalate with prepared notes."
+
+    matched_runbook = result.matched_runbook
+    if not matched_runbook and result.citations:
+        matched_runbook = result.citations[0].source_label
+    if not matched_runbook and alert:
+        matched_runbook = alert.get("matched_runbook")
+
+    saved_min = 0
+    impact_avoided = 0
+    if alert:
+        saved_min = max(0, int(alert.get("baseline_min", 0)) - int(alert.get("assisted_min", 0)))
+        impact_avoided = saved_min * int(alert.get("impact_per_min", 0))
 
     return render_template(
         "_workflow_result.html",
@@ -162,8 +179,11 @@ def workflow_triage():
         alert=alert,
         question=question,
         actions=actions,
+        matched_runbook=matched_runbook,
         effective_decision=effective_decision,
         effective_reason=effective_reason,
+        saved_min=saved_min,
+        impact_avoided=impact_avoided,
         model_label=_model_label(),
     )
 

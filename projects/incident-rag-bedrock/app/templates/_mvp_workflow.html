@@ -1,16 +1,22 @@
 <section id="mvp" class="section">
   <div class="section-inner">
-    <p class="section-kicker">MVP workflow</p>
+    <p class="section-kicker">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      MVP workflow
+    </p>
     <h2 class="section-title">From console alert → triage → resolve or escalate</h2>
     <p class="section-lead">
-      Pick an alert, run live Knowledge Base triage via Bedrock, and review matched runbooks,
-      suggested actions, and a resolution recommendation.
+      The everyday on-call loop for DevOps, NOC, and SRE teams. Pick an alert, run live Knowledge Base triage via Bedrock,
+      review matched runbooks and suggested actions, and get a resolve-or-escalate recommendation before impact grows.
     </p>
 
     <div class="workflow-grid">
       <aside class="alert-console" aria-label="Incoming alerts">
         <div class="alert-console-header">
-          <span>Incoming alerts</span>
+          <span class="alert-console-title">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Incoming alerts
+          </span>
           <span>{{ workflow_alerts|length }}</span>
         </div>
         <ul id="alert-list" class="alert-list">
@@ -20,28 +26,53 @@
                     class="alert-item severity-{{ alert.severity }}{% if loop.first %} is-active{% endif %}"
                     data-alert-id="{{ alert.id }}"
                     data-question="{{ alert.question }}"
+                    data-source="{{ alert.source }}"
+                    data-title="{{ alert.title }}"
+                    data-service="{{ alert.service }}"
                     data-baseline-min="{{ alert.baseline_min }}"
                     data-assisted-min="{{ alert.assisted_min }}"
                     data-impact-per-min="{{ alert.impact_per_min }}">
-              <span class="severity severity-{{ alert.severity }}">{{ alert.severity }}</span>
-              <span style="float:right;font-size:0.7rem;color:var(--muted-foreground)">{{ alert.fired_at }}</span>
-              <div style="margin-top:0.4rem;font-weight:600;font-size:0.9rem">{{ alert.title }}</div>
-              <div style="margin-top:0.25rem;font-size:0.7rem;color:var(--muted-foreground)">{{ alert.service }}</div>
+              <div class="alert-item-head">
+                <span class="severity severity-{{ alert.severity }}">{{ alert.severity }}</span>
+                <span class="alert-time">{{ alert.fired_at }}</span>
+              </div>
+              <div class="alert-title">{{ alert.title }}</div>
+              <div class="alert-service">{{ alert.service }}</div>
             </button>
           </li>
           {% endfor %}
         </ul>
+
+        <div class="impact-saved-card" aria-live="polite">
+          <div class="impact-saved-label">Business impact saved</div>
+          <div class="impact-saved-row">
+            <svg class="icon-sm impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            <span class="impact-saved-value" id="total-saved-impact">$0</span>
+          </div>
+          <div class="impact-saved-sub"><span id="total-saved-min">0</span> min of MTTR avoided this session</div>
+        </div>
       </aside>
 
       <div class="triage-panel">
-        <div class="workflow-stages" aria-label="Triage progress">
-          <span class="stage-pill stage-rag">Match KB</span>
-          <span class="stage-pill stage-interface">Suggest actions</span>
-          <span class="stage-pill stage-agent">Recommend</span>
-          <span class="stage-pill stage-resolution">Ready</span>
+        {% set first = workflow_alerts[0] %}
+        <div class="triage-header">
+          <div class="triage-alert-info">
+            <div id="workflow-alert-meta" class="triage-meta">
+              Alert {{ first.id }} · {{ first.source }}
+            </div>
+            <h3 id="workflow-alert-title" class="triage-title">{{ first.title }}</h3>
+            <div id="workflow-alert-service" class="triage-service">{{ first.service }}</div>
+          </div>
+          <button type="submit"
+                  form="workflow-form"
+                  class="btn-primary"
+                  id="workflow-submit">
+            <svg class="icon-sm btn-icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span class="btn-label">Run triage</span>
+            <span id="workflow-spinner" class="spinner htmx-indicator" aria-hidden="true"></span>
+          </button>
         </div>
 
-        {% set first = workflow_alerts[0] %}
         <form id="workflow-form"
               hx-post="{{ url_for('main.workflow_triage') }}"
               hx-target="#workflow-result"
@@ -49,27 +80,56 @@
               hx-indicator="#workflow-spinner">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" id="workflow-alert-id" name="alert_id" value="{{ first.id }}">
-          <label for="workflow-question" class="visually-hidden">Triage question</label>
-          <textarea id="workflow-question"
-                    name="question"
-                    rows="2"
-                    maxlength="{{ max_len }}"
-                    class="form-textarea"
-                    style="width:100%;resize:vertical;font:inherit;">{{ first.question }}</textarea>
-          <div style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-            <button type="submit" class="btn-primary" id="workflow-submit">
-              Run triage
-              <span id="workflow-spinner" class="spinner htmx-indicator" aria-hidden="true"></span>
-            </button>
-            <span class="stats-row" style="margin:0">
-              Session saved: <span class="stat-value" id="session-saved-min">0</span> min ·
-              Impact avoided: <span class="stat-value" id="session-saved-impact">$0</span>
-            </span>
-          </div>
+          <input type="hidden" id="workflow-question" name="question" value="{{ first.question }}">
         </form>
+
+        <div class="workflow-stages" id="workflow-stages" aria-label="Triage progress">
+          <span class="stage-pill stage-rag" data-stage="triage">
+            <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Match KB
+          </span>
+          <span class="stage-arrow" aria-hidden="true">→</span>
+          <span class="stage-pill stage-interface" data-stage="suggest">
+            <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3-1.9 5.8H4.5L10 12.8 8.1 19 12 15.5 15.9 19 14 12.8l5.5-4-5.6-.2L12 3z"/></svg>
+            Suggest actions
+          </span>
+          <span class="stage-arrow" aria-hidden="true">→</span>
+          <span class="stage-pill stage-agent" data-stage="decide">
+            <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Recommend
+          </span>
+          <span class="stage-arrow" aria-hidden="true">→</span>
+          <span class="stage-pill stage-resolution" data-stage="done">
+            <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Ready
+          </span>
+        </div>
 
         <div id="workflow-result" class="workflow-result" aria-live="polite"></div>
       </div>
+    </div>
+
+    <div class="workflow-summary-grid">
+      <article class="workflow-summary-card">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+        <strong>Catch</strong>
+        <p>Alert lands in the console</p>
+      </article>
+      <article class="workflow-summary-card">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <strong>Triage</strong>
+        <p>KB matches runbook + history</p>
+      </article>
+      <article class="workflow-summary-card">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3-1.9 5.8H4.5L10 12.8 8.1 19 12 15.5 15.9 19 14 12.8l5.5-4-5.6-.2L12 3z"/></svg>
+        <strong>Suggest</strong>
+        <p>Concrete next-step actions</p>
+      </article>
+      <article class="workflow-summary-card">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <strong>Decide</strong>
+        <p>Resolve at Tier-1 or escalate</p>
+      </article>
     </div>
   </div>
 </section>
