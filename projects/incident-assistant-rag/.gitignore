@@ -13,6 +13,8 @@ venv/
 env/
 backend/venv/
 backend/.venv/
+backend/.venv312/
+.venv312/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
