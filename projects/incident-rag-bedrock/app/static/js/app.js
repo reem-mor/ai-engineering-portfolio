@@ -125,9 +125,41 @@
     }
   }
 
+  function bindUploadValidation() {
+    const form = document.getElementById("upload-form");
+    const input = document.getElementById("document");
+    if (!form || !input) return;
+    const maxMb = 5;
+    const maxBytes = maxMb * 1024 * 1024;
+    const allowed = [".md", ".txt", ".csv", ".docx", ".pdf"];
+    form.addEventListener("submit", (event) => {
+      const file = input.files?.[0];
+      if (!file) {
+        event.preventDefault();
+        alert("Choose a file to upload.");
+        return;
+      }
+      if (file.size === 0) {
+        event.preventDefault();
+        alert("File is empty.");
+        return;
+      }
+      if (file.size > maxBytes) {
+        event.preventDefault();
+        alert(`File is too large. Maximum size is ${maxMb} MB.`);
+        return;
+      }
+      const name = file.name.toLowerCase();
+      if (!allowed.some((ext) => name.endsWith(ext))) {
+        event.preventDefault();
+        alert(`Unsupported file type. Allowed: ${allowed.join(", ")}`);
+      }
+    });
+  }
+
   function bindHtmxErrors() {
     document.body.addEventListener("htmx:responseError", () => {
-      const targets = ["answer", "workflow-result"];
+      const targets = ["answer", "workflow-result", "upload-result"];
       targets.forEach((id) => {
         const el = document.getElementById(id);
         if (!el || el.innerHTML.trim()) return;
@@ -144,6 +176,7 @@
     bindAlertPicker();
     bindArchitecture();
     bindWorkflowStages();
+    bindUploadValidation();
     restoreSessionMetrics();
     bindHtmxErrors();
   });

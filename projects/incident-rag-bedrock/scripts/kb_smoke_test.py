@@ -62,9 +62,11 @@ def run_smoke() -> tuple[int, int, list[dict]]:
                     "question": question,
                     "grounded": None,
                     "citations": 0,
+                    "citation_labels": [],
                     "status": "PASS" if ok else "FAIL",
                     "failures": failures,
                     "answer_preview": "",
+                    "answer_text": "",
                 },
             )
             print(f"[{'PASS' if ok else 'FAIL'}] #{qid}: {question[:60]}...")
@@ -82,9 +84,11 @@ def run_smoke() -> tuple[int, int, list[dict]]:
                     "question": question,
                     "grounded": None,
                     "citations": 0,
+                    "citation_labels": [],
                     "status": "FAIL",
                     "failures": failures,
                     "answer_preview": "",
+                    "answer_text": "",
                 },
             )
             print(f"[FAIL] #{qid}: {question[:60]}... ({exc.user_message})")
@@ -115,15 +119,18 @@ def run_smoke() -> tuple[int, int, list[dict]]:
         if ok:
             passed += 1
 
+        citation_labels = [c.source_label for c in result.citations]
         rows.append(
             {
                 "id": qid,
                 "question": question,
                 "grounded": result.grounded,
                 "citations": len(result.citations),
+                "citation_labels": citation_labels,
                 "status": "PASS" if ok else "FAIL",
                 "failures": failures,
                 "answer_preview": result.answer[:240].replace("\n", " "),
+                "answer_text": result.answer.strip(),
             },
         )
         print(f"[{'PASS' if ok else 'FAIL'}] #{qid}: {question[:60]}...")
@@ -163,10 +170,56 @@ def write_results(passed: int, total: int, rows: list[dict]) -> Path:
     return out
 
 
+SHOWCASE_IDS = (1, 2, 3, 5)
+
+
+def write_qa_showcase(rows: list[dict]) -> Path:
+    """Submission artifact: grounded Q&A + off-corpus refusal (screenshot 19)."""
+    out = ROOT / "evaluation" / "qa_showcase.md"
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    s3_prefix = "s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/"
+    lines = [
+        "# Sample Questions and Answers — Live Bedrock KB",
+        "",
+        f"- **Run at:** {ts}",
+        f"- **Corpus:** {s3_prefix}",
+        "- **Cases:** 3 grounded runbook answers + 1 off-topic refusal",
+        "",
+    ]
+    for row in rows:
+        if row["id"] not in SHOWCASE_IDS or row["status"] != "PASS":
+            continue
+        q = row["question"].replace("|", "\\|")
+        lines.append(f"## {row['id']}. {q}")
+        lines.append("")
+        lines.append(f"- **Grounded:** `{row['grounded']}` · **Citations:** {row['citations']}")
+        labels = row.get("citation_labels") or []
+        if labels:
+            lines.append(f"- **Sources:** {', '.join(f'`{label}`' for label in labels)}")
+        lines.append("")
+        answer = (row.get("answer_text") or row["answer_preview"] or "").strip()
+        if len(answer) > 720:
+            answer = answer[:720].rstrip() + "…"
+        lines.append("**Answer:**")
+        lines.append("")
+        for paragraph in answer.split("\n"):
+            paragraph = paragraph.strip()
+            if paragraph:
+                lines.append(paragraph)
+                lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    out.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return out
+
+
 def main() -> int:
     passed, total, rows = run_smoke()
     out = write_results(passed, total, rows)
+    showcase = write_qa_showcase(rows)
     print(f"\n{passed}/{total} passed — wrote {out}")
+    print(f"Showcase: {showcase}")
     return 0 if passed == total else 1
 
 

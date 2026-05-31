@@ -38,6 +38,27 @@
       ]
     },
     {
+      "Sid": "WriteKnowledgeBaseS3Bucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::S3_BUCKET_NAME/*"
+    },
+    {
+      "Sid": "BedrockKnowledgeBaseSync",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:StartIngestionJob",
+        "bedrock:GetIngestionJob",
+        "bedrock:ListIngestionJobs"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:REGION:ACCOUNT_ID:knowledge-base/KB_ID",
+        "arn:aws:bedrock:REGION:ACCOUNT_ID:knowledge-base/KB_ID/*"
+      ]
+    },
+    {
       "Sid": "EcrPull",
       "Effect": "Allow",
       "Action": [

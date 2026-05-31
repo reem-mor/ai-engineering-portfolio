@@ -586,3 +586,78 @@ body {
   font-size: 0.8rem;
   color: var(--muted-foreground);
 }
+
+.upload-card { margin-top: 1.5rem; }
+
+.upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.upload-label { font-size: 0.875rem; font-weight: 500; }
+
+.upload-row input[type="file"] {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.upload-sync {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upload-hint { font-size: 0.75rem; color: var(--muted-foreground); }
+
+.upload-result-region { margin-top: 1.25rem; }
+
+.upload-result {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.upload-result--success { border-color: oklch(0.55 0.15 145 / 60%); }
+
+.upload-result--error { border-color: oklch(0.55 0.2 25 / 60%); }
+
+.upload-result-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.upload-result-message { margin: 0; color: var(--muted-foreground); }
+
+.upload-meta {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.upload-meta code {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.upload-sync-ok { color: var(--resolution); }

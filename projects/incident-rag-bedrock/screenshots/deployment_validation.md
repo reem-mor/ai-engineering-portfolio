@@ -6,10 +6,10 @@ Automated checks after S3/KB alignment and EC2 relaunch.
 
 | Check | Result |
 |-------|--------|
-| `py -3.12 -m pytest` | 58 passed |
+| `py -3.12 -m pytest` | 73 passed |
 | `http://localhost:8080/health` | `{"status":"ok"}` |
 | `py -3.12 scripts/kb_smoke_test.py` | 5/6 PASS (grounded corpus OK) |
-| `py -3.12 scripts/verify_e2e.py` | 21/21 PASS |
+| `py -3.12 scripts/verify_e2e.py` | 22/22 PASS |
 
 ## Bedrock KB
 
@@ -31,13 +31,13 @@ Automated checks after S3/KB alignment and EC2 relaunch.
 
 ## Screenshots
 
-All 14 files in [`screenshots/`](./). Regenerate AWS/EC2 proof:
+All 19 files in [`screenshots/`](./). Regenerate AWS/EC2 proof:
 
 ```powershell
 cd scripts
 node capture_aws_proof.mjs      # 01–03
 node capture_ec2_proof.mjs        # 04–06 (while instance running)
-$env:APP_URL="http://<EC2_DNS>"; node capture_screenshots.mjs  # 07–09, 11–14
+$env:APP_URL="http://localhost:8080"; node capture_screenshots.mjs  # 07–09, 11–19
 node capture_cleanup_proof.mjs  # 10 (after terminate)
 ```
 

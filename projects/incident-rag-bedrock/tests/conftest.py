@@ -31,6 +31,10 @@ def fake_config():
         BEDROCK_NUM_RESULTS=5,
         SECRET_KEY="test-secret",
         FLASK_ENV="testing",
+        S3_BUCKET="test-bucket",
+        S3_PREFIX="projects/incident-rag-bedrock/data/sample_documents",
+        BEDROCK_DATA_SOURCE_ID="ds-test",
+        MAX_UPLOAD_BYTES=5242880,
     )
 
 

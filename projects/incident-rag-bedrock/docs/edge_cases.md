@@ -46,6 +46,28 @@ Validation is centralized in `app/validators.py` and shared by `/ask` and `/work
 | CSV / mixed formats in S3 | Bedrock indexes supported types; citations show basename from S3 URI regardless of corpus |
 | Stale KB (sync not run) | Answers may miss new docs until data source sync completes |
 
+## Document upload (S3 + optional KB sync)
+
+| Case | Server | UI |
+|------|--------|-----|
+| No file selected | `400` · `missing_file` | Client alert + server error card |
+| Unsupported extension (e.g. `.exe`) | `400` · `unsupported_type` | Client block + server error card |
+| Empty file (0 bytes) | `400` · `empty_file` | Client alert before submit |
+| File larger than `MAX_UPLOAD_BYTES` | `400` · `file_too_large` | Client alert (5 MB default) |
+| `S3_BUCKET` not configured | `400` · `upload_disabled` | Error card — upload disabled in env |
+| S3 `AccessDenied` / network | `502` · mapped boto3 code | Error card with IAM hint |
+| Upload OK, sync unchecked | `200` | Success card — S3 URI + manual sync note |
+| Upload OK + **Sync to KB** checked | `200` | Success card — ingestion job id when configured |
+| Sync requested but no `BEDROCK_DATA_SOURCE_ID` | `502` · `kb_sync_not_configured` | File saved; sync instructions in message |
+| S3 OK, ingestion job fails | `502` · `kb_sync_failed` | Partial success message (file in S3) |
+
+Allowed types: `.md`, `.txt`, `.csv`, `.docx`, `.pdf` — aligned with Bedrock S3 connector support.
+
+## API codes (upload)
+
+- `missing_file`, `unsupported_type`, `empty_file`, `file_too_large`, `upload_disabled`
+- `kb_sync_not_configured`, `kb_sync_failed` (HTTP 502)
+
 ## API codes (validation)
 
 - `empty_question`

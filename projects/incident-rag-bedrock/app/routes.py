@@ -15,6 +15,8 @@ from app.data_loader import (
 )
 from app.errors import BedrockError
 from app.text_utils import parse_action_bullets
+from app.upload_service import DocumentUploadService
+from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
 
 log = logging.getLogger(__name__)
@@ -27,6 +29,15 @@ def _client() -> BedrockRagClient:
         cfg: Config = Config.from_env() if not isinstance(current_app.config, Config) else current_app.config
         cached = BedrockRagClient(cfg)
         current_app.extensions["bedrock_client"] = cached
+    return cached
+
+
+def _upload_service() -> DocumentUploadService:
+    cached = current_app.extensions.get("upload_service")
+    if cached is None:
+        cfg: Config = Config.from_env() if not isinstance(current_app.config, Config) else current_app.config
+        cached = DocumentUploadService(cfg)
+        current_app.extensions["upload_service"] = cached
     return cached
 
 
@@ -79,6 +90,7 @@ def _success_response(result: RagAnswer, question: str):
 @bp.get("/")
 def index():
     cfg = current_app.config
+    max_bytes = getattr(cfg, "MAX_UPLOAD_BYTES", 5_242_880)
     return render_template(
         "index.html",
         examples=flat_example_questions(),
@@ -87,6 +99,11 @@ def index():
         max_len=MAX_QUESTION_LEN,
         model_label=_model_label(),
         kb_id=getattr(cfg, "BEDROCK_KB_ID", ""),
+        s3_bucket=getattr(cfg, "S3_BUCKET", ""),
+        s3_prefix=getattr(cfg, "S3_PREFIX", ""),
+        max_upload_mb=max(1, max_bytes // (1024 * 1024)),
+        allowed_types=", ".join(sorted(ALLOWED_UPLOAD_SUFFIXES)),
+        sync_kb_default=bool(getattr(cfg, "BEDROCK_DATA_SOURCE_ID", "")),
     )
 
 
@@ -154,3 +171,32 @@ def workflow_triage():
 @bp.get("/health")
 def health():
     return jsonify(status="ok"), 200
+
+
+_UPLOAD_VALIDATION_CODES = {
+    "missing_file",
+    "unsupported_type",
+    "empty_file",
+    "file_too_large",
+    "upload_disabled",
+}
+
+
+@bp.post("/documents/upload")
+def upload_document():
+    upload_file = request.files.get("document")
+    sync_kb = request.form.get("sync_kb") == "on"
+    filename = upload_file.filename if upload_file else None
+    body = upload_file.read() if upload_file else b""
+
+    try:
+        result = _upload_service().upload(filename, body, sync_kb=sync_kb)
+    except BedrockError as exc:
+        status = 400 if exc.code in _UPLOAD_VALIDATION_CODES else 502
+        if _wants_json():
+            return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
+        return render_template("_upload_result.html", error=exc.user_message), status
+
+    if _wants_json():
+        return jsonify(ok=True, **result.to_dict()), 200
+    return render_template("_upload_result.html", result=result), 200

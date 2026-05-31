@@ -10,7 +10,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-58_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-73_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 <br/>
 
@@ -124,7 +124,7 @@ incident-rag-bedrock/
 │   ├── ec2_deployment.md    # Launch + secure + smoke-test EC2
 │   ├── cleanup_checklist.md # MANDATORY tear-down list
 │   └── architecture.md
-├── screenshots/             # Submission proof (10 captures)
+├── screenshots/             # Submission proof (19 captures)
 ├── Dockerfile               # python:3.12-slim, non-root, gunicorn, healthcheck
 ├── docker-compose.yml       # Local dev only
 ├── wsgi.py                  # gunicorn entry
@@ -192,7 +192,7 @@ py -3.12 -m pip install -r requirements.txt
 py -3.12 -m pytest -v
 ```
 
-Expected: **58 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`, `test_validators`.
+Expected: **73 passed** across `test_health`, `test_config`, `test_routes`, `test_bedrock_client`, `test_validators`, `test_upload_*`.
 
 ---
 
@@ -207,14 +207,14 @@ cd projects/incident-rag-bedrock
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
 
-# Offline unit tests (58/58)
+# Offline unit tests (73/73)
 py -3.12 -m pytest -v
 
-# Live KB smoke test against real Bedrock (5/5)
+# Live KB smoke test against real Bedrock (5/6 — Q4 deployment-login is flaky)
 py -3.12 scripts/kb_smoke_test.py
-# → evaluation/smoke_results.md
+# → evaluation/smoke_results.md, evaluation/qa_showcase.md
 
-# Regenerate submission screenshots 07–09, 11–14
+# Regenerate submission screenshots 07–09, 11–19
 cd scripts && npm install && npx playwright install chromium
 node capture_screenshots.mjs
 ```
@@ -223,10 +223,10 @@ node capture_screenshots.mjs
 
 | Check | Success criteria |
 |---|---|
-| `pytest` | 58/58 pass |
-| `kb_smoke_test.py` | 5/5 pass (4 grounded + 1 refusal) |
+| `pytest` | 73/73 pass |
+| `kb_smoke_test.py` | 5/6 pass (4 grounded + 1 refusal; see `evaluation/smoke_results.md`) |
 | `/health` | HTTP 200 |
-| Screenshots | `07`–`09`, `11`–`14` in [`screenshots/`](screenshots/) |
+| Screenshots | `07`–`09`, `11`–`19` in [`screenshots/`](screenshots/) |
 
 Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_questions.json`](evaluation/test_questions.json) · [`docs/edge_cases.md`](docs/edge_cases.md)
 
@@ -234,7 +234,7 @@ Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_q
 
 ## 🧪 Test coverage
 
-**58 tests across 5 files**, every one runnable offline:
+**73 tests across 7 files**, every one runnable offline:
 
 | File | Coverage |
 |---|---|
@@ -243,6 +243,8 @@ Details: [`screenshots/README.md`](screenshots/README.md) · [`evaluation/test_q
 | `test_validators.py` | Empty, short, oversize, stopwords-only questions |
 | `test_routes.py` | Validation + JSON `/ask`; workflow triage partial; HTMX partial rendering; **HTML/XSS escaping**; Unicode question; grounded / no-match cards; Bedrock errors → 502; 404 |
 | `test_bedrock_client.py` | `RetrieveAndGenerate` happy path; typed Bedrock errors; citation `source_label`, dedupe, `latency_ms`; `to_dict()` contract |
+| `test_upload_validators.py` | Missing file, unsupported type, empty/oversize payload |
+| `test_upload_routes.py` | Upload success HTML/JSON, validation 400, S3 error 502, disabled upload |
 
 Tests use `botocore.stub.Stubber` and a fake injected client — **zero real AWS calls in CI**.
 
@@ -278,17 +280,22 @@ Captured into [`screenshots/`](screenshots/):
 | 08 | `08_app_question_and_answer.png` | Grounded answer + citation labels (basename, not raw S3) |
 | 09 | `09_app_refusal_or_low_confidence.png` | **Not in knowledge base** refusal |
 | 10 | `10_cleanup_console.png` | AWS console after teardown |
-| 11 | `11_pytest_43_passed.png` | `pytest` output (58 tests) |
-| 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 5/5 PASS |
+| 11 | `11_pytest_passed.png` | `pytest` output (73 tests) |
+| 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test — 5/6 PASS |
 | 13 | `13_mvp_workflow.png` | MVP alert console + live Bedrock triage result |
 | 14 | `14_architecture.png` | Interactive architecture panel (S3 → KB → Flask) |
+| 15 | `15_document_upload_success.png` | Upload section — file saved + optional KB sync |
+| 16 | `16_document_upload_validation.png` | Client validation (missing file) |
+| 17 | `17_document_upload_type_rejected.png` | Unsupported file type blocked |
+| 18 | `18_dataset_corpus.png` | 10-document corpus — formats + topic coverage table |
+| 19 | `19_sample_questions_answers.png` | Live Bedrock Q&A showcase (3 grounded + 1 refusal) |
 
 ---
 
 ## 🔐 Security & best practices
 
 - ✅ **IAM instance profile** — no `AWS_ACCESS_KEY_ID` anywhere on the instance.
-- ✅ **Scoped IAM policy** — only `bedrock:Retrieve*` / `bedrock:InvokeModel` for one KB + one model ARN; `s3:GetObject` only on the KB bucket.
+- ✅ **Scoped IAM policy** — Bedrock retrieve/generate + inference profile; S3 read + **PutObject** on KB bucket; optional **StartIngestionJob** for web upload sync.
 - ✅ **SSH locked to your IP** (not `0.0.0.0/0`).
 - ✅ **Non-root container user**, `HEALTHCHECK` directive, `gunicorn` (not the Flask dev server).
 - ✅ **CSRF token** on the ask form (Flask-WTF).
@@ -336,7 +343,7 @@ Then click **Sync** on the Bedrock KB data source. Detail: [`data/sample_documen
 | **Bedrock KB ID** | `RBTJM6NIG9` — see [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md) |
 | **How the app works** | Corpus → S3 sync → Bedrock KB ingest → Flask `POST /ask` → boto3 `retrieve_and_generate` → grounded answer + citations |
 | **Code** | [`wsgi.py`](wsgi.py), [`app/`](app/), [`requirements.txt`](requirements.txt), [`Dockerfile`](Dockerfile) |
-| **Screenshots** | All 14 PNGs in [`screenshots/`](screenshots/) — see table below |
+| **Screenshots** | All 17 PNGs in [`screenshots/`](screenshots/) — see table below |
 | **Public URL** | Filled in after EC2 launch — see [Public URL used during testing](#-public-url-used-during-testing) |
 | **Cleanup note** | Filled in after teardown — see [Cleanup confirmation](#-cleanup-confirmation) |
 
