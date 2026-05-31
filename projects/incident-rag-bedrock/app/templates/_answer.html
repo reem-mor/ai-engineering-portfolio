@@ -1,0 +1,40 @@
+{% if error %}
+  <article class="answer-card error">
+    <header class="answer-header">
+      <span class="badge badge-error">⚠ Error</span>
+      <span class="answer-question">“{{ question }}”</span>
+    </header>
+    <p class="answer-body">{{ error }}</p>
+  </article>
+{% elif result %}
+  <article class="answer-card {% if result.grounded %}grounded{% else %}no-match{% endif %}">
+    <header class="answer-header">
+      {% if result.grounded %}
+        <span class="badge badge-grounded">✓ Grounded · {{ result.citations|length }} source{{ '' if result.citations|length == 1 else 's' }}</span>
+      {% else %}
+        <span class="badge badge-nomatch">∅ No matching context</span>
+      {% endif %}
+      <span class="answer-question">“{{ question }}”</span>
+    </header>
+
+    <p class="answer-body">{{ result.answer }}</p>
+
+    {% if result.citations %}
+      <section class="citations">
+        <h3 class="citations-title">Sources</h3>
+        <ol class="citation-list">
+          {% for c in result.citations %}
+            <li class="citation-card">
+              <div class="citation-snippet">{{ c.snippet }}</div>
+              {% if c.source_uri %}
+                <div class="citation-source" title="{{ c.source_uri }}">
+                  <span aria-hidden="true">📄</span> {{ c.source_uri }}
+                </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}
+  </article>
+{% endif %}
