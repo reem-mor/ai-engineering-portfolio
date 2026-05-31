@@ -1,6 +1,6 @@
 # Sample Questions and Answers — Live Bedrock KB
 
-- **Run at:** 2026-05-31 19:14:29 UTC
+- **Run at:** 2026-05-31 19:35:42 UTC
 - **Corpus:** s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
 - **Cases:** 4 grounded runbook answers + 1 off-topic refusal
 
@@ -13,7 +13,7 @@
 
 To triage an authentication service incident, follow these steps:
 
-1. **Confirm the scope of the incident.** Check the auth service dashboard for the global error rate. If `auth_login_errors_total` is above 5% over the last 5 minutes, declare a P2 immediately. Above 25% → P1. 2. **Check recent deployments.** Use the command `kubectl -n auth get deploy -o wide`. If the latest rollout is less than 30 minutes old, treat the deployment as the likely cause and prepare a rollback. 3. **Check upstream dependencies.** Confirm that Redis (session store) and Postgres (user table) are healthy in the Service Map view before suspecting the auth service itself. 4. **Validate the OIDC discovery document.** Use the command `cu…
+1. **Confirm the scope of the incident.** Check the authentication service dashboard for the global error rate. If `auth_login_errors_total` is above 5% over the last 5 minutes, declare a P2 immediately. Above 25% → P1. 2. **Check recent deployments.** Use the command `kubectl -n auth get deploy -o wide` to see if the latest rollout is less than 30 minutes old. If so, treat the deployment as the likely cause and prepare a rollback. 3. **Check upstream dependencies.** Ensure that Redis (session store) and Postgres (user table) are healthy in the Service Map view before suspecting the authentication service itself. 4. **Validate the OIDC discovery…
 
 ---
 
@@ -24,7 +24,7 @@ To triage an authentication service incident, follow these steps:
 
 **Answer:**
 
-For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address problems related to database connectivity, such as applications logging "connection refused", "too many connections", or "SSL handshake failed", and other symptoms like high p95 query latency or replication lag.
+For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address issues related to database connectivity, such as applications logging "connection refused", "too many connections", or "SSL handshake failed", and other symptoms like high p95 query latency or replication lag.
 
 ---
 
@@ -45,8 +45,6 @@ For a P1 production outage, the escalation steps are as follows:
 
 4. The engineering manager on call should be woken for any P1 incident that lasts more than 30 minutes, any incident where customer data confidentiality, integrity, or availability is at risk, or any incident involving payment processing.
 
-5. All P1/P2 incidents require updates in the #incident channel every 15 minutes,…
-
 ---
 
 ## 4. What should I check first when users cannot log in after a deployment?
@@ -56,7 +54,7 @@ For a P1 production outage, the escalation steps are as follows:
 
 **Answer:**
 
-When users cannot log in after a deployment, the first thing to check is recent deployments. If the latest rollout of the `auth-api` is less than 30 minutes old, treat the deployment as the likely cause and prepare a rollback.
+When users cannot log in after a deployment, the first thing to check is recent deployments. If the latest `auth-api` rollout is less than 30 minutes old, treat the deployment as the likely cause and prepare a rollback per the Standard recovery actions section.
 
 ---
 

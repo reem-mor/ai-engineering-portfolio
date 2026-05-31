@@ -2,7 +2,17 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { askQuestion, triageAlert, uploadDocument } from "@/lib/api";
 import { useBootstrap } from "@/context/bootstrap";
-import type { RagAnswer, WorkflowAlert, WorkflowTriagePayload } from "@/types/rag";
+import { useDemoTour } from "@/context/demo-tour";
+import { useWorkflowSession } from "@/context/workflow-session";
+import { AppTopBar } from "@/components/AppTopBar";
+import { DemoDashboard } from "@/components/DemoDashboard";
+import {
+  StepPipeline,
+  WORKFLOW_PIPELINE_ORDER,
+  WORKFLOW_PIPELINE_STEPS,
+} from "@/components/StepPipeline";
+import { delay, rankSimilarAlerts } from "@/lib/workflow-utils";
+import type { Citation, RagAnswer, WorkflowAlert, WorkflowTriagePayload } from "@/types/rag";
 import {
   FileText,
   Database,
@@ -28,7 +38,6 @@ import {
   Bell,
   ShieldCheck,
   ArrowUpRight,
-  Clock,
   TrendingDown,
   Activity,
   Upload,
@@ -112,6 +121,32 @@ const STEPS: Step[] = [
 
 // ---------- Page ----------
 
+function AppShell() {
+  const { sessionTotals, triageCount, lastTriageAt } = useWorkflowSession();
+
+  return (
+    <main className="min-h-screen text-foreground">
+      <AppTopBar
+        totalSavedDollars={sessionTotals.dollars}
+        totalSavedMin={sessionTotals.minutes}
+        triageCount={triageCount}
+        lastTriageAt={lastTriageAt}
+      />
+      <Hero />
+      <Problem />
+      <MvpWorkflow />
+      <DemoDashboard />
+      <Architecture />
+      <DocumentUpload />
+      <LiveKnowledgeBase />
+      <Flow />
+      <Stack />
+      <Deliverables />
+      <Footer />
+    </main>
+  );
+}
+
 export default function App() {
   const { loading, error } = useBootstrap();
 
@@ -135,20 +170,7 @@ export default function App() {
     );
   }
 
-  return (
-    <main className="min-h-screen text-foreground">
-      <Hero />
-      <Problem />
-      <MvpWorkflow />
-      <Architecture />
-      <DocumentUpload />
-      <LiveKnowledgeBase />
-      <Flow />
-      <Stack />
-      <Deliverables />
-      <Footer />
-    </main>
-  );
+  return <AppShell />;
 }
 
 // ---------- Sections ----------
@@ -453,7 +475,8 @@ const FLOW: BlockKey[] = ["documents", "kb", "flask", "docker", "ec2", "public"]
 const ARROW_LABELS = ["upload", "retrieve", "serve", "ship", "deploy"];
 
 function Architecture() {
-  const [active, setActive] = useState<BlockKey>("kb");
+  const { architectureBlock, setArchitectureBlock } = useDemoTour();
+  const active = architectureBlock;
   const block = BLOCKS[active];
 
   return (
@@ -474,7 +497,7 @@ function Architecture() {
                 <ArchBlock
                   block={BLOCKS[key]}
                   active={active === key}
-                  onClick={() => setActive(key)}
+                  onClick={() => setArchitectureBlock(key)}
                 />
                 {i < FLOW.length - 1 && <Arrow label={ARROW_LABELS[i]} />}
               </div>
@@ -490,7 +513,7 @@ function Architecture() {
               transition={{ duration: 0.2 }}
               className="mt-8 rounded-xl border border-border bg-background/60 p-5 md:p-6"
             >
-              <DetailPanel block={block} onClose={() => setActive("kb")} />
+              <DetailPanel block={block} onClose={() => setArchitectureBlock("kb")} />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -807,8 +830,13 @@ function decisionMeta(d: string | undefined) {
 
 function MvpWorkflow() {
   const { alerts } = useBootstrap();
+  const {
+    resolved,
+    markResolved: markResolvedSession,
+    sessionTotals,
+    recordTriageComplete,
+  } = useWorkflowSession();
   const [activeId, setActiveId] = useState<string>("");
-  const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [stage, setStage] = useState<
     "idle" | "triage" | "suggest" | "decide" | "done"
   >("idle");
@@ -829,9 +857,11 @@ function MvpWorkflow() {
     try {
       const payload = await triageAlert(alert.id);
       setTriageData(payload);
-      setStage("suggest");
-      setStage("decide");
-      setStage("done");
+      for (const s of ["suggest", "decide", "done"] as const) {
+        setStage(s);
+        await delay(400);
+      }
+      recordTriageComplete(alert.id);
     } catch (err) {
       setTriageError(err instanceof Error ? err.message : "Triage failed");
       setStage("idle");
@@ -849,16 +879,21 @@ function MvpWorkflow() {
     triageData?.effective_reason ?? alert.decisionReason ?? "";
   const dMeta = decisionMeta(effectiveDecision);
 
+  const citations = triageData?.result?.citations ?? [];
+  const similarAlerts = rankSimilarAlerts(alerts, alert, 2);
+
+  const triageImpactDollars =
+    triageData?.impact_avoided ??
+    Math.max(0, alert.baselineMin - alert.assistedMin) * alert.impactPerMin;
+  const triageSavedMin =
+    triageData?.saved_min ?? Math.max(0, alert.baselineMin - alert.assistedMin);
+
   function markResolved() {
-    setResolved((prev) => new Set(prev).add(alert.id));
+    markResolvedSession(alert.id);
   }
 
-  const totalSavedMin = alerts
-    .filter((a) => resolved.has(a.id))
-    .reduce((sum, a) => sum + (a.baselineMin - a.assistedMin), 0);
-  const totalSavedImpact = alerts
-    .filter((a) => resolved.has(a.id))
-    .reduce((sum, a) => sum + (a.baselineMin - a.assistedMin) * a.impactPerMin, 0);
+  const totalSavedMin = sessionTotals.minutes;
+  const totalSavedImpact = sessionTotals.dollars;
 
   const DIcon = dMeta.icon;
 
@@ -987,7 +1022,11 @@ function MvpWorkflow() {
             </div>
 
             <div className="mt-4">
-              <WorkflowStages stage={stage} />
+              <StepPipeline
+                stage={stage}
+                steps={WORKFLOW_PIPELINE_STEPS}
+                order={WORKFLOW_PIPELINE_ORDER}
+              />
             </div>
 
             {triageError && (
@@ -1021,6 +1060,45 @@ function MvpWorkflow() {
                     <p className="mt-3 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
                       {triageData.result.answer}
                     </p>
+                  )}
+
+                  {citations.length > 0 && (
+                    <TriageCitationList citations={citations.slice(0, 4)} />
+                  )}
+
+                  {similarAlerts.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Similar open alerts
+                      </div>
+                      <ul className="mt-2 space-y-2">
+                        {similarAlerts.map((a) => (
+                          <li
+                            key={a.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card/60 px-3 py-2 text-sm"
+                          >
+                            <div>
+                              <span className="font-medium">{a.title}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {a.severity} · {a.service}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="text-xs text-[var(--interface)] hover:underline"
+                              onClick={() => {
+                                setActiveId(a.id);
+                                setStage("idle");
+                                setTriageData(null);
+                                setTriageError(null);
+                              }}
+                            >
+                              Open in console
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
 
                   <div className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">
@@ -1066,6 +1144,20 @@ function MvpWorkflow() {
                     {effectiveReason}
                   </p>
 
+                  {stage === "done" && (
+                    <div className="mt-3 rounded-lg border border-border bg-[color-mix(in_oklab,var(--resolution)_12%,transparent)] px-3 py-2 text-sm">
+                      This triage avoided{" "}
+                      <span className="font-semibold text-[var(--resolution)]">
+                        ${triageImpactDollars.toLocaleString()}
+                      </span>{" "}
+                      /{" "}
+                      <span className="font-semibold text-[var(--resolution)]">
+                        {triageSavedMin} min
+                      </span>{" "}
+                      MTTR (included in session total when complete).
+                    </div>
+                  )}
+
                   <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
                     <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
                       <div className="text-muted-foreground">Baseline MTTR</div>
@@ -1101,13 +1193,13 @@ function MvpWorkflow() {
                 className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-card px-3.5 py-2 text-sm hover:bg-background transition"
               >
                 <CheckCircle2 className="size-4 text-[var(--resolution)]" />
-                Mark alert as resolved
+                Mark alert as resolved (include in session total)
               </motion.button>
             )}
             {resolved.has(alert.id) && (
               <div className="mt-4 text-xs text-[var(--resolution)] flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5" />
-                Logged · counted in business impact saved
+                Logged · included in business impact saved
               </div>
             )}
           </div>
@@ -1139,61 +1231,30 @@ function MvpWorkflow() {
   );
 }
 
-function WorkflowStages({
-  stage,
-}: {
-  stage: "idle" | "triage" | "suggest" | "decide" | "done";
-}) {
-  const steps: {
-    key: typeof stage;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-  }[] = [
-    { key: "triage", label: "Match KB", icon: Search, color: "rag" },
-    { key: "suggest", label: "Suggest actions", icon: Sparkles, color: "interface" },
-    { key: "decide", label: "Recommend", icon: ShieldCheck, color: "agent" },
-    { key: "done", label: "Ready", icon: Clock, color: "resolution" },
-  ];
-  const order = ["idle", "triage", "suggest", "decide", "done"] as const;
-  const currentIdx = order.indexOf(stage);
-
+function TriageCitationList({ citations }: { citations: Citation[] }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto">
-      {steps.map((s, i) => {
-        const stepIdx = order.indexOf(s.key);
-        const done = currentIdx >= stepIdx && stage !== "idle";
-        const active = stage === s.key;
-        const Icon = s.icon;
-        return (
-          <div key={s.key} className="flex items-center gap-2">
-            <div
-              className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-all"
-              style={{
-                borderColor: done ? `var(--${s.color})` : "var(--border)",
-                color: done ? `var(--${s.color})` : "var(--muted-foreground)",
-                backgroundColor: active
-                  ? `color-mix(in oklab, var(--${s.color}) 20%, transparent)`
-                  : "transparent",
-              }}
-            >
-              {active ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Icon className="size-3.5" />
-              )}
-              {s.label}
+    <div className="mt-4">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+        Sources (citations)
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {citations.map((c) => (
+          <div
+            key={c.index}
+            className="rounded-lg border border-border bg-card/60 p-3"
+          >
+            <div className="text-xs font-medium">
+              [{c.index}] {c.source_label}
             </div>
-            {i < steps.length - 1 && (
-              <ArrowRight className="size-3.5 text-muted-foreground/60" />
-            )}
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-4">
+              {c.snippet}
+            </p>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
-
 
 // ---------- Document upload ----------
 
@@ -1503,53 +1564,26 @@ function LiveKnowledgeBase() {
   );
 }
 
+const KB_PIPELINE_STEPS = [
+  { key: "chunk", label: "Chunk", icon: Scissors, color: "ingest" },
+  { key: "retrieve", label: "Retrieve", icon: Search, color: "rag" },
+  { key: "generate", label: "Generate", icon: Sparkles, color: "agent" },
+  { key: "done", label: "Answer", icon: CheckCircle2, color: "resolution" },
+] as const;
+
+const KB_PIPELINE_ORDER = ["idle", "chunk", "retrieve", "generate", "done"] as const;
+
 function PipelineStages({
   stage,
 }: {
   stage: "idle" | "chunk" | "retrieve" | "generate" | "done";
 }) {
-  const steps: { key: typeof stage; label: string; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
-    { key: "chunk", label: "Chunk", icon: Scissors, color: "ingest" },
-    { key: "retrieve", label: "Retrieve", icon: Search, color: "rag" },
-    { key: "generate", label: "Generate", icon: Sparkles, color: "agent" },
-    { key: "done", label: "Answer", icon: CheckCircle2, color: "resolution" },
-  ];
-  const order = ["idle", "chunk", "retrieve", "generate", "done"] as const;
-  const currentIdx = order.indexOf(stage);
-
   return (
-    <div className="flex items-center gap-2 overflow-x-auto">
-      {steps.map((s, i) => {
-        const stepIdx = order.indexOf(s.key);
-        const done = currentIdx >= stepIdx && stage !== "idle";
-        const active = stage === s.key;
-        const Icon = s.icon;
-        return (
-          <div key={s.key} className="flex items-center gap-2">
-            <div
-              className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-all"
-              style={{
-                borderColor: done ? `var(--${s.color})` : "var(--border)",
-                color: done ? `var(--${s.color})` : "var(--muted-foreground)",
-                backgroundColor: active
-                  ? `color-mix(in oklab, var(--${s.color}) 20%, transparent)`
-                  : "transparent",
-              }}
-            >
-              {active ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Icon className="size-3.5" />
-              )}
-              {s.label}
-            </div>
-            {i < steps.length - 1 && (
-              <ArrowRight className="size-3.5 text-muted-foreground/60" />
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <StepPipeline
+      stage={stage}
+      steps={[...KB_PIPELINE_STEPS]}
+      order={KB_PIPELINE_ORDER}
+    />
   );
 }
 

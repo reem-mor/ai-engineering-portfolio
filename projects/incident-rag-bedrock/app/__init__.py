@@ -51,12 +51,11 @@ def create_app(config: Config | None = None) -> Flask:
 
     @app.context_processor
     def inject_ui_context():
-        cfg = app.config
-        arn = getattr(cfg, "BEDROCK_MODEL_ARN", "") or ""
+        arn = app.config.get("BEDROCK_MODEL_ARN", "") or ""
         model_label = arn.rsplit("/", 1)[-1] if arn else "Bedrock model"
         return {
             "model_label": model_label,
-            "kb_id": getattr(cfg, "BEDROCK_KB_ID", ""),
+            "kb_id": app.config.get("BEDROCK_KB_ID", ""),
         }
 
     return app

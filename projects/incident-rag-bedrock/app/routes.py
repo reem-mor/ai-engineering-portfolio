@@ -54,29 +54,35 @@ def _wants_json() -> bool:
     return best == "application/json" and request.accept_mimetypes[best] >= request.accept_mimetypes["text/html"]
 
 
+def _cfg_get(key: str, default: str = "") -> str:
+    """Read Flask config keys set via Config.from_object (dict storage)."""
+    value = current_app.config.get(key, default)
+    return value if value is not None else default
+
+
 def _model_label() -> str:
-    cfg = current_app.config
-    arn = getattr(cfg, "BEDROCK_MODEL_ARN", "") or ""
+    arn = _cfg_get("BEDROCK_MODEL_ARN")
     if "/" in arn:
         return arn.rsplit("/", 1)[-1]
     return "Bedrock model"
 
 
 def _bootstrap_context() -> dict:
-    cfg = current_app.config
-    max_bytes = getattr(cfg, "MAX_UPLOAD_BYTES", 5_242_880)
+    max_bytes = current_app.config.get("MAX_UPLOAD_BYTES", 5_242_880)
+    if not isinstance(max_bytes, int):
+        max_bytes = int(max_bytes or 5_242_880)
     return {
         "examples": flat_example_questions(),
         "example_groups": grouped_example_questions(),
         "workflow_alerts": load_workflow_alerts(),
         "max_len": MAX_QUESTION_LEN,
         "model_label": _model_label(),
-        "kb_id": getattr(cfg, "BEDROCK_KB_ID", ""),
-        "s3_bucket": getattr(cfg, "S3_BUCKET", ""),
-        "s3_prefix": getattr(cfg, "S3_PREFIX", ""),
+        "kb_id": _cfg_get("BEDROCK_KB_ID"),
+        "s3_bucket": _cfg_get("S3_BUCKET"),
+        "s3_prefix": _cfg_get("S3_PREFIX"),
         "max_upload_mb": max(1, max_bytes // (1024 * 1024)),
         "allowed_types": sorted(ALLOWED_UPLOAD_SUFFIXES),
-        "sync_kb_default": bool(getattr(cfg, "BEDROCK_DATA_SOURCE_ID", "")),
+        "sync_kb_default": bool(_cfg_get("BEDROCK_DATA_SOURCE_ID")),
         "spa_enabled": spa_enabled(),
     }
 
@@ -237,11 +243,10 @@ def health():
     if request.args.get("deep") != "1":
         return jsonify(status="ok"), 200
 
-    cfg = current_app.config
     checks: dict[str, str] = {"app": "ok"}
-    bucket = getattr(cfg, "S3_BUCKET", "") or ""
-    kb_id = getattr(cfg, "BEDROCK_KB_ID", "") or ""
-    model_arn = getattr(cfg, "BEDROCK_MODEL_ARN", "") or ""
+    bucket = _cfg_get("S3_BUCKET")
+    kb_id = _cfg_get("BEDROCK_KB_ID")
+    model_arn = _cfg_get("BEDROCK_MODEL_ARN")
 
     if not bucket:
         checks["s3"] = "missing_config"

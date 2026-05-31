@@ -131,7 +131,7 @@ Full deployment path: **Documents -> S3 -> Bedrock KB -> Flask + boto3 -> Docker
 | Docker | Docker Desktop / Engine | Containerization with gunicorn, non-root user, healthcheck |
 | Amazon EC2 | t3.micro | Public demo host with IAM instance profile |
 | gunicorn | 22.0.0 | Production WSGI server; never Flask dev server |
-| Flask-WTF | 1.2.1 | CSRF protection on all POST forms |
+| Flask-WTF | 1.2.1 | CSRF for legacy forms; JSON SPA routes exempt (token via `/api/bootstrap`) |
 | pytest | 8.3.4 | 102 offline unit tests with Stubber and fakes; zero live AWS calls |
 
 ---
@@ -219,6 +219,18 @@ Set `FORCE_LEGACY_UI=1` to fall back to the original Jinja + HTMX templates (use
 
 ### Verification (production review)
 
+Run commands from the **project root** (`projects/incident-rag-bedrock`). The Python venv is `.venv` here — not under `frontend/`.
+
+**Windows (PowerShell):**
+
+```powershell
+cd projects\incident-rag-bedrock
+.\scripts\verify.ps1
+# Offline only (no AWS): .\scripts\verify.ps1 -SkipLiveAws -SkipE2e
+```
+
+**Linux / macOS:**
+
 ```bash
 pytest -q
 cd frontend && npm run build
@@ -228,7 +240,7 @@ python scripts/kb_smoke_test.py                            # live Bedrock KB (re
 curl http://127.0.0.1:8080/health?deep=1
 ```
 
-See [docs/PRODUCTION_REVIEW.md](docs/PRODUCTION_REVIEW.md) for the full phased checklist.
+See [docs/PRODUCTION_REVIEW.md](docs/PRODUCTION_REVIEW.md) and [docs/GRADING_CHECKLIST.md](docs/GRADING_CHECKLIST.md) for the full checklist and course guideline mapping.
 
 ### Run with Docker (recommended)
 
@@ -334,7 +346,7 @@ All 19 proof screenshots are in [`screenshots/`](screenshots/). See [`screenshot
 | 08 | `08_app_question_and_answer.png` | Grounded answer with citation cards |
 | 09 | `09_app_refusal_or_low_confidence.png` | Off-topic refusal; amber card |
 | 10 | `10_cleanup_console.png` | EC2 terminated / resources deleted |
-| 11 | `11_pytest_passed.png` | pytest: 89 passed |
+| 11 | `11_pytest_passed.png` | pytest: 102 passed (re-capture after test changes) |
 | 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test: 6/6 PASS |
 | 13 | `13_mvp_workflow.png` | MVP alert console + triage result |
 | 14 | `14_architecture.png` | Interactive architecture panel |
@@ -377,7 +389,7 @@ Public URL used during testing: `http://ec2-100-53-32-194.compute-1.amazonaws.co
 | Scoped IAM policy | Bedrock retrieve/generate + S3 read + PutObject on KB prefix only |
 | SSH locked to my IP | Port 22 not open to `0.0.0.0/0` |
 | Non-root container | `useradd app` in Dockerfile, `USER app` before CMD |
-| CSRF on all forms | Flask-WTF `CSRFProtect`, token in every POST form |
+| CSRF | Flask-WTF `CSRFProtect`; legacy POST forms validated; JSON SPA uses exempt routes + bootstrap token |
 | Server-side validation | Questions 3-500 chars; upload type/size whitelist before any S3 call |
 | `.env` gitignored | Only `.env.example` with placeholders is in the repo |
 | Graceful refusal | No hallucination; amber card when KB has no relevant chunks |
