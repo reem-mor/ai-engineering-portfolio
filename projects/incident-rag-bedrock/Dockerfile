@@ -1,4 +1,12 @@
 # syntax=docker/dockerfile:1.7
+
+FROM node:22-alpine AS frontend-build
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -6,22 +14,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Minimal runtime deps (curl for healthcheck).
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-# Non-root user.
 RUN useradd --create-home --shell /bin/bash app
 WORKDIR /home/app
 
-# Install Python deps first for cache efficiency.
 COPY --chown=app:app requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code.
 COPY --chown=app:app app ./app
 COPY --chown=app:app wsgi.py ./wsgi.py
+COPY --from=frontend-build --chown=app:app /build/app/static/spa ./app/static/spa
 
 USER app
 

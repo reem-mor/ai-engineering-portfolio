@@ -8,7 +8,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-89_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-102_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?style=flat-square&logo=flask&logoColor=white)
@@ -35,20 +35,22 @@ On-call engineers waste 5-15 minutes per incident searching for the right runboo
 ```mermaid
 flowchart TD
     user["On-call engineer<br/>Browser"]
-    ui["IncidentIQ UI<br/>Flask 3 · Jinja · HTMX"]
-    routes["app/routes.py<br/>/ask · /workflow/triage · /documents/upload"]
+    spa["React 19 SPA · Vite · shadcn/ui<br/>frontend/ → app/static/spa"]
+    api["Flask 3 JSON API<br/>/api/bootstrap · /ask · /api/workflow/triage"]
+    routes["app/routes.py<br/>BedrockRagClient · uploads"]
     rag["BedrockRagClient<br/>boto3 bedrock-agent-runtime"]
     bedrock["Amazon Bedrock<br/>RetrieveAndGenerate"]
     kb["Knowledge Base<br/>RBTJM6NIG9"]
     vector["OpenSearch Serverless<br/>managed vector index"]
     s3["S3 corpus bucket<br/>reem-amdocs-ai-artifacts-3331<br/>projects/incident-rag-bedrock/data/sample_documents/"]
     model["LLM<br/>inference profile / Claude Haiku compatible model"]
-    partials["Rendered partials<br/>_answer.html · _workflow_result.html"]
+    legacy["Legacy HTMX UI optional<br/>FORCE_LEGACY_UI=1"]
     docker["Docker + gunicorn<br/>non-root user · healthcheck"]
     ec2["EC2 t3.micro demo host<br/>IAM instance profile · public URL"]
 
-    user -->|"HTMX POST"| ui
-    ui --> routes
+    user -->|"fetch JSON"| spa
+    spa --> api
+    api --> routes
     routes --> rag
     rag --> bedrock
     bedrock --> kb
@@ -56,9 +58,9 @@ flowchart TD
     vector --> s3
     bedrock --> model
     model -->|"grounded answer + citations"| rag
-    rag --> partials
-    partials -->|"HTMX swap"| user
-    ui -. packaged as .-> docker
+    rag -->|"answer + citations"| spa
+    api -. legacy .-> legacy
+    spa -. packaged as .-> docker
     docker -. deployed on .-> ec2
 
     classDef browser fill:#dff7ff,stroke:#0ea5b7,color:#0f172a
@@ -68,9 +70,9 @@ flowchart TD
     classDef deploy fill:#f5f3ff,stroke:#8b5cf6,color:#111827
 
     class user browser
-    class ui,routes,rag app
+    class spa,api,routes,rag app
     class bedrock,kb,vector,s3,model aws
-    class partials answer
+    class legacy answer
     class docker,ec2 deploy
 ```
 
@@ -117,9 +119,12 @@ Full deployment path: **Documents -> S3 -> Bedrock KB -> Flask + boto3 -> Docker
 | Technology | Version | Role in this project |
 |-----------|---------|---------------------|
 | Python | 3.12 | Application language |
-| Flask | 3.0.3 | Web framework, Jinja templates, HTMX integration |
+| Flask | 3.0.3 | Web framework, JSON API, optional legacy Jinja/HTMX |
+| React | 19 | SPA UI ported from [incident-iq-compass](https://github.com/reem-mor/incident-iq-compass) |
+| Vite | 7 | Frontend build; dev proxy to Flask `:8080` |
+| shadcn/ui | — | Component library under `frontend/src/components/ui/` |
 | boto3 | 1.35.49 | AWS SDK; calls `bedrock-agent-runtime` |
-| HTMX | 2.0.3 | Partial page swaps without a JavaScript framework |
+| HTMX | 2.0.3 | Legacy UI only when `FORCE_LEGACY_UI=1` |
 | Amazon Bedrock | AWS managed | `RetrieveAndGenerate`; single API call per Q&A |
 | Amazon S3 | AWS managed | Document corpus storage and KB data source |
 | Amazon OpenSearch Serverless | AWS managed | Vector index managed by Bedrock KB |
@@ -127,7 +132,7 @@ Full deployment path: **Documents -> S3 -> Bedrock KB -> Flask + boto3 -> Docker
 | Amazon EC2 | t3.micro | Public demo host with IAM instance profile |
 | gunicorn | 22.0.0 | Production WSGI server; never Flask dev server |
 | Flask-WTF | 1.2.1 | CSRF protection on all POST forms |
-| pytest | 8.3.4 | 89 offline unit tests with Stubber and fakes; zero live AWS calls |
+| pytest | 8.3.4 | 102 offline unit tests with Stubber and fakes; zero live AWS calls |
 
 ---
 
@@ -188,11 +193,48 @@ cp .env.example .env
 
 **Note:** No `AWS_ACCESS_KEY_ID` in `.env` on EC2. IAM instance profile handles credentials.
 
+### React UI (local development)
+
+The production UI lives in `frontend/` (design ported from **incident-iq-compass**). Build output is written to `app/static/spa/` and served by Flask when present.
+
+```bash
+# Terminal 1 — API
+gunicorn -b 127.0.0.1:8080 wsgi:app
+
+# Terminal 2 — Vite dev server (proxies /api, /ask, /documents to Flask)
+cd frontend
+npm install
+npm run dev
+# http://localhost:5173
+```
+
+Build the SPA for Docker or same-origin Flask:
+
+```bash
+cd frontend && npm ci && npm run build
+# serves at http://localhost:8080 when gunicorn is running
+```
+
+Set `FORCE_LEGACY_UI=1` to fall back to the original Jinja + HTMX templates (used by most pytest fixtures). SPA-specific tests live in `tests/test_spa_mode.py`.
+
+### Verification (production review)
+
+```bash
+pytest -q
+cd frontend && npm run build
+docker compose up -d --build
+APP_URL=http://127.0.0.1:8080 python scripts/verify_e2e.py   # SPA-aware E2E
+python scripts/kb_smoke_test.py                            # live Bedrock KB (requires AWS)
+curl http://127.0.0.1:8080/health?deep=1
+```
+
+See [docs/PRODUCTION_REVIEW.md](docs/PRODUCTION_REVIEW.md) for the full phased checklist.
+
 ### Run with Docker (recommended)
 
 ```bash
 docker compose up --build
-# http://localhost:8080
+# http://localhost:8080  (includes built React SPA)
 ```
 
 ### Run with Python directly
@@ -215,7 +257,7 @@ Windows activation alternative:
 
 ```bash
 pytest -v
-# Expected: 89 passed, 0 failed; no live AWS calls required
+# Expected: 102 passed, 0 failed; no live AWS calls required
 ```
 
 ---
@@ -224,13 +266,17 @@ pytest -v
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/` | Full homepage with all presentation sections |
-| `GET` | `/health` | `{"status":"ok"}`; used by Docker healthcheck |
-| `POST` | `/ask` | HTMX partial: grounded answer + citations, or refusal |
-| `POST` | `/workflow/triage` | HTMX partial: alert triage with recommendation + MTTR metrics |
-| `POST` | `/documents/upload` | HTMX partial: S3 upload + optional KB sync |
+| `GET` | `/` | React SPA (`app/static/spa`) or legacy Jinja homepage |
+| `GET` | `/api/bootstrap` | JSON: examples, workflow alerts, upload limits, `csrf_token` |
+| `GET` | `/health` | `{"status":"ok"}`; optional `?deep=1` for config checks |
+| `POST` | `/ask` | JSON or HTMX: grounded answer + citations; optional `session_id` for follow-ups |
+| `POST` | `/api/workflow/triage` | JSON: alert triage (Bedrock-backed) |
+| `POST` | `/workflow/triage` | JSON or HTMX: same triage payload as above |
+| `POST` | `/documents/upload` | JSON (`?format=json`) or HTMX: S3 upload + optional KB sync |
 
-`/ask` also accepts `?format=json` or `Accept: application/json` for API usage.
+`/ask` accepts `Content-Type: application/json` with `{"question":"...","session_id":"..."}` (omit or null `session_id` to start a new Bedrock session).
+
+Upload with KB sync issues returns **202** when the file reached S3 but ingestion did not start (`partial`, `sync_warning`).
 
 ---
 

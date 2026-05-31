@@ -28,9 +28,10 @@ class UploadResult:
     size_bytes: int
     sync_started: bool
     ingestion_job_id: str | None = None
+    sync_warning: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "filename": self.filename,
             "s3_key": self.s3_key,
             "s3_uri": self.s3_uri,
@@ -38,6 +39,10 @@ class UploadResult:
             "sync_started": self.sync_started,
             "ingestion_job_id": self.ingestion_job_id,
         }
+        if self.sync_warning:
+            payload["sync_warning"] = self.sync_warning
+            payload["partial"] = True
+        return payload
 
 
 def _object_key(prefix: str, filename: str) -> tuple[str, str]:
@@ -90,29 +95,29 @@ class DocumentUploadService:
         ingestion_job_id: str | None = None
         sync_started = False
 
+        sync_warning: str | None = None
         if sync_kb:
             if not self._config.BEDROCK_DATA_SOURCE_ID:
-                raise BedrockError(
+                sync_warning = (
                     f"File saved to {s3_uri}, but KB sync is not configured "
-                    "(set BEDROCK_DATA_SOURCE_ID). Sync manually in the Bedrock console.",
-                    code="kb_sync_not_configured",
+                    "(set BEDROCK_DATA_SOURCE_ID). Sync manually in the Bedrock console."
                 )
-            try:
-                resp = self._agent.start_ingestion_job(
-                    knowledgeBaseId=self._config.BEDROCK_KB_ID,
-                    dataSourceId=self._config.BEDROCK_DATA_SOURCE_ID,
-                    description=f"Web upload: {original}",
-                )
-                job = resp.get("ingestionJob") or {}
-                ingestion_job_id = job.get("ingestionJobId")
-                sync_started = True
-            except (ClientError, BotoCoreError) as exc:
-                log.warning("KB sync failed after S3 upload: %s", exc)
-                err = translate(exc)
-                raise BedrockError(
-                    f"File saved to {s3_uri}, but Knowledge Base sync failed: {err.user_message}",
-                    code="kb_sync_failed",
-                ) from exc
+            else:
+                try:
+                    resp = self._agent.start_ingestion_job(
+                        knowledgeBaseId=self._config.BEDROCK_KB_ID,
+                        dataSourceId=self._config.BEDROCK_DATA_SOURCE_ID,
+                        description=f"Web upload: {original}",
+                    )
+                    job = resp.get("ingestionJob") or {}
+                    ingestion_job_id = job.get("ingestionJobId")
+                    sync_started = True
+                except (ClientError, BotoCoreError) as exc:
+                    log.warning("KB sync failed after S3 upload: %s", exc)
+                    err = translate(exc)
+                    sync_warning = (
+                        f"File saved to {s3_uri}, but Knowledge Base sync failed: {err.user_message}"
+                    )
 
         return UploadResult(
             filename=original,
@@ -121,6 +126,7 @@ class DocumentUploadService:
             size_bytes=len(body),
             sync_started=sync_started,
             ingestion_job_id=ingestion_job_id,
+            sync_warning=sync_warning,
         )
 
 
