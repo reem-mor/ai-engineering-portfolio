@@ -33,9 +33,10 @@ def _source_hit(citations: list, fragments: list[str]) -> bool:
     return any(frag.lower() in blob for frag in fragments)
 
 
-def run_smoke() -> tuple[int, int, list[dict]]:
+def run_smoke() -> tuple[int, int, list[dict], str]:
     cfg = Config.from_env()
     client = BedrockRagClient(cfg)
+    model_arn = cfg.BEDROCK_MODEL_ARN
     questions = _load_questions()
     rows: list[dict] = []
     passed = 0
@@ -135,16 +136,17 @@ def run_smoke() -> tuple[int, int, list[dict]]:
         )
         print(f"[{'PASS' if ok else 'FAIL'}] #{qid}: {question[:60]}...")
 
-    return passed, len(questions), rows
+    return passed, len(questions), rows, model_arn
 
 
-def write_results(passed: int, total: int, rows: list[dict]) -> Path:
+def write_results(passed: int, total: int, rows: list[dict], model_arn: str = "") -> Path:
     out = ROOT / "evaluation" / "smoke_results.md"
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
         "# Bedrock KB Smoke Test Results",
         "",
         f"- **Run at:** {ts}",
+        f"- **Model:** `{model_arn}`" if model_arn else "- **Model:** (not recorded)",
         f"- **Score:** {passed}/{total} PASS",
         "",
         "| # | Question | Grounded | Citations | Status |",
@@ -173,7 +175,7 @@ def write_results(passed: int, total: int, rows: list[dict]) -> Path:
 SHOWCASE_IDS = (1, 2, 3, 4, 5)
 
 
-def write_qa_showcase(rows: list[dict]) -> Path:
+def write_qa_showcase(rows: list[dict], model_arn: str = "") -> Path:
     """Submission artifact: grounded Q&A + off-corpus refusal (screenshot 19)."""
     out = ROOT / "evaluation" / "qa_showcase.md"
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -182,6 +184,7 @@ def write_qa_showcase(rows: list[dict]) -> Path:
         "# Sample Questions and Answers — Live Bedrock KB",
         "",
         f"- **Run at:** {ts}",
+        f"- **Model:** `{model_arn}`" if model_arn else "- **Model:** (not recorded)",
         f"- **Corpus:** {s3_prefix}",
         "- **Cases:** 4 grounded runbook answers + 1 off-topic refusal",
         "",
@@ -215,9 +218,9 @@ def write_qa_showcase(rows: list[dict]) -> Path:
 
 
 def main() -> int:
-    passed, total, rows = run_smoke()
-    out = write_results(passed, total, rows)
-    showcase = write_qa_showcase(rows)
+    passed, total, rows, model_arn = run_smoke()
+    out = write_results(passed, total, rows, model_arn)
+    showcase = write_qa_showcase(rows, model_arn)
     print(f"\n{passed}/{total} passed — wrote {out}")
     print(f"Showcase: {showcase}")
     return 0 if passed == total else 1
