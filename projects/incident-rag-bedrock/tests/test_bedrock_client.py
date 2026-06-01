@@ -303,10 +303,18 @@ def test_to_dict_shape(config):
     with stub:
         d = client.ask("valid question here").to_dict()
     assert set(d.keys()) == {
-        "answer", "citations", "session_id", "grounded", "latency_ms", "matched_runbook",
+        "answer",
+        "answer_sections",
+        "citations",
+        "session_id",
+        "grounded",
+        "latency_ms",
+        "matched_runbook",
     }
     assert d["citations"][0]["source_label"] == "a.md"
     assert d["citations"][0]["index"] == 1
+    assert "preview" in d["citations"][0]
+    assert "steps" in d["answer_sections"]
 
 
 def test_ask_sends_custom_generation_prompt(config):

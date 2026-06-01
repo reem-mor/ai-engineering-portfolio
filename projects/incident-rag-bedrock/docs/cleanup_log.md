@@ -10,6 +10,7 @@ Resources created for assignment proof and removed the same day.
 | Security group | `sg-0b405b6a42325979e` (`incident-rag-sg`) | Deleted |
 | IAM instance profile | `incident-rag-ec2-profile` | Deleted |
 | IAM role | `incident-rag-ec2-role` | Deleted (inline policy removed first) |
+| ECR repository | `incident-rag-bedrock` | Deleted 2026-06-01 (`--force`); deploy path uses GHCR, repo was leftover |
 
 ## Public URL used during testing (now offline)
 
@@ -21,10 +22,9 @@ Validated: `/health` → `{"status":"ok"}`, grounded `/ask` with citations, off-
 
 | Resource | Notes |
 |----------|--------|
-| Bedrock KB `RBTJM6NIG9` | Data source prefix updated to `projects/incident-rag-bedrock/data/sample_documents/`; ingestion job `PESWBFWL1V` indexed 10/10 docs |
+| Bedrock KB `RBTJM6NIG9` | Data source prefix `projects/incident-rag-bedrock/data/sample_documents/`; re-synced 2026-06-01 (job `EZ0U4VBQ0O`) — 17 docs indexed after adding course demo runbooks and removing upload duplicates |
 | S3 bucket `reem-amdocs-ai-artifacts-3331` | Canonical corpus at `projects/incident-rag-bedrock/data/sample_documents/` |
 | Bedrock KB execution role S3 policy | `AmazonBedrockS3PolicyForKnowledgeBase_2q8xn` v2 — includes new prefix (see `infra/bedrock_kb_s3_policy.json`) |
-| ECR repo `incident-rag-bedrock:demo` | Latest image pushed for EC2 deploy |
 
 ## Prior cleanup (same day, earlier session)
 

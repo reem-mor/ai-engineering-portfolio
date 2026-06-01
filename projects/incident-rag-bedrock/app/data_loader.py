@@ -27,6 +27,14 @@ def flat_example_questions() -> list[str]:
     return [item["question"] for item in load_example_questions()]
 
 
+def grouped_example_questions() -> dict[str, list[str]]:
+    groups: dict[str, list[str]] = {}
+    for item in load_example_questions():
+        label = str(item.get("label") or "General")
+        groups.setdefault(label, []).append(item["question"])
+    return groups
+
+
 def find_workflow_alert(alert_id: str | None) -> dict[str, Any] | None:
     if not alert_id:
         return None
