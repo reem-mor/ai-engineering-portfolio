@@ -345,6 +345,9 @@ See **Demo Questions** above and [`evaluation/qa_showcase.md`](evaluation/qa_sho
 >
 > Result: amber **Not in knowledge base** card; no hallucination.
 
+Full smoke-test output: [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md)
+
+Submission deliverable (dataset + sample Q&A, ready to email): [`docs/teacher_submission_email.md`](docs/teacher_submission_email.md). Dataset card: [`data/sample_documents/README.md`](data/sample_documents/README.md).
 ---
 
 ## Screenshots
