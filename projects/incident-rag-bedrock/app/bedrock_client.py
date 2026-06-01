@@ -10,7 +10,12 @@ import boto3
 
 from app.config import Config
 from app.errors import BedrockError, translate
-from app.text_utils import format_citation_label
+from app.text_utils import (
+    extract_reference_metadata,
+    format_answer_sections,
+    format_citation_label,
+    format_citation_preview,
+)
 from app.validators import MAX_QUESTION_LEN, validate_question
 
 log = logging.getLogger(__name__)
@@ -20,7 +25,24 @@ MIN_QUESTION_LEN = 3
 
 # Override Bedrock default prompt (which can nudge models toward tool-style output).
 RAG_GENERATION_PROMPT = """You are IncidentIQ, an NOC assistant. Answer ONLY using the search results below.
-Write plain English runbook steps. Do NOT emit tool calls, JSON, or lines starting with "Action:".
+Write plain English. Do NOT emit tool calls, JSON, or lines starting with "Action:".
+
+Use exactly this structure:
+
+Summary:
+One short sentence answering the question.
+
+Recommended steps:
+1. First concrete action
+2. Second action
+(continue numbering as needed)
+
+Escalation:
+- When to escalate
+- Who to escalate to
+
+Why this answer:
+One line citing the runbook, alert history, or postmortem from the search results.
 
 User question:
 $query$
@@ -38,6 +60,21 @@ class Citation:
     source_uri: str | None
     source_label: str = "Unknown source"
     index: int = 1
+    score: float | None = None
+    chunk_index: int | None = None
+    preview: str = ""
+
+    def __post_init__(self) -> None:
+        if self.source_uri and self.source_label == "Unknown source":
+            object.__setattr__(
+                self, "source_label", format_citation_label(self.source_uri)
+            )
+        if not self.preview and self.snippet:
+            object.__setattr__(
+                self,
+                "preview",
+                format_citation_preview(self.snippet, self.source_label),
+            )
 
 
 @dataclass(frozen=True)
@@ -52,12 +89,16 @@ class RagAnswer:
     def to_dict(self) -> dict[str, Any]:
         return {
             "answer": self.answer,
+            "answer_sections": format_answer_sections(self.answer),
             "citations": [
                 {
                     "snippet": c.snippet,
                     "source_uri": c.source_uri,
                     "source_label": c.source_label,
                     "index": c.index,
+                    "score": c.score,
+                    "chunk_index": c.chunk_index,
+                    "preview": c.preview or format_citation_preview(c.snippet, c.source_label),
                 }
                 for c in self.citations
             ],
@@ -129,11 +170,16 @@ def _parse_response(response: dict[str, Any], *, latency_ms: int) -> RagAnswer:
             location = ref.get("location", {}) or {}
             source_uri = (location.get("s3Location", {}) or {}).get("uri")
             if snippet:
+                label = format_citation_label(source_uri)
+                score, chunk_index = extract_reference_metadata(ref)
                 parsed.append(
                     Citation(
                         snippet=snippet,
                         source_uri=source_uri,
-                        source_label=format_citation_label(source_uri),
+                        source_label=label,
+                        score=score,
+                        chunk_index=chunk_index,
+                        preview=format_citation_preview(snippet, label),
                     ),
                 )
 
@@ -168,6 +214,9 @@ def _dedupe_citations(citations: list[Citation]) -> list[Citation]:
             source_uri=c.source_uri,
             source_label=c.source_label,
             index=idx,
+            score=c.score,
+            chunk_index=c.chunk_index,
+            preview=c.preview,
         )
         for idx, c in enumerate(unique, start=1)
     ]

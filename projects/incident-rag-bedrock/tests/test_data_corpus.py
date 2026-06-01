@@ -15,12 +15,28 @@ EVAL_PATH = ROOT / "evaluation" / "test_questions.json"
 
 def test_example_questions_unique_labels_and_text():
     items = load_example_questions()
-    assert len(items) >= 3
+    assert len(items) == 5
     questions = [i["question"] for i in items]
     assert len(questions) == len(set(questions))
     for item in items:
         assert item.get("label")
         assert len(item["question"]) >= 10
+
+
+DEMO_CORPUS_FILES = (
+    "runbook_db_cpu.md",
+    "runbook_checkout_5xx.md",
+    "runbook_queue_lag.md",
+    "runbook_auth_login.md",
+    "alerts_last_3mo.json",
+    "postmortem_2024_07.md",
+    "tier1_escalation_guide.md",
+)
+
+
+def test_demo_corpus_files_exist():
+    for name in DEMO_CORPUS_FILES:
+        assert (CORPUS / name).is_file(), f"missing demo corpus file: {name}"
 
 
 def test_grouped_examples_cover_all_questions():
@@ -31,7 +47,7 @@ def test_grouped_examples_cover_all_questions():
 
 def test_workflow_alerts_have_required_fields():
     alerts = load_workflow_alerts()
-    assert alerts
+    assert len(alerts) == 5
     ids = [a["id"] for a in alerts]
     assert len(ids) == len(set(ids))
     for alert in alerts:

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { askQuestion, triageAlert, uploadDocument } from "@/lib/api";
 import { useBootstrap } from "@/context/bootstrap";
@@ -6,12 +6,13 @@ import { useDemoTour } from "@/context/demo-tour";
 import { useWorkflowSession } from "@/context/workflow-session";
 import { AppTopBar } from "@/components/AppTopBar";
 import { DemoDashboard } from "@/components/DemoDashboard";
+import { CitationList, FormattedAnswer } from "@/components/FormattedAnswer";
 import {
   StepPipeline,
   WORKFLOW_PIPELINE_ORDER,
   WORKFLOW_PIPELINE_STEPS,
 } from "@/components/StepPipeline";
-import { delay, rankSimilarAlerts } from "@/lib/workflow-utils";
+import { delay, rankSimilarAlerts, alertImpactDollars, alertSavedMinutes } from "@/lib/workflow-utils";
 import type { Citation, RagAnswer, WorkflowAlert, WorkflowTriagePayload } from "@/types/rag";
 import {
   FileText,
@@ -868,8 +869,6 @@ function MvpWorkflow() {
     }
   }
 
-  const displayActions =
-    triageData?.actions?.length ? triageData.actions : alert.actions ?? [];
   const displayRunbook =
     triageData?.matched_runbook ?? triageData?.result?.matched_runbook ?? alert.matchedRunbook;
   const displayQuestion = triageData?.question ?? alert.question;
@@ -883,10 +882,8 @@ function MvpWorkflow() {
   const similarAlerts = rankSimilarAlerts(alerts, alert, 2);
 
   const triageImpactDollars =
-    triageData?.impact_avoided ??
-    Math.max(0, alert.baselineMin - alert.assistedMin) * alert.impactPerMin;
-  const triageSavedMin =
-    triageData?.saved_min ?? Math.max(0, alert.baselineMin - alert.assistedMin);
+    triageData?.impact_avoided ?? alertImpactDollars(alert);
+  const triageSavedMin = triageData?.saved_min ?? alertSavedMinutes(alert);
 
   function markResolved() {
     markResolvedSession(alert.id);
@@ -984,11 +981,20 @@ function MvpWorkflow() {
               <div className="mt-1 flex items-baseline gap-2">
                 <TrendingDown className="size-4 text-[var(--resolution)]" />
                 <span className="text-2xl font-semibold text-[var(--resolution)]">
-                  ${totalSavedImpact.toLocaleString()}
+                  ~ ${totalSavedImpact.toLocaleString()}
                 </span>
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {totalSavedMin} min of MTTR avoided this session
+              </div>
+              {sessionTotals.triagedCount > 0 && (
+                <div className="mt-1 text-[11px] text-[var(--resolution)]">
+                  {sessionTotals.triagedCount} alert
+                  {sessionTotals.triagedCount === 1 ? "" : "s"} triaged with assistant guidance
+                </div>
+              )}
+              <div className="mt-2 text-[10px] text-muted-foreground/80">
+                Demo estimate — not actual financial impact.
               </div>
             </div>
           </div>
@@ -1056,14 +1062,20 @@ function MvpWorkflow() {
                     <span className="text-muted-foreground">Top runbook: </span>
                     <span className="font-medium">{displayRunbook ?? "—"}</span>
                   </div>
-                  {triageData?.result?.answer && (
-                    <p className="mt-3 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                      {triageData.result.answer}
-                    </p>
+                  {triageData?.result && (
+                    <div className="mt-3">
+                      <FormattedAnswer
+                        answer={triageData.result.answer}
+                        sections={triageData.result.answer_sections}
+                        grounded={triageData.result.grounded}
+                      />
+                    </div>
                   )}
 
                   {citations.length > 0 && (
-                    <TriageCitationList citations={citations.slice(0, 4)} />
+                    <div className="mt-4">
+                      <CitationList citations={citations.slice(0, 4)} title="Retrieved citations" />
+                    </div>
                   )}
 
                   {similarAlerts.length > 0 && (
@@ -1101,19 +1113,6 @@ function MvpWorkflow() {
                     </div>
                   )}
 
-                  <div className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">
-                    Suggested actions
-                  </div>
-                  <ol className="mt-2 space-y-1.5">
-                    {displayActions.map((a, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--interface)_25%,transparent)] text-[10px] font-semibold text-[var(--interface)]">
-                          {i + 1}
-                        </span>
-                        <span>{a}</span>
-                      </li>
-                    ))}
-                  </ol>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1146,37 +1145,27 @@ function MvpWorkflow() {
 
                   {stage === "done" && (
                     <div className="mt-3 rounded-lg border border-border bg-[color-mix(in_oklab,var(--resolution)_12%,transparent)] px-3 py-2 text-sm">
-                      This triage avoided{" "}
+                      Expected MTTR reduction:{" "}
                       <span className="font-semibold text-[var(--resolution)]">
-                        ${triageImpactDollars.toLocaleString()}
+                        ~ ${triageImpactDollars.toLocaleString()}
                       </span>{" "}
                       /{" "}
                       <span className="font-semibold text-[var(--resolution)]">
                         {triageSavedMin} min
                       </span>{" "}
-                      MTTR (included in session total when complete).
+                      (demo estimate). Counted when you run triage once per alert.
                     </div>
                   )}
 
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 text-xs">
                     <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
-                      <div className="text-muted-foreground">Baseline MTTR</div>
-                      <div className="font-mono">{alert.baselineMin} min</div>
+                      <div className="text-muted-foreground">Severity</div>
+                      <div className="font-mono">{alert.severity}</div>
                     </div>
                     <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
-                      <div className="text-muted-foreground">With assistant</div>
+                      <div className="text-muted-foreground">Demo impact if resolved</div>
                       <div className="font-mono text-[var(--resolution)]">
-                        {alert.assistedMin} min
-                      </div>
-                    </div>
-                    <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
-                      <div className="text-muted-foreground">Impact avoided</div>
-                      <div className="font-mono text-[var(--resolution)]">
-                        $
-                        {(
-                          (alert.baselineMin - alert.assistedMin) *
-                          alert.impactPerMin
-                        ).toLocaleString()}
+                        ${alertImpactDollars(alert).toLocaleString()} / {alertSavedMinutes(alert)} min
                       </div>
                     </div>
                   </div>
@@ -1193,13 +1182,13 @@ function MvpWorkflow() {
                 className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-card px-3.5 py-2 text-sm hover:bg-background transition"
               >
                 <CheckCircle2 className="size-4 text-[var(--resolution)]" />
-                Mark alert as resolved (include in session total)
+                Mark alert as resolved
               </motion.button>
             )}
             {resolved.has(alert.id) && (
               <div className="mt-4 text-xs text-[var(--resolution)] flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5" />
-                Logged · included in business impact saved
+                Resolved · impact already counted from triage
               </div>
             )}
           </div>
@@ -1231,31 +1220,6 @@ function MvpWorkflow() {
   );
 }
 
-function TriageCitationList({ citations }: { citations: Citation[] }) {
-  return (
-    <div className="mt-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-        Sources (citations)
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {citations.map((c) => (
-          <div
-            key={c.index}
-            className="rounded-lg border border-border bg-card/60 p-3"
-          >
-            <div className="text-xs font-medium">
-              [{c.index}] {c.source_label}
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-4">
-              {c.snippet}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ---------- Document upload ----------
 
 function DocumentUpload() {
@@ -1265,16 +1229,84 @@ function DocumentUpload() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bucket = data?.s3_bucket || "…";
   const prefix = data?.s3_prefix || "";
-  const allowed = (data?.allowed_types ?? []).join(", ");
+  const allowedTypes = data?.allowed_types ?? [".md", ".txt", ".csv", ".docx", ".pdf"];
+  const allowed = allowedTypes.join(", ");
   const maxMb = data?.max_upload_mb ?? 5;
+  const maxBytes = maxMb * 1024 * 1024;
+
+  const validateFile = useCallback(
+    (candidate: File): string | null => {
+      const ext = candidate.name.includes(".")
+        ? `.${candidate.name.split(".").pop()?.toLowerCase()}`
+        : "";
+      if (!allowedTypes.some((t) => t.toLowerCase() === ext)) {
+        return `Invalid file type. Allowed: ${allowed}`;
+      }
+      if (candidate.size > maxBytes) {
+        return `File exceeds ${maxMb} MB limit (${(candidate.size / (1024 * 1024)).toFixed(1)} MB).`;
+      }
+      if (candidate.size === 0) {
+        return "File is empty.";
+      }
+      return null;
+    },
+    [allowed, allowedTypes, maxBytes, maxMb],
+  );
+
+  const selectFile = useCallback(
+    (candidate: File | null) => {
+      setMessage(null);
+      if (!candidate) {
+        setFile(null);
+        setError(null);
+        return;
+      }
+      const validationError = validateFile(candidate);
+      if (validationError) {
+        setFile(null);
+        setError(validationError);
+        return;
+      }
+      setFile(candidate);
+      setError(null);
+    },
+    [validateFile],
+  );
+
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  }
+
+  function onDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) selectFile(dropped);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) {
       setError("Choose a file to upload.");
+      return;
+    }
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setBusy(true);
@@ -1289,6 +1321,7 @@ function DocumentUpload() {
         setMessage(`${base}${result.sync_started ? " · KB sync started" : ""}`);
       }
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -1320,13 +1353,46 @@ function DocumentUpload() {
         >
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Choose file
+              Document file
             </label>
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              className={`mt-2 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition ${
+                dragActive
+                  ? "border-[var(--ingest)] bg-[color-mix(in_oklab,var(--ingest)_12%,transparent)]"
+                  : "border-border bg-background/40 hover:border-muted-foreground/50"
+              }`}
+            >
+              <Upload className="size-6 text-muted-foreground" />
+              <p className="mt-2 text-sm font-medium">
+                {dragActive ? "Drop file here" : "Drag & drop or click to browse"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Max {maxMb} MB · {allowed}
+              </p>
+              {file && (
+                <p className="mt-3 text-xs text-[var(--resolution)]">
+                  Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
             <input
+              ref={fileInputRef}
               type="file"
-              accept=".md,.txt,.csv,.docx,.pdf"
-              className="mt-2 block w-full text-sm"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              accept={allowedTypes.join(",")}
+              className="sr-only"
+              onChange={(e) => selectFile(e.target.files?.[0] ?? null)}
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
@@ -1340,15 +1406,12 @@ function DocumentUpload() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !file}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
             >
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
               Upload document
             </button>
-            <span className="text-xs text-muted-foreground">
-              Max {maxMb} MB · {allowed}
-            </span>
           </div>
         </form>
 
@@ -1406,7 +1469,7 @@ function LiveKnowledgeBase() {
           Live Knowledge Base
         </div>
         <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          Query the Bedrock Knowledge Base
+          Try the Incident Knowledge Base in real time
         </h2>
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Ask incident questions against indexed runbooks and alert history. Responses are
@@ -1530,31 +1593,16 @@ function LiveKnowledgeBase() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-foreground/95 whitespace-pre-wrap">
-                  {result.answer}
-                </p>
+                <div className="mt-3">
+                  <FormattedAnswer
+                    answer={result.answer}
+                    sections={result.answer_sections}
+                    grounded={result.grounded}
+                  />
+                </div>
               </div>
               {result.citations.length > 0 && (
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                    Citations
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {result.citations.map((c) => (
-                      <div
-                        key={c.index}
-                        className="rounded-lg border border-border bg-card/60 p-3"
-                      >
-                        <div className="text-xs font-medium">
-                          [{c.index}] {c.source_label}
-                        </div>
-                        <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-4">
-                          {c.snippet}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <CitationList citations={result.citations} />
               )}
             </motion.div>
           )}

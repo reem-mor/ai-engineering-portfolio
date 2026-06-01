@@ -1,12 +1,23 @@
+export interface AnswerSections {
+  summary: string;
+  steps: string[];
+  escalation: string[];
+  why: string;
+}
+
 export interface Citation {
   snippet: string;
   source_uri: string;
   source_label: string;
   index: number;
+  score?: number | null;
+  chunk_index?: number | null;
+  preview?: string;
 }
 
 export interface RagAnswer {
   answer: string;
+  answer_sections?: AnswerSections;
   citations: Citation[];
   session_id: string | null;
   grounded: boolean;
@@ -76,4 +87,16 @@ export interface UploadResultPayload {
   size_bytes?: number;
   sync_started?: boolean;
   ingestion_job_id?: string | null;
+}
+
+/** Demo MTTR and dollar estimates by severity — not real financial data. */
+export const SEVERITY_IMPACT: Record<string, { minutes: number; dollars: number }> = {
+  P1: { minutes: 30, dollars: 5000 },
+  P2: { minutes: 15, dollars: 2500 },
+  P3: { minutes: 5, dollars: 500 },
+};
+
+export function severityImpact(severity: string): { minutes: number; dollars: number } {
+  const key = (severity || "P3").toUpperCase();
+  return SEVERITY_IMPACT[key] ?? SEVERITY_IMPACT.P3;
 }

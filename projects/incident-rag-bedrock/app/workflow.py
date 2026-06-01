@@ -5,6 +5,7 @@ from typing import Any
 
 from app.bedrock_client import RagAnswer
 from app.text_utils import parse_action_bullets
+from app.workflow_impact import severity_impact
 
 
 def build_workflow_payload(
@@ -35,8 +36,7 @@ def build_workflow_payload(
     saved_min = 0
     impact_avoided = 0
     if alert:
-        saved_min = max(0, int(alert.get("baseline_min", 0)) - int(alert.get("assisted_min", 0)))
-        impact_avoided = saved_min * int(alert.get("impact_per_min", 0))
+        saved_min, impact_avoided = severity_impact(str(alert.get("severity", "P3")))
 
     return {
         "result": result.to_dict(),

@@ -11,6 +11,10 @@ engineer should do first, and which runbook to consult.
 | `PaymentGatewayDown` | 100% non-2xx for 2m on `/charge` | Failover to backup PSP | `payment_service_latency_runbook.txt` |
 | `DatabasePrimaryUnreachable` | health probe fails 3× | Promote standby; involve DBA | `database_connectivity_runbook.md` |
 | `ApiGateway5xxStorm` | 5xx > 10% for 3m | Check upstream service map | `api_gateway_5xx_runbook.txt` |
+| `CheckoutApi5xxRate` | 5xx > 2% for 4m on checkout | Check deploy + logs; rollback if correlated | `runbook_checkout_5xx.md` |
+| `PostgresCpuHigh` | CPU > 90% for 5m on prod-db-* | Cancel long queries; check indexes | `runbook_db_cpu.md` |
+| `QueueLagHigh` | lag > 30s for 5m | Scale workers; inspect DLQ | `runbook_queue_lag.md` |
+| `AuthLoginFailureRate` | login failures > 5% for 5m | Health + env vars; rollback deploy | `runbook_auth_login.md` |
 
 ## P2 — page within 15 minutes
 

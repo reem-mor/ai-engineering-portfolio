@@ -1,25 +1,29 @@
 import type { WorkflowAlert } from "@/types/rag";
+import { severityImpact } from "@/types/rag";
 
 export function alertImpactDollars(alert: WorkflowAlert): number {
-  return Math.max(0, alert.baselineMin - alert.assistedMin) * alert.impactPerMin;
+  return severityImpact(alert.severity).dollars;
 }
 
 export function alertSavedMinutes(alert: WorkflowAlert): number {
-  return Math.max(0, alert.baselineMin - alert.assistedMin);
+  return severityImpact(alert.severity).minutes;
 }
 
 export function sessionImpactTotals(
   alerts: WorkflowAlert[],
-  countedIds: Set<string>,
-): { dollars: number; minutes: number } {
+  triagedIds: Set<string>,
+): { dollars: number; minutes: number; triagedCount: number } {
   let dollars = 0;
   let minutes = 0;
+  let triagedCount = 0;
   for (const a of alerts) {
-    if (!countedIds.has(a.id)) continue;
-    minutes += alertSavedMinutes(a);
-    dollars += alertImpactDollars(a);
+    if (!triagedIds.has(a.id)) continue;
+    const impact = severityImpact(a.severity);
+    minutes += impact.minutes;
+    dollars += impact.dollars;
+    triagedCount += 1;
   }
-  return { dollars, minutes };
+  return { dollars, minutes, triagedCount };
 }
 
 export function rankSimilarAlerts(

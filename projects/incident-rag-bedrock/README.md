@@ -1,6 +1,6 @@
 <div align="center">
 
-# IncidentIQ · Bedrock RAG
+# Incident RAG Bedrock
 
 ### Topic-based RAG web app on Amazon Bedrock — Flask · boto3 · Docker · EC2
 
@@ -8,7 +8,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-success?style=for-the-badge)]()
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/pytest-102_passed-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
+[![Tests](https://img.shields.io/badge/pytest-offline_passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)]()
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?style=flat-square&logo=flask&logoColor=white)
@@ -27,6 +27,22 @@
 **Incident Operations** — NOC / SRE runbooks, alert triage, escalation policies, and post-mortems.
 
 On-call engineers waste 5-15 minutes per incident searching for the right runbook, past ticket, or post-mortem. IncidentIQ turns that scattered knowledge into a Bedrock Knowledge Base: ask a question, get a grounded, cited answer in seconds.
+
+---
+
+## Demo Questions (course showcase)
+
+Five grounded questions aligned with workflow alerts and [`data/demo_qa_expected.md`](data/demo_qa_expected.md):
+
+| # | Question | Expected focus |
+|---|----------|----------------|
+| 1 | Postgres CPU is 95% on prod-db-1 — what is the runbook? | `runbook_db_cpu.md` |
+| 2 | API 5xx rate is above 2% on checkout — what should I check? | `runbook_checkout_5xx.md` |
+| 3 | Queue lag is above 30 seconds — what should I do? | `runbook_queue_lag.md` |
+| 4 | Users cannot log in after deployment — what should I check? | `runbook_auth_login.md` |
+| 5 | How do I decide if an alert should be resolved at Tier 1 or escalated? | `tier1_escalation_guide.md`, `escalation_policy.pdf` |
+
+Off-topic refusal: *"What is the best restaurant in Tokyo?"*
 
 ---
 
@@ -138,22 +154,38 @@ Full deployment path: **Documents -> S3 -> Bedrock KB -> Flask + boto3 -> Docker
 
 ## Documents Used in the Knowledge Base
 
-10 documents across all 5 formats supported by the Bedrock S3 connector:
+**17 files** under `data/sample_documents/` (original 10 + course demo runbooks). After adding files locally, upload to S3 and **Sync** the Bedrock data source.
+
+### Course demo documents (primary for grading Q&A)
+
+| File | Purpose |
+|------|---------|
+| `runbook_db_cpu.md` | Postgres CPU 95% — pg_stat_activity, cancel >5m, indexes, Patroni |
+| `runbook_checkout_5xx.md` | Checkout/API 5xx triage |
+| `runbook_queue_lag.md` | Email worker queue lag >30s |
+| `runbook_auth_login.md` | Post-deploy login failures |
+| `alerts_last_3mo.json` | Structured alert history (A-1042 checkout, prod-db CPU, etc.) |
+| `postmortem_2024_07.md` | Checkout outage / N+1 / 47 min impact |
+| `tier1_escalation_guide.md` | Tier 1 vs escalation decision guide |
+
+### Original corpus (still indexed)
 
 | # | File | Format | Covers |
 |---|------|--------|--------|
-| 1 | `auth_service_runbook.md` | MD | Authentication service triage: OIDC, Redis, pod rollbacks |
-| 2 | `database_connectivity_runbook.md` | MD | Postgres + Redis health checks, connection pool recovery |
-| 3 | `monitoring_alerts_reference.md` | MD | Alert catalog: P1/P2/P3 definitions, first actions, runbook links |
-| 4 | `api_gateway_5xx_runbook.txt` | TXT | API Gateway 5xx storm: throttling, timeout, recovery validation |
-| 5 | `payment_service_latency_runbook.txt` | TXT | Payment PSP failover, latency triage, idempotency rules |
-| 6 | `incident_history.csv` | CSV | 30 past incidents with severity, service, root cause, MTTR |
-| 7 | `deployment_rollback_sop.docx` | DOCX | When and how to roll back: Kubernetes and Lambda procedures |
-| 8 | `postmortem_template.docx` | DOCX | Blameless postmortem structure, action item discipline |
-| 9 | `escalation_policy.pdf` | PDF | P1-P4 severity matrix, on-call chain, communications policy |
-| 10 | `on_call_handoff_checklist.pdf` | PDF | Start/end of shift checklist, mid-shift hygiene |
+| 1 | `auth_service_runbook.md` | MD | Authentication service triage |
+| 2 | `database_connectivity_runbook.md` | MD | Postgres + Redis health checks |
+| 3 | `monitoring_alerts_reference.md` | MD | Alert catalog P1/P2/P3 |
+| 4 | `api_gateway_5xx_runbook.txt` | TXT | API Gateway 5xx storm |
+| 5 | `payment_service_latency_runbook.txt` | TXT | Payment PSP failover |
+| 6 | `incident_history.csv` | CSV | Past incidents with MTTR |
+| 7 | `deployment_rollback_sop.docx` | DOCX | Rollback procedures |
+| 8 | `postmortem_template.docx` | DOCX | Blameless postmortem structure |
+| 9 | `escalation_policy.pdf` | PDF | P1–P4 severity matrix |
+| 10 | `on_call_handoff_checklist.pdf` | PDF | Shift handoff checklist |
 
 S3 location: `s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/`
+
+**S3 tags (recommended):** `Project=Amdocs-AI-Course`, `Environment=Course`, `Owner=Reem`, `Purpose=Bedrock-Knowledge-Base`. Block public access on the bucket.
 
 Rebuild corpus locally:
 
@@ -190,6 +222,9 @@ cp .env.example .env
 | `S3_BUCKET` | For upload | Bucket for document corpus, `reem-amdocs-ai-artifacts-3331` |
 | `BEDROCK_DATA_SOURCE_ID` | For KB sync | Enables post-upload ingestion jobs |
 | `FLASK_ENV` | Recommended | `development` locally, `production` on EC2 |
+| `AWS_PROFILE` | Local only | Shell env for `aws configure` profiles — do not commit |
+
+**Port:** The container listens on **8080** (gunicorn). Course handouts sometimes mention port 5000 — use `5000:8080` in compose only if you need that host port.
 
 **Note:** No `AWS_ACCESS_KEY_ID` in `.env` on EC2. IAM instance profile handles credentials.
 
@@ -267,9 +302,11 @@ Windows activation alternative:
 
 ### Run tests
 
+See [`TESTING.md`](TESTING.md) for the full checklist.
+
 ```bash
-pytest -v
-# Expected: 102 passed, 0 failed; no live AWS calls required
+pytest -q
+# Offline only — no live AWS calls required
 ```
 
 ---
@@ -294,45 +331,38 @@ Upload with KB sync issues returns **202** when the file reached S3 but ingestio
 
 ## Sample Questions & Answers
 
-Real questions tested against the live Bedrock Knowledge Base (KB ID: `RBTJM6NIG9`):
+See **Demo Questions** above and [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md) for live Bedrock smoke output.
 
-**Q: How do I triage an authentication service incident?**
+**Q: Postgres CPU is 95% on prod-db-1 — what is the runbook?**
 
-> To triage an authentication service incident: (1) Confirm scope by checking `auth_login_errors_total`; above 5% is P2 and above 25% is P1. (2) Check recent deployments with `kubectl -n auth get deploy -o wide`; if rollout is under 30 minutes old, treat it as the likely cause. (3) Verify Redis and Postgres are healthy before suspecting auth itself. (4) Validate the OIDC discovery document with `curl -sS https://auth.example.com/.well-known/openid-configuration`.
+> Check `pg_stat_activity`, cancel queries running longer than 5 minutes, review indexes, and escalate to DBA if CPU stays above 90%.
 >
-> Source: `auth_service_runbook.md`
-
-**Q: Which runbook should I follow for database connectivity issues?**
-
-> Follow the Database Connectivity Runbook. It covers connection refused, too many connections, SSL handshake failures, p95 query latency, replication lag, and Redis memory saturation. It also gives first checks such as active Postgres connections and Redis `INFO memory`.
->
-> Source: `database_connectivity_runbook.md`
-
-**Q: What are the escalation steps for a P1 production outage?**
-
-> For P1: (1) Primary on-call is paged immediately. (2) If there is no acknowledgement within 8 minutes, secondary on-call is auto-paged. (3) If secondary does not acknowledge within 8 more minutes, the engineering manager on call is paged. The manager should be woken for any P1 over 30 minutes or incidents involving payment processing or customer data risk.
->
-> Source: `escalation_policy.pdf`
-
-**Q: What should I check first when users cannot log in after a deployment?**
-
-> Check recent deployments first. If the latest `auth-api` rollout is less than 30 minutes old, treat it as the likely cause and prepare a rollback with `kubectl -n auth rollout undo deployment/auth-api`.
->
-> Source: `auth_service_runbook.md`
+> Source: `runbook_db_cpu.md`
 
 **Q: What is the best restaurant in Tokyo?** (off-topic; tests graceful refusal)
 
-> The system cannot find sufficient information to answer this question. The knowledge base does not contain information related to restaurants in Tokyo.
+> The system cannot find sufficient information to answer this question.
 >
 > Result: amber **Not in knowledge base** card; no hallucination.
-
-Full smoke-test output: [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md)
 
 ---
 
 ## Screenshots
 
-All 19 proof screenshots are in [`screenshots/`](screenshots/). See [`screenshots/README.md`](screenshots/README.md) for capture instructions.
+All proof screenshots are in [`screenshots/`](screenshots/). See [`screenshots/README.md`](screenshots/README.md) for capture instructions.
+
+### Course submission name map
+
+| Course filename | Existing file in repo |
+|-----------------|----------------------|
+| `01-bedrock-knowledge-base.png` | `01_bedrock_kb_overview.png` |
+| `02-bedrock-data-source-sync.png` | `02_bedrock_kb_data_source_synced.png` |
+| `03-flask-local-app.png` | `07_app_homepage_public.png` or `08_app_question_and_answer.png` |
+| `04-successful-question-answer.png` | `08_app_question_and_answer.png` |
+| `05-docker-container-running.png` | `06_docker_ps_on_ec2.png` or local `docker ps` |
+| `06-ec2-instance-details.png` | `04_ec2_instance_running.png` |
+| `07-public-ec2-app.png` | `07_app_homepage_public.png` |
+| `08-cleanup-proof.png` | `10_cleanup_console.png` |
 
 | # | File | Shows |
 |---|------|-------|
@@ -408,8 +438,31 @@ Public URL used during testing: `http://ec2-100-53-32-194.compute-1.amazonaws.co
 | Security group `sg-0b405b6a42325979e` | Yes | Deleted after demo |
 | IAM role `incident-rag-ec2-role` | Yes | Deleted after demo |
 | IAM instance profile `incident-rag-ec2-profile` | Yes | Deleted after demo |
+| ECR repository `incident-rag-bedrock` | Yes | Deleted after demo (deploy path uses GHCR) |
 
 Full log: [`docs/cleanup_log.md`](docs/cleanup_log.md) · Procedure: [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
+
+### Manual cleanup (run only after you approve)
+
+1. Terminate EC2 demo instance  
+2. Remove temporary ECR images if used  
+3. Local Docker (safe — review output first):
+
+```powershell
+docker images
+docker ps -a
+docker image prune -f
+docker container prune -f
+# Remove project image only after confirming tag:
+# docker rmi incident-rag-bedrock:dev
+```
+
+4. Empty/delete S3 objects created only for this project (keep shared course bucket if reused)  
+5. Review/delete Bedrock KB if course allows  
+6. Review IAM roles/policies created for demo  
+7. Remove temporary security group rules (SSH/HTTP wide open)
+
+**Do not** auto-delete AWS resources from scripts in this repo.
 
 ---
 
@@ -425,6 +478,8 @@ The EC2 setup also mattered: using an IAM instance profile kept long-lived AWS k
 
 Built for the **AI-Augmented Software Engineering** course assignment: *Build a Topic-Based RAG Web App with Amazon Bedrock, Flask, Docker, and EC2.*
 
+See also [`../README.md`](../README.md) at the repo projects index.
+
 This is **Part 1**. Part 2 will wrap `BedrockRagClient.ask()` as an MCP tool so the same Knowledge Base is available to AI agents.
 
 ---
@@ -433,6 +488,7 @@ This is **Part 1**. Part 2 will wrap `BedrockRagClient.ask()` as an MCP tool so 
 
 | Doc | Purpose |
 |-----|---------|
+| [`TESTING.md`](TESTING.md) | pytest, Docker smoke, live KB test |
 | [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md) | Step-by-step KB creation |
 | [`docs/ec2_deployment.md`](docs/ec2_deployment.md) | EC2 launch and smoke test |
 | [`docs/architecture.md`](docs/architecture.md) | Component breakdown and request flow |

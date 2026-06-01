@@ -1,22 +1,22 @@
 [
   {
-    "label": "Auth",
-    "question": "What should I check first when users cannot log in after a deployment?"
-  },
-  {
-    "label": "Auth",
-    "question": "How do I triage an authentication service incident?"
-  },
-  {
     "label": "Database",
-    "question": "Which runbook should I follow for database connectivity issues?"
+    "question": "Postgres CPU is 95% on prod-db-1 — what is the runbook?"
+  },
+  {
+    "label": "Checkout",
+    "question": "API 5xx rate is above 2% on checkout — what should I check?"
+  },
+  {
+    "label": "Queue",
+    "question": "Queue lag is above 30 seconds — what should I do?"
+  },
+  {
+    "label": "Auth",
+    "question": "Users cannot log in after deployment — what should I check?"
   },
   {
     "label": "Escalation",
-    "question": "What are the escalation steps for a P1 production outage?"
-  },
-  {
-    "label": "Health",
-    "question": "Summarize the standard health-check checklist before resolving an incident."
+    "question": "How do I decide if an alert should be resolved at Tier 1 or escalated?"
   }
 ]

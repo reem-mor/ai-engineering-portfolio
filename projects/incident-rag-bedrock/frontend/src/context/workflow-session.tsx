@@ -17,7 +17,7 @@ type WorkflowSessionValue = {
   recordTriageComplete: (alertId: string) => void;
   markResolved: (alertId: string) => void;
   countedIds: Set<string>;
-  sessionTotals: { dollars: number; minutes: number };
+  sessionTotals: { dollars: number; minutes: number; triagedCount: number };
 };
 
 const WorkflowSessionContext = createContext<WorkflowSessionValue | null>(null);
@@ -29,16 +29,9 @@ export function WorkflowSessionProvider({ children }: { children: ReactNode }) {
   const [triageCount, setTriageCount] = useState(0);
   const [lastTriageAt, setLastTriageAt] = useState<string | null>(null);
 
-  const countedIds = useMemo(() => {
-    const ids = new Set<string>();
-    triagedIds.forEach((id) => ids.add(id));
-    resolved.forEach((id) => ids.add(id));
-    return ids;
-  }, [triagedIds, resolved]);
-
   const sessionTotals = useMemo(
-    () => sessionImpactTotals(alerts, countedIds),
-    [alerts, countedIds],
+    () => sessionImpactTotals(alerts, triagedIds),
+    [alerts, triagedIds],
   );
 
   const recordTriageComplete = useCallback((alertId: string) => {
@@ -61,7 +54,7 @@ export function WorkflowSessionProvider({ children }: { children: ReactNode }) {
       lastTriageAt,
       recordTriageComplete,
       markResolved,
-      countedIds,
+      countedIds: triagedIds,
       sessionTotals,
     }),
     [
@@ -71,7 +64,6 @@ export function WorkflowSessionProvider({ children }: { children: ReactNode }) {
       lastTriageAt,
       recordTriageComplete,
       markResolved,
-      countedIds,
       sessionTotals,
     ],
   );
