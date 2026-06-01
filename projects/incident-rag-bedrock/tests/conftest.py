@@ -15,8 +15,9 @@ class _FakeBedrockClient:
         self.next_error = None
         self.calls: list[str] = []
 
-    def ask(self, question: str):
+    def ask(self, question: str, *, session_id: str | None = None):
         self.calls.append(question)
+        self.last_session_id = session_id
         if self.next_error is not None:
             raise self.next_error
         return self.next_response
@@ -46,7 +47,7 @@ def fake_bedrock():
 @pytest.fixture
 def app(fake_config, fake_bedrock):
     app = create_app(fake_config)
-    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True)
     app.extensions["bedrock_client"] = fake_bedrock
     return app
 

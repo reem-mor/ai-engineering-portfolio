@@ -59,7 +59,7 @@ Validation is centralized in `app/validators.py` and shared by `/ask` and `/work
 | Upload OK, sync unchecked | `200` | Success card — S3 URI + manual sync note |
 | Upload OK + **Sync to KB** checked | `200` | Success card — ingestion job id when configured |
 | Sync requested but no `BEDROCK_DATA_SOURCE_ID` | `502` · `kb_sync_not_configured` | File saved; sync instructions in message |
-| S3 OK, ingestion job fails | `502` · `kb_sync_failed` | Partial success message (file in S3) |
+| S3 OK, ingestion job fails | `202` · `partial` + `sync_warning` | File in S3; user sees actionable warning |
 
 Allowed types: `.md`, `.txt`, `.csv`, `.docx`, `.pdf` — aligned with Bedrock S3 connector support.
 

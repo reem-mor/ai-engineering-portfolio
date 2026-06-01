@@ -309,5 +309,12 @@ def test_workflow_triage_renders_result(client, fake_bedrock):
     assert b"Impact avoided" in response.data
 
 
-def test_unknown_route_returns_404(client):
-    assert client.get("/no-such-path").status_code == 404
+def test_unknown_route_returns_404_or_spa_fallback(client, app):
+    response = client.get("/no-such-path")
+    from app.spa import spa_index_path
+
+    if spa_index_path() and not app.config.get("FORCE_LEGACY_UI"):
+        assert response.status_code == 200
+        assert b'id="root"' in response.data
+    else:
+        assert response.status_code == 404

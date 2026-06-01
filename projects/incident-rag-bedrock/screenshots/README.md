@@ -1,6 +1,21 @@
 # Screenshots
 
-Submission proof captures for `incident-rag-bedrock`. Drop PNGs alongside this file using the exact filenames below.
+Submission proof captures for **Incident RAG Bedrock**. Drop PNGs alongside this file using the exact filenames below.
+
+## Course submission name map
+
+If your grader expects hyphenated filenames, rename or copy from the existing set:
+
+| Course name | Repo filename |
+|-------------|---------------|
+| `01-bedrock-knowledge-base.png` | `01_bedrock_kb_overview.png` |
+| `02-bedrock-data-source-sync.png` | `02_bedrock_kb_data_source_synced.png` |
+| `03-flask-local-app.png` | `07_app_homepage_public.png` |
+| `04-successful-question-answer.png` | `08_app_question_and_answer.png` |
+| `05-docker-container-running.png` | `06_docker_ps_on_ec2.png` |
+| `06-ec2-instance-details.png` | `04_ec2_instance_running.png` |
+| `07-public-ec2-app.png` | `07_app_homepage_public.png` |
+| `08-cleanup-proof.png` | `10_cleanup_console.png` |
 
 ## Automated captures (regenerate locally)
 
@@ -32,7 +47,7 @@ node capture_screenshots.mjs --pytest-only
 | `07_app_homepage_public.png` | Full-page homepage with hero + sticky nav |
 | `08_app_question_and_answer.png` | Auth triage question → `.badge-grounded` + `.citation-list` with labels |
 | `09_app_refusal_or_low_confidence.png` | Tokyo restaurant question → `.badge-nomatch` |
-| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (89 tests) |
+| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (102 tests) |
 | `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` (6/6 PASS) |
 | `13_mvp_workflow.png` | `#mvp` section after **Run triage** → grounded workflow result |
 | `14_architecture.png` | `#architecture` with Documents block selected |

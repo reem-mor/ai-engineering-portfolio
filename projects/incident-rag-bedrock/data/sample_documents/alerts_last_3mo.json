@@ -1,0 +1,53 @@
+[
+  {
+    "id": "A-1042",
+    "severity": "P1",
+    "title": "checkout API 5xx rate above 2%",
+    "service": "checkout",
+    "fired": "2024-07-14T14:03:00Z",
+    "resolved_after_min": 47,
+    "linked_postmortem": "postmortem_2024_07.md",
+    "runbook": "runbook_checkout_5xx.md",
+    "summary": "Elevated 5xx on checkout after deploy; rolled back after DB CPU saturation identified."
+  },
+  {
+    "id": "A-1108",
+    "severity": "P2",
+    "title": "prod-db-1 cpu > 90%",
+    "service": "postgres",
+    "fired": "2024-08-02T09:11:00Z",
+    "resolved_after_min": 12,
+    "runbook": "runbook_db_cpu.md",
+    "summary": "Long-running analytics query cancelled; index added on orders table."
+  },
+  {
+    "id": "A-1199",
+    "severity": "P3",
+    "title": "queue lag > 30s on email-worker",
+    "service": "email-worker",
+    "fired": "2024-09-21T22:40:00Z",
+    "resolved_after_min": 8,
+    "runbook": "runbook_queue_lag.md",
+    "summary": "Worker scaled from 3 to 6 replicas; lag cleared."
+  },
+  {
+    "id": "A-1210",
+    "severity": "P2",
+    "title": "auth login failures > 5%",
+    "service": "auth-service",
+    "fired": "2024-10-03T16:22:00Z",
+    "resolved_after_min": 18,
+    "runbook": "runbook_auth_login.md",
+    "summary": "TOKEN_ISSUER typo in deploy; rollback restored logins."
+  },
+  {
+    "id": "A-1222",
+    "severity": "P3",
+    "title": "disk usage > 85% on logs-volume",
+    "service": "prod-app-2",
+    "fired": "2024-10-18T08:05:00Z",
+    "resolved_after_min": 25,
+    "runbook": "monitoring_alerts_reference.md",
+    "summary": "Log rotation cron fixed; volume extended."
+  }
+]

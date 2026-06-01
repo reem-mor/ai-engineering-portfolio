@@ -1,69 +1,160 @@
 # Sample Questions and Answers — Live Bedrock KB
 
-- **Run at:** 2026-05-31 11:41:55 UTC
+- **Run at:** 2026-06-01 11:22:24 UTC
 - **Corpus:** s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
 - **Cases:** 4 grounded runbook answers + 1 off-topic refusal
 
-## 1. How do I triage an authentication service incident?
+## 1. Postgres CPU is 95% on prod-db-1 — what is the runbook?
 
 - **Grounded:** `True` · **Citations:** 1
-- **Sources:** `auth_service_runbook.md`
+- **Sources:** `runbook_db_cpu.md`
 
 **Answer:**
 
-To triage an authentication service incident, follow these steps:
+Summary:
 
-1. **Confirm the scope of the incident.** Check the auth service dashboard for the global error rate. If `auth_login_errors_total` is above 5% over the last 5 minutes, declare a P2 immediately. Above 25% → P1. 2. **Check recent deployments.** Use `kubectl -n auth get deploy -o wide` to see if the latest rollout is less than 30 minutes old. If so, treat the deployment as the likely cause and prepare a rollback. 3. **Check upstream dependencies.** Ensure that Redis (session store) and Postgres (user table) are healthy in the Service Map view before suspecting the auth service itself. 4. **Validate the OIDC discovery document.** Use `curl -sS https…
+The runbook for Postgres CPU above 90% on prod-db-1 is `runbook_db_cpu.md`.
+
+Recommended steps:
+
+1. Confirm the alert and identify long-running queries.
+
+2. Connect through the bastion host to the affected primary.
+
+3. Run the following against `pg_stat_activity`:
+
+```sql
+
+SELECT pid, usename, state, now() - query_start AS duration, query FROM pg_stat_activity WHERE state = 'active' ORDER BY duration DESC;
+
+```
+
+4. Cancel queries running longer than 5 minutes:
+
+```sql
+
+SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE state = 'active' AND now() - query_start > interval '5 minutes';
+
+```
+
+5. Terminate the backend only if cancel fails:
+
+```sql
+
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid…
 
 ---
 
-## 2. Which runbook should I follow for database connectivity issues?
+## 2. API 5xx rate is above 2% on checkout — what should I check?
 
 - **Grounded:** `True` · **Citations:** 1
-- **Sources:** `database_connectivity_runbook.md`
+- **Sources:** `runbook_checkout_5xx.md`
 
 **Answer:**
 
-For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address issues related to database connectivity, such as applications logging "connection refused", "too many connections", or "SSL handshake failed", and other symptoms like high p95 query latency or replication lag.
+Summary:
+
+Check recent deployments, service logs, database performance, and dependency errors.
+
+Recommended steps:
+
+1. Check recent deployments — correlate 5xx spike with the last release timestamp. 2. Check service logs — tail checkout-api and gateway logs for ERROR and stack traces. 3. Check database CPU and slow queries — run `runbook_db_cpu.md` if Postgres is hot. 4. Check dependency errors — payment service, inventory, auth token validation. Escalation:
+
+- When to escalate: If the error rate stays above 2% for 10 minutes. - Who to escalate to: Checkout service owner. Why this answer:
+
+The runbook for Checkout API 5xx rate above 2% lists these steps to investigate and resolve the issue.
 
 ---
 
-## 3. What are the escalation steps for a P1 production outage?
+## 3. Queue lag is above 30 seconds — what should I do?
 
 - **Grounded:** `True` · **Citations:** 1
-- **Sources:** `escalation_policy.pdf`
+- **Sources:** `runbook_queue_lag.md`
 
 **Answer:**
 
-For a P1 production outage, the escalation steps are as follows:
+Summary:
 
-1. The primary on-call engineer is paged immediately.
+Check worker health, queue depth, recent deploys, scale workers, inspect dead-letter queue, and escalate if necessary.
 
-2. If the primary on-call engineer does not acknowledge the page within 8 minutes, the secondary on-call engineer is paged automatically.
+Recommended steps:
 
-3. If the secondary on-call engineer does not acknowledge the page within an additional 8 minutes, the engineering manager on call is paged.
+1. Check worker health — pod status, restarts, OOM kills in the worker namespace.
 
-4. The engineering manager on call should be woken for any P1 incident lasting more than 30 minutes, any incident where customer data confidentiality, integrity, or availability is at risk, and any incident involving payment processing.
+2. Check queue depth — compare current depth to baseline for this time of day.
+
+3. Check recent deploys — new worker version may have slower handlers or bad config.
+
+4. Scale workers if allowed — increase replica count within autoscaling limits.
+
+5. Inspect dead-letter queue — failed messages may block progress or indicate poison pills.
+
+6. Escalate if lag keeps increasing after scale-up or DLQ rate is abnormal.
+
+Escalation:
+
+- When to escalate: If the lag keeps increasing after scaling up…
 
 ---
 
-## 4. What should I check first when users cannot log in after a deployment?
+## 4. Users cannot log in after deployment — what should I check?
 
-- **Grounded:** `True` · **Citations:** 1
-- **Sources:** `auth_service_runbook.md`
+- **Grounded:** `True` · **Citations:** 2
+- **Sources:** `auth_service_runbook.md`, `runbook_auth_login.md`
 
 **Answer:**
 
-When users cannot log in after a deployment, the first thing to check is recent deployments. If the latest rollout of the `auth-api` is less than 30 minutes old, treat the deployment as the likely cause and prepare a rollback.
+Summary:
+
+Check recent deployments, auth-service health, logs, environment variables, and database connectivity.
+
+Recommended steps:
+
+1. Check recent deployments to see if the latest rollout is less than 30 minutes old.
+
+2. Check auth-service health endpoint to ensure `/health` and `/ready` return 200.
+
+3. Check auth-service logs for OIDC, token, and database connection errors.
+
+4. Validate environment variables: `JWT_SECRET`, `AUTH_DB_URL`, `TOKEN_ISSUER`.
+
+5. Check database connectivity to ensure Postgres and Redis session store are healthy.
+
+Escalation:
+
+- When to escalate: If login failure rate is above 25% or if there is a complete auth outage.
+
+- Who to escalate to: Auth team / security for suspected credential l…
 
 ---
 
-## 5. What is the best restaurant in Tokyo?
+## 5. How do I decide if an alert should be resolved at Tier 1 or escalated?
 
-- **Grounded:** `False` · **Citations:** 0
+- **Grounded:** `True` · **Citations:** 1
+- **Sources:** `tier1_escalation_guide.md`
 
 **Answer:**
 
-The model cannot find sufficient information to answer the question about the best restaurant in Tokyo. The provided search results do not contain any information related to restaurants in Tokyo.
+Summary:
+
+Decide based on the severity, customer impact, and whether the runbook provides clear actions.
+
+Recommended steps:
+
+1. Check if the runbook has deterministic, safe actions and if the customer impact is low or isolated.
+
+2. Determine if a recent deploy caused the issue and if a rollback is possible.
+
+3. Verify if the alert matches a known pattern with documented resolution.
+
+4. If the customer impact is high, data loss is possible, or the runbook requires specialized teams, escalate.
+
+5. If Tier-1 actions did not improve the signal within the time box, escalate.
+
+6. If unsure, escalate early with prepared notes.
+
+Escalation:
+
+- When to escalate: If customer impact is high, data loss is possible, or the runbook…
 
 ---

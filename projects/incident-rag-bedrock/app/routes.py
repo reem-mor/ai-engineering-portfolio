@@ -1,23 +1,25 @@
-"""HTTP routes: home page, /ask, workflow triage, /health."""
+"""HTTP routes: SPA bootstrap, /ask, workflow triage, uploads, /health."""
 from __future__ import annotations
 
 import logging
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
+from flask_wtf.csrf import generate_csrf
 
 from app.bedrock_client import BedrockRagClient, RagAnswer
 from app.config import Config
 from app.data_loader import (
     find_workflow_alert,
     flat_example_questions,
-    load_example_questions,
+    grouped_example_questions,
     load_workflow_alerts,
 )
 from app.errors import BedrockError
-from app.text_utils import parse_action_bullets
+from app.spa import _SPA_ROOT, spa_enabled
 from app.upload_service import DocumentUploadService
 from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
+from app.workflow import build_workflow_payload
 
 log = logging.getLogger(__name__)
 bp = Blueprint("main", __name__)
@@ -46,21 +48,48 @@ def _wants_json() -> bool:
         return False
     if request.args.get("format") == "json":
         return True
+    if request.is_json:
+        return True
     best = request.accept_mimetypes.best_match(["application/json", "text/html"])
     return best == "application/json" and request.accept_mimetypes[best] >= request.accept_mimetypes["text/html"]
 
 
+def _cfg_get(key: str, default: str = "") -> str:
+    """Read Flask config keys set via Config.from_object (dict storage)."""
+    value = current_app.config.get(key, default)
+    return value if value is not None else default
+
+
 def _model_label() -> str:
-    cfg = current_app.config
-    arn = getattr(cfg, "BEDROCK_MODEL_ARN", "") or ""
+    arn = _cfg_get("BEDROCK_MODEL_ARN")
     if "/" in arn:
         return arn.rsplit("/", 1)[-1]
     return "Bedrock model"
 
 
-def _handle_ask(question: str) -> RagAnswer:
+def _bootstrap_context() -> dict:
+    max_bytes = current_app.config.get("MAX_UPLOAD_BYTES", 5_242_880)
+    if not isinstance(max_bytes, int):
+        max_bytes = int(max_bytes or 5_242_880)
+    return {
+        "examples": flat_example_questions(),
+        "example_groups": grouped_example_questions(),
+        "workflow_alerts": load_workflow_alerts(),
+        "max_len": MAX_QUESTION_LEN,
+        "model_label": _model_label(),
+        "kb_id": _cfg_get("BEDROCK_KB_ID"),
+        "s3_bucket": _cfg_get("S3_BUCKET"),
+        "s3_prefix": _cfg_get("S3_PREFIX"),
+        "max_upload_mb": max(1, max_bytes // (1024 * 1024)),
+        "allowed_types": sorted(ALLOWED_UPLOAD_SUFFIXES),
+        "sync_kb_default": bool(_cfg_get("BEDROCK_DATA_SOURCE_ID")),
+        "spa_enabled": spa_enabled(),
+    }
+
+
+def _handle_ask(question: str, *, session_id: str | None = None) -> RagAnswer:
     question = validate_question(question)
-    return _client().ask(question)
+    return _client().ask(question, session_id=session_id)
 
 
 def _validation_response(exc: BedrockError, question: str):
@@ -87,37 +116,57 @@ def _success_response(result: RagAnswer, question: str):
     )
 
 
+@bp.get("/api/bootstrap")
+def api_bootstrap():
+    payload = _bootstrap_context()
+    payload["csrf_token"] = generate_csrf()
+    return jsonify(ok=True, **payload), 200
+
+
 @bp.get("/")
 def index():
-    cfg = current_app.config
-    max_bytes = getattr(cfg, "MAX_UPLOAD_BYTES", 5_242_880)
+    if spa_enabled():
+        return send_from_directory(_SPA_ROOT, "index.html")
+    ctx = _bootstrap_context()
     return render_template(
         "index.html",
-        examples=flat_example_questions(),
-        example_groups=load_example_questions(),
-        workflow_alerts=load_workflow_alerts(),
-        max_len=MAX_QUESTION_LEN,
-        model_label=_model_label(),
-        kb_id=getattr(cfg, "BEDROCK_KB_ID", ""),
-        s3_bucket=getattr(cfg, "S3_BUCKET", ""),
-        s3_prefix=getattr(cfg, "S3_PREFIX", ""),
-        max_upload_mb=max(1, max_bytes // (1024 * 1024)),
-        allowed_types=", ".join(sorted(ALLOWED_UPLOAD_SUFFIXES)),
-        sync_kb_default=bool(getattr(cfg, "BEDROCK_DATA_SOURCE_ID", "")),
+        examples=ctx["examples"],
+        example_groups=ctx["example_groups"],
+        workflow_alerts=ctx["workflow_alerts"],
+        max_len=ctx["max_len"],
+        model_label=ctx["model_label"],
+        kb_id=ctx["kb_id"],
+        s3_bucket=ctx["s3_bucket"],
+        s3_prefix=ctx["s3_prefix"],
+        max_upload_mb=ctx["max_upload_mb"],
+        allowed_types=", ".join(ctx["allowed_types"]),
+        sync_kb_default=ctx["sync_kb_default"],
     )
+
+
+@bp.get("/ask")
+def ask_get_not_allowed():
+    return jsonify(ok=False, message="Method not allowed. Use POST."), 405
 
 
 @bp.post("/ask")
 def ask():
+    session_id: str | None = None
     if request.is_json:
         payload = request.get_json(silent=True) or {}
         question = str(payload.get("question", ""))
+        raw_session = payload.get("session_id")
+        if raw_session:
+            session_id = str(raw_session).strip() or None
     else:
         question = request.form.get("question") or ""
+        raw_session = request.form.get("session_id")
+        if raw_session:
+            session_id = str(raw_session).strip() or None
 
     question = question.strip()
     try:
-        result = _handle_ask(question)
+        result = _handle_ask(question, session_id=session_id)
     except BedrockError as exc:
         if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"}:
             return _validation_response(exc, question)
@@ -126,71 +175,91 @@ def ask():
     return _success_response(result, question)
 
 
-@bp.post("/workflow/triage")
-def workflow_triage():
-    alert_id = request.form.get("alert_id")
+def _workflow_triage_core(alert_id: str | None, question: str):
     alert = find_workflow_alert(alert_id)
-    question = (request.form.get("question") or (alert or {}).get("question") or "").strip()
-
-    try:
-        result = _handle_ask(question)
-    except BedrockError as exc:
-        if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"}:
-            return render_template(
-                "_workflow_result.html",
-                error=exc.user_message,
-                alert=alert,
-                question=question,
-            ), 400
-        return render_template(
-            "_workflow_result.html",
-            error=exc.user_message,
-            alert=alert,
-            question=question,
-        ), 502
-
-    actions = parse_action_bullets(result.answer)
-    if not actions and alert:
-        fallback = alert.get("actions")
-        if isinstance(fallback, list):
-            actions = [str(a) for a in fallback if str(a).strip()]
-
-    effective_decision = alert.get("decision") if alert else None
-    effective_reason = alert.get("decision_reason") if alert else None
-    if not result.grounded:
-        effective_decision = "escalate"
-        effective_reason = "Insufficient knowledge-base context — escalate with prepared notes."
-
-    matched_runbook = result.matched_runbook
-    if not matched_runbook and result.citations:
-        matched_runbook = result.citations[0].source_label
-    if not matched_runbook and alert:
-        matched_runbook = alert.get("matched_runbook")
-
-    saved_min = 0
-    impact_avoided = 0
-    if alert:
-        saved_min = max(0, int(alert.get("baseline_min", 0)) - int(alert.get("assisted_min", 0)))
-        impact_avoided = saved_min * int(alert.get("impact_per_min", 0))
-
-    return render_template(
-        "_workflow_result.html",
+    question = (question or (alert or {}).get("question") or "").strip()
+    result = _handle_ask(question)
+    payload = build_workflow_payload(
         result=result,
         alert=alert,
         question=question,
-        actions=actions,
-        matched_runbook=matched_runbook,
-        effective_decision=effective_decision,
-        effective_reason=effective_reason,
-        saved_min=saved_min,
-        impact_avoided=impact_avoided,
         model_label=_model_label(),
     )
+    return alert, question, payload
+
+
+@bp.post("/workflow/triage")
+def workflow_triage():
+    if request.is_json:
+        body = request.get_json(silent=True) or {}
+        alert_id = body.get("alert_id")
+        question = str(body.get("question", "")).strip()
+    else:
+        alert_id = request.form.get("alert_id")
+        question = (request.form.get("question") or "").strip()
+
+    try:
+        alert, question, payload = _workflow_triage_core(alert_id, question)
+    except BedrockError as exc:
+        if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"}:
+            if _wants_json():
+                return jsonify(ok=False, reason=exc.code, message=exc.user_message), 400
+            return render_template(
+                "_workflow_result.html",
+                error=exc.user_message,
+                alert=find_workflow_alert(alert_id),
+                question=question,
+            ), 400
+        if _wants_json():
+            return jsonify(ok=False, reason=exc.code, message=exc.user_message), 502
+        return render_template(
+            "_workflow_result.html",
+            error=exc.user_message,
+            alert=find_workflow_alert(alert_id),
+            question=question,
+        ), 502
+
+    if _wants_json():
+        return jsonify(ok=True, **payload), 200
+
+    return render_template("_workflow_result.html", **payload)
+
+
+@bp.post("/api/workflow/triage")
+def api_workflow_triage():
+    body = request.get_json(silent=True) or {}
+    alert_id = body.get("alert_id")
+    question = str(body.get("question", "")).strip()
+    try:
+        _alert, _question, payload = _workflow_triage_core(alert_id, question)
+    except BedrockError as exc:
+        status = 400 if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"} else 502
+        return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
+    return jsonify(ok=True, **payload), 200
 
 
 @bp.get("/health")
 def health():
-    return jsonify(status="ok"), 200
+    if request.args.get("deep") != "1":
+        return jsonify(status="ok"), 200
+
+    checks: dict[str, str] = {"app": "ok"}
+    bucket = _cfg_get("S3_BUCKET")
+    kb_id = _cfg_get("BEDROCK_KB_ID")
+    model_arn = _cfg_get("BEDROCK_MODEL_ARN")
+
+    if not bucket:
+        checks["s3"] = "missing_config"
+    else:
+        checks["s3"] = "configured"
+
+    if not kb_id or not model_arn:
+        checks["bedrock"] = "missing_config"
+    else:
+        checks["bedrock"] = "configured"
+
+    status = "ok" if all(v in {"ok", "configured"} for v in checks.values()) else "degraded"
+    return jsonify(status=status, checks=checks), 200
 
 
 _UPLOAD_VALIDATION_CODES = {
@@ -205,7 +274,7 @@ _UPLOAD_VALIDATION_CODES = {
 @bp.post("/documents/upload")
 def upload_document():
     upload_file = request.files.get("document")
-    sync_kb = request.form.get("sync_kb") == "on"
+    sync_kb = request.form.get("sync_kb") == "on" or request.form.get("sync_kb") == "true"
     filename = upload_file.filename if upload_file else None
     body = upload_file.read() if upload_file else b""
 
@@ -217,6 +286,17 @@ def upload_document():
             return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
         return render_template("_upload_result.html", error=exc.user_message), status
 
+    payload = {"ok": True, **result.to_dict()}
+    if result.sync_warning:
+        payload["message"] = result.sync_warning
+        if _wants_json():
+            return jsonify(**payload), 202
+        return render_template(
+            "_upload_result.html",
+            result=result,
+            warning=result.sync_warning,
+        ), 202
+
     if _wants_json():
-        return jsonify(ok=True, **result.to_dict()), 200
+        return jsonify(**payload), 200
     return render_template("_upload_result.html", result=result), 200

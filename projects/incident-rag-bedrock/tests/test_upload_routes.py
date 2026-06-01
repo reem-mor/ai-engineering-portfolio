@@ -137,6 +137,27 @@ def test_upload_s3_error_502(upload_client, upload_service):
     assert resp.status_code == 502
 
 
+def test_upload_partial_sync_returns_202_json(upload_client, upload_service):
+    upload_service.next_result = UploadResult(
+        filename="a.txt",
+        s3_key="prefix/key.txt",
+        s3_uri="s3://test-bucket/prefix/key.txt",
+        size_bytes=4,
+        sync_started=False,
+        sync_warning="File saved to s3://test-bucket/prefix/key.txt, but KB sync failed.",
+    )
+    resp = upload_client.post(
+        "/documents/upload?format=json",
+        data={"document": _file("a.txt", b"data"), "sync_kb": "true"},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 202
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data.get("partial") is True
+    assert data.get("sync_warning")
+
+
 def test_upload_json_format(upload_client, upload_service):
     upload_service.next_result = UploadResult(
         filename="a.md",

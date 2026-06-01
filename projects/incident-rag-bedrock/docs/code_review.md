@@ -1,27 +1,55 @@
-# Code review — document upload + RAG stack (2026-05-31)
+# Code review — incident-rag-bedrock (2026-05-31)
 
-Self-review after adding S3 upload, KB sync option, and expanded test coverage.
+Final self-review for course submission: datasets, corpus, KB sync, Flask API, React SPA, and AWS integration.
+
+## Verdict
+
+**Ready for top-grade submission** when live checks pass: 102 offline tests, 10 corpus files on disk, KB smoke 6/6, SPA E2E 20/20 with Docker.
 
 ## Strengths
 
-- **Separation of concerns:** `upload_validators.py` (pure validation), `upload_service.py` (boto3 S3 + Bedrock Agent), `routes.py` (HTTP only).
-- **Consistent error model:** All user-facing failures use `BedrockError` with stable `code` values; S3/boto3 mapped via `translate()` in `errors.py`.
-- **Testability:** Upload routes tested with injected `_FakeUploadService`; validators covered independently; Bedrock client still uses Stubber (no live AWS in unit tests).
-- **Security:** CSRF on upload form; `secure_filename` + timestamp prefix for S3 keys; allowed suffix whitelist; size cap; IAM policy scoped to single bucket prefix pattern.
-- **UX:** HTMX partial for upload result; client-side pre-checks mirror server rules; optional KB sync checkbox only default-checked when `BEDROCK_DATA_SOURCE_ID` is set.
+- **Separation of concerns:** `upload_validators.py`, `upload_service.py`, `bedrock_client.py`, `routes.py` (HTTP only), `data_loader.py` (examples + corpus metadata).
+- **Consistent error model:** `BedrockError` with stable `code` values; boto3 mapped in `errors.py`.
+- **Testability:** 102 pytest tests with Stubber/fakes; upload routes use injectable fakes; SPA covered in `tests/test_spa_mode.py`; corpus alignment in `tests/test_data_corpus.py`.
+- **Security:** `secure_filename`, suffix whitelist, size cap, scoped IAM; CSRF enabled with `main_bp` exempt for JSON SPA (token still from `/api/bootstrap`).
+- **KB sync UX:** S3 success + ingestion failure returns **HTTP 202** (`partial`, `sync_warning`) instead of losing the upload outcome.
+- **Follow-ups:** `session_id` passed through `/ask` to Bedrock for multi-turn Q&A in the SPA.
+- **Data quality:** `evaluation/test_questions.json` and `example_questions.json` grounded in corpus stems; off-topic refusal tested.
 
-## Risks / follow-ups (acceptable for course MVP)
+## Corpus and datasets
+
+| Asset | Count / status |
+|-------|----------------|
+| `data/sample_documents/` | **10** documents + README (within 5–15 guideline) |
+| Example questions (UI) | `app/data/example_questions.json` with grouped labels |
+| Eval / smoke | `evaluation/test_questions.json` — 6 cases for `kb_smoke_test.py` |
+| Workflow demo | `app/data/workflow_alerts.json` |
+
+Regenerate corpus artifacts if needed: `python scripts/build_corpus.py` (see `data/sample_documents/README.md`).
+
+## Risks / notes (acceptable for course MVP)
 
 | Item | Severity | Notes |
 |------|----------|-------|
-| Partial sync failure | Low | File lands in S3 before ingestion job; user gets explicit 502 with S3 URI |
-| No upload progress | Low | Fine for ≤5 MB course corpus |
-| Duplicate filenames | Low | Timestamp prefix avoids overwrite |
-| Local AWS creds in Docker | Info | Documented; EC2 uses instance profile |
-| `11_pytest_43_passed.png` legacy name | Info | Renamed to `11_pytest_passed.png` in capture script |
+| SPA vs legacy in pytest | Info | Default `FORCE_LEGACY_UI=True` in `tests/conftest.py`; SPA has dedicated tests |
+| Orphan frontend files | Info | `frontend/src/routes/index.tsx`, `rag.functions.ts` not in production bundle |
+| Screenshot #11 | Info | May still show older pytest count until re-captured with `capture_screenshots.mjs --pytest-only` |
+| Live AWS cost | Info | Run `kb_smoke_test.py` only when creds configured; delete EC2 after demo |
 
 ## Verification performed
 
-- `pytest`: 89 passed
-- KB data source prefix: `projects/incident-rag-bedrock/data/sample_documents/`
-- Edge cases documented in [`edge_cases.md`](edge_cases.md)
+| Check | Result |
+|-------|--------|
+| `pytest -q` | **102 passed** |
+| `npm run build` | SPA → `app/static/spa/` |
+| `scripts/kb_smoke_test.py` | **6/6** PASS |
+| `scripts/verify_e2e.py` (SPA, `APP_URL=http://127.0.0.1:8080`) | **20/20** PASS |
+| KB data source prefix | `projects/incident-rag-bedrock/data/sample_documents/` |
+
+Windows: run from project root — `.\scripts\verify.ps1` (not from `frontend/`; venv is at repo root).
+
+## Guideline mapping
+
+See [`GRADING_CHECKLIST.md`](GRADING_CHECKLIST.md). Entry points: [`app.py`](../app.py) (alias), [`wsgi.py`](../wsgi.py) (Gunicorn/Docker).
+
+Edge cases: [`edge_cases.md`](edge_cases.md). Phased review log: [`PRODUCTION_REVIEW.md`](PRODUCTION_REVIEW.md).
