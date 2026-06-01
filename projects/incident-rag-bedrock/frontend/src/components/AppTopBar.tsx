@@ -30,7 +30,7 @@ export function AppTopBar({
             onClick={() => scrollToSection("live-kb")}
           >
             <MessageSquare className="size-3.5 text-[var(--tools)]" />
-            Ask incident questions
+            Incident Knowledge Base
           </button>
           <button type="button" className={navBtn} onClick={() => scrollToSection("mvp")}>
             <Activity className="size-3.5 text-[var(--interface)]" />
@@ -62,7 +62,7 @@ export function AppTopBar({
             <span className="font-semibold text-[var(--resolution)]">
               ${totalSavedDollars.toLocaleString()}
             </span>{" "}
-            impact saved
+            impact saved (triaged)
           </span>
           <span>{totalSavedMin} min MTTR avoided</span>
           <span>{triageCount} triage{triageCount === 1 ? "" : "s"}</span>

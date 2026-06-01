@@ -7,6 +7,8 @@
     <p class="answer-body">{{ error }}</p>
   </article>
 {% elif result %}
+  {% set payload = result.to_dict() %}
+  {% set sections = payload.answer_sections %}
   <article class="answer-card {% if result.grounded %}grounded{% else %}no-match{% endif %}">
     <header class="answer-header">
       {% if result.grounded %}
@@ -20,25 +22,55 @@
       {% endif %}
     </header>
 
-    <p class="answer-body">{{ result.answer }}</p>
+    <section class="answer-section">
+      <h3 class="citations-title">Answer</h3>
+      <p class="answer-body">{{ sections.summary or result.answer }}</p>
+    </section>
+
+    {% if sections.steps and result.grounded %}
+      <section class="answer-section">
+        <h3 class="citations-title">Recommended steps</h3>
+        <ol class="answer-steps">
+          {% for step in sections.steps %}
+            <li class="answer-body">{{ step }}</li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% elif not sections.steps %}
+      <p class="answer-body">{{ result.answer }}</p>
+    {% endif %}
+
+    {% if sections.escalation and result.grounded %}
+      <section class="answer-section">
+        <h3 class="citations-title">Escalation</h3>
+        <ul class="answer-escalation">
+          {% for item in sections.escalation %}
+            <li class="answer-body">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if sections.why and result.grounded %}
+      <section class="answer-section">
+        <h3 class="citations-title">Why this answer</h3>
+        <p class="answer-body text-muted">{{ sections.why }}</p>
+      </section>
+    {% endif %}
 
     {% if result.citations %}
       <section class="citations">
-        <h3 class="citations-title">Sources</h3>
+        <h3 class="citations-title">Retrieved citations</h3>
         <ol class="citation-list">
-          {% for c in result.citations %}
+          {% for c in payload.citations %}
             <li class="citation-card">
               <div class="citation-head">
-                <span>#{{ c.index }}</span>
-                <span>{{ c.source_label }}</span>
+                <span>[{{ c.index }}] {{ c.source_label }}{% if c.chunk_index is not none %} · chunk {{ c.chunk_index }}{% endif %}</span>
+                {% if c.score is not none %}
+                  <span class="citation-score">Score: {{ '%.2f'|format(c.score) }}</span>
+                {% endif %}
               </div>
-              <details>
-                <summary class="citation-snippet">{{ c.snippet[:180] }}{% if c.snippet|length > 180 %}…{% endif %}</summary>
-                <p class="citation-snippet">{{ c.snippet }}</p>
-              </details>
-              {% if c.source_uri %}
-                <div class="citation-uri-hint" title="{{ c.source_uri }}">{{ c.source_uri }}</div>
-              {% endif %}
+              <p class="citation-snippet">{{ c.preview or c.snippet[:220] }}</p>
             </li>
           {% endfor %}
         </ol>

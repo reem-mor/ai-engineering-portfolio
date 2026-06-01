@@ -31,7 +31,7 @@ def test_api_bootstrap(client):
     assert isinstance(data["example_groups"], dict)
     assert sum(len(v) for v in data["example_groups"].values()) >= len(data["examples"])
     assert "workflow_alerts" in data
-    assert len(data["workflow_alerts"]) >= 1
+    assert len(data["workflow_alerts"]) == 5
     assert "max_len" in data
     assert "csrf_token" in data
 
@@ -58,4 +58,6 @@ def test_ask_json_body(client, fake_bedrock):
     data = response.get_json()
     assert data["ok"] is True
     assert "answer" in data
+    assert "answer_sections" in data
     assert data["citations"]
+    assert "preview" in data["citations"][0]

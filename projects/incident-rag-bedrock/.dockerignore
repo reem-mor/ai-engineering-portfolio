@@ -15,3 +15,9 @@ data
 .gitignore
 .dockerignore
 docker-compose.yml
+frontend/node_modules
+node_modules
+*.egg-info
+.mypy_cache
+.ruff_cache
+frontend/.vite

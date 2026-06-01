@@ -1,45 +1,51 @@
 # Bedrock KB Smoke Test Results
 
-- **Run at:** 2026-05-31 19:35:42 UTC
-- **Score:** 6/6 PASS
+- **Run at:** 2026-06-01 11:22:24 UTC
+- **Score:** 7/7 PASS
 
 | # | Question | Grounded | Citations | Status |
 |---|----------|----------|-----------|--------|
-| 1 | How do I triage an authentication service incident? | True | 1 | **PASS** |
-| 2 | Which runbook should I follow for database connectivity issues? | True | 1 | **PASS** |
-| 3 | What are the escalation steps for a P1 production outage? | True | 1 | **PASS** |
-| 4 | What should I check first when users cannot log in after a deployment? | True | 1 | **PASS** |
-| 5 | What is the best restaurant in Tokyo? | False | 0 | **PASS** |
-| 6 | what is the | None | 0 | **PASS** |
+| 1 | Postgres CPU is 95% on prod-db-1 — what is the runbook? | True | 1 | **PASS** |
+| 2 | API 5xx rate is above 2% on checkout — what should I check? | True | 1 | **PASS** |
+| 3 | Queue lag is above 30 seconds — what should I do? | True | 1 | **PASS** |
+| 4 | Users cannot log in after deployment — what should I check? | True | 2 | **PASS** |
+| 5 | How do I decide if an alert should be resolved at Tier 1 or escalated? | True | 1 | **PASS** |
+| 6 | What is the best restaurant in Tokyo? | False | 0 | **PASS** |
+| 7 | what is the | None | 0 | **PASS** |
 
 ## Details
 
-### 1. How do I triage an authentication service incident?
+### 1. Postgres CPU is 95% on prod-db-1 — what is the runbook?
 - Status: **PASS**
 - Grounded: `True` · Citations: `1`
-- Answer preview: To triage an authentication service incident, follow these steps:  1. **Confirm the scope of the incident.** Check the authentication service dashboard for the global error rate. If `auth_login_errors_total` is above 5% over the last 5 minu
+- Answer preview: Summary: The runbook for Postgres CPU above 90% on prod-db-1 is `runbook_db_cpu.md`.  Recommended steps: 1. Confirm the alert and identify long-running queries. 2. Connect through the bastion host to the affected primary. 3. Run the followi
 
-### 2. Which runbook should I follow for database connectivity issues?
+### 2. API 5xx rate is above 2% on checkout — what should I check?
 - Status: **PASS**
 - Grounded: `True` · Citations: `1`
-- Answer preview: For database connectivity issues, you should follow the "Database Connectivity Runbook". This runbook is specifically designed to address issues related to database connectivity, such as applications logging "connection refused", "too many 
+- Answer preview: Summary: Check recent deployments, service logs, database performance, and dependency errors.  Recommended steps: 1. Check recent deployments — correlate 5xx spike with the last release timestamp. 2. Check service logs — tail checkout-api a
 
-### 3. What are the escalation steps for a P1 production outage?
+### 3. Queue lag is above 30 seconds — what should I do?
 - Status: **PASS**
 - Grounded: `True` · Citations: `1`
-- Answer preview: For a P1 production outage, the escalation steps are as follows:  1. The primary on-call engineer is paged immediately. 2. If the primary on-call engineer does not acknowledge the page within 8 minutes, the secondary on-call engineer is pag
+- Answer preview: Summary: Check worker health, queue depth, recent deploys, scale workers, inspect dead-letter queue, and escalate if necessary.  Recommended steps: 1. Check worker health — pod status, restarts, OOM kills in the worker namespace. 2. Check q
 
-### 4. What should I check first when users cannot log in after a deployment?
+### 4. Users cannot log in after deployment — what should I check?
+- Status: **PASS**
+- Grounded: `True` · Citations: `2`
+- Answer preview: Summary: Check recent deployments, auth-service health, logs, environment variables, and database connectivity.  Recommended steps: 1. Check recent deployments to see if the latest rollout is less than 30 minutes old. 2. Check auth-service 
+
+### 5. How do I decide if an alert should be resolved at Tier 1 or escalated?
 - Status: **PASS**
 - Grounded: `True` · Citations: `1`
-- Answer preview: When users cannot log in after a deployment, the first thing to check is recent deployments. If the latest `auth-api` rollout is less than 30 minutes old, treat the deployment as the likely cause and prepare a rollback per the Standard reco
+- Answer preview: Summary: Decide based on the severity, customer impact, and whether the runbook provides clear actions.  Recommended steps: 1. Check if the runbook has deterministic, safe actions and if the customer impact is low or isolated. 2. Determine 
 
-### 5. What is the best restaurant in Tokyo?
+### 6. What is the best restaurant in Tokyo?
 - Status: **PASS**
 - Grounded: `False` · Citations: `0`
-- Answer preview: The model cannot find sufficient information to answer the question about the best restaurant in Tokyo. The provided search results do not contain any information related to restaurants in Tokyo.
+- Answer preview: The model cannot find sufficient information to answer the question.
 
-### 6. what is the
+### 7. what is the
 - Status: **PASS**
 - Grounded: `None` · Citations: `0`
 - Answer preview: 
