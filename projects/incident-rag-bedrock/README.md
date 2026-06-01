@@ -89,6 +89,31 @@ On-call engineers waste **5–15 minutes per incident** searching for the right 
 
 </div>
 
+### 📷 See it in action
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="screenshots/08_app_question_and_answer.png" alt="Grounded answer with citation cards" width="100%"/>
+<br/><sub><b>Grounded answer</b> — cited from the runbook it came from</sub>
+</td>
+<td width="50%" valign="top">
+<img src="screenshots/09_app_refusal_or_low_confidence.png" alt="Off-topic question returns an amber not-in-knowledge-base card" width="100%"/>
+<br/><sub><b>Graceful refusal</b> — amber card, no hallucination</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="screenshots/01_bedrock_kb_overview.png" alt="Amazon Bedrock Knowledge Base, status Active" width="100%"/>
+<br/><sub><b>Bedrock Knowledge Base</b> — <code>RBTJM6NIG9</code>, status Active</sub>
+</td>
+<td width="50%" valign="top">
+<img src="screenshots/07_app_homepage_public.png" alt="App served from a public EC2 URL" width="100%"/>
+<br/><sub><b>Live on EC2</b> — served from a public URL</sub>
+</td>
+</tr>
+</table>
+
 ---
 
 ## 🧭 Topic
@@ -428,6 +453,11 @@ pytest -q          # 102 offline unit tests — no live AWS calls required
 
 See [`TESTING.md`](TESTING.md) for the full checklist.
 
+<div align="center">
+<img src="screenshots/11_pytest_passed.png" alt="pytest: 102 tests passed" width="80%"/>
+<br/><sub><b>102 offline tests passing</b> — Stubber and fakes, zero live AWS calls</sub>
+</div>
+
 ---
 
 ## 🔌 HTTP API
@@ -488,7 +518,7 @@ All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/
 </details>
 
 <details>
-<summary><b>🖼️ Full screenshot index — 19 captures (click to expand)</b></summary>
+<summary><b>🖼️ Full screenshot index — 20 captures (click to expand)</b></summary>
 
 <br/>
 
@@ -513,6 +543,7 @@ All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/
 | 17 | `17_document_upload_type_rejected.png` | Unsupported file type blocked |
 | 18 | `18_dataset_corpus.png` | 10-document corpus catalog |
 | 19 | `19_sample_questions_answers.png` | Live Q&A showcase: 4 grounded + 1 refusal |
+| 20 | `20_codex_local_verification.png` | Codex-assisted local verification run |
 
 </details>
 
@@ -537,6 +568,19 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 
 > [!NOTE]
 > Public URL used during testing: `http://ec2-100-53-32-194.compute-1.amazonaws.com/`
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="screenshots/04_ec2_instance_running.png" alt="EC2 console showing the running t3.micro instance with a public IP" width="100%"/>
+<br/><sub><b>EC2 t3.micro running</b> — with public IP</sub>
+</td>
+<td width="50%" valign="top">
+<img src="screenshots/06_docker_ps_on_ec2.png" alt="docker ps showing the container up and healthy on EC2" width="100%"/>
+<br/><sub><b><code>docker ps</code> on EC2</b> — container Up (healthy)</sub>
+</td>
+</tr>
+</table>
 
 ---
 
