@@ -38,20 +38,16 @@ export function FormattedAnswer({
         <p className="mt-2 text-foreground/95">{s.summary || answer}</p>
       </div>
 
-      {(s.steps.length > 0 || answer) && (
+      {s.steps.length > 0 && (
         <div>
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             Recommended steps
           </div>
-          {s.steps.length > 0 ? (
-            <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-              {s.steps.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mt-2 whitespace-pre-wrap text-foreground/90">{answer}</p>
-          )}
+          <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+            {s.steps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
         </div>
       )}
 
