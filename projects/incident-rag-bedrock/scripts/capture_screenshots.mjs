@@ -156,6 +156,21 @@ async function captureRefusal(page) {
   console.log("Saved 09_app_refusal_or_low_confidence.png");
 }
 
+function unionBoundingBoxes(...boxes) {
+  const valid = boxes.filter(Boolean);
+  if (valid.length === 0) throw new Error("No bounding boxes to union");
+  const x = Math.min(...valid.map((b) => b.x));
+  const y = Math.min(...valid.map((b) => b.y));
+  const right = Math.max(...valid.map((b) => b.x + b.width));
+  const bottom = Math.max(...valid.map((b) => b.y + b.height));
+  return {
+    x: Math.floor(x),
+    y: Math.floor(y),
+    width: Math.ceil(right - x),
+    height: Math.ceil(bottom - y),
+  };
+}
+
 async function captureMvpWorkflow(page) {
   await page.goto(APP_URL, { waitUntil: "networkidle" });
   await page.locator("#mvp").scrollIntoViewIfNeeded();
@@ -182,10 +197,20 @@ async function captureMvpWorkflow(page) {
     { timeout: 60_000 },
   );
   await page.waitForTimeout(800);
-  await page.locator("#mvp").screenshot({
+
+  const title = page.locator("#mvp h2");
+  const grid = page.locator("#mvp div.mt-8.grid").first();
+  await title.waitFor({ state: "visible" });
+  await grid.waitFor({ state: "visible" });
+  const titleBox = await title.boundingBox();
+  const gridBox = await grid.boundingBox();
+  const clip = unionBoundingBoxes(titleBox, gridBox);
+
+  await page.screenshot({
     path: path.join(SCREENSHOTS, "13_mvp_workflow.png"),
+    clip,
   });
-  console.log("Saved 13_mvp_workflow.png");
+  console.log(`Saved 13_mvp_workflow.png (${clip.width}x${clip.height} clip)`);
 }
 
 async function captureArchitecture(page) {
@@ -345,7 +370,7 @@ async function main() {
   if (mvpOnly) {
     const context = await browser.newContext({
       viewport: VIEWPORT,
-      deviceScaleFactor: 2,
+      deviceScaleFactor: 1,
     });
     const page = await context.newPage();
     await captureMvpWorkflow(page);

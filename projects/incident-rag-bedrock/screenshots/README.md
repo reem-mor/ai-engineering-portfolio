@@ -30,7 +30,7 @@ Optional depth for reviewers; regenerate with `capture_screenshots.mjs` where no
 |------|-------|
 | `11_pytest_passed.png` | `pytest -v` — full unit suite passing |
 | `12_kb_smoke_evaluation.png` | `evaluation/smoke_results.md` rendered — **6/6 PASS** |
-| `13_mvp_workflow.png` | `#mvp` after **Run triage** — numbered steps + citation cards in triage panel |
+| `13_mvp_workflow.png` | Clipped `#mvp` h2 + alert/triage grid after **Run triage** (excludes footer pills); full-width in root README |
 | `14_architecture.png` | `#architecture` with Documents block selected |
 | `15_document_upload_success.png` | Upload success + S3 key |
 | `16_document_upload_validation.png` | Client validation — missing file |
@@ -105,7 +105,7 @@ node capture_screenshots.mjs --mvp-only
 node capture_screenshots.mjs --pytest-only
 
 $env:APP_URL="http://<public-ip>:8080"
-node capture_public_app.mjs           # 07 (if not localhost), 08, 08b
+node capture_public_app.mjs           # 07 viewport + #live-kb element shots for 08, 08b, 09
 
 node capture_partA.mjs                # extras/partA_*
 node capture_aws_proof.mjs            # 01–03
@@ -115,13 +115,13 @@ node capture_cleanup_proof.mjs        # 10 after terminate
 
 | Output file | Capture method |
 |-------------|----------------|
-| `07_app_homepage_public.png` | `capture_public_app.mjs` or `capture_screenshots.mjs` |
-| `08_app_question_and_answer.png` | Grounded SQL question → numbered steps + code blocks |
-| `08b_app_citations_expanded.png` | Same answer, **Retrieved citations** expanded |
-| `09_app_refusal_or_low_confidence.png` | Off-topic → refusal / no-match |
+| `07_app_homepage_public.png` | Viewport only (1440×900), not full-page scroll |
+| `08_app_question_and_answer.png` | `#live-kb` element — grounded SQL answer |
+| `08b_app_citations_expanded.png` | `#live-kb` element — citations expanded |
+| `09_app_refusal_or_low_confidence.png` | `#live-kb` element — off-topic, **Low confidence** badge |
 | `11_pytest_passed.png` | Rendered pytest output |
 | `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` |
-| `13_mvp_workflow.png` | `#mvp` after **Run triage** (SPA; use `--mvp-only` to refresh) |
+| `13_mvp_workflow.png` | Page clip: `#mvp h2` + `div.mt-8.grid` after triage (`--mvp-only`; excludes Catch/Triage/Suggest/Decide pills); README MVP section |
 | `14_architecture.png` | `#architecture` — Documents selected |
 | `15`–`17` | Document upload flows |
 | `18_dataset_corpus.png` | Corpus catalog from `data/sample_documents/README.md` |

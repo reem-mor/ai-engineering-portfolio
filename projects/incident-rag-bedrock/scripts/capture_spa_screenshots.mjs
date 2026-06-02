@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * Capture SPA (React default UI) screenshots 07–09 against the running app.
+ * Legacy SPA capture for 07–09. Prefer capture_public_app.mjs (viewport 07,
+ * #live-kb elements for 08/08b/09, includes 08b).
  *
- * Prereqs:
- *   docker compose up --build -d   -> http://localhost:8080 (SPA, live AWS creds)
- *
- *   node scripts/capture_spa_screenshots.mjs
+ *   node scripts/capture_public_app.mjs
  */
 import fs from "node:fs";
 import path from "node:path";

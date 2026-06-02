@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
- * Capture submission shots 07/08/08b against APP_URL.
- *   07_app_homepage_public.png            homepage served from the public IP
- *   08_app_question_and_answer.png        grounded answer (Part A UI: code block + steps)
- *   08b_app_citations_expanded.png        same answer with citations expanded
+ * Capture Tier-1 app screenshots 07–09 against APP_URL.
+ *   07_app_homepage_public.png         viewport only (hero, 1440×900)
+ *   08_app_question_and_answer.png     #live-kb element (grounded answer)
+ *   08b_app_citations_expanded.png     #live-kb element (citations expanded)
+ *   09_app_refusal_or_low_confidence.png  #live-kb element (off-topic refusal)
  *
- * Prereq: app reachable at APP_URL with working Bedrock (instance profile).
+ * Set SKIP_HOMEPAGE=1 to skip overwriting 07 (e.g. keep an EC2 URL-bar capture).
+ *
+ * Prereq: app reachable with working Bedrock credentials.
  *   APP_URL="http://<public-ip>:8080" node scripts/capture_public_app.mjs
  */
 import fs from "node:fs";
@@ -18,12 +21,11 @@ const SHOTS = path.join(ROOT, "screenshots");
 const playwrightPath = path.join(__dirname, "node_modules", "playwright", "index.mjs");
 const { chromium } = await import(pathToFileURL(playwrightPath).href);
 const APP_URL = (process.env.APP_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
-const SKIP_HOMEPAGE =
-  process.env.SKIP_HOMEPAGE === "1" ||
-  /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(APP_URL);
+const SKIP_HOMEPAGE = process.env.SKIP_HOMEPAGE === "1";
 const SQL_QUESTION = "Postgres CPU is 95% on prod-db-1 — what is the runbook?";
+const REFUSAL_QUESTION = "What is the best restaurant in Tokyo?";
 
-async function ask(page, question) {
+async function ask(page, question, { expectGrounded = true } = {}) {
   const section = page.locator("#live-kb");
   await section.scrollIntoViewIfNeeded();
   await section.locator("textarea").fill(question);
@@ -36,14 +38,25 @@ async function ask(page, question) {
   ]);
   if (!resp.ok()) throw new Error(`/ask failed HTTP ${resp.status()}`);
   await page.waitForFunction(
-    () => {
+    (grounded) => {
       const s = document.querySelector("#live-kb");
       if (!s) return false;
-      return /Recommended steps/i.test(s.textContent || "") || !!s.querySelector("pre code");
+      const text = s.textContent || "";
+      if (grounded) {
+        return /Recommended steps/i.test(text) || !!s.querySelector("pre code");
+      }
+      return /Low confidence/i.test(text);
     },
+    expectGrounded,
     { timeout: 60_000 },
   );
   await page.waitForTimeout(900);
+}
+
+async function screenshotLiveKb(page, filename) {
+  const section = page.locator("#live-kb");
+  await section.scrollIntoViewIfNeeded();
+  await section.screenshot({ path: path.join(SHOTS, filename) });
 }
 
 async function main() {
@@ -52,26 +65,22 @@ async function main() {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
 
-  await page.goto(APP_URL, { waitUntil: "networkidle" });
-  await page.waitForTimeout(700);
-
-  // 07 — public homepage (skip when localhost to avoid overwriting EC2-captured 07)
+  // 07 — homepage viewport (hero + nav; not full-page scroll)
   if (!SKIP_HOMEPAGE) {
+    await page.goto(APP_URL, { waitUntil: "networkidle" });
+    await page.waitForTimeout(700);
     await page.screenshot({
       path: path.join(SHOTS, "07_app_homepage_public.png"),
-      fullPage: true,
+      fullPage: false,
     });
   }
 
-  // 08 — grounded question + answer
-  await ask(page, SQL_QUESTION);
-  await page.locator("#live-kb").scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: path.join(SHOTS, "08_app_question_and_answer.png"),
-    fullPage: true,
-  });
+  // 08 — grounded question + answer (#live-kb element)
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await ask(page, SQL_QUESTION, { expectGrounded: true });
+  await screenshotLiveKb(page, "08_app_question_and_answer.png");
 
-  // 08b — citations expanded
+  // 08b — citations expanded (same session)
   const citToggle = page
     .locator("#live-kb button", { hasText: /Retrieved citations/i })
     .first();
@@ -79,13 +88,15 @@ async function main() {
     await citToggle.click();
     await page.waitForTimeout(600);
   }
-  await page.screenshot({
-    path: path.join(SHOTS, "08b_app_citations_expanded.png"),
-    fullPage: true,
-  });
+  await screenshotLiveKb(page, "08b_app_citations_expanded.png");
+
+  // 09 — off-topic refusal (#live-kb element)
+  await page.goto(APP_URL, { waitUntil: "networkidle" });
+  await ask(page, REFUSAL_QUESTION, { expectGrounded: false });
+  await screenshotLiveKb(page, "09_app_refusal_or_low_confidence.png");
 
   await browser.close();
-  const saved = ["08", "08b"];
+  const saved = ["08", "08b", "09"];
   if (!SKIP_HOMEPAGE) saved.unshift("07");
   console.log(JSON.stringify({ appUrl: APP_URL, saved }, null, 2));
 }
