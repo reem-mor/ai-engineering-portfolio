@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import boto3
+from botocore.config import Config as BotoConfig
 
 from app.config import Config
 from app.errors import BedrockError, translate
@@ -114,7 +115,16 @@ class BedrockRagClient:
 
     def __init__(self, config: Config, *, client: Any | None = None) -> None:
         self._config = config
-        self._client = client or boto3.client("bedrock-agent-runtime", region_name=config.AWS_REGION)
+        boto_cfg = BotoConfig(
+            read_timeout=120,
+            connect_timeout=10,
+            retries={"max_attempts": 3, "mode": "standard"},
+        )
+        self._client = client or boto3.client(
+            "bedrock-agent-runtime",
+            region_name=config.AWS_REGION,
+            config=boto_cfg,
+        )
 
     def ask(self, question: str, *, session_id: str | None = None) -> RagAnswer:
         question = validate_question(question)

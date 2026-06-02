@@ -36,8 +36,6 @@
           {% endfor %}
         </ol>
       </section>
-    {% elif not sections.steps %}
-      <p class="answer-body">{{ result.answer }}</p>
     {% endif %}
 
     {% if sections.escalation and result.grounded %}

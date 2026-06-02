@@ -126,7 +126,7 @@ function AppShell() {
   const { sessionTotals, triageCount, lastTriageAt } = useWorkflowSession();
 
   return (
-    <main className="min-h-screen text-foreground">
+    <main className="min-h-screen overflow-x-hidden text-foreground">
       <AppTopBar
         totalSavedDollars={sessionTotals.dollars}
         totalSavedMin={sessionTotals.minutes}
@@ -676,7 +676,7 @@ function CodeCard({
           {lang}
         </span>
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-xs leading-relaxed text-foreground/90">
+      <pre className="max-w-full overflow-x-auto p-3 font-mono text-xs leading-relaxed text-foreground/90">
         {code}
       </pre>
     </div>
@@ -1478,13 +1478,18 @@ function LiveKnowledgeBase() {
         </p>
 
         <div className="mt-8 rounded-xl border border-border bg-card/60 p-4 flex flex-col max-w-3xl">
-          <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="live-kb-question"
+            className="text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Question (max {maxLen} chars)
           </label>
           <textarea
+            id="live-kb-question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             maxLength={maxLen}
+            aria-label="Incident knowledge base question"
             className="mt-2 h-24 w-full resize-none rounded-md border border-border bg-background/80 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           {Object.keys(exampleGroups).length > 0 ? (
@@ -1528,6 +1533,8 @@ function LiveKnowledgeBase() {
             type="button"
             onClick={run}
             disabled={busy}
+            aria-busy={busy}
+            aria-label={busy ? "Querying knowledge base" : "Ask knowledge base"}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 transition"
           >
             {busy ? (

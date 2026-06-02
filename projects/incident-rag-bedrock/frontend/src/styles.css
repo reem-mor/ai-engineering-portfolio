@@ -74,7 +74,7 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
+  html, body { background-color: var(--color-background); color: var(--color-foreground); overflow-x: hidden; }
   body {
     font-family: ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
     background-image:
