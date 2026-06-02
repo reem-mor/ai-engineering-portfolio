@@ -17,7 +17,7 @@ Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB 
 | KB exists | `screenshots/01_bedrock_kb_overview.png`; `BEDROCK_KB_ID` in `.env.example` |
 | Data source attached + synced | `screenshots/02_*`; setup steps in [`docs/bedrock_kb_setup.md`](bedrock_kb_setup.md) |
 | boto3 query from app | [`app/bedrock_client.py`](../app/bedrock_client.py) — `retrieve_and_generate` |
-| Live Q&A proof | `screenshots/08_*`, `evaluation/qa_showcase.md`, `kb_smoke_test.py` **6/6** |
+| Live Q&A proof | `screenshots/08_*`, `08b_*`, `evaluation/qa_showcase.md`, `kb_smoke_test.py` **6/6** |
 
 ## Flask application
 
@@ -39,8 +39,8 @@ Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB 
 
 | Requirement | Evidence |
 |-------------|----------|
-| Required AWS + app captures | All 19 files listed in [`screenshots/README.md`](../screenshots/README.md) |
-| Successful Q&A screenshot | `08_app_question_and_answer.png` |
+| Required AWS + app captures | Tier 1 (11 files) in [`screenshots/README.md`](../screenshots/README.md); Tier 2 optional |
+| Successful Q&A screenshot | `08_app_question_and_answer.png`, `08b_app_citations_expanded.png` |
 | Cleanup after demo | `screenshots/10_cleanup_console.png`, [`docs/cleanup_checklist.md`](cleanup_checklist.md), [`cleanup_log.md`](../cleanup_log.md) |
 
 ## README submission items

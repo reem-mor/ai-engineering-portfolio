@@ -8,6 +8,7 @@
  *   cd scripts && npm install && npx playwright install chromium
  *   node capture_screenshots.mjs
  *   node capture_screenshots.mjs --pytest-only
+ *   node capture_screenshots.mjs --mvp-only   → 13_mvp_workflow.png only
  */
 
 import { execSync } from "node:child_process";
@@ -157,19 +158,29 @@ async function captureRefusal(page) {
 
 async function captureMvpWorkflow(page) {
   await page.goto(APP_URL, { waitUntil: "networkidle" });
-  await waitForHtmx(page);
   await page.locator("#mvp").scrollIntoViewIfNeeded();
   const [response] = await Promise.all([
     page.waitForResponse(
-      (r) => r.url().includes("/workflow/triage") && r.request().method() === "POST",
+      (r) =>
+        r.url().includes("/workflow/triage") && r.request().method() === "POST",
       { timeout: 120_000 },
     ),
-    page.locator("#workflow-submit").click(),
+    page.getByRole("button", { name: /Run triage/i }).click(),
   ]);
   if (!response.ok()) {
     throw new Error(`/workflow/triage failed with HTTP ${response.status()}`);
   }
-  await page.locator("#workflow-result .kb-match-panel").waitFor({ timeout: 5_000 });
+  await page.waitForFunction(
+    () => {
+      const mvp = document.querySelector("#mvp");
+      if (!mvp) return false;
+      return (
+        /Recommended steps/i.test(mvp.textContent || "") ||
+        mvp.querySelector("[data-step-badge]") !== null
+      );
+    },
+    { timeout: 60_000 },
+  );
   await page.waitForTimeout(800);
   await page.locator("#mvp").screenshot({
     path: path.join(SCREENSHOTS, "13_mvp_workflow.png"),
@@ -325,10 +336,24 @@ async function captureQaShowcase(browser) {
 }
 
 const pytestOnly = process.argv.includes("--pytest-only");
+const mvpOnly = process.argv.includes("--mvp-only");
 
 async function main() {
   fs.mkdirSync(SCREENSHOTS, { recursive: true });
   const browser = await chromium.launch({ headless: true });
+
+  if (mvpOnly) {
+    const context = await browser.newContext({
+      viewport: VIEWPORT,
+      deviceScaleFactor: 2,
+    });
+    const page = await context.newPage();
+    await captureMvpWorkflow(page);
+    await context.close();
+    await browser.close();
+    console.log("Done — 13_mvp_workflow.png");
+    return;
+  }
 
   if (pytestOnly) {
     await capturePytest(browser);

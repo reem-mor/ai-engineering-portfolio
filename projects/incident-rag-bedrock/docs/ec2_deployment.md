@@ -23,7 +23,7 @@ Make the package **public** in GHCR settings so EC2 can pull without authenticat
 
 1. **IAM → Roles → Create role**
    - Trusted entity: **AWS service** → **EC2**
-2. Skip the AWS-managed policies for now. Click **Create role**, name it `incident-rag-ec2-role`.
+2. Skip the AWS-managed policies for now. Click **Create role**, name it `IncidentRagBedrockEC2Role` (or your chosen name; match the instance profile).
 3. After it's created, **Add permissions → Create inline policy → JSON tab**.
 4. Paste [`infra/iam_policy.json`](../infra/iam_policy.json), then **replace** the three placeholders:
    - `REGION` → your region (e.g. `us-east-1`)
@@ -41,11 +41,11 @@ Make the package **public** in GHCR settings so EC2 can pull without authenticat
 2. **Network settings**
    - VPC / Subnet: default
    - Auto-assign public IP: **Enable**
-   - Create a **new security group** `incident-rag-sg`:
-     - SSH (22/tcp) — Source: **My IP** (not `0.0.0.0/0`!)
-     - HTTP (80/tcp) — Source: `0.0.0.0/0`
-3. **Advanced details → IAM instance profile**: select `incident-rag-ec2-role`.
-4. **User data**: paste [`infra/ec2_user_data.sh`](../infra/ec2_user_data.sh) after replacing `<IMAGE>` with your GHCR image reference.
+   - Create a **new security group** (e.g. `incident-rag-sg`):
+     - Custom TCP **8080** — Source: `0.0.0.0/0` (app port; matches Docker publish)
+     - SSH (22/tcp) — Source: **My IP** (optional)
+3. **Advanced details → IAM instance profile**: select `IncidentRagBedrockEC2Profile` (role `IncidentRagBedrockEC2Role`).
+4. **User data**: paste [`infra/ec2_user_data_demo.sh`](../infra/ec2_user_data_demo.sh) (ECR `:demo` on port 8080).
 5. **Launch**.
 
 📸 *Screenshots*: `04_ec2_instance_running.png`, `05_security_group_rules.png`
@@ -72,10 +72,10 @@ You should see `incident-rag` with status `Up (healthy)`.
 
 Open the app:
 ```
-http://<EC2_PUBLIC_DNS>/
+http://<EC2_PUBLIC_IP>:8080/
 ```
 
-📸 *Screenshots*: `07_app_homepage_public.png`, `08_app_question_and_answer.png`, `09_app_refusal_or_low_confidence.png`
+📸 *Screenshots*: `07_app_homepage_public.png`, `08_app_question_and_answer.png`, `08b_app_citations_expanded.png`, `09_app_refusal_or_low_confidence.png`
 
 ## 6. After the demo — TEAR DOWN
 

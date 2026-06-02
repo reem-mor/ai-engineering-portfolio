@@ -94,22 +94,22 @@ On-call engineers waste **5–15 minutes per incident** searching for the right 
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="screenshots/08_app_question_and_answer.png" alt="Grounded answer with citation cards" width="100%"/>
-<br/><sub><b>Grounded answer</b> — cited from the runbook it came from</sub>
+<img src="screenshots/08_app_question_and_answer.png" alt="Grounded answer with numbered steps and SQL blocks" width="100%"/>
+<br/><sub><b>Grounded answer</b> — numbered steps + cited SQL from the runbook</sub>
 </td>
 <td width="50%" valign="top">
-<img src="screenshots/09_app_refusal_or_low_confidence.png" alt="Off-topic question returns an amber not-in-knowledge-base card" width="100%"/>
-<br/><sub><b>Graceful refusal</b> — amber card, no hallucination</sub>
+<img src="screenshots/08b_app_citations_expanded.png" alt="Retrieved citations expanded with score meters" width="100%"/>
+<br/><sub><b>Citations</b> — expanded cards with relevance scores</sub>
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-<img src="screenshots/01_bedrock_kb_overview.png" alt="Amazon Bedrock Knowledge Base, status Active" width="100%"/>
-<br/><sub><b>Bedrock Knowledge Base</b> — <code>RBTJM6NIG9</code>, status Active</sub>
+<img src="screenshots/09_app_refusal_or_low_confidence.png" alt="Off-topic question returns an amber not-in-knowledge-base card" width="100%"/>
+<br/><sub><b>Graceful refusal</b> — amber card, no hallucination</sub>
 </td>
 <td width="50%" valign="top">
 <img src="screenshots/07_app_homepage_public.png" alt="App served from a public EC2 URL" width="100%"/>
-<br/><sub><b>Live on EC2</b> — served from a public URL</sub>
+<br/><sub><b>Live on EC2</b> — same Docker image as local demo</sub>
 </td>
 </tr>
 </table>
@@ -499,6 +499,8 @@ See **[Demo Questions](#-demo-questions)** above and [`evaluation/qa_showcase.md
 
 All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/README.md`](screenshots/README.md) for capture instructions.
 
+**What to submit:** Tier 1 — `01`–`10` plus `08b_app_citations_expanded.png` (11 files). Tier 2 (`11`–`19`) and `extras/partA_*` are optional depth. Details in [`screenshots/README.md`](screenshots/README.md).
+
 <details>
 <summary><b>🗂️ Course submission name map (click to expand)</b></summary>
 
@@ -518,7 +520,7 @@ All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/
 </details>
 
 <details>
-<summary><b>🖼️ Full screenshot index — 20 captures (click to expand)</b></summary>
+<summary><b>🖼️ Full screenshot index — Tier 1 (11) + Tier 2 (9) + extras (click to expand)</b></summary>
 
 <br/>
 
@@ -527,14 +529,15 @@ All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/
 | 01 | `01_bedrock_kb_overview.png` | Bedrock KB: name, ID, status Active |
 | 02 | `02_bedrock_kb_data_source_synced.png` | Data source sync status = Available |
 | 03 | `03_bedrock_model_access_granted.png` | Model access granted |
-| 04 | `04_ec2_instance_running.png` | EC2 console: running instance with public IP |
-| 05 | `05_security_group_rules.png` | SG inbound: SSH from my IP, HTTP from anywhere |
-| 06 | `06_docker_ps_on_ec2.png` | `docker ps`: container Up (healthy) |
-| 07 | `07_app_homepage_public.png` | Full app via public EC2 URL |
-| 08 | `08_app_question_and_answer.png` | Grounded answer with citation cards |
-| 09 | `09_app_refusal_or_low_confidence.png` | Off-topic refusal; amber card |
+| 04 | `04_ec2_instance_running.png` | EC2 console: running instance with public IP (historical) |
+| 05 | `05_security_group_rules.png` | SG inbound: **8080/tcp** from `0.0.0.0/0` |
+| 06 | `06_docker_ps_on_ec2.png` | `docker ps`: container Up (healthy) on 8080 |
+| 07 | `07_app_homepage_public.png` | Full app homepage |
+| 08 | `08_app_question_and_answer.png` | Grounded answer — numbered steps + SQL |
+| 08b | `08b_app_citations_expanded.png` | Same answer — citations expanded |
+| 09 | `09_app_refusal_or_low_confidence.png` | Off-topic refusal only |
 | 10 | `10_cleanup_console.png` | EC2 terminated / resources deleted |
-| 11 | `11_pytest_passed.png` | pytest: 102 passed |
+| 11 | `11_pytest_passed.png` | pytest: full suite passed |
 | 12 | `12_kb_smoke_evaluation.png` | Live KB smoke test: 6/6 PASS |
 | 13 | `13_mvp_workflow.png` | MVP alert console + triage result |
 | 14 | `14_architecture.png` | Interactive architecture panel |
@@ -543,7 +546,8 @@ All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/
 | 17 | `17_document_upload_type_rejected.png` | Unsupported file type blocked |
 | 18 | `18_dataset_corpus.png` | 10-document corpus catalog |
 | 19 | `19_sample_questions_answers.png` | Live Q&A showcase: 4 grounded + 1 refusal |
-| 20 | `20_codex_local_verification.png` | Codex-assisted local verification run |
+
+Extras: `screenshots/extras/partA_*` (responsive crops). Archive: `screenshots/archive/` (not for submission).
 
 </details>
 
@@ -560,14 +564,14 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 ```
 
 1. Launch EC2 **t3.micro** on Amazon Linux 2023.
-2. Attach IAM role `incident-rag-ec2-role`.
-3. Security group rules: **port 22 from my IP only**, **port 80 from `0.0.0.0/0`**.
-4. Use [`infra/ec2_user_data.sh`](infra/ec2_user_data.sh) to install Docker and run the image.
-5. Copy `.env` to `/home/ec2-user/.env` — it contains **no AWS keys** and uses the instance profile.
-6. Verify: `curl http://ec2-100-53-32-194.compute-1.amazonaws.com/health`
+2. Attach IAM instance profile **`IncidentRagBedrockEC2Profile`** (role **`IncidentRagBedrockEC2Role`**).
+3. Security group: **8080/tcp** from `0.0.0.0/0` for the demo app (SSH optional, my IP only).
+4. Use [`infra/ec2_user_data_demo.sh`](infra/ec2_user_data_demo.sh) to install Docker and run the ECR image on port **8080**.
+5. Copy `.env` to `/home/ec2-user/.env` — **no AWS keys**; Bedrock auth via instance profile.
+6. Verify: `curl http://<public-ip>:8080/health`
 
 > [!NOTE]
-> Public URL used during testing: `http://ec2-100-53-32-194.compute-1.amazonaws.com/`
+> Demo instance `i-05cbc9f5604d6704e` was **terminated** after capture; `04`–`06` are historical proof. App shots `07`–`08b` use the same `:demo` image (captured locally or on the public IP before teardown).
 
 <table>
 <tr>
@@ -603,15 +607,17 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 
 ## 🧹 AWS Resources — Created & Deleted
 
+Latest re-deployment (2026-06-02), region `us-east-1` — torn down same day after capture:
+
 | Resource | Created | Status |
 |----------|:-------:|--------|
-| Bedrock Knowledge Base `RBTJM6NIG9` | ✅ | 🟢 Retained for course reuse |
+| Bedrock Knowledge Base `RBTJM6NIG9` (`S3_VECTORS`) | ✅ | 🟢 Retained for course reuse (negligible cost) |
 | S3 bucket `reem-amdocs-ai-artifacts-3331` | ✅ | 🟢 Retained; corpus prefix only |
-| EC2 instance `i-03d3c5a59e849e5cf` | ✅ | 🔴 Terminated after demo |
-| Security group `sg-0b405b6a42325979e` | ✅ | 🔴 Deleted after demo |
-| IAM role `incident-rag-ec2-role` | ✅ | 🔴 Deleted after demo |
-| IAM instance profile `incident-rag-ec2-profile` | ✅ | 🔴 Deleted after demo |
-| ECR repository `incident-rag-bedrock` | ✅ | 🔴 Deleted after demo (deploy path uses GHCR) |
+| EC2 instance `i-05cbc9f5604d6704e` (`t3.micro`, `98.80.119.235`) | ✅ | 🔴 **Terminated** after demo (billing stopped) |
+| Security group `sg-032f462d8ff507604` (`incident-rag-sg`, 8080/tcp 0.0.0.0/0) | ✅ | 🔴 **Deleted** after demo (closed public 8080) |
+| IAM role `IncidentRagBedrockEC2Role` (Bedrock+S3+ECR least-priv, SSM core) | ✅ | 🟢 Retained (free, reusable for redeploy) |
+| IAM instance profile `IncidentRagBedrockEC2Profile` | ✅ | 🟢 Retained (free) |
+| ECR repository `incident-rag-bedrock` (`:demo`, 165 MB) | ✅ | 🟢 Retained (free tier ≤500 MB; image ready for redeploy) |
 
 Full log: [`docs/cleanup_log.md`](docs/cleanup_log.md) · Procedure: [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
 
@@ -637,6 +643,24 @@ docker container prune -f
 5. Review/delete Bedrock KB if course allows
 6. Review IAM roles/policies created for demo
 7. Remove temporary security group rules (SSH/HTTP wide open)
+
+**Concrete teardown for the 2026-06-02 deployment** (run after approval; deletes the only paid item first):
+
+```powershell
+$env:AWS_PROFILE="reemmor"; $env:AWS_REGION="us-east-1"
+# 1) Terminate EC2 (stops billing)
+aws ec2 terminate-instances --instance-ids i-05cbc9f5604d6704e
+aws ec2 wait instance-terminated --instance-ids i-05cbc9f5604d6704e
+# 2) Delete security group (after instance is gone)
+aws ec2 delete-security-group --group-id sg-032f462d8ff507604
+# 3) (optional) Tear down free IAM + ECR if not reusing
+aws iam remove-role-from-instance-profile --instance-profile-name IncidentRagBedrockEC2Profile --role-name IncidentRagBedrockEC2Role
+aws iam delete-instance-profile --instance-profile-name IncidentRagBedrockEC2Profile
+aws iam delete-role-policy --role-name IncidentRagBedrockEC2Role --policy-name IncidentRagBedrockInline
+aws iam detach-role-policy --role-name IncidentRagBedrockEC2Role --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+aws iam delete-role --role-name IncidentRagBedrockEC2Role
+aws ecr delete-repository --repository-name incident-rag-bedrock --force
+```
 
 > [!CAUTION]
 > **Do not** auto-delete AWS resources from scripts in this repo. All teardown is manual and reviewed.

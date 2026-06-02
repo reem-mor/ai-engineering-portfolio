@@ -32,7 +32,7 @@ th{background:#fafafa}
 <table><tr><th>Instance ID</th><th>State</th><th>Public DNS</th></tr>
 ${instances.map((i) => `<tr><td>${i.Id}</td><td>${i.State}</td><td>${i.DNS || "—"}</td></tr>`).join("")}
 </table>
-<div class="note"><strong>Deleted after demo:</strong> EC2 instance <code>i-03d3c5a59e849e5cf</code>, security group <code>sg-0b405b6a42325979e</code>, IAM role <code>incident-rag-ec2-role</code>, instance profile <code>incident-rag-ec2-profile</code>.</div>
+<div class="note"><strong>Deleted after demo (2026-06-02):</strong> EC2 <code>i-05cbc9f5604d6704e</code> (terminated), security group <code>sg-032f462d8ff507604</code>. Retained (free): IAM <code>IncidentRagBedrockEC2Role</code>, profile <code>IncidentRagBedrockEC2Profile</code>, ECR <code>incident-rag-bedrock:demo</code>.</div>
 </div></body></html>`;
 
 const browser = await chromium.launch({ headless: true });

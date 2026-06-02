@@ -69,11 +69,13 @@ Smoke suite: **6/6 PASS** (`evaluation/smoke_results.md`).
 
 In `screenshots/` — Bedrock KB + synced data source, model access, EC2 instance + security group, `docker ps` healthy, the public app, grounded answer with citations, the off-topic refusal, `pytest` passing, the 6/6 smoke run, the dataset corpus, and a live Q&A showcase.
 
-Key files for grading:
-- `01_bedrock_kb_overview.png` · `02_bedrock_kb_data_source_synced.png`
-- `07_app_homepage_public.png` · `08_app_question_and_answer.png` · `09_app_refusal_or_low_confidence.png`
-- `11_pytest_passed.png` · `12_kb_smoke_evaluation.png`
-- `18_dataset_corpus.png` · `19_sample_questions_answers.png`
+Key files for grading (Tier 1):
+- `01_bedrock_kb_overview.png` · `02_bedrock_kb_data_source_synced.png` · `03_bedrock_model_access_granted.png`
+- `04_ec2_instance_running.png` · `05_security_group_rules.png` · `06_docker_ps_on_ec2.png`
+- `07_app_homepage_public.png` · `08_app_question_and_answer.png` · `08b_app_citations_expanded.png` · `09_app_refusal_or_low_confidence.png`
+- `10_cleanup_console.png`
+
+Optional depth: `11`–`19` in `screenshots/` (see `screenshots/README.md`).
 
 ---
 
