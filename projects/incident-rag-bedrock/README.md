@@ -91,25 +91,27 @@ On-call engineers waste **5–15 minutes per incident** searching for the right 
 
 ### 📷 See it in action
 
+Four submission-grade app shots (2×2, equal height — full-page captures are cropped to the top viewport).
+
 <table>
 <tr>
-<td width="50%" valign="top">
-<img src="screenshots/08_app_question_and_answer.png" alt="Grounded answer with numbered steps and SQL blocks" width="100%"/>
-<br/><sub><b>Grounded answer</b> — numbered steps + cited SQL from the runbook</sub>
+<td width="50%" valign="top" style="padding:4px">
+<img src="screenshots/08_app_question_and_answer.png" alt="Grounded answer with numbered steps and SQL blocks" width="100%" style="display:block;max-height:340px;width:100%;object-fit:cover;object-position:top;border-radius:6px"/>
+<br/><sub><b>Grounded answer</b> — numbered steps + cited SQL</sub>
 </td>
-<td width="50%" valign="top">
-<img src="screenshots/08b_app_citations_expanded.png" alt="Retrieved citations expanded with score meters" width="100%"/>
-<br/><sub><b>Citations</b> — expanded cards with relevance scores</sub>
+<td width="50%" valign="top" style="padding:4px">
+<img src="screenshots/08b_app_citations_expanded.png" alt="Retrieved citations expanded with score meters" width="100%" style="display:block;max-height:340px;width:100%;object-fit:cover;object-position:top;border-radius:6px"/>
+<br/><sub><b>Citations</b> — expanded cards + relevance scores</sub>
 </td>
 </tr>
 <tr>
-<td width="50%" valign="top">
-<img src="screenshots/09_app_refusal_or_low_confidence.png" alt="Off-topic question returns an amber not-in-knowledge-base card" width="100%"/>
+<td width="50%" valign="top" style="padding:4px">
+<img src="screenshots/09_app_refusal_or_low_confidence.png" alt="Off-topic question returns an amber not-in-knowledge-base card" width="100%" style="display:block;max-height:340px;width:100%;object-fit:cover;object-position:top;border-radius:6px"/>
 <br/><sub><b>Graceful refusal</b> — amber card, no hallucination</sub>
 </td>
-<td width="50%" valign="top">
-<img src="screenshots/07_app_homepage_public.png" alt="App served from a public EC2 URL" width="100%"/>
-<br/><sub><b>Live on EC2</b> — same Docker image as local demo</sub>
+<td width="50%" valign="top" style="padding:4px">
+<img src="screenshots/07_app_homepage_public.png" alt="App homepage" width="100%" style="display:block;max-height:340px;width:100%;object-fit:cover;object-position:top;border-radius:6px"/>
+<br/><sub><b>Homepage</b> — hero + live Knowledge Base entry</sub>
 </td>
 </tr>
 </table>
