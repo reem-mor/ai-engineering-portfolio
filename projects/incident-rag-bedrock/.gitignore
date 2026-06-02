@@ -1,5 +1,12 @@
 .env
 .env.production
+
+# Secrets / credentials — never commit
+*.pem
+*.key
+.ssh/
+.sg_id.txt
+.ec2_instance_id.txt
 .venv/
 __pycache__/
 *.pyc

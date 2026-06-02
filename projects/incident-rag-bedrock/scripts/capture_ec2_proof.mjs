@@ -88,10 +88,15 @@ async function main() {
     `<table><tr><th>Protocol</th><th>Port</th><th>Source</th></tr>${sgRules}</table>`,
   );
 
-  const dockerPs = execSync(
-    `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ec2-user@${PUBLIC_DNS} "sudo docker ps"`,
-    { encoding: "utf8" },
-  );
+  // Prefer a pre-captured `docker ps` (e.g. via SSM Run Command) when DOCKER_PS_FILE
+  // is set; fall back to SSH for environments that still use a key pair.
+  const dockerPsFile = process.env.DOCKER_PS_FILE;
+  const dockerPs = dockerPsFile && fs.existsSync(dockerPsFile)
+    ? fs.readFileSync(dockerPsFile, "utf8")
+    : execSync(
+        `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ec2-user@${PUBLIC_DNS} "sudo docker ps"`,
+        { encoding: "utf8" },
+      );
   const dockerHtml = consoleHtml(
     "EC2 SSH session · docker ps",
     `ec2-user@${PUBLIC_DNS}`,

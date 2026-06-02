@@ -1,6 +1,75 @@
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Play, FileText } from "lucide-react";
 import type { AnswerSections, Citation } from "@/types/rag";
+import { segmentText, isCommandStep, coalesceSteps, type Segment } from "@/lib/answer-format";
+import { CodeBlock, CodeSession } from "@/components/CodeBlock";
+
+// Shared section wrapper: header + light divider for clear visual separation.
+function Section({
+  title,
+  children,
+  first = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  first?: boolean;
+}) {
+  return (
+    <div className={first ? "" : "border-t border-border pt-4"}>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{title}</div>
+      <div className="mt-2">{children}</div>
+    </div>
+  );
+}
+
+function StepNumberBadge({ n }: { n: number }) {
+  return (
+    <span
+      data-step-badge
+      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums"
+      style={{
+        backgroundColor: "color-mix(in oklab, var(--resolution) 22%, transparent)",
+        color: "var(--resolution)",
+        border: "1px solid color-mix(in oklab, var(--resolution) 35%, transparent)",
+      }}
+      aria-hidden
+    >
+      {n}
+    </span>
+  );
+}
+
+function StepItem({ step, index }: { step: string; index: number }) {
+  const segments = useMemo(() => segmentText(step), [step]);
+  const command = useMemo(() => isCommandStep(segments, step), [segments, step]);
+  const codeBlocks = segments.filter((s) => s.kind === "code") as Extract<Segment, { kind: "code" }>[];
+  const proseText = segments
+    .filter((s) => s.kind === "prose")
+    .map((s) => (s.kind === "prose" ? s.text : ""))
+    .join(" ")
+    .trim();
+
+  return (
+    <li data-step-index={index} className="flex items-start gap-3">
+      <StepNumberBadge n={index + 1} />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-start gap-1.5 text-foreground/90">
+          {command && (
+            <Play className="mt-[3px] size-3.5 shrink-0 text-[var(--tools)]" aria-hidden />
+          )}
+          <span className={command ? "font-semibold" : ""}>
+            {proseText || (codeBlocks.length ? "Run the command below" : step)}
+          </span>
+        </div>
+        {codeBlocks.length > 0 && (
+          <CodeSession
+            blocks={codeBlocks.map((c) => ({ code: c.code, lang: c.lang, destructive: c.destructive }))}
+          />
+        )}
+      </div>
+    </li>
+  );
+}
 
 export function FormattedAnswer({
   answer,
@@ -18,174 +87,214 @@ export function FormattedAnswer({
     why: "",
   };
 
-  // On a refusal / low-confidence answer, only show the message — no derived
-  // steps, escalation, or "why" boilerplate.
+  const steps = useMemo(() => coalesceSteps(s.steps), [s.steps]);
+
   if (!grounded) {
     return (
       <div className="space-y-4 text-sm leading-relaxed">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Answer</div>
-          <p className="mt-2 text-foreground/95">{s.summary || answer}</p>
-        </div>
+        <Section title="Answer" first>
+          <p className="text-foreground/95">{s.summary || answer}</p>
+        </Section>
       </div>
     );
   }
 
   return (
     <div className="space-y-4 text-sm leading-relaxed">
-      <div>
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Answer</div>
-        <p className="mt-2 text-foreground/95">{s.summary || answer}</p>
-      </div>
+      <Section title="Answer" first>
+        <p className="text-foreground/95">{s.summary || answer}</p>
+      </Section>
 
-      {s.steps.length > 0 && (
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Recommended steps
-          </div>
-          <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-            {s.steps.map((step, i) => (
-              <li key={i}>{step}</li>
+      {steps.length > 0 && (
+        <Section title="Recommended steps">
+          <ul className="space-y-4">
+            {steps.map((step, i) => (
+              <StepItem key={i} step={step} index={i} />
             ))}
-          </ol>
-        </div>
+          </ul>
+        </Section>
       )}
 
       {s.escalation.length > 0 && (
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Escalation</div>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+        <Section title="Escalation">
+          <ul className="list-disc space-y-1 pl-5 text-foreground/90">
             {s.escalation.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ul>
-        </div>
+        </Section>
       )}
 
       {s.why && (
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Why this answer
-          </div>
-          <p className="mt-2 text-muted-foreground">{s.why}</p>
-        </div>
+        <Section title="Why this answer">
+          <p className="text-foreground/80">{s.why}</p>
+        </Section>
       )}
     </div>
   );
 }
 
-function splitSnippetSteps(snippet: string): string[] {
-  const text = (snippet || "").trim();
-  if (!text) return [];
+function CitationScoreMeter({ score }: { score: number }) {
+  const pct = Math.min(100, Math.max(0, score <= 1 ? score * 100 : score));
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <div
+        className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-border"
+        role="meter"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Relevance ${pct.toFixed(0)} percent`}
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-300"
+          style={{
+            width: `${pct}%`,
+            backgroundColor: "var(--rag)",
+          }}
+        />
+      </div>
+      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+        {score.toFixed(2)}
+      </span>
+    </div>
+  );
+}
 
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const fromLines: string[] = [];
-
-  for (const line of lines) {
-    const numberedParts = line.split(/(?<=\s)(?=\d+\.\s)/);
-    if (numberedParts.length > 1) {
-      for (const part of numberedParts) {
-        const stripped = part.trim();
-        const match = stripped.match(/^\d+[.)]\s+(.+)$/);
-        fromLines.push(match ? match[1].trim() : stripped);
-      }
-      continue;
-    }
-    const bullet = line.match(/^[-*•]\s+(.+)$/);
-    if (bullet) {
-      fromLines.push(bullet[1].trim());
-      continue;
-    }
-    const numbered = line.match(/^\d+[.)]\s+(.+)$/);
-    if (numbered) {
-      fromLines.push(numbered[1].trim());
-      continue;
-    }
-    fromLines.push(line);
-  }
-
-  if (fromLines.length >= 2) return fromLines;
-
-  const sentences = text
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 12);
-  if (sentences.length >= 2) return sentences;
-
-  return fromLines.length ? fromLines : [text];
+function CitationBody({ segments }: { segments: Segment[] }) {
+  if (!segments.length) return null;
+  return (
+    <div className="mt-3 space-y-3 border-t border-border pt-3">
+      {segments.map((seg, i) =>
+        seg.kind === "code" ? (
+          <CodeBlock key={i} code={seg.code} lang={seg.lang} destructive={seg.destructive} />
+        ) : (
+          <p
+            key={i}
+            className="border-l-2 pl-3 text-xs leading-relaxed text-foreground/80 whitespace-pre-line"
+            style={{ borderColor: "color-mix(in oklab, var(--rag) 45%, transparent)" }}
+          >
+            {seg.text}
+          </p>
+        ),
+      )}
+    </div>
+  );
 }
 
 export function CitationCard({ citation }: { citation: Citation }) {
   const [expanded, setExpanded] = useState(false);
-  const chunk =
-    citation.chunk_index != null ? ` · chunk ${citation.chunk_index}` : "";
-  const score =
-    citation.score != null ? (
-      <span className="text-muted-foreground">Score: {citation.score.toFixed(2)}</span>
-    ) : null;
+  const chunk = citation.chunk_index != null ? `chunk ${citation.chunk_index}` : null;
 
   const fullSnippet = citation.snippet?.trim() ?? "";
-  const preview = citation.preview ?? citation.snippet;
-  const hasMore = fullSnippet.length > 0 && fullSnippet !== preview;
-  const expandedSteps = splitSnippetSteps(fullSnippet);
+  const preview = (citation.preview ?? citation.snippet ?? "").trim();
+  const segments = useMemo(() => segmentText(fullSnippet), [fullSnippet]);
+  const hasCode = segments.some((seg) => seg.kind === "code");
+  const canExpand =
+    fullSnippet.length > 0 &&
+    (hasCode || segments.length > 1 || fullSnippet.length > (preview?.length ?? 0) + 40);
+
+  const collapsedExcerpt =
+    preview.length > 160 ? `${preview.slice(0, 157).trim()}…` : preview;
 
   return (
-    <div className="rounded-lg border border-border bg-card/60 p-3">
+    <article
+      className="overflow-hidden rounded-lg border border-border bg-card/50 shadow-sm"
+      data-citation-index={citation.index}
+    >
       <button
         type="button"
-        className="flex w-full items-start justify-between gap-2 text-left"
-        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-card/80 disabled:cursor-default disabled:hover:bg-card/50"
+        onClick={() => canExpand && setExpanded((v) => !v)}
         aria-expanded={expanded}
-        disabled={!hasMore && expandedSteps.length <= 1}
+        disabled={!canExpand}
       >
+        <span
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-[11px] font-bold tabular-nums"
+          style={{
+            backgroundColor: "color-mix(in oklab, var(--rag) 18%, transparent)",
+            color: "var(--rag)",
+          }}
+        >
+          {citation.index}
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-medium">
-            [{citation.index}] {citation.source_label}
-            {chunk}
-          </div>
-          {score && <div className="mt-1 text-[11px]">{score}</div>}
+          <div className="truncate text-xs font-semibold text-foreground">{citation.source_label}</div>
+          {chunk && (
+            <div className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{chunk}</div>
+          )}
+          {citation.score != null && <CitationScoreMeter score={citation.score} />}
+          {!expanded && collapsedExcerpt && (
+            <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+              {collapsedExcerpt}
+            </p>
+          )}
         </div>
-        {(hasMore || expandedSteps.length > 1) && (
+        {canExpand && (
           <ChevronDown
-            className={`size-4 shrink-0 text-muted-foreground transition-transform ${
-              expanded ? "rotate-180" : ""
-            }`}
+            className={`mt-1 size-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
             aria-hidden
           />
         )}
       </button>
 
-      {!expanded && (
-        <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{preview}</p>
-      )}
-
-      {expanded && expandedSteps.length > 0 && (
-        <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-xs text-muted-foreground leading-relaxed">
-          {expandedSteps.map((step, i) => (
-            <li key={i}>{step}</li>
-          ))}
-        </ol>
-      )}
-
-      {expanded && expandedSteps.length === 0 && (
-        <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
-          {fullSnippet || preview}
-        </p>
-      )}
-    </div>
+      {expanded && <div className="px-3 pb-3"><CitationBody segments={segments} /></div>}
+    </article>
   );
 }
 
-export function CitationList({ citations, title = "Retrieved citations" }: { citations: Citation[]; title?: string }) {
+export function CitationList({
+  citations,
+  title = "Retrieved citations",
+  collapsible = true,
+  defaultOpen = false,
+}: {
+  citations: Citation[];
+  title?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   if (!citations.length) return null;
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {citations.map((c) => (
-          <CitationCard key={c.index} citation={c} />
-        ))}
+
+  const grid = (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {citations.map((c) => (
+        <CitationCard key={c.index} citation={c} />
+      ))}
+    </div>
+  );
+
+  if (!collapsible) {
+    return (
+      <div className="border-t border-border pt-4">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
+        {grid}
       </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+          <FileText className="size-3.5" aria-hidden />
+          {title}
+          <span className="rounded-full bg-card px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-foreground/70">
+            {citations.length}
+          </span>
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+      {open && <div className="mt-3">{grid}</div>}
     </div>
   );
 }

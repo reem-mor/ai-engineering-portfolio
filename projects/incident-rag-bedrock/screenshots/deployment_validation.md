@@ -31,13 +31,17 @@ Automated checks after S3/KB alignment and EC2 relaunch.
 
 ## Screenshots
 
-All 19 files in [`screenshots/`](./). Regenerate AWS/EC2 proof:
+**Tier 1 (submit):** 11 files at `screenshots/` root (`01`–`10` + `08b`). **Tier 2:** `11`–`19`. **Extras:** `extras/partA_*`. **Archive:** `archive/` (not for submission).
+
+Regenerate:
 
 ```powershell
 cd scripts
 node capture_aws_proof.mjs      # 01–03
-node capture_ec2_proof.mjs        # 04–06 (while instance running)
-$env:APP_URL="http://localhost:8080"; node capture_screenshots.mjs  # 07–09, 11–19
+node capture_ec2_proof.mjs      # 04–06 (while instance running)
+node capture_public_app.mjs     # 07 (if public URL), 08, 08b
+node capture_screenshots.mjs    # 11–19; --mvp-only for 13
+node capture_partA.mjs          # extras/partA_*
 node capture_cleanup_proof.mjs  # 10 (after terminate)
 ```
 

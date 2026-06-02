@@ -138,8 +138,8 @@ function AppShell() {
       <MvpWorkflow />
       <DemoDashboard />
       <Architecture />
-      <DocumentUpload />
       <LiveKnowledgeBase />
+      <DocumentUpload />
       <Flow />
       <Stack />
       <Deliverables />
@@ -1334,7 +1334,7 @@ function DocumentUpload() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--ingest)]">
           <Upload className="size-3.5" />
-          Corpus ingestion
+          Knowledge Base — manage corpus
         </div>
         <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
           Upload runbook documents

@@ -1,10 +1,77 @@
 # Screenshots
 
-Submission proof captures for **Incident RAG Bedrock**. Drop PNGs alongside this file using the exact filenames below.
+Submission proof captures for **Incident RAG Bedrock**. PNGs use the exact filenames below.
+
+## What to submit (Tier 1)
+
+Attach these **11 files** from the repo root `screenshots/` folder for course grading:
+
+| # | File | Proof |
+|---|------|-------|
+| 01 | `01_bedrock_kb_overview.png` | KB `RBTJM6NIG9` active |
+| 02 | `02_bedrock_kb_data_source_synced.png` | Data source **Available** |
+| 03 | `03_bedrock_model_access_granted.png` | Nova / model access |
+| 04 | `04_ec2_instance_running.png` | `i-05cbc9f5604d6704e` running (historical; instance terminated) |
+| 05 | `05_security_group_rules.png` | **8080/tcp** from `0.0.0.0/0` |
+| 06 | `06_docker_ps_on_ec2.png` | Container healthy on port 8080 |
+| 07 | `07_app_homepage_public.png` | Full app homepage |
+| 08 | `08_app_question_and_answer.png` | Grounded answer — numbered steps + SQL blocks |
+| 08b | `08b_app_citations_expanded.png` | Same answer, citations expanded (visual cards) |
+| 09 | `09_app_refusal_or_low_confidence.png` | Off-topic refusal only |
+| 10 | `10_cleanup_console.png` | Post-teardown console |
+
+> **Note:** `04`–`06` are historical EC2 proof. `07`–`08b` were captured against the same Docker image as ECR `:demo` (localhost or public IP).
+
+## Tier 2 — README / instructor depth
+
+Optional depth for reviewers; regenerate with `capture_screenshots.mjs` where noted.
+
+| File | Shows |
+|------|-------|
+| `11_pytest_passed.png` | `pytest -v` — full unit suite passing |
+| `12_kb_smoke_evaluation.png` | `evaluation/smoke_results.md` rendered — **6/6 PASS** |
+| `13_mvp_workflow.png` | `#mvp` after **Run triage** — numbered steps + citation cards in triage panel |
+| `14_architecture.png` | `#architecture` with Documents block selected |
+| `15_document_upload_success.png` | Upload success + S3 key |
+| `16_document_upload_validation.png` | Client validation — missing file |
+| `17_document_upload_type_rejected.png` | Unsupported type rejected |
+| `18_dataset_corpus.png` | 10-document corpus catalog |
+| `19_sample_questions_answers.png` | `evaluation/qa_showcase.md` — 4 grounded + 1 refusal |
+
+```powershell
+cd scripts
+node capture_screenshots.mjs --mvp-only   # refresh 13 only
+node capture_screenshots.mjs --pytest-only
+```
+
+## Tier 3 — Extras (`extras/`)
+
+Responsive Part A crops — grader-optional; not in the Tier 1 zip.
+
+| File | Shows |
+|------|-------|
+| `extras/partA_answer_1440.png` | Live KB answer panel @ 1440px |
+| `extras/partA_answer_expanded_1440.png` | Citations expanded @ 1440px |
+| `extras/partA_answer_768.png` | Tablet crop |
+| `extras/partA_answer_390.png` | Mobile crop |
+
+```powershell
+cd scripts
+node capture_partA.mjs   # writes to screenshots/extras/
+```
+
+## Archive (`archive/`)
+
+Not for submission — kept for audit only.
+
+| File | Reason |
+|------|--------|
+| `archive/partA_home_1440.png` | Duplicate of `07_app_homepage_public.png` |
+| `archive/20_codex_local_verification.png` | Redundant with `11` + `19` |
 
 ## Course submission name map
 
-If your grader expects hyphenated filenames, rename or copy from the existing set:
+If your grader expects hyphenated filenames, rename or copy from the Tier 1 set:
 
 | Course name | Repo filename |
 |-------------|---------------|
@@ -19,63 +86,57 @@ If your grader expects hyphenated filenames, rename or copy from the existing se
 
 ## Automated captures (regenerate locally)
 
-Prerequisites: Docker running, `.env` with valid `BEDROCK_KB_ID` and an **inference profile** model ARN, app on `http://localhost:8080`.
+Prerequisites: Docker running, `.env` with valid `BEDROCK_KB_ID` and inference profile ARN, app on `http://localhost:8080`.
 
 ```powershell
 cd projects/incident-rag-bedrock
 
-# 1. Start app
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}
 
-# 2. Live KB smoke test (6/6) + Q&A showcase markdown
 py -3.12 scripts/kb_smoke_test.py
 # → evaluation/smoke_results.md, evaluation/qa_showcase.md
 
-# 3. Unit tests + UI screenshots
 cd scripts
 npm install
 npx playwright install chromium
-node capture_screenshots.mjs
-
-# Pytest screenshot only
+node capture_screenshots.mjs          # 07–09 (legacy HTMX paths), 11–19
+node capture_screenshots.mjs --mvp-only
 node capture_screenshots.mjs --pytest-only
+
+$env:APP_URL="http://<public-ip>:8080"
+node capture_public_app.mjs           # 07 (if not localhost), 08, 08b
+
+node capture_partA.mjs                # extras/partA_*
+node capture_aws_proof.mjs            # 01–03
+node capture_ec2_proof.mjs            # 04–06 (while instance running)
+node capture_cleanup_proof.mjs        # 10 after terminate
 ```
 
 | Output file | Capture method |
 |-------------|----------------|
-| `07_app_homepage_public.png` | Full-page homepage with hero + sticky nav |
-| `08_app_question_and_answer.png` | Auth triage question → `.badge-grounded` + `.citation-list` with labels |
-| `09_app_refusal_or_low_confidence.png` | Tokyo restaurant question → `.badge-nomatch` |
-| `11_pytest_passed.png` | Rendered `py -3.12 -m pytest -v` output (102 tests) |
-| `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` (6/6 PASS) |
-| `13_mvp_workflow.png` | `#mvp` section after **Run triage** → grounded workflow result |
-| `14_architecture.png` | `#architecture` with Documents block selected |
-| `15_document_upload_success.png` | `#document-upload` after successful S3 upload (+ sync if enabled) |
-| `16_document_upload_validation.png` | Upload form — client validation (missing file) |
-| `17_document_upload_type_rejected.png` | Upload form — unsupported `.exe` rejected |
-| `18_dataset_corpus.png` | Rendered corpus catalog from `data/sample_documents/README.md` |
-| `19_sample_questions_answers.png` | Rendered `evaluation/qa_showcase.md` (4 grounded + 1 refusal) |
+| `07_app_homepage_public.png` | `capture_public_app.mjs` or `capture_screenshots.mjs` |
+| `08_app_question_and_answer.png` | Grounded SQL question → numbered steps + code blocks |
+| `08b_app_citations_expanded.png` | Same answer, **Retrieved citations** expanded |
+| `09_app_refusal_or_low_confidence.png` | Off-topic → refusal / no-match |
+| `11_pytest_passed.png` | Rendered pytest output |
+| `12_kb_smoke_evaluation.png` | Rendered `evaluation/smoke_results.md` |
+| `13_mvp_workflow.png` | `#mvp` after **Run triage** (SPA; use `--mvp-only` to refresh) |
+| `14_architecture.png` | `#architecture` — Documents selected |
+| `15`–`17` | Document upload flows |
+| `18_dataset_corpus.png` | Corpus catalog from `data/sample_documents/README.md` |
+| `19_sample_questions_answers.png` | `evaluation/qa_showcase.md` |
 
 ## Manual captures (AWS Console / EC2)
 
 | # | Filename | What it must show |
 |---|---|---|
-| 01 | `01_bedrock_kb_overview.png` | Bedrock → Knowledge bases → detail page for `RBTJM6NIG9` |
-| 02 | `02_bedrock_kb_data_source_synced.png` | Data source row with **Status: Available** after Sync |
-| 03 | `03_bedrock_model_access_granted.png` | Bedrock → Model access — generation model enabled |
-| 04 | `04_ec2_instance_running.png` | EC2 → Instances — public DNS visible |
-| 05 | `05_security_group_rules.png` | Inbound: 22/tcp from your IP, 80/tcp from anywhere |
-| 06 | `06_docker_ps_on_ec2.png` | SSH session showing `docker ps` → `Up (healthy)` |
-| 10 | `10_cleanup_console.png` | Empty Bedrock / EC2 / OpenSearch console after teardown |
+| 01 | `01_bedrock_kb_overview.png` | Bedrock → Knowledge bases → `RBTJM6NIG9` |
+| 02 | `02_bedrock_kb_data_source_synced.png` | Data source **Status: Available** |
+| 03 | `03_bedrock_model_access_granted.png` | Model access enabled |
+| 04 | `04_ec2_instance_running.png` | EC2 instance running with public IP |
+| 05 | `05_security_group_rules.png` | Inbound **8080/tcp** from `0.0.0.0/0` |
+| 06 | `06_docker_ps_on_ec2.png` | `docker ps` → `Up (healthy)` on 8080 |
+| 10 | `10_cleanup_console.png` | Empty console after teardown |
 
-CLI-generated proof (when console capture is inconvenient):
-
-```powershell
-cd scripts
-node capture_aws_proof.mjs       # 01–03 from AWS CLI
-node capture_ec2_proof.mjs       # 04–06 while instance is running
-node capture_cleanup_proof.mjs   # 10 after terminate
-```
-
-See [`deployment_validation.md`](deployment_validation.md) for the latest automated check log.
+See [`deployment_validation.md`](deployment_validation.md) for the latest validation log.
