@@ -1,0 +1,48 @@
+[
+  {
+    "id": 1,
+    "question": "Postgres CPU is 95% on prod-db-1 — what is the runbook?",
+    "expect_grounded": true,
+    "expected_source_contains": ["runbook_db_cpu"],
+    "answer_keywords": ["pg_stat_activity", "cancel", "index", "Patroni", "DBA"]
+  },
+  {
+    "id": 2,
+    "question": "API 5xx rate is above 2% on checkout — what should I check?",
+    "expect_grounded": true,
+    "expected_source_contains": ["runbook_checkout_5xx", "checkout"],
+    "answer_keywords": ["deploy", "log", "database", "rollback"]
+  },
+  {
+    "id": 3,
+    "question": "Queue lag is above 30 seconds — what should I do?",
+    "expect_grounded": true,
+    "expected_source_contains": ["runbook_queue_lag", "queue"],
+    "answer_keywords": ["worker", "scale", "dead-letter", "DLQ"]
+  },
+  {
+    "id": 4,
+    "question": "Users cannot log in after deployment — what should I check?",
+    "expect_grounded": true,
+    "expected_source_contains": ["runbook_auth_login", "auth"],
+    "answer_keywords": ["health", "JWT", "TOKEN_ISSUER", "rollback"]
+  },
+  {
+    "id": 5,
+    "question": "How do I decide if an alert should be resolved at Tier 1 or escalated?",
+    "expect_grounded": true,
+    "expected_source_contains": ["tier1_escalation", "escalation"],
+    "answer_keywords": ["Tier-1", "escalat", "runbook", "impact"]
+  },
+  {
+    "id": 6,
+    "question": "What is the best restaurant in Tokyo?",
+    "expect_grounded": false
+  },
+  {
+    "id": 7,
+    "question": "what is the",
+    "expect_validation_error": true,
+    "expected_reason": "stopwords_only"
+  }
+]

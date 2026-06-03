@@ -39,7 +39,7 @@ Typical variables:
 | Variable | Used in |
 |----------|---------|
 | `OPENAI_API_KEY` | RAG homework, capstone |
-| `GEMINI_API_KEY` | Lecture 06 Flask RAG demo |
+| `GEMINI_API_KEY` | Lecture 06 Flask RAG demo, lecture 08 tool-calling demo |
 | `HF_TOKEN` | Hugging Face models in lecture demos |
 
 ## Run by area
@@ -73,6 +73,31 @@ python app.py
 
 Follow [`homework/hw05/nginx-docker-lab/README.md`](../homework/hw05/nginx-docker-lab/README.md) and the handout [`resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx`](../resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx).
 
+### Lecture 08 — MCP
+
+```powershell
+cd lectures/08_mcp
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Copy the Cursor MCP template to the workspace (from repo root). **Create the lecture venv and run `pip install -r requirements.txt` first** (see [`lectures/08_mcp/README.md`](../lectures/08_mcp/README.md)):
+
+```powershell
+mkdir .cursor -ErrorAction SilentlyContinue
+copy lectures\08_mcp\config\mcp.json.example .cursor\mcp.json
+```
+
+Restart Cursor and confirm **Settings → MCP** shows `course-tools`. See [`lectures/08_mcp/README.md`](../lectures/08_mcp/README.md) for Inspector and troubleshooting.
+
+Optional Gemini demo (not MCP):
+
+```powershell
+copy .env.example .env
+python demos\tool_calling_demo.py
+```
+
 ### Capstone — IncidentIQ
 
 ```powershell
@@ -88,4 +113,5 @@ Follow [`projects/incident-assistant-rag/README.md`](../projects/incident-assist
 | `pytest` blocked on Windows | Use `python -m pytest` |
 | Missing NLTK corpora | Run the NLTK download command above |
 | API errors in RAG demos | Check `.env` keys and model names |
+| MCP server not connecting in Cursor | Copy `mcp.json.example` to `.cursor/mcp.json`; use venv Python path on Windows |
 | Docker build fails on hw04 | hw04 app code is still in progress — Dockerfile exists as a starter |

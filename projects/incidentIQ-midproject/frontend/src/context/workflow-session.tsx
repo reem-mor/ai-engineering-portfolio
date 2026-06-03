@@ -1,0 +1,84 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useBootstrap } from "@/context/bootstrap";
+import { sessionImpactTotals } from "@/lib/workflow-utils";
+
+type WorkflowSessionValue = {
+  triagedIds: Set<string>;
+  resolved: Set<string>;
+  triageCount: number;
+  lastTriageAt: string | null;
+  recordTriageComplete: (alertId: string) => void;
+  markResolved: (alertId: string) => void;
+  countedIds: Set<string>;
+  sessionTotals: { dollars: number; minutes: number; triagedCount: number };
+};
+
+const WorkflowSessionContext = createContext<WorkflowSessionValue | null>(null);
+
+export function WorkflowSessionProvider({ children }: { children: ReactNode }) {
+  const { alerts } = useBootstrap();
+  const [triagedIds, setTriagedIds] = useState<Set<string>>(() => new Set());
+  const [resolved, setResolved] = useState<Set<string>>(() => new Set());
+  const [triageCount, setTriageCount] = useState(0);
+  const [lastTriageAt, setLastTriageAt] = useState<string | null>(null);
+
+  const sessionTotals = useMemo(
+    () => sessionImpactTotals(alerts, triagedIds),
+    [alerts, triagedIds],
+  );
+
+  const recordTriageComplete = useCallback((alertId: string) => {
+    setTriagedIds((prev) => new Set(prev).add(alertId));
+    setTriageCount((n) => n + 1);
+    setLastTriageAt(
+      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    );
+  }, []);
+
+  const markResolved = useCallback((alertId: string) => {
+    setResolved((prev) => new Set(prev).add(alertId));
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      triagedIds,
+      resolved,
+      triageCount,
+      lastTriageAt,
+      recordTriageComplete,
+      markResolved,
+      countedIds: triagedIds,
+      sessionTotals,
+    }),
+    [
+      triagedIds,
+      resolved,
+      triageCount,
+      lastTriageAt,
+      recordTriageComplete,
+      markResolved,
+      sessionTotals,
+    ],
+  );
+
+  return (
+    <WorkflowSessionContext.Provider value={value}>
+      {children}
+    </WorkflowSessionContext.Provider>
+  );
+}
+
+export function useWorkflowSession() {
+  const ctx = useContext(WorkflowSessionContext);
+  if (!ctx) {
+    throw new Error("useWorkflowSession must be used within WorkflowSessionProvider");
+  }
+  return ctx;
+}

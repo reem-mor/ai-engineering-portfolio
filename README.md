@@ -163,6 +163,7 @@ flowchart TB
 | 05 | Flask web development | Routes, slugs, HTTP methods, forms, Jinja2, static files | Introduces browser-based Python applications |
 | 06 | SQLite and RAG web app | SQLite, CRUD, REST endpoints, session memory, FAISS, Hugging Face, Gemini, async UI | Demonstrates a complete AI web prototype with persistent chat |
 | 07 | Docker and AWS EC2 | Docker images, containers, volumes, networks, Dockerfile, EC2, SSH, Nginx, Security Groups | Shows deployment workflow and container fundamentals |
+| 08 | Model Context Protocol (MCP) | Stdio MCP server, Cursor `mcp.json`, FastMCP tools, MCP Inspector, contrast with ad-hoc tool calling | Shows how agents connect to standardized external tools |
 | Project | Full-stack AI system | FastAPI, React, FAISS, OpenAI, Docker Compose, tests, evaluation, documentation | Shows end-to-end AI software delivery |
 
 ---
@@ -188,6 +189,7 @@ flowchart TB
   Lectures --> L05[05 Flask Intro]
   Lectures --> L06[06 Flask Advanced RAG]
   Lectures --> L07[07 Docker and AWS]
+  Lectures --> L08[08 MCP]
 
   Homework --> HW01[HW01 Notebook Basics]
   Homework --> HW02[HW02 Python Exercises]
@@ -229,7 +231,7 @@ amdocs-ai-course/
 │   ├── lecture01.pdf … lecture06_docker_aws.pdf
 │   └── handouts/                  # DOCX/PPTX guidelines
 │
-├── lectures/                      # 01–07 lesson folders
+├── lectures/                      # 01–08 lesson folders
 ├── homework/                      # hw01–hw05
 ├── exercises/                     # Index to runnable labs
 │

@@ -1,0 +1,28 @@
+import path from "node:path";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      "/api": "http://127.0.0.1:8080",
+      "/ask": "http://127.0.0.1:8080",
+      "/workflow": "http://127.0.0.1:8080",
+      "/documents": "http://127.0.0.1:8080",
+      "/health": "http://127.0.0.1:8080",
+    },
+  },
+  build: {
+    outDir: path.resolve(__dirname, "../app/static/spa"),
+    emptyOutDir: true,
+  },
+});

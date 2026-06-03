@@ -1,0 +1,41 @@
+PAYMENT SERVICE — LATENCY RUNBOOK
+=================================
+
+Trigger conditions
+------------------
+- p95 of POST /charge above 2000 ms for 5 minutes
+- or, success rate below 99.0% for 5 minutes
+- or, an alert from the primary payment provider's status page
+
+Initial triage (under 3 minutes)
+--------------------------------
+1. Check the provider status page. If the primary PSP is degraded, skip
+   directly to the failover step.
+2. Check internal metrics: charge_attempts_total, charge_success_total,
+   charge_p95_latency_ms.
+3. If only ONE region is affected, traffic-shift to the healthy region
+   via the global load balancer. Document the shift in #incident-pay.
+
+Failover to the backup PSP
+--------------------------
+We support two PSPs: PRIMARY=stripe, BACKUP=adyen. Failover is a feature
+flag, not a deployment:
+
+    curl -X POST https://configsvc.example.com/flags/payment.psp \
+         -H 'Authorization: Bearer $CONFIG_TOKEN' \
+         -d '{"value":"adyen"}'
+
+Effect is immediate. Verify by watching charge_attempts_total{psp="adyen"}
+increase within 30 seconds. Roll back the flag once the primary recovers
+and has been stable for 30 minutes.
+
+DO NOT
+------
+- Do not retry failed charges automatically without idempotency keys.
+  We have caused duplicate-charge incidents before. The retry helper in
+  payments-sdk handles this safely; never write your own retry loop.
+
+Communication
+-------------
+Customer-facing status page MUST be updated within 10 minutes of declaring
+a payment incident. Use the "Payments degraded" template.
