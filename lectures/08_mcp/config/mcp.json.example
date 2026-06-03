@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "course-tools": {
+      "command": "${workspaceFolder}/lectures/08_mcp/.venv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/lectures/08_mcp/server/tools_server.py"],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.75"]
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"messageVersion": "1.0", "response": {"actionGroup": "incidentiq-ops", "apiPath": "/environments/GIB/status", "httpMethod": "GET", "httpStatusCode": 404, "responseBody": {"application/json": {"body": "{\"error\": \"No handler for GET /environments/GIB/status\"}"}}}, "sessionAttributes": {}, "promptSessionAttributes": {}}

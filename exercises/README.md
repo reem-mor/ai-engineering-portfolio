@@ -32,6 +32,18 @@ Run: copy `.env.example` to `.env`, then `python app.py`.
 |------|-------------|
 | [`lectures/07_docker_aws/`](../lectures/07_docker_aws/) | AWS architecture notes and Mermaid diagram |
 
+## MCP (Lecture 08)
+
+| Path | Description |
+|------|-------------|
+| [`lectures/08_mcp/`](../lectures/08_mcp/) | Stdio MCP server, Cursor `mcp.json` setup, Gemini tool-calling contrast |
+| [`lectures/08_mcp/server/tools_server.py`](../lectures/08_mcp/server/tools_server.py) | FastMCP server (`get_weather`, `get_joke`) |
+| [`lectures/08_mcp/demos/tool_calling_demo.py`](../lectures/08_mcp/demos/tool_calling_demo.py) | Ad-hoc JSON tool-calling without MCP |
+
+Setup: `pip install -r requirements.txt`, copy `config/mcp.json.example` to `.cursor/mcp.json` at repo root.
+
+Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
+
 ## Homework labs
 
 | Path | Description |

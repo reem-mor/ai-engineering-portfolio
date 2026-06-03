@@ -1,0 +1,57 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockKnowledgeBaseRetrieve",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:Retrieve",
+        "bedrock:RetrieveAndGenerate"
+      ],
+      "Resource": "arn:aws:bedrock:REGION:ACCOUNT_ID:knowledge-base/KB_ID"
+    },
+    {
+      "Sid": "InvokeActionGroupLambda",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:LAMBDA_FUNCTION_NAME"
+    },
+    {
+      "Sid": "ReadActionGroupOpenApiSchema",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::S3_BUCKET_NAME",
+        "arn:aws:s3:::S3_BUCKET_NAME/agent/*"
+      ]
+    },
+    {
+      "Sid": "BedrockUseInferenceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:GetInferenceProfile",
+        "bedrock:ListInferenceProfiles",
+        "bedrock:UseInferenceProfile"
+      ],
+      "Resource": "arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/*"
+    },
+    {
+      "Sid": "BedrockInvokeFoundationModel",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:GetInferenceProfile",
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "MODEL_ARN",
+        "arn:aws:bedrock:us-east-1::foundation-model/FOUNDATION_MODEL_ID",
+        "arn:aws:bedrock:us-east-2::foundation-model/FOUNDATION_MODEL_ID",
+        "arn:aws:bedrock:us-west-2::foundation-model/FOUNDATION_MODEL_ID"
+      ]
+    }
+  ]
+}
