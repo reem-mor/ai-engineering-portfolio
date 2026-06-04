@@ -1,8 +1,29 @@
 # Screenshots
 
-Submission proof captures for **Incident RAG Bedrock**. PNGs use the exact filenames below.
+Submission proof captures for **IncidentIQ Bedrock Agent mid-project**. PNGs use the exact filenames below.
 
-## What to submit (Tier 1)
+## Agent architecture set (prompt #3 — preferred for mid-project)
+
+Capture when EC2/demo is approved. Files live in `screenshots/`:
+
+| # | File | Proof |
+|---|------|-------|
+| 1 | `01_agent.png` | Bedrock Agent `HH4YGSLZUE` + alias, KB linked |
+| 2 | `02_kb_sync.png` | KB `RBTJM6NIG9` data source **Available** |
+| 3 | `03_mcp.png` | Action groups (Path B) or AgentCore Gateway (Path A) |
+| 4 | `04_lambdas.png` | `iiq-correlate`, `iiq-context`, `iiq-similar` |
+| 5 | `05_s3.png` | S3 runbook prefix under `incidentIQ-midproject` |
+| 6 | `06_ec2.png` | EC2 public IP + security group |
+| 7 | `07_app_home.png` | SPA homepage |
+| 8 | `08_qa.png` | Triage card — Postgres CPU scenario |
+| 9 | `09_memory_followup.png` | Follow-up in same Bedrock session |
+| 10 | `10_mobile.png` | Triage card @ 390px |
+| 11 | `11_docker_ps.png` | Container healthy on 8080 |
+| 12 | `12_tests.png` | `pytest` all green |
+
+See [`docs/SUBMISSION_CHECKLIST.md`](../docs/SUBMISSION_CHECKLIST.md) for commands and requirement mapping.
+
+## What to submit (Tier 1 — legacy RAG naming)
 
 Attach these **11 files** from the repo root `screenshots/` folder for course grading:
 

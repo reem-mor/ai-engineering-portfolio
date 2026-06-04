@@ -1,0 +1,62 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockKnowledgeBaseQuery",
+      "Effect": "Allow",
+      "Action": ["bedrock:Retrieve", "bedrock:RetrieveAndGenerate"],
+      "Resource": "arn:aws:bedrock:us-east-1:329597159579:knowledge-base/RBTJM6NIG9"
+    },
+    {
+      "Sid": "BedrockInvokeInferenceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:GetInferenceProfile",
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "ReadKnowledgeBaseS3Bucket",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::reem-amdocs-ai-artifacts-3331",
+        "arn:aws:s3:::reem-amdocs-ai-artifacts-3331/*"
+      ]
+    },
+    {
+      "Sid": "WriteKnowledgeBaseS3Bucket",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::reem-amdocs-ai-artifacts-3331/*"
+    },
+    {
+      "Sid": "BedrockInvokeAgent",
+      "Effect": "Allow",
+      "Action": "bedrock:InvokeAgent",
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:329597159579:agent/HH4YGSLZUE",
+        "arn:aws:bedrock:us-east-1:329597159579:agent-alias/HH4YGSLZUE/*"
+      ]
+    },
+    {
+      "Sid": "EcrPull",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

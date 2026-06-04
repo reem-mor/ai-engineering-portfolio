@@ -1,6 +1,7 @@
 """boto3 wrapper for Amazon Bedrock Agents invoke_agent (KB-backed)."""
 from __future__ import annotations
 
+import json
 import logging
 import time
 import uuid
@@ -18,47 +19,47 @@ from app.validators import validate_question
 
 log = logging.getLogger(__name__)
 
-AGENT_INSTRUCTION = """You are IncidentIQ, an NOC assistant for on-call engineers.
+AGENT_INSTRUCTION = """You are IncidentIQ, an incident-triage assistant for a NOC/SRE team in a regulated online-gaming company. For each alert: (1) retrieve the relevant runbook from the knowledge base and answer WITH a citation; (2) call tools to enrich — correlate recent deployments including dependency hops, identify the owning team and escalation path, score business impact, and find similar past incidents; (3) compose ONE triage recommendation: cited answer, recommended steps, likely cause, owner, impact, and a similar incident. Rules: never invent a runbook or remediation without a citation; flag destructive database actions and advise they be used only if safer steps fail; never recommend auto-executing changes in production without human approval; keep answers concise and scannable for an on-call engineer under time pressure."""
 
-Use your linked knowledge base for runbooks, postmortems, escalation policies, and
-historical incident patterns.
 
-Use the incidentiq-ops action group for live operational data:
-- Environment health status (getEnvironmentStatus)
-- Recent alerts for an environment (getRecentAlerts)
-- Creating incident tickets (createIncident)
-
-Before calling createIncident (POST /incidents), confirm title, severity, and environment
-with the user. Never open a ticket without explicit user approval.
-
-Write plain English in your final response. Do NOT emit raw tool calls, JSON, or lines
-starting with "Action:" in the user-facing answer.
-
-Use exactly this structure:
-
-Summary:
-One short sentence answering the question.
-
-Recommended steps:
-1. First concrete action
-2. Second action
-(continue numbering as needed)
-
-Escalation:
-- When to escalate
-- Who to escalate to
-
-Why this answer:
-One line citing the runbook, live ops data, alert history, or postmortem that supports
-the answer.
-
-If neither the knowledge base nor ops tools have relevant data, say so clearly and
-recommend escalating with prepared notes. Do not invent runbook steps or live metrics.
-"""
+def build_session_attributes(
+    *,
+    alert_id: str | None = None,
+    service: str | None = None,
+    environment: str | None = None,
+    severity: str | None = None,
+    symptom: str | None = None,
+    alert_time: str | None = None,
+    triage_complete: str = "false",
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Session + prompt attributes for multi-turn triage memory."""
+    session: dict[str, str] = {}
+    prompt: dict[str, str] = {}
+    if alert_id:
+        session["alert_id"] = alert_id
+    if service:
+        session["service"] = service
+        prompt["current_service"] = service
+    if environment:
+        session["environment"] = environment
+        prompt["current_environment"] = environment
+    if severity:
+        session["severity"] = severity
+    if symptom:
+        session["symptom"] = symptom
+    if alert_time:
+        session["alert_time"] = alert_time
+    session["triage_complete"] = triage_complete
+    if triage_complete == "true":
+        prompt["follow_up_mode"] = (
+            "Prior triage is complete. Answer follow-up questions using session context; "
+            "do not repeat full triage unless the user asks to re-run."
+        )
+    return session, prompt
 
 
 class BedrockAgentClient:
-    """Question in via invoke_agent; grounded answer + citations out."""
+    """Question in via invoke_agent; grounded answer + citations + enrichment out."""
 
     def __init__(self, config: Config, *, client: Any | None = None) -> None:
         self._config = config
@@ -73,7 +74,14 @@ class BedrockAgentClient:
             config=boto_cfg,
         )
 
-    def ask(self, question: str, *, session_id: str | None = None) -> RagAnswer:
+    def ask(
+        self,
+        question: str,
+        *,
+        session_id: str | None = None,
+        session_attributes: dict[str, str] | None = None,
+        prompt_session_attributes: dict[str, str] | None = None,
+    ) -> RagAnswer:
         question = validate_question(question)
         started = time.perf_counter()
         request: dict[str, Any] = {
@@ -83,6 +91,13 @@ class BedrockAgentClient:
             "sessionId": session_id or str(uuid.uuid4()),
             "enableTrace": True,
         }
+        if session_attributes:
+            request["sessionState"] = request.get("sessionState", {})
+            request["sessionState"]["sessionAttributes"] = session_attributes
+        if prompt_session_attributes:
+            request["sessionState"] = request.get("sessionState", {})
+            request["sessionState"]["promptSessionAttributes"] = prompt_session_attributes
+
         try:
             response = self._client.invoke_agent(**request)
         except Exception as exc:  # noqa: BLE001
@@ -91,6 +106,7 @@ class BedrockAgentClient:
 
         answer_parts: list[str] = []
         citations_raw: list[dict[str, Any]] = []
+        enrichment: dict[str, Any] = {}
         out_session_id = response.get("sessionId")
 
         try:
@@ -106,14 +122,17 @@ class BedrockAgentClient:
                             citations_raw.append(ref)
 
                 trace = event.get("trace") or {}
-                orch = trace.get("trace", {}).get("orchestrationTrace") or trace.get(
-                    "orchestrationTrace"
-                )
-                if orch:
-                    observation = orch.get("observation") or {}
-                    kb_out = observation.get("knowledgeBaseLookupOutput") or {}
-                    for ref in kb_out.get("retrievedReferences", []) or []:
-                        citations_raw.append(ref)
+                inner = trace.get("trace") or trace
+                orch = inner.get("orchestrationTrace")
+                if not orch:
+                    continue
+                observation = orch.get("observation") or {}
+                kb_out = observation.get("knowledgeBaseLookupOutput") or {}
+                for ref in kb_out.get("retrievedReferences", []) or []:
+                    citations_raw.append(ref)
+                action_out = observation.get("actionGroupInvocationOutput") or {}
+                if action_out:
+                    _merge_action_output(enrichment, action_out)
         except EventStreamError as exc:
             log.exception("Bedrock invoke_agent stream failed")
             raise translate(exc) from exc
@@ -133,7 +152,31 @@ class BedrockAgentClient:
             grounded=grounded,
             latency_ms=latency_ms,
             matched_runbook=matched,
+            enrichment=enrichment or None,
         )
+
+
+def _merge_action_output(enrichment: dict[str, Any], action_out: dict[str, Any]) -> None:
+    text = action_out.get("text") or ""
+    if not text:
+        return
+    try:
+        body = json.loads(text)
+    except json.JSONDecodeError:
+        enrichment.setdefault("raw_tool_outputs", []).append(text)
+        return
+    if isinstance(body, dict):
+        for key in (
+            "deployments",
+            "owner_team",
+            "similar_incidents",
+            "revenue_impact_usd_per_hour",
+            "likely_deploy_correlation",
+        ):
+            if key in body:
+                enrichment[key] = body[key]
+        if "error" not in body:
+            enrichment.setdefault("tools", []).append(body)
 
 
 def _parse_references(refs: list[dict[str, Any]]) -> list[Citation]:

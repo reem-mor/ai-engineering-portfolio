@@ -11,7 +11,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-22c55e?style=for-the-badge)](#-overview)
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)](#-topic)
-[![Tests](https://img.shields.io/badge/pytest-102_offline_passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)](#-running-tests)
+[![Tests](https://img.shields.io/badge/pytest-140_offline_passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)](#-running-tests)
 [![License](https://img.shields.io/badge/course-AI--Augmented_SE-0ea5b7?style=for-the-badge)](#-course-context)
 
 <br/>
@@ -153,79 +153,60 @@ Five grounded questions aligned with the workflow alerts and [`data/demo_qa_expe
 
 ```mermaid
 flowchart TB
-    user(["🧑‍💻 On-call Engineer<br/>Browser"])
+    user(["On-call Engineer"])
 
-    subgraph UI["🎨 Presentation Layer"]
-        direction LR
-        spa["⚛️ React 19 SPA<br/>Vite · shadcn/ui"]
-        legacy["🌐 Legacy HTMX UI<br/>FORCE_LEGACY_UI=1"]
+    subgraph UI["Presentation — Docker to EC2"]
+        spa["React 19 SPA"]
+        flask["Flask 3 + gunicorn"]
     end
 
-    subgraph APP["🐍 Application Layer · Flask 3 + gunicorn"]
-        direction LR
-        api["🔌 JSON API<br/>/api/bootstrap · /ask<br/>/api/workflow/triage"]
-        rag["🧠 BedrockAgentClient<br/>invoke_agent · boto3"]
+    subgraph Agent["Amazon Bedrock Agent"]
+        inst["System prompt + session memory"]
+        bedrock{{"Agent HH4YGSLZUE"}}
     end
 
-    subgraph AWS["☁️ Amazon Bedrock — Agent + KB"]
-        direction TB
-        bedrock{{"🤖 Bedrock Agent<br/>incidentiq-noc-agent"}}
-        model["🤖 LLM<br/>Claude Haiku compatible"]
-        kb[("📚 Knowledge Base<br/>linked to agent")]
-        vector[("🔎 OpenSearch Serverless<br/>managed vector index")]
-        s3[("🗄️ S3 Corpus<br/>reem-amdocs-ai-artifacts-3331<br/>17 source documents")]
+    subgraph KBox["Knowledge Base — RAG"]
+        kb[("KB RBTJM6NIG9")]
+        s3[("S3 runbooks")]
     end
 
-    subgraph INFRA["🚀 Deployment"]
-        direction LR
-        docker["🐳 Docker + gunicorn<br/>non-root · healthcheck"]
-        ec2["🖥️ EC2 t3.micro<br/>IAM instance profile"]
+    subgraph Tools["Enrichment — action groups MCP Path B"]
+        l1["iiq-correlate"]
+        l2["iiq-context"]
+        l3["iiq-similar"]
     end
 
-    %% ---- request lifecycle (numbered) ----
-    user ==>|"① ask (JSON)"| spa
-    spa ==>|"② POST /ask"| api
-    api ==> rag
-    rag ==>|"③ invoke_agent"| bedrock
-    bedrock ==>|"④ KB retrieval"| kb
-    kb --> vector
-    vector -.->|"reads chunks"| s3
-    bedrock ==>|"⑤ grounded prompt"| model
-    model ==>|"⑥ answer + citations"| bedrock
-    bedrock ==>|"⑦ grounded response"| rag
-    rag ==>|"⑧ JSON"| spa
-    spa ==>|"⑨ answer + citation cards"| user
+    data[("agent_data CSV/JSON")]
 
-    %% ---- secondary / packaging ----
-    api -. optional .-> legacy
-    spa -. built into .-> docker
-    docker -. deployed on .-> ec2
+    subgraph INFRA["Deployment"]
+        docker["Docker"]
+        ec2["EC2 IAM profile"]
+    end
 
-    %% ---- node styling ----
-    classDef client fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a
-    classDef ui fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#1e1b4b
-    classDef app fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#1e1b4b
-    classDef aws fill:#ffedd5,stroke:#ea580c,stroke-width:1.5px,color:#431407
-    classDef core fill:#fed7aa,stroke:#f97316,stroke-width:3px,color:#431407
-    classDef infra fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#052e16
-
-    class user client
-    class spa,legacy ui
-    class api,rag app
-    class kb,vector,s3,model aws
-    class bedrock core
-    class docker,ec2 infra
-
-    %% ---- subgraph (layer) styling ----
-    style UI fill:#faf5ff,stroke:#a78bfa,stroke-dasharray:5 4,color:#6d28d9
-    style APP fill:#eef2ff,stroke:#818cf8,stroke-dasharray:5 4,color:#4338ca
-    style AWS fill:#fffbeb,stroke:#fb923c,stroke-width:2px,color:#c2410c
-    style INFRA fill:#f0fdf4,stroke:#4ade80,stroke-dasharray:5 4,color:#15803d
+    user -->|"alert / follow-up"| spa
+    spa --> flask
+    flask ==>|"InvokeAgent + sessionId"| bedrock
+    inst --> bedrock
+    bedrock ==>|"cited retrieve"| kb
+    s3 --> kb
+    bedrock ==>|"tools"| l1
+    bedrock --> l2
+    bedrock --> l3
+    l1 --> data
+    l2 --> data
+    l3 --> data
+    bedrock ==>|"triage card JSON"| flask
+    flask --> spa
+    spa --> user
+    spa -.-> docker
+    docker -.-> ec2
 ```
 
-**Legend** — solid bold arrows `══>` trace the **request lifecycle ① → ⑨**; dotted arrows show packaging and the optional legacy UI. Each color is one architectural layer: 🔵 client · 🟣 presentation · 🔷 application · 🟠 AWS Bedrock RAG · 🟢 deployment.
+**Primary backend:** `invoke_agent` via [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (not direct `RetrieveAndGenerate`). **Tools:** three enrichment Lambdas wired as Bedrock action groups ([`docs/MCP_PATH.md`](docs/MCP_PATH.md) — Path B landed; AgentCore Gateway is optional Path A). **Memory:** `sessionId` + `sessionAttributes` on triage and follow-up `/ask`.
 
-**Deployment path:** `Documents → S3 → Bedrock KB → Flask + boto3 → Docker → EC2 → Public URL → Cleanup`
+Source diagram: [`incidentiq_architecture.mermaid`](incidentiq_architecture.mermaid)
+
+**Deployment path:** `Runbooks → S3 → KB sync → Agent + tools → Flask/React → Docker → EC2 → Cleanup`
 
 <details>
 <summary><b>📜 Text request path (click to expand)</b></summary>
@@ -248,7 +229,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
      |        |
      |        v  reads source chunks
      |      S3 Bucket (reem-amdocs-ai-artifacts-3331)
-     |        `-- projects/incident-rag-bedrock/data/sample_documents/
+     |        `-- projects/incidentIQ-midproject/data/sample_documents/
      |
      +--> LLM (inference profile / Claude Haiku compatible model)
               |
@@ -284,7 +265,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
 | **Amazon EC2** | t3.micro | Public demo host with IAM instance profile |
 | **gunicorn** | 22.0.0 | Production WSGI server — never the Flask dev server |
 | **Flask-WTF** | 1.2.1 | CSRF for legacy forms; JSON SPA routes exempt (token via `/api/bootstrap`) |
-| **pytest** | 8.3.4 | 102 offline unit tests with Stubber and fakes; zero live AWS calls |
+| **pytest** | 8.3.4 | 140 offline unit tests with Stubber and fakes; zero live AWS calls |
 
 ---
 
@@ -324,7 +305,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
 
 </details>
 
-**S3 location:** `s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/`
+**S3 location:** `s3://reem-amdocs-ai-artifacts-3331/projects/incidentIQ-midproject/data/sample_documents/`
 
 > [!TIP]
 > **Recommended S3 tags:** `Project=Amdocs-AI-Course`, `Environment=Course`, `Owner=Reem`, `Purpose=Bedrock-Knowledge-Base`. Keep **Block Public Access** enabled on the bucket.
@@ -456,14 +437,14 @@ See [`docs/PRODUCTION_REVIEW.md`](docs/PRODUCTION_REVIEW.md) and [`docs/GRADING_
 ### 🧪 Running Tests
 
 ```bash
-pytest -q          # 102 offline unit tests — no live AWS calls required
+pytest -q          # 140 offline unit tests — no live AWS calls required
 ```
 
 See [`TESTING.md`](TESTING.md) for the full checklist.
 
 <div align="center">
 <img src="screenshots/11_pytest_passed.png" alt="pytest: 102 tests passed" width="80%"/>
-<br/><sub><b>102 offline tests passing</b> — Stubber and fakes, zero live AWS calls</sub>
+<br/><sub><b>140 offline tests passing</b> — Stubber and fakes, zero live AWS calls</sub>
 </div>
 
 ---
@@ -613,6 +594,64 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 
 ---
 
+## Mid-project upgrade — Agent + enrichment tools + memory
+
+**Live IDs (account `329597159579`, `us-east-1`):**
+
+| Component | ID / name |
+|-----------|-----------|
+| Knowledge Base | `RBTJM6NIG9` |
+| Bedrock Agent | `HH4YGSLZUE` |
+| Enrichment Lambdas | `iiq-correlate`, `iiq-context`, `iiq-similar` |
+| Ops Lambda (unchanged) | `incidentiq-actions` |
+
+### System prompt
+
+The agent instruction is the **exact** brief in [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (`AGENT_INSTRUCTION`). Sync to AWS:
+
+```powershell
+python scripts/setup_action_group.py --agent-id HH4YGSLZUE
+python scripts/ensure_agent_alias.py --agent-id HH4YGSLZUE
+```
+
+### Session memory
+
+`invoke_agent` receives `sessionAttributes` and `promptSessionAttributes` built by `build_session_attributes()` (alert id, service, env, severity, symptom, `triage_complete`). The workflow triage API accepts optional `session_id` for follow-up turns without re-triage.
+
+### Enrichment tools (action groups)
+
+| Tool | Data | Purpose |
+|------|------|---------|
+| `correlate_deployments` | `data/agent_data/deploys.csv`, `service_catalog.json` | Recent deploys + dependency hop |
+| `lookup_owner` / `score_business_impact` | catalog + `impact_matrix.csv` | Owner + revenue impact |
+| `find_similar_incidents` | `incident_history.csv` | Past incidents |
+
+Deploy Lambdas and wire action groups:
+
+```powershell
+python scripts/setup_enrichment_lambdas.py --agent-id HH4YGSLZUE
+```
+
+Core logic is unit-tested in [`app/enrichment_tools.py`](app/enrichment_tools.py) and [`tests/test_enrichment_tools.py`](tests/test_enrichment_tools.py).
+
+### MCP path (Phase 3)
+
+- **Path B (landed):** Bedrock action groups — reliable agent tool path. See [`docs/MCP_PATH.md`](docs/MCP_PATH.md).
+- **Path A (optional):** AgentCore Gateway + Cognito over the same Lambdas — probe with `python scripts/setup_agentcore_gateway.py --report-only`.
+
+### Docker
+
+```powershell
+docker compose up --build
+# http://localhost:8080
+```
+
+### Teardown after demo
+
+Resource list and delete order: [`docs/TEARDOWN.md`](docs/TEARDOWN.md) (manual; no auto-delete in repo).
+
+---
+
 ## 🧹 AWS Resources — Created & Deleted
 
 Latest re-deployment (2026-06-02), region `us-east-1` — torn down same day after capture:
@@ -710,6 +749,11 @@ See also [`../README.md`](../README.md) at the repo projects index.
 | [`docs/code_review.md`](docs/code_review.md) | Self-review notes |
 | [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md) | Mandatory teardown steps |
 | [`docs/cleanup_log.md`](docs/cleanup_log.md) | What was deleted vs retained |
+| [`docs/PHASE0_AUDIT.md`](docs/PHASE0_AUDIT.md) | Mid-project folder audit + gaps |
+| [`docs/MCP_PATH.md`](docs/MCP_PATH.md) | MCP Path A vs B decision |
+| [`docs/TEARDOWN.md`](docs/TEARDOWN.md) | Post-demo resource teardown |
+| [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | R1–R11 evidence, smoke commands, screenshot list |
+| [`docs/READONLY_VERIFICATION.md`](docs/READONLY_VERIFICATION.md) | Read-only AWS + local verification log |
 
 </details>
 
@@ -723,6 +767,6 @@ See also [`../README.md`](../README.md) at the repo projects index.
 
 <sub>Built with Amazon Bedrock · Flask · React · Docker · EC2 — grounded answers, real citations, honest refusals.</sub>
 
-[⬆ Back to top](#%EF%B8%8F-incidentiq--incident-rag-on-amazon-bedrock)
+[⬆ Back to top](#%EF%B8%8F-incidentiq--bedrock-agent-mid-project)
 
 </div>

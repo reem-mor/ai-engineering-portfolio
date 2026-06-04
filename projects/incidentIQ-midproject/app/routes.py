@@ -6,6 +6,7 @@ import logging
 from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
 from flask_wtf.csrf import generate_csrf
 
+from app.bedrock_agent_client import build_session_attributes
 from app.bedrock_client import RagAnswer
 from app.rag_factory import RagClient, get_rag_client
 from app.config import Config
@@ -88,9 +89,23 @@ def _bootstrap_context() -> dict:
     }
 
 
-def _handle_ask(question: str, *, session_id: str | None = None) -> RagAnswer:
+def _handle_ask(
+    question: str,
+    *,
+    session_id: str | None = None,
+    session_attributes: dict[str, str] | None = None,
+    prompt_session_attributes: dict[str, str] | None = None,
+) -> RagAnswer:
     question = validate_question(question)
-    return _client().ask(question, session_id=session_id)
+    client = _client()
+    if hasattr(client, "ask") and session_attributes is not None:
+        return client.ask(
+            question,
+            session_id=session_id,
+            session_attributes=session_attributes,
+            prompt_session_attributes=prompt_session_attributes,
+        )
+    return client.ask(question, session_id=session_id)
 
 
 def _validation_response(exc: BedrockError, question: str):
@@ -176,10 +191,29 @@ def ask():
     return _success_response(result, question)
 
 
-def _workflow_triage_core(alert_id: str | None, question: str):
+def _workflow_triage_core(
+    alert_id: str | None,
+    question: str,
+    *,
+    session_id: str | None = None,
+):
     alert = find_workflow_alert(alert_id)
     question = (question or (alert or {}).get("question") or "").strip()
-    result = _handle_ask(question)
+    session_attrs, prompt_attrs = build_session_attributes(
+        alert_id=alert_id,
+        service=str((alert or {}).get("service") or ""),
+        environment=str((alert or {}).get("environment") or ""),
+        severity=str((alert or {}).get("severity") or ""),
+        symptom=str((alert or {}).get("symptom") or ""),
+        alert_time=str((alert or {}).get("alert_time") or ""),
+        triage_complete="false",
+    )
+    result = _handle_ask(
+        question,
+        session_id=session_id,
+        session_attributes=session_attrs,
+        prompt_session_attributes=prompt_attrs,
+    )
     payload = build_workflow_payload(
         result=result,
         alert=alert,
@@ -231,8 +265,13 @@ def api_workflow_triage():
     body = request.get_json(silent=True) or {}
     alert_id = body.get("alert_id")
     question = str(body.get("question", "")).strip()
+    session_id = body.get("session_id")
+    if session_id is not None:
+        session_id = str(session_id).strip() or None
     try:
-        _alert, _question, payload = _workflow_triage_core(alert_id, question)
+        _alert, _question, payload = _workflow_triage_core(
+            alert_id, question, session_id=session_id
+        )
     except BedrockError as exc:
         status = 400 if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"} else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status

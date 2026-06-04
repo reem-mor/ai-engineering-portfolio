@@ -95,14 +95,23 @@ export async function askQuestion(
 export async function triageAlert(
   alertId: string,
   question?: string,
+  sessionId?: string | null,
 ): Promise<WorkflowTriagePayload> {
+  const body: { alert_id: string; question: string; session_id?: string } = {
+    alert_id: alertId,
+    question: question ?? "",
+  };
+  if (sessionId) body.session_id = sessionId;
+
   const response = await fetch("/api/workflow/triage", {
     method: "POST",
     headers: withCsrf(JSON_HEADERS),
     credentials: "same-origin",
-    body: JSON.stringify({ alert_id: alertId, question: question ?? "" }),
+    body: JSON.stringify(body),
   });
-  return parseJson<WorkflowTriagePayload>(response);
+  const payload = await parseJson<WorkflowTriagePayload>(response);
+  const sid = payload.result?.session_id ?? payload.session_id ?? null;
+  return { ...payload, session_id: sid };
 }
 
 export async function uploadDocument(
