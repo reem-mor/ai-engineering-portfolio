@@ -87,6 +87,7 @@ class RagAnswer:
     latency_ms: int = 0
     matched_runbook: str | None = None
     enrichment: dict[str, Any] | None = None
+    mode: str = "bedrock"
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -108,6 +109,7 @@ class RagAnswer:
             "grounded": self.grounded,
             "latency_ms": self.latency_ms,
             "matched_runbook": self.matched_runbook,
+            "mode": self.mode,
         }
         if self.enrichment is not None:
             payload["enrichment"] = self.enrichment
@@ -150,9 +152,11 @@ class BedrockRagClient:
                             "textPromptTemplate": RAG_GENERATION_PROMPT,
                         },
                         "inferenceConfig": {
+                            # Claude (Haiku 4.5+) rejects sending both temperature
+                            # and topP. For deterministic RAG we pin temperature=0
+                            # and omit topP entirely.
                             "textInferenceConfig": {
                                 "temperature": 0.0,
-                                "topP": 0.9,
                                 "maxTokens": 1024,
                                 "stopSequences": ["Action:", "GlobalDataSource"],
                             },

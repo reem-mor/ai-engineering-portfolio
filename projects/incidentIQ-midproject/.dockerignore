@@ -8,8 +8,8 @@ tests
 screenshots
 docs
 infra
-data
 *.md
+!knowledge_base/**
 .env
 .git
 .gitignore

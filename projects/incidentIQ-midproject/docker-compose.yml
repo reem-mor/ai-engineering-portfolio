@@ -1,5 +1,9 @@
 # Local development convenience only.
 # On EC2 we run the container directly via `docker run` from user-data.
+#
+# Runs OUT OF THE BOX in local (offline) mode — no AWS or .env required:
+#   docker compose up --build   ->  http://localhost:8080/console
+# To use Bedrock instead: create .env (see .env.example) and set USE_BEDROCK=true.
 services:
   web:
     build: .
@@ -7,9 +11,14 @@ services:
     container_name: incidentiq-midproject
     ports:
       - "8080:8080"
-    env_file: .env
-    # Locally we forward host AWS creds so boto3 can call Bedrock.
-    # (On EC2 we use an instance profile instead.)
+    environment:
+      # Default to the reliable offline demo; override in .env to enable Bedrock.
+      - USE_BEDROCK=${USE_BEDROCK:-false}
+    # .env is OPTIONAL — only needed for Bedrock mode (requires Compose v2.24+).
+    env_file:
+      - path: .env
+        required: false
+    # Locally we forward host AWS creds so boto3 can call Bedrock (Bedrock mode only).
     volumes:
       - ~/.aws:/home/app/.aws:ro
     restart: unless-stopped

@@ -7,14 +7,41 @@ import os
 from flask import Flask
 from flask_wtf.csrf import CSRFProtect
 
-from app.config import Config
+from app.config import Config, ConfigError
 
 csrf = CSRFProtect()
+
+log = logging.getLogger(__name__)
+
+
+def _resolve_config() -> Config:
+    """Load Bedrock config, falling back to offline-safe local config.
+
+    ``USE_BEDROCK=true`` forces strict Bedrock config (errors surface loudly).
+    ``USE_BEDROCK=false`` runs local mode directly. When unset, we try Bedrock
+    and gracefully degrade to local mode if AWS configuration is incomplete so
+    the demo never fails to boot.
+    """
+    raw = os.environ.get("USE_BEDROCK", "").strip().lower()
+    if raw in {"false", "0", "no", "off"}:
+        log.info("USE_BEDROCK disabled — starting IncidentIQ in LOCAL mode")
+        return Config.local()
+    try:
+        return Config.from_env()
+    except ConfigError as exc:
+        if raw in {"true", "1", "yes", "on"}:
+            raise
+        log.warning("AWS/Bedrock config incomplete (%s) — falling back to LOCAL mode", exc)
+        return Config.local()
 
 
 def create_app(config: Config | None = None) -> Flask:
     app = Flask(__name__)
-    app.config.from_object(config or Config.from_env())
+    config_obj = config or _resolve_config()
+    app.config.from_object(config_obj)
+    # Keep the resolved Config object so request handlers select the right RAG
+    # backend (local vs Bedrock) instead of re-reading the environment.
+    app.config["INCIDENTIQ_CONFIG"] = config_obj
 
     app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
     app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")

@@ -310,6 +310,7 @@ def test_to_dict_shape(config):
         "grounded",
         "latency_ms",
         "matched_runbook",
+        "mode",
     }
     assert d["citations"][0]["source_label"] == "a.md"
     assert d["citations"][0]["index"] == 1
