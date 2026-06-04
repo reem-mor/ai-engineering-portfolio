@@ -23,6 +23,39 @@ Capture when EC2/demo is approved. Files live in `screenshots/`:
 
 See [`docs/SUBMISSION_CHECKLIST.md`](../docs/SUBMISSION_CHECKLIST.md) for commands and requirement mapping.
 
+## Live class-demo set (`console_demo/`)
+
+Real captures of the `/console` live-demo surface for the class presentation,
+generated against the running container in **Bedrock** mode. They map 1:1 to the
+15 live-demo validation points. See [`docs/LIVE_DEMO_CHECKLIST.md`](../docs/LIVE_DEMO_CHECKLIST.md).
+
+| # | File | Proof |
+|---|------|-------|
+| 01 | `console_demo/01_home.png` | `/console` home — empty alert form |
+| 02 | `console_demo/02_demo_alert.png` | Demo alert loaded (postgres / NJ-DGE / P2) before submit |
+| 03 | `console_demo/03_loading.png` | 3-step agent processing loader mid-flight |
+| 04 | `console_demo/04_triage_card.png` | Full triage card — `mode: bedrock`, cited answer, all 4 tools |
+| 05 | `console_demo/05_citations.png` | Citations section (runbook + postmortem) |
+| 06 | `console_demo/06_owner_escalation.png` | Owner / on-call / escalation chain |
+| 07 | `console_demo/07_business_impact.png` | Cost-per-15-min + SLA / regulatory risk |
+| 08 | `console_demo/08_similar_incidents.png` | Similar incidents + MTTR |
+| 09 | `console_demo/09_followup_memory.png` | Follow-up answer marked **from memory** |
+| 10 | `console_demo/10_mobile.png` | Full triage card @ 390px (projector/mobile) |
+| 11 | `console_demo/11_pytest.png` | `pytest` — 189 passed |
+| 12 | `console_demo/12_smoke_results.png` | `evaluation/live_smoke_summary.md` rendered |
+
+Regenerate (Docker on `:8080`, `.env` with `USE_BEDROCK=true` for the live set;
+falls back to local mode automatically if AWS is down):
+
+```powershell
+cd projects/incidentIQ-midproject
+docker compose up --build -d
+.\.venv\Scripts\python.exe -m pytest -ra --tb=short -o console_output_style=count *> evaluation\pytest_output.txt
+cd scripts
+npm ci ; npx playwright install chromium
+node capture_console_demo.mjs        # → screenshots/console_demo/01..12
+```
+
 ## What to submit (Tier 1 — legacy RAG naming)
 
 Attach these **11 files** from the repo root `screenshots/` folder for course grading:

@@ -11,7 +11,7 @@
 
 [![Status](https://img.shields.io/badge/status-MVP_ready-22c55e?style=for-the-badge)](#-overview)
 [![Topic](https://img.shields.io/badge/topic-Incident_Operations-7c3aed?style=for-the-badge)](#-topic)
-[![Tests](https://img.shields.io/badge/pytest-140_offline_passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)](#-running-tests)
+[![Tests](https://img.shields.io/badge/pytest-189_offline_passing-34d399?style=for-the-badge&logo=pytest&logoColor=white)](#-running-tests)
 [![License](https://img.shields.io/badge/course-AI--Augmented_SE-0ea5b7?style=for-the-badge)](#-course-context)
 
 <br/>
@@ -121,6 +121,115 @@ Four submission-grade app shots (viewport homepage + Live Knowledge Base panels)
 End-to-end on-call loop: pick an alert, run triage, get grounded steps from the Knowledge Base, then resolve or escalate.
 
 <img src="screenshots/13_mvp_workflow.png" alt="MVP workflow: alert console, triage, KB match, numbered steps, Tier-1 recommendation" width="100%"/>
+
+---
+
+## 🖥️ Local-First Mode & Mid-Project Requirements
+
+IncidentIQ runs a **reliable offline demo by default** — no AWS, no keys, no
+network. Bedrock is optional and, when enabled, auto-falls back to local mode if
+it is unavailable, so a live demo never fails.
+
+### Run the local demo
+
+```bash
+cp .env.example .env          # optional; defaults to USE_BEDROCK=false
+docker compose up --build     # → http://localhost:8080/console   (offline, no AWS)
+```
+
+Or with Python directly:
+
+```bash
+pip install -r requirements.txt
+# USE_BEDROCK defaults to local fallback; force it explicitly if you like:
+#   set USE_BEDROCK=false   (Windows)   /   export USE_BEDROCK=false   (bash)
+gunicorn -b 0.0.0.0:8080 wsgi:app      # → http://localhost:8080/console
+```
+
+### Local-first API
+
+| Method | Path | Purpose |
+|:------:|------|---------|
+| `GET`  | `/api/demo-alert` | Canned demo alert (Postgres CPU 95% on `prod-db-1`, NJ-DGE, P2) |
+| `POST` | `/api/triage` | Run triage for a free-form alert → one triage card (JSON contract below) |
+| `POST` | `/api/follow-up` | Follow-up question reusing the incident session memory |
+| `GET`  | `/health` | Liveness (`?deep=1` for config checks) |
+| `GET`  | `/console` | Self-contained HTML triage console for the live demo |
+
+**Triage card JSON contract** (`POST /api/triage`): `answer`, `citations[{document, excerpt, score}]`,
+`recommended_steps[]`, `suspect_deploys[]`, `owner{}`, `impact{}`, `similar_incidents[]`,
+`session_id`, `memory_used`, `mode` (`local` | `bedrock`).
+
+### How RAG works (local)
+
+`app/services/local_rag.py` loads the 10 markdown runbooks in
+`knowledge_base/runbooks/`, splits them into heading-delimited chunks, and ranks
+them with a **pure-Python TF-IDF cosine** retriever (no heavy deps). Every answer
+cites the source document + excerpt + score; below the relevance threshold the
+app returns a visible **"Not in knowledge base"** refusal instead of guessing.
+
+### How MCP / tools work
+
+`app/services/tool_router.py` holds a `TOOLS` registry (name, description,
+parameters) and emits/executes JSON decisions `{"tool": name, "arguments": {...}}`
+— the same shape a model would produce. Triage runs all four deterministically;
+follow-ups reuse stored tool outputs from session memory.
+
+### The 4 enrichment tools (`app/enrichment_tools.py`)
+
+1. **`correlate_deployments`** — recent deploys for the service + dependency hops; returns the suspect deploy + reason.
+2. **`lookup_owner_and_escalation`** — owner team, on-call, secondary escalation, Slack channel, escalation chain, dependencies.
+3. **`score_business_impact`** — cost per 15 min, estimated total cost, SLA risk, regulatory risk (with fallback estimate).
+4. **`find_similar_incidents`** — similar past incidents with root cause, resolution, MTTR, similarity reason.
+
+### Data files (Pandas / CSV / JSON)
+
+`app/services/data_access.py` provides validated loaders (Pandas when available,
+stdlib `csv`/`json` fallback) for `data/agent_data/deploys.csv`,
+`data/agent_data/service_catalog.json`, `data/agent_data/impact_matrix.csv`,
+`data/sample_documents/incident_history.csv`, and `data/external_status.json`.
+Each raises a clear `DataAccessError` on missing files, missing columns, or
+malformed JSON.
+
+### Session memory
+
+`app/services/session_memory.py` keeps one session per incident (`session_id`):
+alert, citations, tool outputs, final card, and follow-up history. Follow-ups
+reuse the same session so questions like *"who do I escalate to?"* are answered
+**from memory** without re-running the tools.
+
+### Course requirement coverage
+
+- **Flask app** — `app/` factory + `app/routes.py` (JSON API + `/console` HTML UI).
+- **RAG over documents** — local TF-IDF over `knowledge_base/runbooks/` (+ optional Bedrock KB), always cited.
+- **MCP / tools** — `app/services/tool_router.py` JSON tool-calling over 4 tools.
+- **Docker** — `docker compose up --build` runs offline out of the box.
+- **Pandas / CSV / JSON** — `app/services/data_access.py` validated loaders.
+- **Clean repo + README** — this document + `docs/`.
+- **Live demo** — `/console`, reliable without AWS.
+- **6-slide presentation** — `docs/presentation_outline.md`.
+
+### Environment variables (local mode)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `USE_BEDROCK` | `false` | `false` = offline local mode; `true` = Bedrock (requires the AWS vars below) |
+| `AWS_REGION`, `BEDROCK_KB_ID`, `BEDROCK_MODEL_ARN`, `BEDROCK_AGENT_ID`, `BEDROCK_AGENT_ALIAS_ID` | — | Only required when `USE_BEDROCK=true` |
+| `FLASK_SECRET_KEY` | dev random | Set a long random hex in production |
+
+### Run tests
+
+```bash
+pytest -q     # 189 offline tests, no AWS
+```
+
+> [!NOTE]
+> **Spec folder mapping:** the spec's `app/tools/` and `app/agent/` are realized
+> additively as `app/services/*` (`local_rag`, `data_access`, `tool_router`,
+> `session_memory`, `triage_service`) plus `app/local_agent.py`, reusing the
+> existing flat layout. Datasets stay under `data/agent_data/` (shared with the
+> Bedrock action-group lambdas); only `data/external_status.json` and
+> backward-compatible columns were added.
 
 ---
 
@@ -265,7 +374,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
 | **Amazon EC2** | t3.micro | Public demo host with IAM instance profile |
 | **gunicorn** | 22.0.0 | Production WSGI server — never the Flask dev server |
 | **Flask-WTF** | 1.2.1 | CSRF for legacy forms; JSON SPA routes exempt (token via `/api/bootstrap`) |
-| **pytest** | 8.3.4 | 140 offline unit tests with Stubber and fakes; zero live AWS calls |
+| **pytest** | 8.3.4 | 189 offline unit tests with Stubber and fakes; zero live AWS calls |
 
 ---
 
@@ -437,14 +546,14 @@ See [`docs/PRODUCTION_REVIEW.md`](docs/PRODUCTION_REVIEW.md) and [`docs/GRADING_
 ### 🧪 Running Tests
 
 ```bash
-pytest -q          # 140 offline unit tests — no live AWS calls required
+pytest -q          # 189 offline unit tests — no live AWS calls required
 ```
 
 See [`TESTING.md`](TESTING.md) for the full checklist.
 
 <div align="center">
 <img src="screenshots/11_pytest_passed.png" alt="pytest: 102 tests passed" width="80%"/>
-<br/><sub><b>140 offline tests passing</b> — Stubber and fakes, zero live AWS calls</sub>
+<br/><sub><b>189 offline tests passing</b> — Stubber and fakes, zero live AWS calls</sub>
 </div>
 
 ---

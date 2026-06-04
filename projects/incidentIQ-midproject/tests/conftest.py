@@ -59,7 +59,12 @@ def fake_bedrock():
 @pytest.fixture
 def app(fake_config, fake_bedrock):
     app = create_app(fake_config)
-    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True)
+    app.config.update(
+        TESTING=True,
+        WTF_CSRF_ENABLED=False,
+        FORCE_LEGACY_UI=True,
+        LOCAL_FALLBACK=False,
+    )
     app.extensions["bedrock_client"] = fake_bedrock
     return app
 
@@ -67,3 +72,21 @@ def app(fake_config, fake_bedrock):
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def local_config():
+    """Offline config that uses the local TF-IDF RAG backend (no AWS)."""
+    return Config.local()
+
+
+@pytest.fixture
+def local_app(local_config):
+    app = create_app(local_config)
+    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True)
+    return app
+
+
+@pytest.fixture
+def local_client(local_app):
+    return local_app.test_client()

@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app app ./app
 COPY --chown=app:app wsgi.py ./wsgi.py
+# Local-mode assets: knowledge base for offline RAG + operational datasets.
+COPY --chown=app:app knowledge_base ./knowledge_base
+COPY --chown=app:app data ./data
 COPY --from=frontend-build --chown=app:app /build/app/static/spa ./app/static/spa
 
 USER app
@@ -35,8 +38,11 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8080/health || exit 1
 
+# Single worker + threads: session_memory is an in-process store, so follow-up
+# requests must reach the same process that handled the original triage.
 CMD ["gunicorn", \
-     "--workers", "2", \
+     "--workers", "1", \
+     "--threads", "4", \
      "--bind", "0.0.0.0:8080", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
