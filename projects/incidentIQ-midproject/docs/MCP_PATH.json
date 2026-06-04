@@ -1,0 +1,12 @@
+{
+  "path_chosen": "B",
+  "path_a_available": false,
+  "reason": "bedrock-agentcore SDK not available in this boto3 build; use action groups (Path B) for agent tool invocation.",
+  "lambda_tools": [
+    "iiq-correlate",
+    "iiq-context",
+    "iiq-similar"
+  ],
+  "gateway_endpoint": null,
+  "cognito": null
+}

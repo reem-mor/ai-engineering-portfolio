@@ -7,6 +7,7 @@ import { useWorkflowSession } from "@/context/workflow-session";
 import { AppTopBar } from "@/components/AppTopBar";
 import { DemoDashboard } from "@/components/DemoDashboard";
 import { CitationList, FormattedAnswer } from "@/components/FormattedAnswer";
+import { EnrichmentPanel } from "@/components/EnrichmentPanel";
 import {
   StepPipeline,
   WORKFLOW_PIPELINE_ORDER,
@@ -843,6 +844,10 @@ function MvpWorkflow() {
   >("idle");
   const [triageData, setTriageData] = useState<WorkflowTriagePayload | null>(null);
   const [triageError, setTriageError] = useState<string | null>(null);
+  const [bedrockSessionId, setBedrockSessionId] = useState<string | null>(null);
+  const [followUpQuestion, setFollowUpQuestion] = useState("");
+  const [followUpBusy, setFollowUpBusy] = useState(false);
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   const effectiveId = activeId || alerts[0]?.id || "";
   const alert = alerts.find((a) => a.id === effectiveId) ?? alerts[0];
@@ -851,13 +856,49 @@ function MvpWorkflow() {
     return null;
   }
 
+  async function submitFollowUp() {
+    const q = followUpQuestion.trim();
+    if (!q || !bedrockSessionId) return;
+    setFollowUpBusy(true);
+    setFollowUpError(null);
+    try {
+      const answer = await askQuestion(q, bedrockSessionId);
+      setTriageData((prev) =>
+        prev
+          ? {
+              ...prev,
+              result: {
+                ...prev.result!,
+                answer: answer.answer,
+                answer_sections: answer.answer_sections,
+                citations: answer.citations,
+                grounded: answer.grounded,
+                session_id: answer.session_id ?? bedrockSessionId,
+                latency_ms: answer.latency_ms,
+                matched_runbook: answer.matched_runbook ?? prev.result?.matched_runbook,
+              },
+              session_id: answer.session_id ?? bedrockSessionId,
+            }
+          : prev,
+      );
+      if (answer.session_id) setBedrockSessionId(answer.session_id);
+      setFollowUpQuestion("");
+    } catch (err) {
+      setFollowUpError(err instanceof Error ? err.message : "Follow-up failed");
+    } finally {
+      setFollowUpBusy(false);
+    }
+  }
+
   async function triage() {
     setTriageError(null);
     setTriageData(null);
+    setFollowUpError(null);
     setStage("triage");
     try {
-      const payload = await triageAlert(alert.id);
+      const payload = await triageAlert(alert.id, undefined, bedrockSessionId);
       setTriageData(payload);
+      if (payload.session_id) setBedrockSessionId(payload.session_id);
       for (const s of ["suggest", "decide", "done"] as const) {
         setStage(s);
         await delay(400);
@@ -936,6 +977,9 @@ function MvpWorkflow() {
                         setStage("idle");
                         setTriageData(null);
                         setTriageError(null);
+                        setBedrockSessionId(null);
+                        setFollowUpQuestion("");
+                        setFollowUpError(null);
                       }}
                       className="w-full text-left rounded-lg border border-border bg-background/60 p-3 cursor-pointer transition-colors hover:bg-background"
                       style={{
@@ -1078,6 +1122,13 @@ function MvpWorkflow() {
                     </div>
                   )}
 
+                  <EnrichmentPanel
+                    enrichment={triageData?.enrichment}
+                    ownerTeam={triageData?.owner_team}
+                    similarIncidents={triageData?.similar_incidents}
+                    externalStatus={triageData?.external_status}
+                  />
+
                   {similarAlerts.length > 0 && (
                     <div className="mt-4">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -1189,6 +1240,52 @@ function MvpWorkflow() {
               <div className="mt-4 text-xs text-[var(--resolution)] flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5" />
                 Resolved · impact already counted from triage
+              </div>
+            )}
+
+            {stage === "done" && bedrockSessionId && (
+              <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5 uppercase tracking-wider">
+                    <MessageSquare className="size-3.5" />
+                    Follow-up (same session)
+                  </span>
+                  <span
+                    className="font-mono truncate max-w-[220px]"
+                    title={bedrockSessionId}
+                  >
+                    session {bedrockSessionId.slice(0, 8)}…
+                  </span>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={followUpQuestion}
+                    onChange={(e) => setFollowUpQuestion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !followUpBusy) void submitFollowUp();
+                    }}
+                    placeholder='e.g. "Who do I escalate to?" or "Show me the SQL again"'
+                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    disabled={followUpBusy}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void submitFollowUp()}
+                    disabled={followUpBusy || !followUpQuestion.trim()}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-background disabled:opacity-50"
+                  >
+                    {followUpBusy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="size-4" />
+                    )}
+                    Ask
+                  </button>
+                </div>
+                {followUpError && (
+                  <p className="mt-2 text-xs text-[var(--destructive)]">{followUpError}</p>
+                )}
               </div>
             )}
           </div>

@@ -15,9 +15,18 @@ class _FakeBedrockClient:
         self.next_error = None
         self.calls: list[str] = []
 
-    def ask(self, question: str, *, session_id: str | None = None):
+    def ask(
+        self,
+        question: str,
+        *,
+        session_id: str | None = None,
+        session_attributes: dict | None = None,
+        prompt_session_attributes: dict | None = None,
+    ):
         self.calls.append(question)
         self.last_session_id = session_id
+        self.last_session_attributes = session_attributes
+        self.last_prompt_session_attributes = prompt_session_attributes
         if self.next_error is not None:
             raise self.next_error
         return self.next_response

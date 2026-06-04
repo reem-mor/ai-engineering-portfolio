@@ -59,6 +59,63 @@ export interface BootstrapPayload {
   spa_enabled?: boolean;
 }
 
+export interface DeploymentMatch {
+  service?: string;
+  environment?: string;
+  deployed_at?: string;
+  change?: string;
+  deployed_by?: string;
+  hop?: string;
+  [key: string]: unknown;
+}
+
+export interface OwnerContext {
+  owner_team?: string;
+  escalation_path?: string;
+  pagerduty_service?: string;
+  display_name?: string;
+  service?: string;
+  environment?: string;
+  warning?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export interface SimilarIncident {
+  incident_id?: string;
+  date?: string;
+  severity?: string;
+  root_cause?: string;
+  mttr_minutes?: number;
+  customer_impact?: string;
+  resolution?: string;
+  [key: string]: unknown;
+}
+
+export interface TriageEnrichment {
+  deployments?: DeploymentMatch[];
+  likely_deploy_correlation?: boolean;
+  owner_team?: string | OwnerContext;
+  escalation_path?: string;
+  pagerduty_service?: string;
+  revenue_impact_usd_per_hour?: number;
+  player_impact_pct?: number;
+  regulatory_flag?: boolean;
+  escalation_minutes?: number;
+  similar_incidents?: SimilarIncident[];
+  tools?: Record<string, unknown>[];
+  raw_tool_outputs?: string[];
+  dependency_hop?: { depends_on?: string[]; depended_by?: string[] };
+  [key: string]: unknown;
+}
+
+export interface ExternalStatus {
+  provider?: string;
+  status?: string;
+  summary?: string;
+  url?: string;
+}
+
 export interface WorkflowTriagePayload {
   ok: boolean;
   result?: RagAnswer;
@@ -71,6 +128,11 @@ export interface WorkflowTriagePayload {
   saved_min?: number;
   impact_avoided?: number;
   model_label?: string;
+  enrichment?: TriageEnrichment | null;
+  owner_team?: string | OwnerContext | null;
+  similar_incidents?: SimilarIncident[] | null;
+  external_status?: ExternalStatus | null;
+  session_id?: string | null;
   message?: string;
   reason?: string;
 }

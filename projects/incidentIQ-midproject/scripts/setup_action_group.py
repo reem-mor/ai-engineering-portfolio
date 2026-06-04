@@ -165,12 +165,20 @@ def _model_invoke_resources(model: str, region: str, account: str) -> list[str]:
     return list(dict.fromkeys(resources))
 
 
+ENRICHMENT_LAMBDAS = ("iiq-correlate", "iiq-context", "iiq-similar")
+
+
+def _lambda_invoke_resources(region: str, account: str, *function_names: str) -> list[str]:
+    names = list(dict.fromkeys(function_names))
+    return [f"arn:aws:lambda:{region}:{account}:function:{name}" for name in names]
+
+
 def _build_agent_resource_policy(
     *,
     region: str,
     account: str,
     kb_id: str,
-    lambda_fn: str,
+    lambda_functions: tuple[str, ...],
     s3_bucket: str,
     model: str,
 ) -> dict:
@@ -187,7 +195,7 @@ def _build_agent_resource_policy(
                 "Sid": "InvokeActionGroupLambda",
                 "Effect": "Allow",
                 "Action": "lambda:InvokeFunction",
-                "Resource": f"arn:aws:lambda:{region}:{account}:function:{lambda_fn}",
+                "Resource": _lambda_invoke_resources(region, account, *lambda_functions),
             },
             {
                 "Sid": "ReadActionGroupOpenApiSchema",
@@ -249,7 +257,7 @@ def _ensure_agent_role(
     region: str,
     account: str,
     kb_id: str,
-    lambda_fn: str,
+    lambda_functions: tuple[str, ...],
     s3_bucket: str,
     model: str,
     dry_run: bool,
@@ -263,7 +271,7 @@ def _ensure_agent_role(
         region=region,
         account=account,
         kb_id=kb_id,
-        lambda_fn=lambda_fn,
+        lambda_functions=lambda_functions,
         s3_bucket=s3_bucket,
         model=model,
     )
@@ -521,13 +529,14 @@ def main() -> int:
     lambda_role_arn = _ensure_lambda_role(
         iam, role_name=lambda_role_name, region=region, account=account, dry_run=args.dry_run
     )
+    all_lambdas = (lambda_fn,) + ENRICHMENT_LAMBDAS
     agent_role_arn = _ensure_agent_role(
         iam,
         role_name=agent_role_name,
         region=region,
         account=account,
         kb_id=kb_id,
-        lambda_fn=lambda_fn,
+        lambda_functions=all_lambdas,
         s3_bucket=cfg.S3_BUCKET,
         model=foundation_model,
         dry_run=args.dry_run,

@@ -38,6 +38,18 @@ def build_workflow_payload(
     if alert:
         saved_min, impact_avoided = severity_impact(str(alert.get("severity", "P3")))
 
+    enrichment = result.enrichment if getattr(result, "enrichment", None) else None
+    owner_team = None
+    similar = None
+    if enrichment:
+        owner_team = enrichment.get("owner_team")
+        similar = enrichment.get("similar_incidents")
+        if not owner_team and enrichment.get("tools"):
+            for tool in enrichment["tools"]:
+                if isinstance(tool, dict) and tool.get("owner_team"):
+                    owner_team = tool["owner_team"]
+                    break
+
     return {
         "result": result.to_dict(),
         "alert": alert,
@@ -49,4 +61,7 @@ def build_workflow_payload(
         "saved_min": saved_min,
         "impact_avoided": impact_avoided,
         "model_label": model_label,
+        "enrichment": enrichment,
+        "owner_team": owner_team,
+        "similar_incidents": similar,
     }

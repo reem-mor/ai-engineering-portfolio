@@ -86,9 +86,10 @@ class RagAnswer:
     grounded: bool
     latency_ms: int = 0
     matched_runbook: str | None = None
+    enrichment: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "answer": self.answer,
             "answer_sections": format_answer_sections(self.answer),
             "citations": [
@@ -108,6 +109,9 @@ class RagAnswer:
             "latency_ms": self.latency_ms,
             "matched_runbook": self.matched_runbook,
         }
+        if self.enrichment is not None:
+            payload["enrichment"] = self.enrichment
+        return payload
 
 
 class BedrockRagClient:

@@ -53,6 +53,9 @@ projects/*/knowledge_base/faiss_index/
 .DS_Store
 Thumbs.db
 
+# Firecrawl CLI cache
+.firecrawl/
+
 # IDE/editor local state
 .idea/
 .vscode/

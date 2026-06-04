@@ -1,0 +1,44 @@
+flowchart TB
+    User["NOC / SRE Engineer"]
+
+    subgraph UI["Presentation — Docker → EC2"]
+        Flask["Flask + React SPA"]
+    end
+
+    subgraph Agent["Amazon Bedrock Agent"]
+        Inst["System prompt + session memory"]
+        Orch["Orchestration"]
+    end
+
+    subgraph KBox["Knowledge Base — RAG"]
+        KB[["Bedrock Knowledge Base"]]
+        S3[("S3 — runbook documents")]
+    end
+
+    subgraph Tools["Action groups — MCP Path B"]
+        L1["iiq-correlate"]
+        L2["iiq-context"]
+        L3["iiq-similar"]
+    end
+
+    subgraph GWopt["Optional — AgentCore Gateway Path A"]
+        GW["MCP tools endpoint"]
+    end
+
+    Data[("CSV / JSON<br/>deploys · catalog · impact · history")]
+
+    User -->|"submit alert"| Flask
+    Flask -->|"InvokeAgent sessionId"| Agent
+    Inst --> Orch
+    Agent -->|"retrieve cited"| KB
+    S3 -->|"sync"| KB
+    Agent -->|"call tools"| L1
+    Agent -->|"call tools"| L2
+    Agent -->|"call tools"| L3
+    GWopt -.->|"optional"| L1
+    GWopt -.-> L2
+    GWopt -.-> L3
+    L1 --> Data
+    L2 --> Data
+    L3 --> Data
+    Agent -->|"triage card + citations"| Flask
