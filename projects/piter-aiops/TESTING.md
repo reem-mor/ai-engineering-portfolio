@@ -6,6 +6,7 @@ All unit tests run **offline** with mocked Bedrock (no AWS credentials required)
 
 ```powershell
 cd C:\dev\amdocs-ai-course\projects\piter-aiops
+py -3.12 -m pip install -r requirements-dev.txt
 py -3.12 -m compileall .
 py -3.12 -m pytest -q
 ```

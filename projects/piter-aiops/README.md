@@ -140,7 +140,7 @@ docker compose up --build     # → http://localhost:8080/console   (offline, no
 Or with Python directly:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # or requirements.txt for runtime-only (Docker matches this)
 # USE_BEDROCK defaults to local fallback; force it explicitly if you like:
 #   set USE_BEDROCK=false   (Windows)   /   export USE_BEDROCK=false   (bash)
 gunicorn -b 0.0.0.0:8080 wsgi:app      # → http://localhost:8080/console
@@ -436,7 +436,7 @@ python scripts/build_corpus.py
 ## ⚡ Quick Start
 
 > [!IMPORTANT]
-> **Prerequisites:** Python 3.12+ · Docker Desktop · an AWS account with Bedrock access · AWS CLI configured (`aws configure` or `AWS_PROFILE`).
+> **Prerequisites:** Python 3.12+ · Docker Desktop · an AWS account with Bedrock access · AWS CLI configured (`aws configure` or `AWS_PROFILE`). **Credential layout:** [docs/aws_credentials.md](docs/aws_credentials.md) — keys in `~/.aws/credentials`, IDs in `projects/piter-aiops/.env` (`PITER_*`).
 
 **The fastest path — Docker (recommended):**
 
@@ -454,14 +454,15 @@ That's it. The container runs gunicorn on port **8080** with the built React SPA
 
 | Variable | Required | Description |
 |----------|:--------:|-------------|
-| `AWS_REGION` | ✅ | Region where the KB lives — `us-east-1` for this project |
-| `BEDROCK_KB_ID` | ✅ | Knowledge Base ID — `RBTJM6NIG9` for the submitted KB |
-| `BEDROCK_MODEL_ARN` | ✅ | Foundation model or inference profile ARN |
-| `FLASK_SECRET_KEY` | ✅ | Long random hex string for CSRF signing |
-| `S3_BUCKET` | upload | Corpus bucket — `reem-amdocs-ai-artifacts-3331` |
-| `BEDROCK_DATA_SOURCE_ID` | KB sync | Enables post-upload ingestion jobs |
+| `PITER_AWS_REGION` | ✅ | Region where the KB lives — prefer `PITER_*` prefix (see `.env.example`) |
+| `PITER_BEDROCK_KB_ID` | ✅ | Knowledge Base ID |
+| `PITER_BEDROCK_MODEL_ARN` | ✅ | Foundation model or inference profile ARN |
+| `PITER_FLASK_SECRET_KEY` | ✅ | Long random hex string for CSRF signing |
+| `PITER_USE_BEDROCK` | ✅ | `false` offline / `true` live Bedrock |
+| `AWS_PROFILE` | local | Profile name in `~/.aws/credentials` — **never put access keys in `.env`** |
+| `PITER_S3_BUCKET` | upload | Corpus bucket for document upload scripts |
+| `PITER_BEDROCK_DATA_SOURCE_ID` | KB sync | Enables post-upload ingestion jobs |
 | `FLASK_ENV` | recommended | `development` locally, `production` on EC2 |
-| `AWS_PROFILE` | local only | Shell env for `aws configure` profiles — **do not commit** |
 
 > [!WARNING]
 > **Port:** The container listens on **8080** (gunicorn). Course handouts sometimes mention port 5000 — only map `5000:8080` in compose if you need that host port.
@@ -478,7 +479,7 @@ That's it. The container runs gunicorn on port **8080** with the built React SPA
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # or requirements.txt for runtime-only (Docker matches this)
 gunicorn -b 0.0.0.0:8080 wsgi:app
 # → http://localhost:8080
 ```
