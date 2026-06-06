@@ -1,1786 +1,1374 @@
-import { useState, useRef, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { askQuestion, triageAlert, uploadDocument } from "@/lib/api";
-import { useBootstrap } from "@/context/bootstrap";
-import { useDemoTour } from "@/context/demo-tour";
-import { useWorkflowSession } from "@/context/workflow-session";
-import { AppTopBar } from "@/components/AppTopBar";
-import { DemoDashboard } from "@/components/DemoDashboard";
-import { CitationList, FormattedAnswer } from "@/components/FormattedAnswer";
-import { EnrichmentPanel } from "@/components/EnrichmentPanel";
+import { useMemo, useState } from "react";
 import {
-  StepPipeline,
-  WORKFLOW_PIPELINE_ORDER,
-  WORKFLOW_PIPELINE_STEPS,
-} from "@/components/StepPipeline";
-import { delay, rankSimilarAlerts, alertImpactDollars, alertSavedMinutes } from "@/lib/workflow-utils";
-import type { Citation, RagAnswer, WorkflowAlert, WorkflowTriagePayload } from "@/types/rag";
-import {
-  FileText,
-  Database,
-  Server,
-  Container,
-  Cloud,
-  Globe,
-  MessageSquare,
-  Trash2,
-  CheckCircle2,
-  ArrowRight,
-  Lightbulb,
-  Target,
-  Layers,
-  Terminal,
-  X,
-  Play,
-  Loader2,
-  AlertTriangle,
-  Sparkles,
-  Scissors,
-  Search,
-  Bell,
-  ShieldCheck,
-  ArrowUpRight,
-  TrendingDown,
   Activity,
-  Upload,
+  AlertTriangle,
+  Archive,
+  Bell,
+  Bot,
+  Brain,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  Database,
+  FileText,
+  Flame,
+  Gauge,
+  GitBranch,
+  History,
+  Layers,
+  Lock,
+  MessageSquare,
+  Network,
+  Play,
+  Search,
+  ServerCog,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TerminalSquare,
+  TrendingDown,
+  Zap,
 } from "lucide-react";
-// ---------- Data ----------
 
-type Step = {
-  n: number;
-  title: string;
-  plain: string; // non-technical explanation
-  tech: string; // technical detail
-  icon: React.ComponentType<{ className?: string }>;
-  color: string; // semantic token name
+import { askQuestion } from "@/lib/api";
+import { useBootstrap } from "@/context/bootstrap";
+import type { Citation, RagAnswer } from "@/types/rag";
+
+type NavKey =
+  | "dashboard"
+  | "investigations"
+  | "storm"
+  | "memory"
+  | "knowledge"
+  | "tools"
+  | "architecture"
+  | "settings";
+
+type Investigation = {
+  id: string;
+  conclusion: string;
+  alertTime: string;
+  alert: string;
+  service: string;
+  environment: string;
+  entities: string;
+  source: string;
+  status: string;
+  priority: "P1" | "P2" | "P3" | "P4";
+  impact: string;
 };
 
-const STEPS: Step[] = [
+type StormState = "idle" | "streaming" | "critical" | "investigating" | "resolved";
+
+const NAV_ITEMS: {
+  key: NavKey;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { key: "dashboard", label: "Dashboard", icon: Gauge },
+  { key: "investigations", label: "Investigations", icon: Search },
+  { key: "storm", label: "Alert Storm Demo", icon: Activity },
+  { key: "memory", label: "Context Memory", icon: Brain },
+  { key: "knowledge", label: "Knowledge Base", icon: Database },
+  { key: "tools", label: "MCP / Lambda Tools", icon: ServerCog },
+  { key: "architecture", label: "Architecture", icon: Network },
+  { key: "settings", label: "Settings", icon: ShieldCheck },
+];
+
+const INVESTIGATIONS: Investigation[] = [
   {
-    n: 1,
-    title: "Collect Runbooks & Incident History",
-    plain:
-      "I gather the team's runbooks, past alert tickets, post-mortems and on-call notes — the knowledge that today only lives in people's heads or scattered wiki pages.",
-    tech: "PDF / MD / TXT / JSON alert exports uploaded to an S3 bucket that the Knowledge Base reads from.",
-    icon: FileText,
-    color: "ingest",
+    id: "INV-2026-0610-001",
+    conclusion: "Critical betting outage detected; escalation preview prepared.",
+    alertTime: "10:02:55",
+    alert: "bet-service 100% error rate on GIB-UKGC",
+    service: "bet-service",
+    environment: "GIB-UKGC",
+    entities: "bet-api, postgres, kafka-settlement",
+    source: "Bedrock KB + Lambda",
+    status: "Escalated",
+    priority: "P1",
+    impact: "$9.8k/min at risk",
   },
   {
-    n: 2,
-    title: "Build the Bedrock Knowledge Base",
-    plain:
-      "Amazon Bedrock indexes everything so when an on-call engineer asks a question about an alert, the system knows exactly where to look.",
-    tech: "Bedrock Knowledge Base + vector store. Data source synced from S3; embeddings indexed for retrieval.",
-    icon: Database,
-    color: "rag",
+    id: "INV-2026-0610-002",
+    conclusion: "Noise grouped: repeated memory warnings under threshold.",
+    alertTime: "10:01:13",
+    alert: "wallet-service memory utilization 78%",
+    service: "wallet-service",
+    environment: "NJ-DGE",
+    entities: "wallet-worker-3",
+    source: "Local fallback",
+    status: "Noise Grouped",
+    priority: "P4",
+    impact: "No customer impact",
   },
   {
-    n: 3,
-    title: "Flask Triage UI (with boto3)",
-    plain:
-      "A simple web console: paste an alert or ask a question, get back a grounded answer with the source runbook, plus suggested next steps.",
-    tech: "Python Flask app; boto3 calls bedrock-agent-runtime RetrieveAndGenerate; UI shows answer + citations + latency.",
-    icon: Server,
-    color: "interface",
+    id: "INV-2026-0610-003",
+    conclusion: "Known pattern: replication warning correlated with previous deploy.",
+    alertTime: "09:58:42",
+    alert: "replication lag above 30s",
+    service: "replication",
+    environment: "GIB-UKGC",
+    entities: "read-replica-2, wallet-service",
+    source: "piter-recent-deployments",
+    status: "Investigating",
+    priority: "P2",
+    impact: "Regulatory exposure",
   },
   {
-    n: 4,
-    title: "Containerize with Docker",
-    plain:
-      "I wrap the app into a container so it runs identically on a laptop, a staging box or production — no setup surprises.",
-    tech: "Dockerfile with python:3.11-slim base, requirements.txt, EXPOSE 5000, CMD gunicorn/flask run.",
-    icon: Container,
-    color: "tools",
-  },
-  {
-    n: 5,
-    title: "Deploy to EC2",
-    plain:
-      "A small Linux VM on AWS hosts the container so the whole on-call team can reach it from a browser.",
-    tech: "EC2 instance (Amazon Linux), Docker installed, image pulled/copied, container run with port 80→5000 exposed via security group.",
-    icon: Cloud,
-    color: "agent",
-  },
-  {
-    n: 6,
-    title: "Public URL & Demo",
-    plain:
-      "Anyone on the team opens the URL during an incident, asks a question, and gets the answer plus the source — in seconds.",
-    tech: "Access via EC2 public IPv4 / DNS. Screenshots captured for KB, sync, EC2, container, and a real alert Q&A.",
-    icon: Globe,
-    color: "resolution",
-  },
-  {
-    n: 7,
-    title: "Cleanup",
-    plain:
-      "When the demo is done, I delete the AWS resources so nothing keeps costing money.",
-    tech: "Terminate EC2, delete KB + data source, empty/delete S3 bucket, remove IAM roles created for the demo.",
-    icon: Trash2,
-    color: "ingest",
+    id: "INV-2026-0610-004",
+    conclusion: "False positive: synthetic canary recovered before threshold.",
+    alertTime: "09:55:07",
+    alert: "auth-service canary 502 spike",
+    service: "auth-service",
+    environment: "MGM",
+    entities: "auth-api, edge",
+    source: "GuardDuty-style mock",
+    status: "False Positive",
+    priority: "P3",
+    impact: "No sustained impact",
   },
 ];
 
-// ---------- Page ----------
+const KPI_CARDS = [
+  {
+    label: "Alerts Processed",
+    value: "399",
+    sub: "deterministic storm",
+    icon: Activity,
+    tone: "cyan",
+  },
+  {
+    label: "Noise Suppressed",
+    value: "342",
+    sub: "P3/P4 grouped",
+    icon: TrendingDown,
+    tone: "green",
+  },
+  { label: "Active Incidents", value: "3", sub: "1 critical", icon: Flame, tone: "red" },
+  { label: "MTTR Reduced", value: "31 min", sub: "demo estimate", icon: Clock3, tone: "teal" },
+  {
+    label: "Cost Avoided",
+    value: "$18.6k",
+    sub: "presentation model",
+    icon: Target,
+    tone: "green",
+  },
+  { label: "Escalations", value: "1", sub: "mock preview only", icon: Bell, tone: "amber" },
+  { label: "Knowledge Sources", value: "5", sub: "KB sections", icon: Database, tone: "blue" },
+  { label: "Lambda Tools", value: "4", sub: "final tool map", icon: ServerCog, tone: "cyan" },
+  { label: "Memory Sessions", value: "7", sub: "context reused", icon: Brain, tone: "purple" },
+];
 
-function AppShell() {
-  const { sessionTotals, triageCount, lastTriageAt } = useWorkflowSession();
+const PIPELINE = [
+  { label: "Priority", body: "P1 classification from impact, severity, and regulated market." },
+  {
+    label: "Investigation",
+    body: "Correlates warning shots, deploys, similar incidents, and KB evidence.",
+  },
+  { label: "Triage", body: "Turns evidence into concrete operator steps with citations." },
+  { label: "Escalation", body: "Previews owner, policy, and masked notification recipients." },
+  { label: "Resolution", body: "Produces validation steps and post-mortem draft." },
+];
 
-  return (
-    <main className="min-h-screen overflow-x-hidden text-foreground">
-      <AppTopBar
-        totalSavedDollars={sessionTotals.dollars}
-        totalSavedMin={sessionTotals.minutes}
-        triageCount={triageCount}
-        lastTriageAt={lastTriageAt}
-      />
-      <Hero />
-      <Problem />
-      <MvpWorkflow />
-      <DemoDashboard />
-      <Architecture />
-      <LiveKnowledgeBase />
-      <DocumentUpload />
-      <Flow />
-      <Stack />
-      <Deliverables />
-      <Footer />
-    </main>
-  );
+const TOOLS = [
+  {
+    name: "piter-recent-deployments",
+    purpose: "Recent deployments, correlation, rollback availability",
+    input: "service, environment, alert_time, lookback_hours",
+    output: "suspect_deployment, dependency_hop, rollback_available",
+    status: "mock data / live-ready source",
+    latency: "42 ms",
+    used: true,
+  },
+  {
+    name: "piter-service-context",
+    purpose: "Ownership, on-call role, impact, priority, regulatory exposure",
+    input: "service, environment, severity",
+    output: "owner_team, escalation_path, business_impact",
+    status: "mock data / live-ready source",
+    latency: "31 ms",
+    used: true,
+  },
+  {
+    name: "piter-similar-incidents",
+    purpose: "Historical incident matching, root cause, resolution, previous MTTR",
+    input: "service, symptom, limit",
+    output: "similar_incidents, root_cause, resolution, mttr_minutes",
+    status: "mock data / live-ready source",
+    latency: "58 ms",
+    used: true,
+  },
+  {
+    name: "piter-escalation",
+    purpose: "Escalation policy preview and safe notification workflow",
+    input: "operation, service, severity, incident_id, recipient, token",
+    output: "policy, masked_recipient, blocked_reasons, idempotency_key",
+    status: "mock by default / live-blocked",
+    latency: "27 ms",
+    used: true,
+  },
+];
+
+const KB_DOCS = [
+  {
+    name: "RB-001 API Gateway 5xx Spike",
+    type: "runbook",
+    service: "api-gateway",
+    env: "GIB-UKGC",
+    severity: "P1/P2",
+    score: "0.91",
+    status: "indexed",
+  },
+  {
+    name: "RB-010 Deployment Rollback Procedure",
+    type: "runbook",
+    service: "all",
+    env: "all",
+    severity: "P1/P2",
+    score: "0.87",
+    status: "indexed",
+  },
+  {
+    name: "Severity and Escalation Policy",
+    type: "policy",
+    service: "all",
+    env: "regulated",
+    severity: "P1-P4",
+    score: "0.84",
+    status: "indexed",
+  },
+  {
+    name: "Regulated Market Environments",
+    type: "environment",
+    service: "all",
+    env: "GIB-UKGC",
+    severity: "P1/P2",
+    score: "0.79",
+    status: "indexed",
+  },
+  {
+    name: "Checkout Outage Postmortem Reference",
+    type: "incident",
+    service: "checkout-api",
+    env: "GIB-UKGC",
+    severity: "P1",
+    score: "0.72",
+    status: "indexed",
+  },
+];
+
+const WARNING_ALERTS = [
+  "T+090s bet-service latency p95 increased to 2.4s",
+  "T+125s connection pool exhausted briefly on bet-service",
+  "T+155s bet-service 5xx rate above 2% (3.8%)",
+  "T+170s bet-service circuit breaker tripped briefly",
+  "T+175s P1: bet-service nodes unresponsive, 100% error rate",
+];
+
+function classNames(...items: Array<string | false | null | undefined>) {
+  return items.filter(Boolean).join(" ");
 }
 
-export default function App() {
-  const { loading, error } = useBootstrap();
+function toneClasses(tone: string) {
+  const map: Record<string, string> = {
+    red: "border-red-500/30 bg-red-500/10 text-red-200",
+    amber: "border-amber-400/30 bg-amber-400/10 text-amber-100",
+    green: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
+    teal: "border-teal-400/30 bg-teal-400/10 text-teal-100",
+    cyan: "border-cyan-400/30 bg-cyan-400/10 text-cyan-100",
+    blue: "border-blue-400/30 bg-blue-400/10 text-blue-100",
+    purple: "border-violet-400/30 bg-violet-400/10 text-violet-100",
+  };
+  return map[tone] ?? map.cyan;
+}
+
+function priorityClasses(priority: string) {
+  if (priority === "P1") return "border-red-500/40 bg-red-500/15 text-red-100";
+  if (priority === "P2") return "border-amber-400/40 bg-amber-400/15 text-amber-100";
+  if (priority === "P3") return "border-blue-400/40 bg-blue-400/15 text-blue-100";
+  return "border-slate-500/40 bg-slate-500/15 text-slate-100";
+}
+
+function AppShell() {
+  const { data, loading, error } = useBootstrap();
+  const [active, setActive] = useState<NavKey>("dashboard");
+  const [selected, setSelected] = useState<Investigation>(INVESTIGATIONS[0]);
+  const [stormState, setStormState] = useState<StormState>("idle");
+  const [answer, setAnswer] = useState<RagAnswer | null>(null);
+  const [chatInput, setChatInput] = useState("Who should I escalate this to?");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+
+  const modelLabel = data?.model_label || "Bedrock Agent / KB";
+  const sessionId = answer?.session_id ?? "demo-session-preview";
+
+  async function askAgent(question = chatInput) {
+    const q = question.trim();
+    if (!q) return;
+    setChatLoading(true);
+    setChatError(null);
+    setLastQuestion(q);
+    try {
+      const result = await askQuestion(
+        `For incident ${selected.id} (${selected.alert}), ${q}`,
+        answer?.session_id ?? undefined,
+      );
+      setAnswer(result);
+    } catch (exc) {
+      setChatError(exc instanceof Error ? exc.message : "Agent request failed");
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function startStorm() {
+    setStormState("streaming");
+    window.setTimeout(() => setStormState("critical"), 650);
+  }
+
+  async function runWorkflow() {
+    setStormState("investigating");
+    await askAgent("What should I check first?");
+    setStormState("resolved");
+  }
+
+  function openInvestigation(inv: Investigation) {
+    setSelected(inv);
+    setActive("investigations");
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center text-muted-foreground">
-        <Loader2 className="size-6 animate-spin mr-2" />
-        Loading PITER AiOps…
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
+        <div className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm">
+          <Sparkles className="size-4 animate-pulse text-cyan-300" />
+          Loading PITER AiOps...
+        </div>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-md rounded-lg border border-border bg-card p-4 text-sm">
-          <div className="font-medium text-[var(--destructive)]">Could not load app</div>
-          <p className="mt-2 text-muted-foreground">{error}</p>
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-200">
+        <div className="max-w-md rounded-lg border border-red-500/30 bg-red-950/40 p-5">
+          <div className="font-semibold text-red-100">Could not load PITER AiOps</div>
+          <p className="mt-2 text-sm text-red-100/75">{error}</p>
         </div>
       </main>
     );
   }
 
+  return (
+    <main className="min-h-screen bg-[#08111f] text-slate-100">
+      <div className="grid min-h-screen grid-cols-[250px_minmax(0,1fr)] max-[980px]:grid-cols-1">
+        <Sidebar active={active} setActive={setActive} />
+        <section className="min-w-0">
+          <TopBar modelLabel={modelLabel} />
+          <div className="mx-auto max-w-[1540px] px-5 py-5">
+            {active === "dashboard" && (
+              <Dashboard
+                startStorm={() => {
+                  setActive("storm");
+                  startStorm();
+                }}
+              />
+            )}
+            {active === "investigations" && (
+              <Investigations selected={selected} openInvestigation={openInvestigation} />
+            )}
+            {active === "storm" && (
+              <AlertStorm
+                stormState={stormState}
+                startStorm={startStorm}
+                runWorkflow={runWorkflow}
+                answer={answer}
+                selected={selected}
+              />
+            )}
+            {active === "memory" && (
+              <ContextMemory
+                sessionId={sessionId}
+                lastQuestion={lastQuestion}
+                memoryUsed={Boolean(answer?.session_id)}
+              />
+            )}
+            {active === "knowledge" && <KnowledgeBase citations={answer?.citations ?? []} />}
+            {active === "tools" && <ToolsPanel />}
+            {active === "architecture" && <Architecture />}
+            {active === "settings" && <Settings />}
+          </div>
+        </section>
+      </div>
+      <AgentPanel
+        selected={selected}
+        answer={answer}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+        askAgent={askAgent}
+        loading={chatLoading}
+        error={chatError}
+        lastQuestion={lastQuestion}
+      />
+    </main>
+  );
+}
+
+export default function App() {
   return <AppShell />;
 }
 
-// ---------- Sections ----------
-
-function Hero() {
+function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKey) => void }) {
   return (
-    <section className="relative overflow-hidden border-b border-border">
-      <div className="absolute inset-0 grid-bg opacity-30" aria-hidden />
-      <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-            <Lightbulb className="size-3.5 text-[var(--tools)]" />
-            From Alert to Resolution, Faster.
-          </span>
-          <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight">
-            <span className="text-[var(--tools)]">PITER AiOps</span>
-            <br />
-            AI-Powered Incident Operations
-          </h1>
-          <p className="mt-3 text-sm md:text-base text-muted-foreground">
-            Priority. Investigation. Triage. Escalation. Resolution.
-          </p>
-          <p className="mt-4 text-base md:text-lg text-muted-foreground leading-relaxed">
-            Production incidents cost enterprise teams money, engineering time, customer trust,
-            and reputation. PITER AiOps applies a structured five-stage incident-response framework
-            to help operations teams prioritize, investigate, triage, escalate, and resolve
-            incidents faster — with RAG, tools, and guided workflows.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#priority-center"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
-            >
-              Run the PITER workflow <ArrowRight className="size-4" />
-            </a>
-            <a
-              href="#architecture"
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-card/60 px-4 py-2 text-sm font-medium hover:bg-card transition"
-            >
-              See the architecture
-            </a>
+    <aside className="border-r border-cyan-300/10 bg-[#07101d] px-4 py-4 max-[980px]:border-b max-[980px]:border-r-0">
+      <div className="flex items-center gap-3 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-3 py-3">
+        <div className="flex size-10 items-center justify-center rounded-md bg-cyan-300 text-slate-950">
+          <Zap className="size-5" />
+        </div>
+        <div>
+          <div className="text-sm font-semibold tracking-wide">PITER AiOps</div>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">
+            Autonomous Incident Ops
           </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function Problem() {
-  const items = [
-    {
-      icon: Target,
-      title: "Business impact",
-      body:
-        "Unstructured incident response inflates MTTR, burns engineer hours, and amplifies revenue and reputational risk. Alert fatigue makes P1 signals harder to spot in the noise.",
-    },
-    {
-      icon: Lightbulb,
-      title: "PITER framework",
-      body:
-        "PITER combines the five golden pillars of effective incident response: Priority, Investigation, Triage, Escalation, and Resolution — each stage enriched with knowledge-base evidence and operational tools.",
-    },
-    {
-      icon: Layers,
-      title: "Why it matters",
-      body:
-        "Lower MTTR, less tribal knowledge, faster onboarding for new on-call. Same RAG pattern companies like Amdocs use for internal support and SRE assistants.",
-    },
-  ];
-  return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          What I'm solving
-        </h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {items.map((it) => (
-            <div
-              key={it.title}
-              className="glass rounded-xl p-5"
-            >
-              <it.icon className="size-5 text-[var(--tools)]" />
-              <h3 className="mt-3 font-medium">{it.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                {it.body}
-              </p>
-            </div>
-          ))}
         </div>
       </div>
-    </section>
+      <nav className="mt-5 grid gap-1 max-[980px]:grid-cols-4 max-[700px]:grid-cols-2">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setActive(item.key)}
+            className={classNames(
+              "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition",
+              active === item.key
+                ? "bg-cyan-300/15 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.2)]"
+                : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
+            )}
+          >
+            <item.icon className="size-4 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="mt-5 rounded-lg border border-slate-700/70 bg-slate-900/70 p-3 text-xs text-slate-300">
+        <div className="flex items-center gap-2 text-cyan-200">
+          <ShieldCheck className="size-4" />
+          Presentation Mode
+        </div>
+        <p className="mt-2 leading-relaxed text-slate-400">
+          Deterministic data, visible agent decisions, safe mock notifications, and no live
+          dispatch.
+        </p>
+      </div>
+    </aside>
   );
 }
 
-type BlockKey = "documents" | "kb" | "flask" | "docker" | "ec2" | "public";
-
-type BlockDemo = {
-  key: BlockKey;
-  label: string;
-  sub: string;
-  color: string;
-  icon: React.ComponentType<{ className?: string }>;
-  summary: string;
-  call: { lang: string; title: string; code: string };
-  result: { title: string; lines: string[] };
-  plan: string[];
-};
-
-const BLOCKS: Record<BlockKey, BlockDemo> = {
-  documents: {
-    key: "documents",
-    label: "Documents",
-    sub: "PDF / TXT / DOCX",
-    color: "ingest",
-    icon: FileText,
-    summary:
-      "Runbooks, alert exports and post-mortems. Uploaded to an S3 bucket that the Knowledge Base reads from.",
-    call: {
-      lang: "bash",
-      title: "Upload to S3",
-      code: `aws s3 cp ./knowledge_base/ s3://piter-aiops-kb/ \\
-  --recursive --exclude "*.DS_Store"`,
-    },
-    result: {
-      title: "Upload report",
-      lines: [
-        "upload: knowledge_base/runbooks/postgres-cpu.md       →  s3://piter-aiops-kb/runbooks/postgres-cpu.md",
-        "upload: knowledge_base/incidents/postmortem_2024_07.md  →  s3://piter-aiops-kb/incidents/postmortem_2024_07.md",
-        "upload: knowledge_base/policies/alert-reference.md    →  s3://piter-aiops-kb/policies/alert-reference.md",
-        "37 objects uploaded · 18.4 MB total",
-      ],
-    },
-    plan: [
-      "Confirm all files reach S3",
-      "Trigger a Knowledge Base sync",
-      "Wait for ingestion to finish",
-    ],
-  },
-  kb: {
-    key: "kb",
-    label: "Bedrock KB",
-    sub: "S3 + Vector index",
-    color: "rag",
-    icon: Database,
-    summary:
-      "Amazon Bedrock chunks runbooks and incidents, embeds them, and stores them in a vector index for retrieval.",
-    call: {
-      lang: "python",
-      title: "boto3 · RetrieveAndGenerate",
-      code: `client = boto3.client("bedrock-agent-runtime")
-resp = client.retrieve_and_generate(
-  input={"text": "Postgres CPU is 95% on prod-db-1. What do I do?"},
-  retrieveAndGenerateConfiguration={
-    "type": "KNOWLEDGE_BASE",
-    "knowledgeBaseConfiguration": {
-      "knowledgeBaseId": "KB-ABC123",
-      "modelArn": "anthropic.claude-3-haiku-...",
-    },
-  },
-)`,
-    },
-    result: {
-      title: "Retrieved citations",
-      lines: [
-        "runbook_db_cpu.md          · chunk 3  · score 0.93",
-        "postmortem_2024_07.pdf     · chunk 9  · score 0.81",
-        'answer: "Check long-running queries via pg_stat_activity, then..."',
-      ],
-    },
-    plan: [
-      "Return answer text to Flask",
-      "Attach source runbooks to the response",
-      "Log query for SRE analytics",
-    ],
-  },
-  flask: {
-    key: "flask",
-    label: "Flask + boto3",
-    sub: "Alert → Answer",
-    color: "interface",
-    icon: Server,
-    summary:
-      "A small Python web server. Renders the triage console, takes the alert/question, calls Bedrock, returns the answer.",
-    call: {
-      lang: "http",
-      title: "Browser → Flask",
-      code: `POST /ask  HTTP/1.1
-Content-Type: application/json
-
-{ "question": "Postgres CPU 95% on prod-db-1 — runbook?" }`,
-    },
-    result: {
-      title: "Flask response",
-      lines: [
-        "200 OK · 412 ms",
-        '{ "answer": "Inspect pg_stat_activity, kill long queries...",',
-        '  "sources": ["runbook_db_cpu.md", "postmortem_2024_07.pdf"] }',
-      ],
-    },
-    plan: [
-      "Render answer in the UI",
-      "Show source filenames under the answer",
-      "Keep the input ready for the next question",
-    ],
-  },
-  docker: {
-    key: "docker",
-    label: "Docker",
-    sub: "Portable image",
-    color: "tools",
-    icon: Container,
-    summary:
-      "Packages Flask + Python deps + config into a single image that runs the same anywhere.",
-    call: {
-      lang: "bash",
-      title: "Build & run locally",
-      code: `docker build -t piter-aiops:1.0 .
-docker run -p 5000:5000 \\
-  -e AWS_REGION=us-east-1 \\
-  -e KB_ID=KB-ABC123 \\
-  piter-aiops:1.0`,
-    },
-    result: {
-      title: "Container status",
-      lines: [
-        "Successfully built sha256:9f3a…",
-        "Successfully tagged piter-aiops:1.0",
-        "Container started · listening on 0.0.0.0:5000",
-      ],
-    },
-    plan: [
-      "Push image to a registry (or copy to EC2)",
-      "Provision the EC2 instance",
-      "Run the same image in production",
-    ],
-  },
-  ec2: {
-    key: "ec2",
-    label: "EC2 Instance",
-    sub: "Runs the container",
-    color: "agent",
-    icon: Cloud,
-    summary:
-      "A small Linux virtual machine on AWS that hosts the Docker container and exposes a port.",
-    call: {
-      lang: "bash",
-      title: "On the EC2 host",
-      code: `ssh ec2-user@<public-ip>
-sudo yum install -y docker && sudo service docker start
-docker load -i piter-aiops.tar
-docker run -d -p 80:5000 \\
-  --restart unless-stopped piter-aiops:1.0`,
-    },
-    result: {
-      title: "Host check",
-      lines: [
-        "CONTAINER ID   IMAGE             STATUS         PORTS",
-        "a91c2f5e8b1d   piter-aiops:1.0  Up 12 seconds  0.0.0.0:80->5000/tcp",
-        "Security group: inbound 80/tcp from 0.0.0.0/0  ✓",
-      ],
-    },
-    plan: [
-      "Verify the public URL responds",
-      "Capture proof screenshots",
-      "Schedule cleanup after the demo",
-    ],
-  },
-  public: {
-    key: "public",
-    label: "Public URL",
-    sub: "On-call team uses it",
-    color: "resolution",
-    icon: Globe,
-    summary:
-      "The live, shareable endpoint that on-call engineers (and reviewers) open during an incident.",
-    call: {
-      lang: "bash",
-      title: "Smoke test",
-      code: `curl -s http://ec2-1-2-3-4.compute.amazonaws.com/ask \\
-  -H "Content-Type: application/json" \\
-  -d '{"question":"Postgres CPU 95% on prod-db-1 — runbook?"}'`,
-    },
-    result: {
-      title: "Live answer",
-      lines: [
-        '{ "answer": "Inspect pg_stat_activity, kill long queries...",',
-        '  "sources": ["runbook_db_cpu.md", "postmortem_2024_07.pdf"],',
-        '  "latency_ms": 480 }',
-      ],
-    },
-    plan: [
-      "Share the URL with the on-call team",
-      "Collect a real alert Q&A screenshot",
-      "Run cleanup: terminate EC2, delete KB + S3",
-    ],
-  },
-};
-
-const FLOW: BlockKey[] = ["documents", "kb", "flask", "docker", "ec2", "public"];
-const ARROW_LABELS = ["upload", "retrieve", "serve", "ship", "deploy"];
-
-function Architecture() {
-  const { architectureBlock, setArchitectureBlock } = useDemoTour();
-  const active = architectureBlock;
-  const block = BLOCKS[active];
-
+function TopBar({ modelLabel }: { modelLabel: string }) {
   return (
-    <section id="architecture" className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          Interactive architecture
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-2xl">
-          Click any block to see an example tool call, the live response, and
-          the resolution plan that follows.
-        </p>
+    <header className="sticky top-0 z-20 border-b border-cyan-300/10 bg-[#08111f]/95 px-5 py-3 backdrop-blur">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/70">
+            Priority / Investigation / Triage / Escalation / Resolution
+          </div>
+          <h1 className="text-xl font-semibold">PITER AiOps Operations Console</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Pill tone="green">Health 200</Pill>
+          <Pill tone="cyan">{modelLabel}</Pill>
+          <Pill tone="amber">Notifications: mock</Pill>
+        </div>
+      </div>
+    </header>
+  );
+}
 
-        <div className="mt-10 glass rounded-2xl p-6 md:p-8">
-          <div className="flex flex-wrap items-stretch gap-3 md:gap-2 md:flex-nowrap">
-            {FLOW.map((key, i) => (
-              <div key={key} className="contents md:flex md:items-stretch md:flex-1">
-                <ArchBlock
-                  block={BLOCKS[key]}
-                  active={active === key}
-                  onClick={() => setArchitectureBlock(key)}
-                />
-                {i < FLOW.length - 1 && <Arrow label={ARROW_LABELS[i]} />}
+function Dashboard({ startStorm }: { startStorm: () => void }) {
+  return (
+    <div className="grid gap-5">
+      <HeroCard startStorm={startStorm} />
+      <div className="grid grid-cols-3 gap-3 max-[1100px]:grid-cols-2 max-[680px]:grid-cols-1">
+        {KPI_CARDS.map((card) => (
+          <MetricCard key={card.label} {...card} />
+        ))}
+      </div>
+      <div className="grid grid-cols-[1.35fr_0.65fr] gap-4 max-[1100px]:grid-cols-1">
+        <Panel title="PITER alert-to-resolution pipeline" icon={GitBranch}>
+          <div className="grid grid-cols-5 gap-2 max-[900px]:grid-cols-1">
+            {PIPELINE.map((step, index) => (
+              <div
+                key={step.label}
+                className="rounded-lg border border-slate-700/70 bg-slate-900/70 p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-cyan-200">{step.label}</span>
+                  <span className="text-[11px] text-slate-500">0{index + 1}</span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{step.body}</p>
               </div>
             ))}
           </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={active}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-              className="mt-8 rounded-xl border border-border bg-background/60 p-5 md:p-6"
-            >
-              <DetailPanel block={block} onClose={() => setArchitectureBlock("kb")} />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ArchBlock({
-  block,
-  active,
-  onClick,
-}: {
-  block: BlockDemo;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const Icon = block.icon;
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      aria-pressed={active}
-      className="flex-1 min-w-[140px] rounded-xl border border-border bg-card/60 p-4 text-center cursor-pointer transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      style={{
-        boxShadow: active
-          ? `0 0 0 2px var(--${block.color}), 0 12px 36px -14px var(--${block.color})`
-          : `0 0 0 1px var(--${block.color}), 0 10px 30px -16px var(--${block.color})`,
-        opacity: active ? 1 : 0.9,
-      }}
-    >
-      <div className="mx-auto w-fit" style={{ color: `var(--${block.color})` }}>
-        <Icon className="size-6" />
-      </div>
-      <div className="mt-2 text-sm font-medium">{block.label}</div>
-      <div className="text-xs text-muted-foreground">{block.sub}</div>
-    </motion.button>
-  );
-}
-
-function Arrow({ label }: { label: string }) {
-  return (
-    <div className="hidden md:flex flex-col items-center justify-center px-1 text-muted-foreground">
-      <ArrowRight className="size-5" />
-      <span className="mt-1 text-[10px] uppercase tracking-wider">{label}</span>
-    </div>
-  );
-}
-
-function DetailPanel({
-  block,
-  onClose,
-}: {
-  block: BlockDemo;
-  onClose: () => void;
-}) {
-  const Icon = block.icon;
-  return (
-    <div>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex size-9 items-center justify-center rounded-md"
-            style={{
-              backgroundColor: `color-mix(in oklab, var(--${block.color}) 22%, transparent)`,
-              color: `var(--${block.color})`,
-            }}
-          >
-            <Icon className="size-5" />
+        </Panel>
+        <Panel title="Business value snapshot" icon={Target}>
+          <div className="space-y-3">
+            <ValueBar label="Noise grouped before humans" value={86} />
+            <ValueBar label="RAG answers with citations" value={94} />
+            <ValueBar label="Tool enrichment coverage" value={100} />
+            <ValueBar label="Safe escalation readiness" value={78} />
           </div>
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              Live demo
-            </div>
-            <h3 className="text-lg font-medium">{block.label}</h3>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Reset selection"
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-
-      <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-        {block.summary}
-      </p>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <CodeCard
-          title={block.call.title}
-          lang={block.call.lang}
-          code={block.call.code}
-          color={block.color}
-        />
-        <div className="rounded-lg border border-border bg-card/60 p-4">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <Terminal className="size-3.5" />
-            {block.result.title}
-          </div>
-          <pre className="mt-3 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/90">
-            {block.result.lines.join("\n")}
-          </pre>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-lg border border-border bg-card/60 p-4">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-          Resolution plan
-        </div>
-        <ol className="mt-3 space-y-2">
-          {block.plan.map((step, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm">
-              <span
-                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
-                style={{
-                  backgroundColor: `color-mix(in oklab, var(--${block.color}) 25%, transparent)`,
-                  color: `var(--${block.color})`,
-                }}
-              >
-                {i + 1}
-              </span>
-              <span className="text-foreground/90">{step}</span>
-            </li>
-          ))}
-        </ol>
+        </Panel>
       </div>
     </div>
   );
 }
 
-function CodeCard({
-  title,
-  lang,
-  code,
-  color,
-}: {
-  title: string;
-  lang: string;
-  code: string;
-  color: string;
-}) {
+function HeroCard({ startStorm }: { startStorm: () => void }) {
   return (
-    <div className="rounded-lg border border-border bg-background/80 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-xs font-medium">{title}</span>
-        <span
-          className="rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wider"
-          style={{
-            backgroundColor: `color-mix(in oklab, var(--${color}) 22%, transparent)`,
-            color: `var(--${color})`,
-          }}
-        >
-          {lang}
-        </span>
-      </div>
-      <pre className="max-w-full overflow-x-auto p-3 font-mono text-xs leading-relaxed text-foreground/90">
-        {code}
-      </pre>
-    </div>
-  );
-}
-
-function Flow() {
-  return (
-    <section id="flow" className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          How it works, step by step
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-2xl">
-          Each step has a <em>plain-English</em> version for non-technical
-          reviewers and a <em>technical</em> note for engineers.
-        </p>
-
-        <ol className="mt-10 space-y-4">
-          {STEPS.map((s, i) => (
-            <motion.li
-              key={s.n}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.4, delay: i * 0.04 }}
-              className="glass rounded-xl p-5 md:p-6"
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: `color-mix(in oklab, var(--${s.color}) 20%, transparent)`,
-                    color: `var(--${s.color})`,
-                  }}
-                >
-                  <s.icon className="size-5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Step {s.n}</span>
-                  </div>
-                  <h3 className="mt-1 text-lg font-medium">{s.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    {s.plain}
-                  </p>
-                  <div className="mt-3 rounded-md border border-border bg-background/60 p-3 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Technical: </span>
-                    {s.tech}
-                  </div>
-                </div>
-              </div>
-            </motion.li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-function Stack() {
-  const stack = [
-    { name: "Amazon Bedrock", role: "Knowledge Base + LLM" },
-    { name: "Amazon S3", role: "Document storage / data source" },
-    { name: "Python + Flask", role: "Web app & routing" },
-    { name: "boto3", role: "AWS SDK from Python" },
-    { name: "Docker", role: "Containerization" },
-    { name: "Amazon EC2", role: "Public hosting" },
-  ];
-  return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          Tech stack
-        </h2>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          {stack.map((s) => (
-            <div
-              key={s.name}
-              className="flex items-center justify-between rounded-lg border border-border bg-card/60 px-4 py-3"
-            >
-              <span className="text-sm font-medium">{s.name}</span>
-              <span className="text-xs text-muted-foreground">{s.role}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Deliverables() {
-  const items = [
-    "Bedrock Knowledge Base screenshot + successful sync",
-    "Flask app running locally and in the browser",
-    "Dockerfile + image built and running as a container",
-    "EC2 instance details + publicly accessible URL",
-    "Real question → real answer example",
-    "Cleanup note: all AWS resources deleted",
-  ];
-  return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          What I'll submit
-        </h2>
-        <ul className="mt-8 grid gap-3 md:grid-cols-2">
-          {items.map((t) => (
-            <li
-              key={t}
-              className="flex items-start gap-3 rounded-lg border border-border bg-card/60 px-4 py-3"
-            >
-              <CheckCircle2 className="size-5 shrink-0 text-[var(--resolution)]" />
-              <span className="text-sm">{t}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="mx-auto max-w-6xl px-6 py-10 text-center text-xs text-muted-foreground">
-      <MessageSquare className="mx-auto size-4 opacity-70" />
-      <p className="mt-2">
-        Mid-project presentation · Built to be understood by both technical and
-        non-technical reviewers.
-      </p>
-    </footer>
-  );
-}
-
-// ---------- MVP Workflow ----------
-
-type AlertSeverity = "P1" | "P2" | "P3";
-
-function severityColor(s: string): string {
-  if (s === "P1") return "destructive";
-  if (s === "P2") return "tools";
-  return "rag";
-}
-
-function decisionMeta(d: string | undefined) {
-  if (d === "auto-resolve")
-    return { label: "Auto-resolve", color: "resolution", icon: ShieldCheck };
-  if (d === "tier1-resolve")
-    return { label: "Resolve at Tier-1", color: "interface", icon: CheckCircle2 };
-  return { label: "Escalate (prepared)", color: "destructive", icon: ArrowUpRight };
-}
-
-function MvpWorkflow() {
-  const { alerts } = useBootstrap();
-  const {
-    resolved,
-    markResolved: markResolvedSession,
-    sessionTotals,
-    recordTriageComplete,
-  } = useWorkflowSession();
-  const [activeId, setActiveId] = useState<string>("");
-  const [stage, setStage] = useState<
-    | "idle"
-    | "priority"
-    | "investigation"
-    | "triage"
-    | "escalation"
-    | "resolution"
-    | "done"
-  >("idle");
-  const [triageData, setTriageData] = useState<WorkflowTriagePayload | null>(null);
-  const [triageError, setTriageError] = useState<string | null>(null);
-  const [bedrockSessionId, setBedrockSessionId] = useState<string | null>(null);
-  const [followUpQuestion, setFollowUpQuestion] = useState("");
-  const [followUpBusy, setFollowUpBusy] = useState(false);
-  const [followUpError, setFollowUpError] = useState<string | null>(null);
-
-  const effectiveId = activeId || alerts[0]?.id || "";
-  const alert = alerts.find((a) => a.id === effectiveId) ?? alerts[0];
-
-  if (!alert) {
-    return null;
-  }
-
-  async function submitFollowUp() {
-    const q = followUpQuestion.trim();
-    if (!q || !bedrockSessionId) return;
-    setFollowUpBusy(true);
-    setFollowUpError(null);
-    try {
-      const answer = await askQuestion(q, bedrockSessionId);
-      setTriageData((prev) =>
-        prev
-          ? {
-              ...prev,
-              result: {
-                ...prev.result!,
-                answer: answer.answer,
-                answer_sections: answer.answer_sections,
-                citations: answer.citations,
-                grounded: answer.grounded,
-                session_id: answer.session_id ?? bedrockSessionId,
-                latency_ms: answer.latency_ms,
-                matched_runbook: answer.matched_runbook ?? prev.result?.matched_runbook,
-              },
-              session_id: answer.session_id ?? bedrockSessionId,
-            }
-          : prev,
-      );
-      if (answer.session_id) setBedrockSessionId(answer.session_id);
-      setFollowUpQuestion("");
-    } catch (err) {
-      setFollowUpError(err instanceof Error ? err.message : "Follow-up failed");
-    } finally {
-      setFollowUpBusy(false);
-    }
-  }
-
-  async function triage() {
-    setTriageError(null);
-    setTriageData(null);
-    setFollowUpError(null);
-    setStage("priority");
-    try {
-      const payload = await triageAlert(alert.id, undefined, bedrockSessionId);
-      setTriageData(payload);
-      if (payload.session_id) setBedrockSessionId(payload.session_id);
-      for (const s of [
-        "priority",
-        "investigation",
-        "triage",
-        "escalation",
-        "resolution",
-        "done",
-      ] as const) {
-        setStage(s);
-        await delay(400);
-      }
-      recordTriageComplete(alert.id);
-    } catch (err) {
-      setTriageError(err instanceof Error ? err.message : "Triage failed");
-      setStage("idle");
-    }
-  }
-
-  const displayRunbook =
-    triageData?.matched_runbook ?? triageData?.result?.matched_runbook ?? alert.matchedRunbook;
-  const displayQuestion = triageData?.question ?? alert.question;
-  const effectiveDecision =
-    triageData?.effective_decision ?? alert.decision ?? "escalate";
-  const effectiveReason =
-    triageData?.effective_reason ?? alert.decisionReason ?? "";
-  const dMeta = decisionMeta(effectiveDecision);
-
-  const citations = triageData?.result?.citations ?? [];
-  const similarAlerts = rankSimilarAlerts(alerts, alert, 2);
-
-  const triageImpactDollars =
-    triageData?.impact_avoided ?? alertImpactDollars(alert);
-  const triageSavedMin = triageData?.saved_min ?? alertSavedMinutes(alert);
-
-  function markResolved() {
-    markResolvedSession(alert.id);
-  }
-
-  const totalSavedMin = sessionTotals.minutes;
-  const totalSavedImpact = sessionTotals.dollars;
-
-  const DIcon = dMeta.icon;
-
-  return (
-    <section id="priority-center" className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--tools)]">
-          <Activity className="size-3.5" />
-          PITER workflow
-        </div>
-        <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          Priority → Investigation → Triage → Escalation → Resolution
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-3xl">
-          Incoming alerts are classified P1–P4, enriched with logs, deployments, runbooks,
-          and history, then guided through triage, escalation, and resolution — reducing
-          MTTR and protecting revenue.
-        </p>
-
-        <div className="mt-8 grid gap-4 lg:grid-cols-[320px,1fr]">
-          {/* Alert console */}
-          <div className="rounded-xl border border-border bg-card/60 p-3">
-            <div className="flex items-center justify-between px-2 py-1.5 text-xs uppercase tracking-wider text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Bell className="size-3.5" />
-                Priority Center · incoming alerts
-              </span>
-              <span>{alerts.length}</span>
-            </div>
-            <ul className="mt-1 space-y-2">
-              {alerts.map((a) => {
-                const isActive = a.id === activeId;
-                const isResolved = resolved.has(a.id);
-                const sc = severityColor(a.severity);
-                return (
-                  <li key={a.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveId(a.id);
-                        setStage("idle");
-                        setTriageData(null);
-                        setTriageError(null);
-                        setBedrockSessionId(null);
-                        setFollowUpQuestion("");
-                        setFollowUpError(null);
-                      }}
-                      className="w-full text-left rounded-lg border border-border bg-background/60 p-3 cursor-pointer transition-colors hover:bg-background"
-                      style={{
-                        boxShadow: isActive
-                          ? `inset 0 0 0 1px var(--${sc})`
-                          : undefined,
-                      }}
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span
-                          className="rounded px-1.5 py-0.5 font-semibold"
-                          style={{
-                            backgroundColor: `color-mix(in oklab, var(--${sc}) 22%, transparent)`,
-                            color: `var(--${sc})`,
-                          }}
-                        >
-                          {a.severity}
-                        </span>
-                        <span className="text-muted-foreground">{a.firedAt}</span>
-                      </div>
-                      <div className="mt-1.5 text-sm font-medium leading-snug">
-                        {a.title}
-                      </div>
-                      <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>{a.service}</span>
-                        {isResolved && (
-                          <span className="flex items-center gap-1 text-[var(--resolution)]">
-                            <CheckCircle2 className="size-3" />
-                            resolved
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Business impact saved
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <TrendingDown className="size-4 text-[var(--resolution)]" />
-                <span className="text-2xl font-semibold text-[var(--resolution)]">
-                  ~ ${totalSavedImpact.toLocaleString()}
-                </span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {totalSavedMin} min of MTTR avoided this session
-              </div>
-              {sessionTotals.triagedCount > 0 && (
-                <div className="mt-1 text-[11px] text-[var(--resolution)]">
-                  {sessionTotals.triagedCount} alert
-                  {sessionTotals.triagedCount === 1 ? "" : "s"} triaged with assistant guidance
-                </div>
-              )}
-              <div className="mt-2 text-[10px] text-muted-foreground/80">
-                Demo estimate — not actual financial impact.
-              </div>
-            </div>
-          </div>
-
-          {/* Investigation + triage workspace */}
-          <div id="investigation" className="rounded-xl border border-border bg-card/60 p-5 scroll-mt-24">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Alert {alert.id} · {alert.source}
-                </div>
-                <h3 className="mt-1 text-lg font-medium">{alert.title}</h3>
-                <div className="text-xs text-muted-foreground">{alert.service}</div>
-              </div>
-              <button
-                type="button"
-                onClick={triage}
-                disabled={stage !== "idle" && stage !== "done"}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 transition"
-              >
-                {stage !== "idle" && stage !== "done" ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" /> Triaging…
-                  </>
-                ) : (
-                  <>
-                    <Play className="size-4" /> Run PITER workflow
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="mt-4">
-              <StepPipeline
-                stage={stage}
-                steps={WORKFLOW_PIPELINE_STEPS}
-                order={WORKFLOW_PIPELINE_ORDER}
-              />
-            </div>
-
-            {triageError && (
-              <div className="mt-4 rounded-lg border border-border bg-[color-mix(in_oklab,var(--destructive)_12%,transparent)] p-3 text-sm text-[var(--destructive)]">
-                {triageError}
-              </div>
-            )}
-
-            <AnimatePresence>
-              {(stage === "investigation" ||
-                stage === "triage" ||
-                stage === "escalation" ||
-                stage === "resolution" ||
-                stage === "done") && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-5 rounded-lg border border-border bg-background/60 p-4"
-                >
-                  <div id="triage-plan" className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground scroll-mt-24">
-                    <Database className="size-3.5 text-[var(--rag)]" />
-                    Investigation &amp; Triage Plan
-                  </div>
-                  <div className="mt-2 text-sm">
-                    <span className="text-muted-foreground">Question sent: </span>
-                    <span className="font-mono text-xs">"{displayQuestion}"</span>
-                  </div>
-                  <div className="mt-1 text-sm">
-                    <span className="text-muted-foreground">Top runbook: </span>
-                    <span className="font-medium">{displayRunbook ?? "—"}</span>
-                  </div>
-                  {triageData?.result && (
-                    <div className="mt-3">
-                      <FormattedAnswer
-                        answer={triageData.result.answer}
-                        sections={triageData.result.answer_sections}
-                        grounded={triageData.result.grounded}
-                      />
-                    </div>
-                  )}
-
-                  {citations.length > 0 && (
-                    <div className="mt-4">
-                      <CitationList citations={citations.slice(0, 4)} title="Retrieved citations" />
-                    </div>
-                  )}
-
-                  <EnrichmentPanel
-                    enrichment={triageData?.enrichment}
-                    ownerTeam={triageData?.owner_team}
-                    similarIncidents={triageData?.similar_incidents}
-                    externalStatus={triageData?.external_status}
-                  />
-
-                  {similarAlerts.length > 0 && (
-                    <div id="incident-history" className="mt-4 scroll-mt-24">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Incident History · similar open alerts
-                      </div>
-                      <ul className="mt-2 space-y-2">
-                        {similarAlerts.map((a) => (
-                          <li
-                            key={a.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card/60 px-3 py-2 text-sm"
-                          >
-                            <div>
-                              <span className="font-medium">{a.title}</span>
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                {a.severity} · {a.service}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              className="text-xs text-[var(--interface)] hover:underline"
-                              onClick={() => {
-                                setActiveId(a.id);
-                                setStage("idle");
-                                setTriageData(null);
-                                setTriageError(null);
-                              }}
-                            >
-                              Open in console
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {(stage === "escalation" || stage === "resolution" || stage === "done") && (
-                <motion.div
-                  id="escalation"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 rounded-lg border border-border bg-background/60 p-4 scroll-mt-24"
-                  style={{
-                    boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--${dMeta.color}) 40%, transparent)`,
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <DIcon
-                      className="size-4"
-                      style={{ color: `var(--${dMeta.color})` }}
-                    />
-                    <span
-                      className="text-sm font-semibold"
-                      style={{ color: `var(--${dMeta.color})` }}
-                    >
-                      Escalation Hub · {dMeta.label}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    {effectiveReason}
-                  </p>
-
-                  {stage === "done" && (
-                    <div className="mt-3 rounded-lg border border-border bg-[color-mix(in_oklab,var(--resolution)_12%,transparent)] px-3 py-2 text-sm">
-                      Expected MTTR reduction:{" "}
-                      <span className="font-semibold text-[var(--resolution)]">
-                        ~ ${triageImpactDollars.toLocaleString()}
-                      </span>{" "}
-                      /{" "}
-                      <span className="font-semibold text-[var(--resolution)]">
-                        {triageSavedMin} min
-                      </span>{" "}
-                      (demo estimate). Counted when you run triage once per alert.
-                    </div>
-                  )}
-
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 text-xs">
-                    <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
-                      <div className="text-muted-foreground">Severity</div>
-                      <div className="font-mono">{alert.severity}</div>
-                    </div>
-                    <div className="rounded border border-border bg-card/60 px-2.5 py-1.5">
-                      <div className="text-muted-foreground">Demo impact if resolved</div>
-                      <div className="font-mono text-[var(--resolution)]">
-                        ${alertImpactDollars(alert).toLocaleString()} / {alertSavedMinutes(alert)} min
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div id="resolution" className="scroll-mt-24">
-            {stage === "done" && !resolved.has(alert.id) && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                type="button"
-                onClick={markResolved}
-                className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-card px-3.5 py-2 text-sm hover:bg-background transition"
-              >
-                <CheckCircle2 className="size-4 text-[var(--resolution)]" />
-                Resolution Tracker · mark incident resolved
-              </motion.button>
-            )}
-            </div>
-            {resolved.has(alert.id) && (
-              <div className="mt-4 text-xs text-[var(--resolution)] flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5" />
-                Resolved · impact already counted from triage
-              </div>
-            )}
-
-            {stage === "done" && bedrockSessionId && (
-              <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                    <MessageSquare className="size-3.5" />
-                    Follow-up (same session)
-                  </span>
-                  <span
-                    className="font-mono truncate max-w-[220px]"
-                    title={bedrockSessionId}
-                  >
-                    session {bedrockSessionId.slice(0, 8)}…
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={followUpQuestion}
-                    onChange={(e) => setFollowUpQuestion(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !followUpBusy) void submitFollowUp();
-                    }}
-                    placeholder='e.g. "Who do I escalate to?" or "Show me the SQL again"'
-                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
-                    disabled={followUpBusy}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void submitFollowUp()}
-                    disabled={followUpBusy || !followUpQuestion.trim()}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-background disabled:opacity-50"
-                  >
-                    {followUpBusy ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <MessageSquare className="size-4" />
-                    )}
-                    Ask
-                  </button>
-                </div>
-                {followUpError && (
-                  <p className="mt-2 text-xs text-[var(--destructive)]">{followUpError}</p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-4">
-          {[
-            { icon: Bell, label: "Catch", body: "Alert lands in the console" },
-            { icon: Search, label: "Triage", body: "KB matches runbook + history" },
-            { icon: Sparkles, label: "Suggest", body: "Concrete next-step actions" },
-            {
-              icon: ShieldCheck,
-              label: "Decide",
-              body: "Resolve at Tier-1 or escalate — before impact grows",
-            },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-lg border border-border bg-card/60 p-3"
-            >
-              <s.icon className="size-4 text-[var(--tools)]" />
-              <div className="mt-2 text-sm font-medium">{s.label}</div>
-              <div className="text-xs text-muted-foreground">{s.body}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------- Document upload ----------
-
-function DocumentUpload() {
-  const { data } = useBootstrap();
-  const [file, setFile] = useState<File | null>(null);
-  const [syncKb, setSyncKb] = useState(data?.sync_kb_default ?? false);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const bucket = data?.s3_bucket || "…";
-  const prefix = data?.s3_prefix || "";
-  const allowedTypes = data?.allowed_types ?? [".md", ".txt", ".csv", ".docx", ".pdf"];
-  const allowed = allowedTypes.join(", ");
-  const maxMb = data?.max_upload_mb ?? 5;
-  const maxBytes = maxMb * 1024 * 1024;
-
-  const validateFile = useCallback(
-    (candidate: File): string | null => {
-      const ext = candidate.name.includes(".")
-        ? `.${candidate.name.split(".").pop()?.toLowerCase()}`
-        : "";
-      if (!allowedTypes.some((t) => t.toLowerCase() === ext)) {
-        return `Invalid file type. Allowed: ${allowed}`;
-      }
-      if (candidate.size > maxBytes) {
-        return `File exceeds ${maxMb} MB limit (${(candidate.size / (1024 * 1024)).toFixed(1)} MB).`;
-      }
-      if (candidate.size === 0) {
-        return "File is empty.";
-      }
-      return null;
-    },
-    [allowed, allowedTypes, maxBytes, maxMb],
-  );
-
-  const selectFile = useCallback(
-    (candidate: File | null) => {
-      setMessage(null);
-      if (!candidate) {
-        setFile(null);
-        setError(null);
-        return;
-      }
-      const validationError = validateFile(candidate);
-      if (validationError) {
-        setFile(null);
-        setError(validationError);
-        return;
-      }
-      setFile(candidate);
-      setError(null);
-    },
-    [validateFile],
-  );
-
-  function onDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(true);
-  }
-
-  function onDragLeave(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-  }
-
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const dropped = e.dataTransfer.files?.[0];
-    if (dropped) selectFile(dropped);
-  }
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!file) {
-      setError("Choose a file to upload.");
-      return;
-    }
-    const validationError = validateFile(file);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const result = await uploadDocument(file, syncKb);
-      const base = `Uploaded ${result.filename ?? file.name} → ${result.s3_uri ?? result.s3_key ?? "S3"}`;
-      if (result.sync_warning || result.partial) {
-        setMessage(`${base} · ${result.sync_warning ?? result.message ?? "KB sync pending"}`);
-      } else {
-        setMessage(`${base}${result.sync_started ? " · KB sync started" : ""}`);
-      }
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section id="document-upload" className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--ingest)]">
-          <Upload className="size-3.5" />
-          Knowledge Base — manage corpus
-        </div>
-        <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          Upload runbook documents
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-3xl">
-          Add MD, TXT, CSV, DOCX, or PDF to{" "}
-          <code className="text-xs">
-            s3://{bucket}/{prefix}/
-          </code>
-          . Optionally sync the Bedrock Knowledge Base after upload.
-        </p>
-
-        <form
-          onSubmit={onSubmit}
-          className="mt-8 rounded-xl border border-border bg-card/60 p-5 space-y-4"
-        >
-          <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Document file
-            </label>
-            <div
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              className={`mt-2 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition ${
-                dragActive
-                  ? "border-[var(--ingest)] bg-[color-mix(in_oklab,var(--ingest)_12%,transparent)]"
-                  : "border-border bg-background/40 hover:border-muted-foreground/50"
-              }`}
-            >
-              <Upload className="size-6 text-muted-foreground" />
-              <p className="mt-2 text-sm font-medium">
-                {dragActive ? "Drop file here" : "Drag & drop or click to browse"}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Max {maxMb} MB · {allowed}
-              </p>
-              {file && (
-                <p className="mt-3 text-xs text-[var(--resolution)]">
-                  Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                </p>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={allowedTypes.join(",")}
-              className="sr-only"
-              onChange={(e) => selectFile(e.target.files?.[0] ?? null)}
-            />
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={syncKb}
-              onChange={(e) => setSyncKb(e.target.checked)}
-            />
-            Sync to Knowledge Base after upload
-          </label>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={busy || !file}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-              Upload document
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-4 rounded-lg border border-border bg-background/60 p-3 text-xs text-muted-foreground" aria-live="polite">
-          {error && <p className="text-[var(--destructive)]">{error}</p>}
-          {message && <p className="text-[var(--resolution)]">{message}</p>}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------- Live Knowledge Base ----------
-
-function LiveKnowledgeBase() {
-  const { data } = useBootstrap();
-  const examples = data?.examples ?? [];
-  const exampleGroups = data?.example_groups ?? {};
-  const maxLen = data?.max_len ?? 500;
-  const modelLabel = data?.model_label ?? "Bedrock";
-  const kbId = data?.kb_id ?? "";
-
-  const [question, setQuestion] = useState(examples[0] ?? "");
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [result, setResult] = useState<RagAnswer | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function run() {
-    setError(null);
-    setResult(null);
-    setBusy(true);
-    try {
-      const answer = await askQuestion(question, sessionId);
-      setResult(answer);
-      if (answer.session_id) setSessionId(answer.session_id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function newConversation() {
-    setSessionId(null);
-    setResult(null);
-    setError(null);
-  }
-
-  return (
-    <section id="live-kb" className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--tools)]">
-          <Sparkles className="size-3.5" />
-          Live Knowledge Base
-        </div>
-        <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          Try the PITER Knowledge Base in real time
-        </h2>
-        <p className="mt-2 text-muted-foreground max-w-2xl">
-          Ask incident questions against indexed runbooks and alert history. Responses are
-          grounded in your corpus with citations — powered by {modelLabel}
-          {kbId ? ` · KB ${kbId}` : ""}.
-        </p>
-
-        <div className="mt-8 rounded-xl border border-border bg-card/60 p-4 flex flex-col max-w-3xl">
-          <label
-            htmlFor="live-kb-question"
-            className="text-xs uppercase tracking-wider text-muted-foreground"
-          >
-            Question (max {maxLen} chars)
-          </label>
-          <textarea
-            id="live-kb-question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            maxLength={maxLen}
-            aria-label="Incident knowledge base question"
-            className="mt-2 h-24 w-full resize-none rounded-md border border-border bg-background/80 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          {Object.keys(exampleGroups).length > 0 ? (
-            <div className="mt-3 space-y-3">
-              {Object.entries(exampleGroups).map(([label, questions]) => (
-                <div key={label}>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
-                    {label}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {questions.map((q) => (
-                      <button
-                        key={q}
-                        type="button"
-                        onClick={() => setQuestion(q)}
-                        className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
-                      >
-                        {q.length > 48 ? `${q.slice(0, 48)}…` : q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {examples.slice(0, 6).map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setQuestion(q)}
-                  className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
-                >
-                  {q.length > 48 ? `${q.slice(0, 48)}…` : q}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={run}
-            disabled={busy}
-            aria-busy={busy}
-            aria-label={busy ? "Querying knowledge base" : "Ask knowledge base"}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 transition"
-          >
-            {busy ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Querying Bedrock…
-              </>
-            ) : (
-              <>
-                <Play className="size-4" />
-                Ask Knowledge Base
-              </>
-            )}
-          </button>
-          {sessionId && (
+    <section className="overflow-hidden rounded-xl border border-cyan-300/15 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(8,47,73,0.55))] p-5">
+      <div className="grid grid-cols-[1.3fr_0.7fr] gap-5 max-[900px]:grid-cols-1">
+        <div>
+          <Pill tone="cyan">Recording-ready demo</Pill>
+          <h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white">
+            Autonomous AI incident operations from alert storm to resolution.
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
+            PITER AiOps reduces MTTR by suppressing noise, enriching incidents with RAG and tools,
+            remembering investigation history, previewing escalation, and guiding engineers through
+            Priority, Investigation, Triage, Escalation, and Resolution.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={newConversation}
-              className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              onClick={startStorm}
+              className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
             >
-              New conversation
+              <Play className="size-4" />
+              Start Demo
             </button>
-          )}
+            <a
+              href="/console"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-900/70 px-4 py-2 text-sm text-slate-100 hover:bg-slate-800"
+            >
+              Keep legacy console available
+              <ChevronRight className="size-4" />
+            </a>
           </div>
         </div>
-
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-[color-mix(in_oklab,var(--destructive)_15%,transparent)] p-3 text-sm max-w-3xl"
-              role="alert"
-            >
-              <AlertTriangle className="size-4 mt-0.5 text-[var(--destructive)]" />
-              <span>{error}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-6 grid gap-4 max-w-4xl"
-              aria-live="polite"
-            >
-              <Stat
-                label="Latency"
-                value={`${result.latency_ms} ms`}
-                color="resolution"
-              />
-              <div className="rounded-xl border border-border bg-background/60 p-5">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <Sparkles className="size-3.5 text-[var(--tools)]" />
-                  Answer
-                  {!result.grounded && (
-                    <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wider bg-[color-mix(in_oklab,var(--destructive)_20%,transparent)] text-[var(--destructive)]">
-                      Low confidence
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3">
-                  <FormattedAnswer
-                    answer={result.answer}
-                    sections={result.answer_sections}
-                    grounded={result.grounded}
-                  />
-                </div>
-              </div>
-              {result.citations.length > 0 && (
-                <CitationList citations={result.citations} />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="rounded-lg border border-cyan-300/15 bg-slate-950/50 p-4">
+          <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+            Critical scenario
+          </div>
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-red-100">
+              <AlertTriangle className="size-4" />
+              P1 detected on bet-service
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-red-100/75">
+              100% error rate in GIB-UKGC after warning signals. Escalation preview is safe and
+              masked.
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <MiniStat label="Warnings" value="4" />
+            <MiniStat label="Alerts" value="399" />
+            <MiniStat label="Suppressed" value="342" />
+            <MiniStat label="Session" value="memory on" />
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-const KB_PIPELINE_STEPS = [
-  { key: "chunk", label: "Chunk", icon: Scissors, color: "ingest" },
-  { key: "retrieve", label: "Retrieve", icon: Search, color: "rag" },
-  { key: "generate", label: "Generate", icon: Sparkles, color: "agent" },
-  { key: "done", label: "Answer", icon: CheckCircle2, color: "resolution" },
-] as const;
-
-const KB_PIPELINE_ORDER = ["idle", "chunk", "retrieve", "generate", "done"] as const;
-
-function PipelineStages({
-  stage,
+function Investigations({
+  selected,
+  openInvestigation,
 }: {
-  stage: "idle" | "chunk" | "retrieve" | "generate" | "done";
+  selected: Investigation;
+  openInvestigation: (inv: Investigation) => void;
 }) {
   return (
-    <StepPipeline
-      stage={stage}
-      steps={[...KB_PIPELINE_STEPS]}
-      order={KB_PIPELINE_ORDER}
-    />
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Autonomous investigations"
+        title="Investigation queue"
+        body="Noise grouping, priority classification, RAG evidence, and tool enrichment in one operator table."
+      />
+      <Panel title="Investigation table" icon={Search}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1120px] text-left text-sm">
+            <thead className="border-b border-slate-700 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                {[
+                  "Conclusion",
+                  "Alert Time",
+                  "ID",
+                  "Alert",
+                  "Service",
+                  "Environment",
+                  "Entities",
+                  "Source",
+                  "Status",
+                  "Priority",
+                  "Actions",
+                ].map((h) => (
+                  <th key={h} className="px-3 py-2 font-medium">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {INVESTIGATIONS.map((inv) => (
+                <tr
+                  key={inv.id}
+                  className={classNames(
+                    "border-b border-slate-800",
+                    selected.id === inv.id && "bg-cyan-300/5",
+                  )}
+                >
+                  <td className="max-w-[250px] px-3 py-3 text-slate-200">{inv.conclusion}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-slate-400">{inv.alertTime}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-cyan-200">{inv.id}</td>
+                  <td className="px-3 py-3">{inv.alert}</td>
+                  <td className="px-3 py-3">{inv.service}</td>
+                  <td className="px-3 py-3">{inv.environment}</td>
+                  <td className="px-3 py-3 text-slate-400">{inv.entities}</td>
+                  <td className="px-3 py-3 text-slate-300">{inv.source}</td>
+                  <td className="px-3 py-3">
+                    <Pill
+                      tone={
+                        inv.status === "Escalated"
+                          ? "red"
+                          : inv.status === "Noise Grouped"
+                            ? "green"
+                            : "cyan"
+                      }
+                    >
+                      {inv.status}
+                    </Pill>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span
+                      className={classNames(
+                        "rounded-full border px-2 py-1 text-xs font-semibold",
+                        priorityClasses(inv.priority),
+                      )}
+                    >
+                      {inv.priority}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <button
+                      type="button"
+                      onClick={() => openInvestigation(inv)}
+                      className="rounded-md border border-cyan-300/30 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-300/10"
+                    >
+                      Open Investigation
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+      <InvestigationDetail selected={selected} answer={null} />
+    </div>
   );
 }
 
-function Stat({
+function AlertStorm({
+  stormState,
+  startStorm,
+  runWorkflow,
+  answer,
+  selected,
+}: {
+  stormState: StormState;
+  startStorm: () => void;
+  runWorkflow: () => void;
+  answer: RagAnswer | null;
+  selected: Investigation;
+}) {
+  const progress =
+    stormState === "idle"
+      ? 0
+      : stormState === "streaming"
+        ? 62
+        : stormState === "critical"
+          ? 74
+          : stormState === "investigating"
+            ? 88
+            : 100;
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Main recording flow"
+        title="Alert Storm Demo"
+        body="A deterministic storm processes around 400 alerts, suppresses P3/P4 noise, detects a P1 on bet-service, and runs the full PITER workflow."
+      />
+      <div className="grid grid-cols-[0.9fr_1.1fr] gap-4 max-[1100px]:grid-cols-1">
+        <Panel title="Storm controls" icon={Activity}>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={startStorm}
+              className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+            >
+              Start alert storm
+            </button>
+            <button
+              type="button"
+              onClick={runWorkflow}
+              className="rounded-md border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/20"
+            >
+              Run PITER workflow
+            </button>
+          </div>
+          <div className="mt-5">
+            <div className="mb-2 flex justify-between text-xs text-slate-400">
+              <span>Storm progress</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-800">
+              <div
+                className="h-full rounded-full bg-cyan-300 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <MiniStat label="Processed" value={stormState === "idle" ? "0" : "399"} />
+            <MiniStat label="Noise suppressed" value={stormState === "idle" ? "0" : "342"} />
+            <MiniStat label="Warning signals" value={stormState === "idle" ? "0" : "4"} />
+            <MiniStat
+              label="P1 state"
+              value={
+                stormState === "critical" ||
+                stormState === "investigating" ||
+                stormState === "resolved"
+                  ? "active"
+                  : "waiting"
+              }
+            />
+          </div>
+        </Panel>
+        <Panel title="Live alert stream" icon={TerminalSquare}>
+          <div className="space-y-2">
+            {WARNING_ALERTS.map((alert, index) => {
+              const visible = stormState !== "idle" && (stormState !== "streaming" || index < 4);
+              const critical = index === WARNING_ALERTS.length - 1;
+              return (
+                <div
+                  key={alert}
+                  className={classNames(
+                    "rounded-lg border px-3 py-2 text-sm transition",
+                    visible ? "opacity-100" : "opacity-30",
+                    critical
+                      ? "border-red-500/40 bg-red-500/10 text-red-100"
+                      : "border-slate-700 bg-slate-900/70 text-slate-300",
+                  )}
+                >
+                  {alert}
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+      </div>
+      <Panel title="PITER workflow result" icon={GitBranch}>
+        <div className="grid grid-cols-5 gap-2 max-[900px]:grid-cols-1">
+          {PIPELINE.map((step, index) => (
+            <div
+              key={step.label}
+              className="rounded-lg border border-cyan-300/15 bg-slate-900/70 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-cyan-100">{step.label}</span>
+                {stormState === "resolved" || index < 3 ? (
+                  <CheckCircle2 className="size-4 text-emerald-300" />
+                ) : (
+                  <Clock3 className="size-4 text-slate-500" />
+                )}
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-400">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <InvestigationDetail selected={selected} answer={answer} />
+    </div>
+  );
+}
+
+function InvestigationDetail({
+  selected,
+  answer,
+}: {
+  selected: Investigation;
+  answer: RagAnswer | null;
+}) {
+  return (
+    <div className="grid grid-cols-[1.15fr_0.85fr] gap-4 max-[1100px]:grid-cols-1">
+      <Panel title="Investigation workspace" icon={FileText}>
+        <div className="grid gap-4">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-red-100/70">
+                  Incident summary
+                </div>
+                <h3 className="mt-1 text-xl font-semibold text-red-50">{selected.alert}</h3>
+              </div>
+              <span
+                className={classNames(
+                  "rounded-full border px-3 py-1 text-sm font-semibold",
+                  priorityClasses(selected.priority),
+                )}
+              >
+                {selected.priority}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-red-100/80">
+              PITER classified this as a critical regulated-market incident because the affected
+              service is customer-facing, the error rate reached 100%, and business impact is
+              material.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
+            <EvidenceCard
+              title="Investigation findings"
+              items={[
+                "Four warning signals preceded the P1.",
+                "Recent deployment correlation is available.",
+                "Similar incidents show rollback reduced MTTR.",
+              ]}
+            />
+            <EvidenceCard
+              title="Triage steps"
+              items={[
+                "Check bet-service health and circuit breaker state.",
+                "Compare deploy timestamp with first warning shot.",
+                "Validate database and Kafka dependency health.",
+              ]}
+            />
+            <EvidenceCard
+              title="Resolution plan"
+              items={[
+                "Roll back suspect release if correlation is confirmed.",
+                "Keep queue idempotency enabled.",
+                "Watch error rate and settlement lag for 10 minutes.",
+              ]}
+            />
+            <EvidenceCard
+              title="Post-mortem draft"
+              items={[
+                "Root-cause hypothesis: bad deploy or dependency saturation.",
+                "Impact: GIB-UKGC betting unavailable.",
+                "Follow-up: add pre-P1 warning detector.",
+              ]}
+            />
+          </div>
+        </div>
+      </Panel>
+      <Panel title="Evidence, tools, and impact" icon={Layers}>
+        <div className="grid gap-3">
+          <MiniStat label="Business impact" value={selected.impact} />
+          <MiniStat label="Regulatory exposure" value="UKGC / GIB" />
+          <MiniStat label="Recent deployment" value="DEP-2026-06-06-014" />
+          <MiniStat label="Previous MTTR" value="41 min" />
+          <CitationPreview citations={answer?.citations ?? []} />
+          <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-sm text-amber-100">
+            <div className="font-semibold">Escalation preview</div>
+            <div className="mt-1 text-xs leading-relaxed text-amber-100/80">
+              Owner: Betting Core. Recipient: a***@example.com. Mode: mock. Live dispatch: blocked
+              until explicit confirmation and allowlist gates pass.
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function ContextMemory({
+  sessionId,
+  lastQuestion,
+  memoryUsed,
+}: {
+  sessionId: string;
+  lastQuestion: string | null;
+  memoryUsed: boolean;
+}) {
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Session-aware investigations"
+        title="Context Memory"
+        body="The system stores, summarizes, retrieves, and reuses relevant investigation context. It does not permanently train itself."
+      />
+      <div className="grid grid-cols-[0.8fr_1.2fr] gap-4 max-[1000px]:grid-cols-1">
+        <Panel title="Active memory context" icon={Brain}>
+          <div className="space-y-3 text-sm">
+            <MiniStat label="Current incident" value="INV-2026-0610-001" />
+            <MiniStat label="Session ID" value={sessionId} />
+            <MiniStat label="Memory used" value={memoryUsed ? "true" : "preview"} />
+            <MiniStat label="Last user question" value={lastQuestion ?? "No follow-up asked yet"} />
+          </div>
+        </Panel>
+        <Panel title="Reusable investigation history" icon={History}>
+          <div className="grid gap-2">
+            {[
+              "Same pattern detected today: warning shots before P1 outage.",
+              "Similar incident from history: connection pool exhaustion caused bet-service errors.",
+              "Past resolution reused: rollback plus dependency health validation reduced MTTR.",
+              "Memory rule: use incident context for follow-ups, do not store real personal contacts.",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
+function KnowledgeBase({ citations }: { citations: Citation[] }) {
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Grounded retrieval"
+        title="Knowledge Base"
+        body="Organized runbooks, environments, policies, incidents, and glossary documents support RAG answers with visible citations."
+      />
+      <Panel title='Retrieval tester: "bet-service 100% error rate GIB-UKGC"' icon={Database}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left text-sm">
+            <thead className="border-b border-slate-700 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                {[
+                  "Document",
+                  "Type",
+                  "Services",
+                  "Environments",
+                  "Severity",
+                  "Status",
+                  "Relevance",
+                ].map((h) => (
+                  <th key={h} className="px-3 py-2 font-medium">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {KB_DOCS.map((doc) => (
+                <tr key={doc.name} className="border-b border-slate-800">
+                  <td className="px-3 py-3 text-cyan-100">{doc.name}</td>
+                  <td className="px-3 py-3">{doc.type}</td>
+                  <td className="px-3 py-3 text-slate-400">{doc.service}</td>
+                  <td className="px-3 py-3 text-slate-400">{doc.env}</td>
+                  <td className="px-3 py-3">{doc.severity}</td>
+                  <td className="px-3 py-3">
+                    <Pill tone="green">{doc.status}</Pill>
+                  </td>
+                  <td className="px-3 py-3 font-mono text-cyan-200">{doc.score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+      <CitationPreview citations={citations} />
+    </div>
+  );
+}
+
+function ToolsPanel() {
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Action groups and tool use"
+        title="MCP / Lambda Tools"
+        body="Bedrock action groups backed by AWS Lambda demonstrate the MCP/tools concept. A real MCP server is optional future work."
+      />
+      <div className="grid grid-cols-2 gap-4 max-[980px]:grid-cols-1">
+        {TOOLS.map((tool) => (
+          <Panel key={tool.name} title={tool.name} icon={ServerCog}>
+            <div className="space-y-3 text-sm">
+              <InfoRow label="Purpose" value={tool.purpose} />
+              <InfoRow label="Input schema" value={tool.input} />
+              <InfoRow label="Output example" value={tool.output} />
+              <InfoRow label="Status" value={tool.status} />
+              <div className="flex flex-wrap gap-2">
+                <Pill tone="cyan">last call {tool.latency}</Pill>
+                <Pill tone={tool.used ? "green" : "amber"}>
+                  {tool.used ? "used in current incident" : "idle"}
+                </Pill>
+              </div>
+            </div>
+          </Panel>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Architecture() {
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Technical walkthrough"
+        title="PITER AiOps Architecture"
+        body="A Flask backend serves the React console, connects to Bedrock through boto3, uses RAG citations, invokes tool-style enrichment, and falls back locally."
+      />
+      <div className="grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2 max-[650px]:grid-cols-1">
+        {[
+          ["React/Vite UI", "Recording-ready SOC console, investigation workspace, agent chat."],
+          ["Flask APIs", "/ask, /api/bootstrap, /api/triage, /api/follow-up, /documents/upload."],
+          [
+            "Bedrock KB",
+            "Grounded RAG answers with source citations and retrieve-and-generate fallback.",
+          ],
+          [
+            "Lambda tools",
+            "Four PITER tools for deploys, service context, incidents, and escalation.",
+          ],
+          ["Session memory", "Follow-up questions reuse incident context and session ID."],
+          ["Local fallback", "If Bedrock fails, local corpus retrieval keeps the demo working."],
+          ["Notification safety", "Mock by default, live-blocked unless all gates pass."],
+          ["Docker", "piter-aiops:dev on localhost:8080."],
+        ].map(([title, body]) => (
+          <div key={title} className="rounded-lg border border-slate-700 bg-slate-900/70 p-4">
+            <div className="font-semibold text-cyan-100">{title}</div>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">{body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Settings() {
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Safety and readiness"
+        title="Settings"
+        body="Presentation-safe defaults for notification mode, AWS boundaries, and live-demo controls."
+      />
+      <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
+        <Panel title="Escalation and notification safety" icon={Lock}>
+          <div className="space-y-3 text-sm">
+            <InfoRow label="Default mode" value="mock" />
+            <InfoRow label="Preview mode" value="safe escalation policy preview" />
+            <InfoRow
+              label="Live mode"
+              value="blocked unless all environment and confirmation gates pass"
+            />
+            <InfoRow label="Masked recipients" value="+972-**-***-1234, a***@example.com" />
+            <Pill tone="green">No real SNS or SES messages are sent by this UI</Pill>
+          </div>
+        </Panel>
+        <Panel title="Implemented vs mocked vs planned" icon={Archive}>
+          <div className="space-y-3 text-sm">
+            <InfoRow
+              label="Implemented"
+              value="RAG, citations, tools, memory, local fallback, demo UI"
+            />
+            <InfoRow
+              label="Mocked"
+              value="notification dispatch and deterministic alert storm visuals"
+            />
+            <InfoRow
+              label="Planned"
+              value="real MCP server, AWS redeploy, live notifications after approval"
+            />
+          </div>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
+function AgentPanel({
+  selected,
+  answer,
+  chatInput,
+  setChatInput,
+  askAgent,
+  loading,
+  error,
+  lastQuestion,
+}: {
+  selected: Investigation;
+  answer: RagAnswer | null;
+  chatInput: string;
+  setChatInput: (value: string) => void;
+  askAgent: (question?: string) => void;
+  loading: boolean;
+  error: string | null;
+  lastQuestion: string | null;
+}) {
+  const prompts = [
+    "What should I check first?",
+    "Who should I escalate this to?",
+    "What changed recently?",
+    "Show similar past incidents",
+    "Create post-mortem summary",
+    "What is the business impact?",
+  ];
+
+  return (
+    <aside className="fixed bottom-5 right-5 top-[76px] z-30 flex w-[360px] flex-col rounded-xl border border-cyan-300/20 bg-[#07101d]/95 p-4 shadow-2xl backdrop-blur max-[1250px]:static max-[1250px]:m-5 max-[1250px]:w-auto">
+      <div className="flex items-center gap-2">
+        <div className="flex size-9 items-center justify-center rounded-md bg-cyan-300/15 text-cyan-200">
+          <Bot className="size-5" />
+        </div>
+        <div>
+          <div className="font-semibold">AI Analyst</div>
+          <div className="text-xs text-slate-500">Right-side agent panel</div>
+        </div>
+      </div>
+      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-xs">
+        <InfoRow label="Incident" value={selected.id} />
+        <InfoRow label="Session ID" value={answer?.session_id ?? "created after first follow-up"} />
+        <InfoRow label="Memory used" value={answer?.session_id ? "true" : "preview"} />
+        <InfoRow label="Last question" value={lastQuestion ?? "none"} />
+      </div>
+      <div className="mt-4 flex-1 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+        <div className="text-sm font-semibold text-cyan-100">Agent answer</div>
+        {error && (
+          <div className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">
+            {error}
+          </div>
+        )}
+        {answer ? (
+          <div className="mt-3 space-y-3 text-sm text-slate-300">
+            <p className="leading-relaxed">{answer.answer}</p>
+            <CitationPreview citations={answer.citations} compact />
+          </div>
+        ) : (
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            Ask a follow-up to prove memory and retrieve a grounded answer with citations.
+          </p>
+        )}
+      </div>
+      <div className="mt-3 grid gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {prompts.map((prompt) => (
+            <button
+              type="button"
+              key={prompt}
+              onClick={() => {
+                setChatInput(prompt);
+                askAgent(prompt);
+              }}
+              className="rounded-full border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            value={chatInput}
+            onChange={(event) => setChatInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") askAgent();
+            }}
+            className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-300/50"
+            placeholder="Ask about this incident"
+          />
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => askAgent()}
+            className="rounded-md bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
+          >
+            {loading ? "..." : "Ask"}
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function MetricCard({
   label,
   value,
-  color,
+  sub,
+  icon: Icon,
+  tone,
 }: {
   label: string;
   value: string;
-  color: string;
+  sub: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: string;
 }) {
   return (
-    <div
-      className="rounded-xl border border-border bg-card/60 p-4"
-      style={{ boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--${color}) 35%, transparent)` }}
-    >
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
+    <div className="rounded-lg border border-slate-700/80 bg-slate-900/70 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-slate-500">{label}</div>
+          <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+          <div className="mt-1 text-xs text-slate-500">{sub}</div>
+        </div>
+        <div className={classNames("rounded-md border p-2", toneClasses(tone))}>
+          <Icon className="size-4" />
+        </div>
       </div>
-      <div
-        className="mt-1 text-2xl font-semibold"
-        style={{ color: `var(--${color})` }}
-      >
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-700/80 bg-slate-900/60 p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className="size-4 text-cyan-300" />
+        <h3 className="font-semibold">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Pill({ children, tone = "cyan" }: { children: React.ReactNode; tone?: string }) {
+  return (
+    <span
+      className={classNames(
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        toneClasses(tone),
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+      <div className="text-[11px] uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-slate-100" title={value}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">{eyebrow}</div>
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight">{title}</h2>
+      <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">{body}</p>
+    </div>
+  );
+}
+
+function ValueBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-xs text-slate-400">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-slate-800">
+        <div className="h-full rounded-full bg-emerald-300" style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function EvidenceCard({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-950/45 p-3">
+      <div className="text-sm font-semibold text-cyan-100">{title}</div>
+      <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-slate-400">
+        {items.map((item) => (
+          <li key={item} className="flex gap-2">
+            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-300" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CitationPreview({
+  citations,
+  compact = false,
+}: {
+  citations: Citation[];
+  compact?: boolean;
+}) {
+  const visible = citations.length
+    ? citations.slice(0, compact ? 2 : 4)
+    : [
+        {
+          source_label: "runbook_bet_service_critical.md",
+          snippet:
+            "Check recent deployment, dependency health, and rollback availability before restarting services.",
+          source_uri: "local://knowledge_base/runbooks/runbook_bet_service_critical.md",
+          index: 1,
+        },
+        {
+          source_label: "severity-and-escalation-policy.md",
+          snippet:
+            "P1 incidents in regulated markets require immediate escalation preview and business impact assessment.",
+          source_uri: "local://knowledge_base/policies/severity-and-escalation-policy.md",
+          index: 2,
+        },
+      ];
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-950/45 p-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
+        <FileText className="size-4" />
+        RAG citations
+      </div>
+      <div className="mt-2 grid gap-2">
+        {visible.map((citation) => (
+          <div
+            key={`${citation.index}-${citation.source_label}`}
+            className="rounded border border-slate-800 bg-slate-900/70 p-2 text-xs"
+          >
+            <div className="font-mono text-cyan-200">{citation.source_label}</div>
+            <p className="mt-1 line-clamp-2 text-slate-400">
+              {citation.snippet || citation.preview || citation.source_uri}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[115px_minmax(0,1fr)] gap-2 border-b border-slate-800 pb-2 last:border-b-0 last:pb-0">
+      <div className="text-xs uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="min-w-0 text-sm text-slate-300">{value}</div>
     </div>
   );
 }
