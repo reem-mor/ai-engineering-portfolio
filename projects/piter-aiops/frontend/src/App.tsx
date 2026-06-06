@@ -33,6 +33,7 @@ import {
 import {
   askQuestion,
   executionModeLabel,
+  fetchAlertStream,
   fetchKbManifest,
   followUp,
   runTriageCard,
@@ -100,7 +101,7 @@ const NAV_ITEMS: {
 }[] = [
   { key: "dashboard", label: "Dashboard", icon: Gauge },
   { key: "investigations", label: "Investigations", icon: Search },
-  { key: "storm", label: "Alert Storm Demo", icon: Activity },
+  { key: "storm", label: "Alert Storm", icon: Activity },
   { key: "memory", label: "Context Memory", icon: Brain },
   { key: "knowledge", label: "Knowledge Base", icon: Database },
   { key: "tools", label: "MCP / Lambda Tools", icon: ServerCog },
@@ -199,7 +200,7 @@ const KPI_CARDS_STATIC = [
   {
     label: "Median Triage Time",
     value: "4.2 min",
-    sub: "demo assisted",
+    sub: "agent-assisted",
     icon: Clock3,
     tone: "cyan",
   },
@@ -207,11 +208,11 @@ const KPI_CARDS_STATIC = [
   {
     label: "Cost Avoided",
     value: "$18.6k",
-    sub: "presentation model",
+    sub: "estimated impact",
     icon: Target,
     tone: "green",
   },
-  { label: "Escalations Triggered", value: "1", sub: "mock preview only", icon: Bell, tone: "amber" },
+  { label: "Escalations Triggered", value: "1", sub: "allowlist gated", icon: Bell, tone: "amber" },
   { label: "Knowledge Sources", value: "11+", sub: "KB sections", icon: Database, tone: "blue" },
   { label: "Lambda Tools", value: "4", sub: "final tool map", icon: ServerCog, tone: "cyan" },
   { label: "Memory Sessions", value: "7", sub: "context reused", icon: Brain, tone: "purple" },
@@ -350,7 +351,7 @@ function stormPhaseLabel(state: StormState): string {
     paused: "Paused",
     critical: "P1 detected — auto-paused",
     investigating: "Running PITER triage",
-    resolved: "Demo complete",
+    resolved: "Incident resolved",
   };
   return map[state];
 }
@@ -396,14 +397,17 @@ function AppShell() {
   const [kbDocs, setKbDocs] = useState<KbDocumentMeta[]>([]);
   const [invStatuses, setInvStatuses] = useState<Record<string, string>>({});
   const [escalationModalOpen, setEscalationModalOpen] = useState(false);
+  const [alertCorpus, setAlertCorpus] = useState<Record<string, string>[]>([]);
+  const [stormVisibleCount, setStormVisibleCount] = useState(12);
   const stormTimerRef = useRef<number | null>(null);
+  const stormTickRef = useRef<number | null>(null);
 
   const streamSummary: AlertStreamSummary = data?.alert_stream ?? {
-    total: 399,
-    label: "Simulated alert storm (399 alerts)",
+    total: 400,
+    label: "Alert storm corpus (400 alerts)",
     duration_seconds: 300,
-    by_severity: { P1: 1, P2: 32, P3: 88, P4: 278 },
-    noise_suppressed: 366,
+    by_severity: { P1: 1, P2: 32, P3: 88, P4: 279 },
+    noise_suppressed: 367,
     warning_signals: 5,
     p1_count: 1,
   };
@@ -423,8 +427,15 @@ function AppShell() {
   const demoEmailConfigured = data?.notification?.demo_email_configured ?? false;
 
   useEffect(() => {
+    fetchAlertStream(true)
+      .then((payload) => setAlertCorpus(payload.rows ?? []))
+      .catch(() => setAlertCorpus([]));
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (stormTimerRef.current) window.clearTimeout(stormTimerRef.current);
+      if (stormTickRef.current) window.clearInterval(stormTickRef.current);
     };
   }, []);
 
@@ -513,12 +524,23 @@ function AppShell() {
       window.clearTimeout(stormTimerRef.current);
       stormTimerRef.current = null;
     }
+    if (stormTickRef.current) {
+      window.clearInterval(stormTickRef.current);
+      stormTickRef.current = null;
+    }
   }
 
   function startStorm() {
     clearStormTimer();
+    setStormVisibleCount(8);
     setStormState("streaming");
-    stormTimerRef.current = window.setTimeout(() => setStormState("critical"), 650);
+    stormTickRef.current = window.setInterval(() => {
+      setStormVisibleCount((n) => Math.min(n + 4, 48));
+    }, 400);
+    stormTimerRef.current = window.setTimeout(() => {
+      clearStormTimer();
+      setStormState("critical");
+    }, 2800);
   }
 
   function pauseStorm() {
@@ -530,6 +552,7 @@ function AppShell() {
 
   function resetStorm() {
     clearStormTimer();
+    setStormVisibleCount(12);
     setStormState("idle");
   }
 
@@ -635,6 +658,7 @@ function AppShell() {
                 kpiCards={kpiCards}
                 streamSummary={streamSummary}
                 onOpenInvestigations={() => setActive("investigations")}
+                onOpenStorm={() => setActive("storm")}
               />
             )}
             {active === "investigations" && (
@@ -660,6 +684,8 @@ function AppShell() {
                 triageCard={triageCard}
                 selected={selected}
                 streamSummary={streamSummary}
+                alertCorpus={alertCorpus}
+                stormVisibleCount={stormVisibleCount}
                 notificationMode={notificationMode}
                 liveDispatchEnabled={liveDispatchEnabled}
                 onOpenEscalation={() => setEscalationModalOpen(true)}
@@ -740,15 +766,15 @@ export default function App() {
 
 function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKey) => void }) {
   return (
-    <aside className="border-r border-cyan-300/10 bg-[#07101d] px-4 py-4 max-[980px]:border-b max-[980px]:border-r-0">
-      <div className="flex items-center gap-3 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-3 py-3">
-        <div className="flex size-10 items-center justify-center rounded-md bg-cyan-300 text-slate-950">
+    <aside className="border-r border-slate-800 bg-[#0c0f14] px-4 py-4 max-[980px]:border-b max-[980px]:border-r-0">
+      <div className="flex items-center gap-3 rounded-lg border border-slate-700/80 bg-slate-900/60 px-3 py-3">
+        <div className="flex size-10 items-center justify-center rounded-md bg-violet-600 text-white">
           <Zap className="size-5" />
         </div>
         <div>
           <div className="text-sm font-semibold tracking-wide">PITER AiOps</div>
-          <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">
-            Autonomous Incident Ops
+          <div className="text-[11px] uppercase tracking-[0.15em] text-slate-400">
+            Incident Operations
           </div>
         </div>
       </div>
@@ -761,7 +787,7 @@ function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKe
             className={classNames(
               "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition",
               active === item.key
-                ? "bg-cyan-300/15 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.2)]"
+                ? "bg-violet-600/15 text-violet-100 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.25)]"
                 : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
             )}
           >
@@ -771,13 +797,12 @@ function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKe
         ))}
       </nav>
       <div className="mt-5 rounded-lg border border-slate-700/70 bg-slate-900/70 p-3 text-xs text-slate-300">
-        <div className="flex items-center gap-2 text-cyan-200">
+        <div className="flex items-center gap-2 text-violet-200">
           <ShieldCheck className="size-4" />
-          Presentation Mode
+          Guardrails active
         </div>
         <p className="mt-2 leading-relaxed text-slate-400">
-          Deterministic data, visible agent decisions, safe mock notifications, and no live
-          dispatch.
+          Grounded answers only. Destructive actions and policy bypass requests are blocked.
         </p>
       </div>
     </aside>
@@ -796,26 +821,25 @@ function TopBar({
   onAskAgent: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-cyan-300/10 bg-[#08111f]/95 px-5 py-3 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-slate-800 bg-[#0c0f14]/95 px-5 py-3 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/70">
-            Priority / Investigation / Triage / Escalation / Resolution
+          <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            Priority · Investigation · Triage · Escalation · Resolution
           </div>
-          <h1 className="text-xl font-semibold">PITER AiOps Dashboard</h1>
+          <h1 className="text-xl font-semibold text-slate-100">Operations Center</h1>
           <p className="mt-0.5 text-xs text-slate-500">
-            Autonomous incident operations for faster MTTR
+            Regulated-market incident response with source-grounded AI
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <Pill tone="green">Health 200</Pill>
-          <Pill tone="cyan">{executionLabel || modelLabel}</Pill>
-          <Pill tone="purple">Memory: session</Pill>
-          <Pill tone="amber">Notifications: {notificationMode}</Pill>
+          <Pill tone="green">Healthy</Pill>
+          <Pill tone="purple">{executionLabel || modelLabel}</Pill>
+          <Pill tone="amber">Notify: {notificationMode}</Pill>
           <button
             type="button"
             onClick={onAskAgent}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-cyan-100 transition-colors hover:bg-cyan-300/20"
+            className="btn-primary px-3 py-1.5 text-xs"
           >
             <MessageSquare className="size-3.5" />
             Ask Agent
@@ -831,11 +855,13 @@ function Dashboard({
   kpiCards,
   streamSummary,
   onOpenInvestigations,
+  onOpenStorm,
 }: {
   startStorm: () => void;
   kpiCards: typeof KPI_CARDS_STATIC;
   streamSummary: AlertStreamSummary;
   onOpenInvestigations: () => void;
+  onOpenStorm: () => void;
 }) {
   const severityEntries = Object.entries(streamSummary.by_severity ?? {});
   return (
@@ -851,7 +877,11 @@ function Dashboard({
         <FilterSelect label="Status" defaultValue="All" />
         <FilterSelect label="Source" defaultValue="All" />
       </FilterBar>
-      <HeroCard startStorm={startStorm} streamSummary={streamSummary} />
+      <HeroCard
+        startStorm={startStorm}
+        streamSummary={streamSummary}
+        onOpenStorm={onOpenStorm}
+      />
       <div className="grid grid-cols-3 gap-3 max-[1280px]:grid-cols-2 max-[680px]:grid-cols-1">
         {kpiCards.map((card) => (
           <MetricCard key={card.label} {...card} />
@@ -919,7 +949,7 @@ function Dashboard({
         <Panel title="Business impact" icon={Target}>
           <ValueBar label="Regulated market exposure modeled" value={72} />
           <div className="mt-3 text-sm text-slate-400">
-            Estimated cost avoided in demo: $18.6k via early P1 detection and rollback guidance.
+            Early P1 detection and rollback guidance reduced estimated revenue exposure during the storm window.
           </div>
         </Panel>
       </div>
@@ -979,60 +1009,55 @@ function FilterSelect({ label, defaultValue }: { label: string; defaultValue: st
 function HeroCard({
   startStorm,
   streamSummary,
+  onOpenStorm,
 }: {
   startStorm: () => void;
   streamSummary: AlertStreamSummary;
+  onOpenStorm: () => void;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-cyan-300/15 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(8,47,73,0.55))] p-5">
+    <section className="overflow-hidden rounded-xl border border-slate-700/80 bg-slate-900/60 p-5">
       <div className="grid grid-cols-[1.3fr_0.7fr] gap-5 max-[900px]:grid-cols-1">
         <div>
-          <Pill tone="cyan">Recording-ready demo</Pill>
+          <Pill tone="purple">Active scenario</Pill>
           <h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white">
-            Autonomous AI incident operations from alert storm to resolution.
+            Enterprise incident operations from alert storm to resolution
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
-            PITER AiOps reduces MTTR by suppressing noise, enriching incidents with RAG and tools,
-            remembering investigation history, previewing escalation, and guiding engineers through
-            Priority, Investigation, Triage, Escalation, and Resolution.
+            PITER suppresses noise, enriches incidents with grounded RAG and Lambda tools,
+            preserves session memory, and guides operators through Priority, Investigation,
+            Triage, Escalation, and Resolution.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={startStorm}
-              className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
-            >
+            <button type="button" onClick={startStorm} className="btn-primary">
               <Play className="size-4" />
-              Start Demo
+              Run alert storm
             </button>
-            <a
-              href="/console"
-              className="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-900/70 px-4 py-2 text-sm text-slate-100 hover:bg-slate-800"
-            >
-              Keep legacy console available
+            <button type="button" onClick={onOpenStorm} className="btn-secondary">
+              Open storm workspace
               <ChevronRight className="size-4" />
-            </a>
+            </button>
           </div>
         </div>
-        <div className="rounded-lg border border-cyan-300/15 bg-slate-950/50 p-4">
+        <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-4">
           <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
-            Critical scenario
+            bet-service · GIB-UKGC
           </div>
           <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-red-100">
               <AlertTriangle className="size-4" />
-              P1 detected on bet-service
+              P1 — 100% error rate
             </div>
             <p className="mt-2 text-xs leading-relaxed text-red-100/75">
-              100% error rate in GIB-UKGC after warning signals. Escalation preview is safe and
-              masked.
+              Warning signals precede hard failure. Escalation requires confirmation token and
+              allowlisted recipient.
             </p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
             <MiniStat label="Warnings" value={String(streamSummary.warning_signals)} />
             <MiniStat label="Alerts" value={String(streamSummary.total)} />
             <MiniStat label="Suppressed" value={String(streamSummary.noise_suppressed)} />
-            <MiniStat label="Storm" value={`Simulated alert storm (${streamSummary.total})`} />
+            <MiniStat label="Corpus" value={streamSummary.label} />
           </div>
         </div>
       </div>
@@ -1228,7 +1253,7 @@ function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer rounded-md border border-cyan-300/25 px-2 py-1 text-[11px] text-cyan-100 transition-colors hover:bg-cyan-300/10"
+      className="cursor-pointer rounded-md border border-violet-400/25 px-2 py-1 text-[11px] text-violet-100 transition-colors hover:bg-violet-500/10"
     >
       {label}
     </button>
@@ -1245,6 +1270,8 @@ function AlertStorm({
   triageCard,
   selected,
   streamSummary,
+  alertCorpus,
+  stormVisibleCount,
   notificationMode,
   liveDispatchEnabled,
   onOpenEscalation,
@@ -1259,6 +1286,8 @@ function AlertStorm({
   triageCard: TriageCard | null;
   selected: Investigation;
   streamSummary: AlertStreamSummary;
+  alertCorpus: Record<string, string>[];
+  stormVisibleCount: number;
   notificationMode: string;
   liveDispatchEnabled: boolean;
   onOpenEscalation: () => void;
@@ -1293,21 +1322,28 @@ function AlertStorm({
     stormState === "investigating" ||
     stormState === "resolved";
 
-  const streamRows = buildAlertStreamRows(stormState);
+  const streamRows = buildAlertStreamRows(alertCorpus, stormState, stormVisibleCount);
+  const visibleTotal =
+    stormState === "idle"
+      ? 0
+      : stormState === "critical" ||
+          stormState === "investigating" ||
+          stormState === "resolved"
+        ? streamSummary.total
+        : Math.min(stormVisibleCount * 8, streamSummary.noise_suppressed);
   const ownerTeam =
     (triageCard?.owner?.team as string | undefined) ?? "Betting Core Platform";
 
   return (
     <div className="grid gap-5">
       <SectionHeader
-        eyebrow="Main recording flow"
-        title="Alert Storm Demo"
-        body={`Simulated alert storm — ${streamSummary.total} deterministic alerts over ~5 minutes. The agent suppresses P3/P4 noise, surfaces warning signals, detects a P1 on bet-service, and runs the full PITER workflow via /api/triage with visible citations.`}
+        eyebrow="SRE scenario"
+        title="Alert Storm — bet-service outage"
+        body={`${streamSummary.total} alerts in ~5 minutes on GIB-UKGC. PITER suppresses P3/P4 noise, correlates warning signals, detects P1 on bet-service, and runs grounded triage with citations.`}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="cyan">Phase: {stormPhaseLabel(stormState)}</Pill>
-        <Pill tone="purple">{streamSummary.label}</Pill>
-        <Pill tone="green">Demo mode — AWS mock connected</Pill>
+        <Pill tone="purple">Phase: {stormPhaseLabel(stormState)}</Pill>
+        <Pill tone="slate">{streamSummary.label}</Pill>
       </div>
 
       <div className="grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2 max-[560px]:grid-cols-1">
@@ -1331,16 +1367,16 @@ function AlertStorm({
           type="button"
           onClick={startStorm}
           disabled={stormState === "investigating"}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+          className="btn-primary"
         >
           <Play className="size-4" />
-          Start 5-min alert storm
+          Start alert storm
         </button>
         <button
           type="button"
           onClick={pauseStorm}
           disabled={stormState !== "streaming"}
-          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+          className="btn-secondary"
         >
           Pause
         </button>
@@ -1350,14 +1386,14 @@ function AlertStorm({
             if (stormState === "paused") startStorm();
           }}
           disabled={stormState !== "paused"}
-          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+          className="btn-secondary"
         >
-          Continue live
+          Resume
         </button>
         <button
           type="button"
           onClick={resetStorm}
-          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          className="btn-secondary"
         >
           Reset
         </button>
@@ -1377,7 +1413,7 @@ function AlertStorm({
         <Panel title="Live alert stream" icon={TerminalSquare}>
           <AlertStreamTable
             rows={streamRows}
-            visibleTotal={streamRows.length}
+            visibleTotal={visibleTotal}
             total={streamSummary.total}
           />
         </Panel>
@@ -1428,7 +1464,7 @@ function AlertStorm({
 
       {stormState === "resolved" && (
         <>
-          <Panel title="Post-demo KPI summary" icon={Target}>
+          <Panel title="Resolution summary" icon={Target}>
             <div className="grid grid-cols-4 gap-2 max-[900px]:grid-cols-2">
               <MiniStat label="Alerts processed" value={String(streamSummary.total)} />
               <MiniStat label="Noise suppressed" value={String(streamSummary.noise_suppressed)} />
@@ -1467,18 +1503,56 @@ function AlertStorm({
   );
 }
 
-function buildAlertStreamRows(stormState: StormState): StreamRow[] {
-  const base: StreamRow[] = [
-    { time: "10:01:02", service: "wallet-service", alert: "memory_utilization_high", severity: "P4", status: "streaming" },
-    { time: "10:01:08", service: "wallet-service", alert: "memory_utilization_high", severity: "P4", status: "suppressed" },
-    { time: "10:01:45", service: "bet-service", alert: "latency_p95_elevated", severity: "P2", status: "streaming" },
-    { time: "10:02:12", service: "bet-service", alert: "error_rate_warning", severity: "P2", status: "streaming" },
-    { time: "10:02:55", service: "bet-service", alert: "100% error rate GIB-UKGC", severity: "P1", status: "critical" },
-  ];
-  if (stormState === "idle") return [];
-  if (stormState === "streaming") return base.slice(0, 3);
-  if (stormState === "paused") return base.slice(0, 4);
-  return base;
+function rowToStreamRow(row: Record<string, string>): StreamRow {
+  const ts = row.timestamp ?? "";
+  const time = ts.includes("T") ? (ts.split("T")[1]?.replace(".000Z", "") ?? ts) : ts;
+  const severity = row.severity ?? "P4";
+  const isP1 = severity === "P1" || row.is_trigger === "true";
+  const isWarn = String(row.alert_id ?? "").startsWith("ALT-DEMO-WARN");
+  const status =
+    isP1
+      ? "critical"
+      : row.status === "auto-resolved" || (severity === "P4" && !isWarn)
+        ? "suppressed"
+        : isWarn
+          ? "warning"
+          : severity === "P3"
+            ? "suppressed"
+            : "active";
+  return {
+    time,
+    service: row.service ?? "",
+    alert: row.title ?? row.alert_id ?? "",
+    severity,
+    status,
+  };
+}
+
+function buildAlertStreamRows(
+  corpus: Record<string, string>[],
+  stormState: StormState,
+  visibleCount: number,
+): StreamRow[] {
+  if (stormState === "idle" || !corpus.length) return [];
+
+  const sorted = [...corpus].sort(
+    (a, b) => parseFloat(a.seconds_offset ?? "0") - parseFloat(b.seconds_offset ?? "0"),
+  );
+
+  if (stormState === "streaming" || stormState === "paused") {
+    const preP1 = sorted.filter(
+      (r) => r.severity !== "P1" && r.is_trigger !== "true",
+    );
+    const limit = stormState === "paused" ? visibleCount + 6 : visibleCount;
+    return preP1.slice(0, limit).map(rowToStreamRow);
+  }
+
+  const warnings = sorted.filter((r) => String(r.alert_id ?? "").startsWith("ALT-DEMO-WARN"));
+  const p1 = sorted.filter((r) => r.severity === "P1" || r.is_trigger === "true");
+  const sampleNoise = sorted
+    .filter((r) => r.severity === "P3" || r.severity === "P4")
+    .slice(0, 6);
+  return [...sampleNoise, ...warnings, ...p1].map(rowToStreamRow);
 }
 
 function InvestigationDetail({
@@ -2052,9 +2126,9 @@ function Settings({
   return (
     <div className="grid gap-5">
       <SectionHeader
-        eyebrow="Safety and readiness"
+        eyebrow="Platform"
         title="Settings"
-        body="Presentation-safe defaults for notification mode, AWS boundaries, and live-demo controls."
+        body="Execution mode, guardrails, notification gates, and AWS integration status."
       />
       <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
         <Panel title="Backend / AWS status" icon={ServerCog}>

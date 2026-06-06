@@ -70,7 +70,7 @@ export function ChatThread({
           className={classNames(
             "max-w-[95%] rounded-lg px-3 py-2.5 text-sm leading-relaxed",
             turn.role === "user"
-              ? "ml-auto border border-cyan-400/30 bg-cyan-500/15 text-cyan-50"
+              ? "ml-auto border border-violet-400/30 bg-violet-500/15 text-violet-50"
               : "mr-auto border border-slate-700 bg-slate-900/80 text-slate-200",
           )}
         >

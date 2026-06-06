@@ -40,36 +40,35 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  /* Dark only — neon professional */
-  --background: oklch(0.16 0.02 265);
-  --foreground: oklch(0.96 0.01 250);
-  --card: oklch(0.21 0.025 265);
-  --card-foreground: oklch(0.96 0.01 250);
-  --popover: oklch(0.19 0.025 265);
-  --popover-foreground: oklch(0.96 0.01 250);
-  --primary: oklch(0.78 0.18 200);
-  --primary-foreground: oklch(0.15 0.02 265);
-  --secondary: oklch(0.28 0.03 265);
-  --secondary-foreground: oklch(0.96 0.01 250);
-  --muted: oklch(0.24 0.025 265);
-  --muted-foreground: oklch(0.7 0.02 260);
-  --accent: oklch(0.3 0.04 265);
-  --accent-foreground: oklch(0.96 0.01 250);
-  --destructive: oklch(0.65 0.22 25);
+  --radius: 0.5rem;
+  /* Enterprise dark — restrained palette (DropZone-style SOC) */
+  --background: oklch(0.14 0.015 265);
+  --foreground: oklch(0.94 0.01 250);
+  --card: oklch(0.18 0.018 265);
+  --card-foreground: oklch(0.94 0.01 250);
+  --popover: oklch(0.17 0.018 265);
+  --popover-foreground: oklch(0.94 0.01 250);
+  --primary: oklch(0.62 0.16 275);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.24 0.02 265);
+  --secondary-foreground: oklch(0.94 0.01 250);
+  --muted: oklch(0.22 0.018 265);
+  --muted-foreground: oklch(0.68 0.02 260);
+  --accent: oklch(0.26 0.03 265);
+  --accent-foreground: oklch(0.94 0.01 250);
+  --destructive: oklch(0.58 0.2 25);
   --destructive-foreground: oklch(0.98 0.01 250);
-  --border: oklch(0.3 0.03 265 / 60%);
-  --input: oklch(0.3 0.03 265);
-  --ring: oklch(0.78 0.18 200);
+  --border: oklch(0.28 0.02 265 / 70%);
+  --input: oklch(0.24 0.02 265);
+  --ring: oklch(0.62 0.16 275);
 
-  /* Section neon accents */
-  --ingest: oklch(0.72 0.2 30);          /* red/orange */
-  --interface: oklch(0.7 0.18 245);      /* blue */
-  --agent: oklch(0.7 0.22 305);          /* purple */
-  --tools: oklch(0.78 0.16 200);         /* cyan */
-  --rag: oklch(0.75 0.17 165);           /* teal/green */
-  --resolution: oklch(0.78 0.2 145);     /* green */
-  --grid-line: oklch(0.35 0.03 265 / 40%);
+  --ingest: oklch(0.62 0.16 25);
+  --interface: oklch(0.6 0.14 245);
+  --agent: oklch(0.62 0.16 275);
+  --tools: oklch(0.58 0.12 200);
+  --rag: oklch(0.6 0.12 165);
+  --resolution: oklch(0.62 0.14 145);
+  --grid-line: oklch(0.28 0.02 265 / 35%);
 }
 
 @layer base {
@@ -77,10 +76,7 @@
   html, body { background-color: var(--color-background); color: var(--color-foreground); overflow-x: hidden; }
   body {
     font-family: ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 20% -10%, oklch(0.7 0.22 305 / 0.15), transparent 60%),
-      radial-gradient(ellipse 60% 50% at 100% 10%, oklch(0.78 0.16 200 / 0.12), transparent 60%),
-      linear-gradient(to bottom, var(--color-background), oklch(0.14 0.02 265));
+    background-image: linear-gradient(180deg, oklch(0.15 0.018 265), oklch(0.13 0.015 265));
     background-attachment: fixed;
   }
 }
@@ -90,17 +86,17 @@
     background-image:
       linear-gradient(var(--color-grid-line) 1px, transparent 1px),
       linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-size: 40px 40px;
   }
   .glass {
-    background: color-mix(in oklab, var(--card) 70%, transparent);
-    backdrop-filter: blur(10px);
+    background: color-mix(in oklab, var(--card) 85%, transparent);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--border);
   }
-  .neon-ring-ingest { box-shadow: 0 0 0 1px var(--ingest), 0 8px 30px -8px var(--ingest); }
-  .neon-ring-interface { box-shadow: 0 0 0 1px var(--interface), 0 8px 30px -8px var(--interface); }
-  .neon-ring-agent { box-shadow: 0 0 0 1px var(--agent), 0 8px 30px -8px var(--agent); }
-  .neon-ring-tools { box-shadow: 0 0 0 1px var(--tools), 0 8px 30px -8px var(--tools); }
-  .neon-ring-rag { box-shadow: 0 0 0 1px var(--rag), 0 8px 30px -8px var(--rag); }
-  .neon-ring-resolution { box-shadow: 0 0 0 1px var(--resolution), 0 8px 30px -8px var(--resolution); }
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply cursor-pointer rounded-md border border-slate-600 bg-slate-900/50 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-800 disabled:opacity-40;
+  }
 }

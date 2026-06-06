@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 
 from app.errors import BedrockError
+from app.guardrails import check_operator_guardrails
 
 MIN_QUESTION_LEN = 3
 MAX_QUESTION_LEN = 500
@@ -45,4 +46,5 @@ def validate_question(question: str) -> str:
             "Your question has no searchable keywords. Try rephrasing.",
             code="stopwords_only",
         )
+    check_operator_guardrails(trimmed)
     return trimmed
