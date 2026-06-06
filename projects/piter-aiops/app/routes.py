@@ -22,6 +22,8 @@ from app.upload_service import DocumentUploadService
 from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
 from app.workflow import build_workflow_payload
+from app.services.alert_stream import load_alert_stream, p1_demo_alert, summarize_alert_stream
+from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
 
 log = logging.getLogger(__name__)
@@ -90,6 +92,27 @@ def _model_label() -> str:
     return "Bedrock model"
 
 
+def _execution_mode_hint(mode: str | None = None) -> str:
+    """Human-readable backend label for UI — never claim Agent if KB path was used."""
+    cfg = _app_config()
+    if mode == "local" or not cfg.USE_BEDROCK:
+        return "Local fallback"
+    if cfg.RAG_BACKEND == "retrieve_and_generate":
+        return "Direct Bedrock KB"
+    return "Bedrock Agent"
+
+
+def _notification_settings() -> dict:
+    import os
+
+    return {
+        "mode": os.environ.get("PITER_NOTIFICATION_MODE", "mock"),
+        "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
+        in {"true", "1", "yes"},
+        "max_sends_per_incident": int(os.environ.get("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "1") or 1),
+    }
+
+
 def _bootstrap_context() -> dict:
     max_bytes = current_app.config.get("MAX_UPLOAD_BYTES", 5_242_880)
     if not isinstance(max_bytes, int):
@@ -107,6 +130,11 @@ def _bootstrap_context() -> dict:
         "allowed_types": sorted(ALLOWED_UPLOAD_SUFFIXES),
         "sync_kb_default": bool(_cfg_get("BEDROCK_DATA_SOURCE_ID")),
         "spa_enabled": spa_enabled(),
+        "use_bedrock": _app_config().USE_BEDROCK,
+        "rag_backend": _app_config().RAG_BACKEND,
+        "execution_mode_hint": _execution_mode_hint(),
+        "notification": _notification_settings(),
+        "alert_stream": summarize_alert_stream(),
     }
 
 
@@ -316,7 +344,36 @@ def api_workflow_triage():
 @bp.get("/console")
 def console():
     """Self-contained local-first triage console for the live demo."""
+    import os
+
+    redirect_spa = os.environ.get("PITER_CONSOLE_REDIRECT_SPA", "").lower() in {
+        "true",
+        "1",
+        "yes",
+        "on",
+    }
+    if spa_enabled() and redirect_spa:
+        from flask import redirect
+
+        return redirect("/?section=storm")
     return render_template("console.html")
+
+
+@bp.get("/api/alert-stream")
+def api_alert_stream():
+    """Return deterministic alert storm metadata and optional row payload."""
+    summary = summarize_alert_stream()
+    include_rows = request.args.get("include_rows", "").lower() in {"1", "true", "yes"}
+    payload: dict = {"ok": True, **summary}
+    if include_rows:
+        payload["rows"] = load_alert_stream()
+    return jsonify(payload), 200
+
+
+@bp.get("/api/kb/manifest")
+def api_kb_manifest():
+    """List Knowledge Base documents with metadata for the SPA."""
+    return jsonify(ok=True, documents=load_kb_manifest(), sections=kb_sections()), 200
 
 
 def _ask_fn():

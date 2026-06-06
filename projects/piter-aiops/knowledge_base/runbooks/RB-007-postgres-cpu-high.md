@@ -1,3 +1,15 @@
+---
+title: "Postgres CPU high"
+doc_type: "runbook"
+services: ["postgres"]
+environments: ["NJ-DGE", "GIB-UKGC", "MGM"]
+severity_applicable: ["P1", "P2"]
+tags: ["postgres", "cpu", "database"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-007: PostgreSQL CPU Above 90%
 
 **Severity:** P2 (P1 if checkout/auth blocked)

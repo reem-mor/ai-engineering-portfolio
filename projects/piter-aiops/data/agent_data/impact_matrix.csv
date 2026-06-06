@@ -8,3 +8,6 @@ NJ-DGE,checkout-api,P2,2,75000,20,false,30
 NJ-DGE,auth-api,P2,2,60000,40,false,20
 GIB,postgres,P2,2,45000,15,false,30
 MGM,postgres,P3,3,8000,3,false,120
+GIB-UKGC,bet-service,P1,1,520000,92,true,5
+GIB-UKGC,bet-service,P2,2,140000,40,true,15
+GIB-UKGC,bet-service,P3,3,18000,8,true,45

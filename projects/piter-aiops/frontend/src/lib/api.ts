@@ -1,6 +1,10 @@
 import type {
+  AlertStreamSummary,
   BootstrapPayload,
+  FollowUpResult,
+  KbDocumentMeta,
   RagAnswer,
+  TriageCard,
   UploadResultPayload,
   WorkflowAlert,
   WorkflowTriagePayload,
@@ -71,6 +75,85 @@ export async function fetchBootstrap(): Promise<BootstrapPayload> {
   const data = await parseJson<BootstrapPayload>(response);
   if (data.csrf_token) setCsrfToken(data.csrf_token);
   return data;
+}
+
+export async function fetchAlertStream(includeRows = false): Promise<AlertStreamSummary & { rows?: Record<string, string>[] }> {
+  const qs = includeRows ? "?include_rows=true" : "";
+  const response = await fetch(`/api/alert-stream${qs}`, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  const data = await parseJson<{ ok: boolean } & AlertStreamSummary & { rows?: Record<string, string>[] }>(response);
+  return data;
+}
+
+export async function fetchKbManifest(): Promise<{ documents: KbDocumentMeta[]; sections: Record<string, KbDocumentMeta[]> }> {
+  const response = await fetch("/api/kb/manifest", {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  const data = await parseJson<{ ok: boolean; documents: KbDocumentMeta[]; sections: Record<string, KbDocumentMeta[]> }>(
+    response,
+  );
+  return { documents: data.documents, sections: data.sections };
+}
+
+export async function runTriageCard(
+  alert: Record<string, unknown>,
+  sessionId?: string | null,
+): Promise<TriageCard> {
+  const body: Record<string, unknown> = { ...alert };
+  if (sessionId) body.session_id = sessionId;
+
+  const response = await fetch("/api/triage", {
+    method: "POST",
+    headers: withCsrf(JSON_HEADERS),
+    credentials: "same-origin",
+    body: JSON.stringify(body),
+  });
+  const data = await parseJson<{ ok: boolean } & TriageCard>(response);
+  if (!data.ok) throw new Error("Triage failed");
+  return data;
+}
+
+export async function followUp(sessionId: string, question: string): Promise<FollowUpResult> {
+  const response = await fetch("/api/follow-up", {
+    method: "POST",
+    headers: withCsrf(JSON_HEADERS),
+    credentials: "same-origin",
+    body: JSON.stringify({ session_id: sessionId, question }),
+  });
+  const data = await parseJson<{ ok: boolean } & FollowUpResult>(response);
+  if (!data.ok) throw new Error("Follow-up failed");
+  return data;
+}
+
+export function executionModeLabel(
+  mode: string | undefined,
+  ragBackend: string | undefined,
+  useBedrock: boolean | undefined,
+): string {
+  if (mode === "local" || useBedrock === false) return "Local fallback";
+  if (ragBackend === "retrieve_and_generate") return "Direct Bedrock KB";
+  if (mode === "bedrock") return "Bedrock Agent";
+  return "Bedrock Agent / KB";
+}
+
+export function triageToRagAnswer(card: TriageCard): RagAnswer {
+  return {
+    answer: card.answer,
+    citations: (card.citations ?? []).map((c, index) => ({
+      snippet: c.excerpt,
+      source_uri: c.document,
+      source_label: c.document,
+      index: index + 1,
+      score: c.score ?? null,
+    })),
+    session_id: card.session_id,
+    grounded: card.grounded,
+    latency_ms: 0,
+    matched_runbook: card.matched_runbook,
+  };
 }
 
 export async function askQuestion(

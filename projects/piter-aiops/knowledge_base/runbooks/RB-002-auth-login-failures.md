@@ -1,3 +1,15 @@
+---
+title: "Authentication login failures"
+doc_type: "runbook"
+services: ["auth-api"]
+environments: ["NJ-DGE", "GIB-UKGC", "MGM"]
+severity_applicable: ["P1", "P2"]
+tags: ["auth", "login", "identity"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-002: Authentication Login Failures
 
 **Severity:** P1 (all users) / P2 (subset)

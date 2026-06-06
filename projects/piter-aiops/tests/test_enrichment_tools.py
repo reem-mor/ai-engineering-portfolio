@@ -75,6 +75,50 @@ def test_enrich_triage_demo_bundle():
     assert bundle["find_similar_incidents"]["count"] >= 1
 
 
+STORM = {
+    "service": "bet-service",
+    "environment": "GIB-UKGC",
+    "severity": "P1",
+    "symptom": "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
+    "alert_time": "2026-06-10T10:02:55Z",
+}
+
+
+def test_bet_service_storm_enrichment():
+    owner = lookup_owner(
+        service=STORM["service"],
+        environment=STORM["environment"],
+        data_dir=DATA_DIR,
+    )
+    assert "error" not in owner
+    assert owner["owner_team"] == "Betting Core"
+
+    deploys = correlate_deployments(
+        service=STORM["service"],
+        environment=STORM["environment"],
+        alert_time=STORM["alert_time"],
+        data_dir=DATA_DIR,
+    )
+    assert "error" not in deploys
+    assert deploys["likely_deploy_correlation"] is True
+
+    impact = score_business_impact(
+        service=STORM["service"],
+        environment=STORM["environment"],
+        severity=STORM["severity"],
+        data_dir=DATA_DIR,
+    )
+    assert impact["sla_risk"] == "critical"
+    assert impact["revenue_impact_usd_per_hour"] == 520000
+
+    similar = find_similar_incidents(
+        service=STORM["service"],
+        symptom=STORM["symptom"],
+        environment=STORM["environment"],
+    )
+    assert similar["count"] >= 1
+
+
 @pytest.mark.parametrize(
     "folder,event_file",
     [

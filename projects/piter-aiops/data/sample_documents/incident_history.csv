@@ -32,3 +32,5 @@ INC-2025-030,2026-01-14,P3,monitoring,Prometheus disk near full,17,No customer i
 INC-2026-NJ-001,2026-05-18,P2,postgres,Long-running analytics query saturated CPU on nj-db-primary-01,38,Settlement batch delays up to 12 min in NJ-DGE,NJ-DGE,Cancelled the long analytics query and added a covering index
 INC-2026-NJ-002,2026-05-22,P2,postgres,Replica lag 45s after primary CPU spike,29,Read-after-write issues on reporting,NJ-DGE,Reduced primary load and replica caught up
 INC-2026-NJ-003,2026-06-01,P2,postgres,Connection pool exhausted on checkout-api after deploy,52,Checkout timeouts 8% for 45 min NJ-DGE,NJ-DGE,Rolled back the deploy and cleared idle-in-transaction sessions
+INC-2026-GIB-001,2026-01-22,P1,bet-service,DB connection exhaustion after dependency timeout caused bet-service nodes unresponsive,12,100% bet placement error rate on GIB-UKGC for 12 min,GIB-UKGC,Restarted service and added connection pool circuit breaker
+INC-2026-GIB-002,2026-05-12,P2,bet-service,Failed deploy caused 5xx spike on bet-service,15,5xx rate above 10% immediately after deploy,GIB-UKGC,Rolled back to previous version and redeployed with schema migration fix

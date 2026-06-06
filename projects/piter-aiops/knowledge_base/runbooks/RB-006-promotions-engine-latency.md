@@ -1,3 +1,15 @@
+---
+title: "Promotions engine latency"
+doc_type: "runbook"
+services: ["promotions-engine", "checkout-api"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P2", "P3"]
+tags: ["promotions", "latency", "checkout"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-006: Promotions Engine Latency
 
 **Severity:** P2 (P3 if non-blocking)

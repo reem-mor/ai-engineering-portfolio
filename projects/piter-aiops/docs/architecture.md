@@ -28,6 +28,23 @@ flowchart LR
 | Container | **python:3.12-slim + non-root user** | Small, secure base. |
 | Host | **EC2 t3.micro + IAM instance profile** | Free-tier, no AWS keys on disk. |
 
+## Execution modes (UI honesty)
+
+| Config | Response `mode` | UI label |
+|---|---|---|
+| `RAG_BACKEND=agent`, `USE_BEDROCK=true` | `bedrock` | Bedrock Agent |
+| `RAG_BACKEND=retrieve_and_generate`, `USE_BEDROCK=true` | `bedrock` | Direct Bedrock KB |
+| Bedrock failure or invalid KB id | `local` | Local fallback |
+
+`/api/bootstrap` exposes `rag_backend`, `use_bedrock`, and `execution_mode_hint` without secrets.
+The React SPA and legacy `/console` both call `POST /api/triage` and `POST /api/follow-up`.
+
+## Alert storm demo data
+
+The deterministic storm lives in `data/source/alert_stream.csv` (**399 rows**). `GET /api/alert-stream`
+returns summary metadata for the SPA dashboard and storm page. Do not change the generator to 500 —
+tests assert `390 <= total <= 400`.
+
 ## Request flow
 
 ```mermaid

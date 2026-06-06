@@ -1,3 +1,15 @@
+---
+title: "Connection pool exhaustion"
+doc_type: "runbook"
+services: ["bet-service", "wallet-service", "postgres"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P1", "P2"]
+tags: ["postgres", "jdbc", "pool"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-005: Connection Pool Exhaustion
 
 **Severity:** P2 (P1 if all writes fail)

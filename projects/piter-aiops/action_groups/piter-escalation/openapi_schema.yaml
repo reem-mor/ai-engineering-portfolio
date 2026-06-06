@@ -1,0 +1,39 @@
+openapi: 3.0.0
+info:
+  title: PITER Escalation
+  version: 1.0.0
+  description: Escalation policy preview and safe notification workflow (mock by default).
+
+paths:
+  /escalation:
+    post:
+      summary: Preview or send escalation notification
+      operationId: escalationAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [operation, service, severity, incident_id]
+              properties:
+                operation:
+                  type: string
+                  enum: [preview, send]
+                service:
+                  type: string
+                severity:
+                  type: string
+                incident_id:
+                  type: string
+                recipient:
+                  type: string
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Escalation preview or send result
+        "400":
+          description: Missing or invalid input
+        "403":
+          description: Live dispatch blocked

@@ -1,62 +1,31 @@
-# Grading checklist — course guideline alignment
+# Grading checklist
 
-Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB + Flask + Docker + EC2) to this repository — **PITER AiOps mid-project with Bedrock Agent**.
+Course and demo acceptance criteria for PITER AiOps. See also the detailed checklist in [`GRADING_CHECKLIST.md`](GRADING_CHECKLIST.md).
 
-## Topic and documents
+## Demo reliability
 
-| Requirement | Evidence |
-|-------------|----------|
-| Personal topic | **Incident Operations / NOC** — runbooks, escalation, on-call handoff |
-| 5–15 meaningful documents | **17 files** in [`data/sample_documents/`](../data/sample_documents/) — see [`data/sample_documents/README.md`](../data/sample_documents/README.md) |
-| Documents synced to KB | S3 prefix `projects/piter-aiops/data/sample_documents/` (or shared KB prefix) — screenshot `screenshots/02_bedrock_kb_data_source_synced.png` |
+- [ ] `py -3.12 -m pytest` passes offline
+- [ ] `py -3.12 scripts/verify_live_demo.py` — 29/29
+- [ ] `py -3.12 scripts/verify_spa_demo.py` — 36/36
+- [ ] Docker health `200` on `:8080`
+- [ ] SPA shows **399 alert storm** label from live API data
 
-## Bedrock Knowledge Base + Agent
+## RAG and tools
 
-| Requirement | Evidence |
-|-------------|----------|
-| KB exists | `screenshots/01_bedrock_kb_overview.png`; `BEDROCK_KB_ID` in `.env.example` |
-| Data source attached + synced | `screenshots/02_*`; [`docs/bedrock_kb_setup.md`](bedrock_kb_setup.md) |
-| Bedrock Agent provisioned | [`docs/bedrock_agent_setup.md`](bedrock_agent_setup.md); `scripts/setup_bedrock_agent.py`; optional `screenshots/20_bedrock_agent_overview.png` |
-| Lambda action group (ops tools) | [`docs/bedrock_action_group_setup.md`](bedrock_action_group_setup.md); `scripts/setup_action_group.py`; optional `screenshots/21_agent_action_group.png` |
-| boto3 query from app | [`app/bedrock_agent_client.py`](../app/bedrock_agent_client.py) — `invoke_agent`; fallback [`app/bedrock_client.py`](../app/bedrock_client.py) |
-| Live Q&A proof | `screenshots/08_*`, `evaluation/qa_showcase.md`, `scripts/agent_smoke_test.py` |
+- [ ] Triage card returns citations and `recommended_steps`
+- [ ] Enrichment: deploy correlation, owner, impact, similar incidents
+- [ ] Storm P1 (`bet-service` / `GIB-UKGC`) returns owner and similar incidents
+- [ ] Follow-up sets `memory_used: true`
+- [ ] Local fallback works when Bedrock KB id is invalid
 
-## Flask application
+## Safety
 
-| Requirement | Evidence |
-|-------------|----------|
-| Home page, question, submit, answer | React SPA at `/` or legacy Jinja when `FORCE_LEGACY_UI=1` |
-| Topic-themed design | NOC/incident palette — `screenshots/07_*`, `14_*` |
-| Entry point `app.py` | [`app.py`](../app.py); production [`wsgi.py`](../wsgi.py) |
+- [ ] Notifications in mock/preview mode by default
+- [ ] No real PII in repo datasets or KB
+- [ ] `/console` preserved until `PITER_CONSOLE_REDIRECT_SPA=true`
 
-## Docker and EC2
+## Documentation
 
-| Requirement | Evidence |
-|-------------|----------|
-| Dockerfile + compose | [`Dockerfile`](../Dockerfile), [`docker-compose.yml`](../docker-compose.yml) |
-| Public access | `screenshots/04_*`, `07_*` |
-| Container running | `screenshots/06_docker_ps_on_ec2.png` |
-
-## Automated verification
-
-Run from **project root** (`projects/piter-aiops`):
-
-```powershell
-.\scripts\verify.ps1
-# Offline only: .\scripts\verify.ps1 -SkipLiveAws -SkipE2e
-```
-
-| Command | Expectation |
-|---------|-------------|
-| `pytest -q` | **121+ passed** (offline, no live AWS) |
-| `npm run build` | `app/static/spa/` updated |
-| `scripts/agent_smoke_test.py` | **6/7+** (needs AWS + agent IDs in `.env`) |
-| `scripts/agent_smoke_test.py --ops` | ops action group prompts (GIB status/alerts) |
-| `scripts/kb_smoke_test.py` | fallback when `RAG_BACKEND=retrieve_and_generate` |
-
-## Stretch goals
-
-- Document upload + KB sync — `15_*` screenshots
-- Follow-up via `session_id` on `/ask` (agent session)
-- Workflow triage — `13_mvp_workflow.png`
-- MCP tool wrapper (future) — expose `ask()` to Cursor agents
+- [ ] README describes implemented vs mocked
+- [ ] Architecture documents agent / KB / local paths
+- [ ] `docs/mcp.md` explains action groups vs MCP

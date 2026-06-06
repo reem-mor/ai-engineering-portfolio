@@ -48,6 +48,7 @@ def test_final_lambda_source_directories_are_present():
     assert FINAL_LAMBDAS <= {path.name for path in ACTION_GROUPS.iterdir() if path.is_dir()}
     for name in FINAL_LAMBDAS:
         assert (ACTION_GROUPS / name / "lambda_function.py").is_file()
+        assert (ACTION_GROUPS / name / "openapi_schema.yaml").is_file()
 
 
 def test_escalation_preview_valid_input():

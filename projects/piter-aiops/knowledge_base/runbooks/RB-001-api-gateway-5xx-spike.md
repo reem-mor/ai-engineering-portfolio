@@ -1,3 +1,15 @@
+---
+title: "API Gateway 5xx spike"
+doc_type: "runbook"
+services: ["api-gateway"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P1", "P2"]
+tags: ["edge", "5xx", "gateway"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-001: API Gateway 5xx Spike
 
 **Severity:** P1 (customer-facing) / P2 (single client)
