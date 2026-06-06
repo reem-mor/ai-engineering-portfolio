@@ -1,0 +1,7 @@
+service,owning_team,team_lead,slack_channel,pagerduty_service_id,primary_on_call,secondary_on_call
+wallet-service,Wallet Platform,Sara Levy,#wallet-platform,PD-WAL-001,Daniel Cohen,Maya Ben-David
+bet-service,Betting Core,Yossi Avraham,#betting-core,PD-BET-001,Tom Friedman,Liat Goldberg
+auth-service,Identity & Access,Noa Shapira,#identity,PD-AUTH-001,Roy Katz,Shira Mizrahi
+payments-service,Payments,Eitan Rosen,#payments,PD-PAY-001,Yael Stein,Amit Levi
+game-service,Game Platform,Itai Bar-On,#game-platform,PD-GAME-001,Omer Peretz,Hila Aviv
+replication,Data Platform,Gilad Weiss,#data-platform,PD-DATA-001,Dana Klein,Adi Yosef
