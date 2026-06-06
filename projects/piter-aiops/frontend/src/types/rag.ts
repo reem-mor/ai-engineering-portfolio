@@ -1,8 +1,20 @@
+export interface PiterSections {
+  priority: string;
+  investigation: string;
+  triage_plan: string[];
+  escalation: string[];
+  resolution: string;
+  business_impact: string;
+  sources: string;
+  confidence: string;
+}
+
 export interface AnswerSections {
   summary: string;
   steps: string[];
   escalation: string[];
   why: string;
+  piter_sections?: PiterSections;
 }
 
 export interface Citation {

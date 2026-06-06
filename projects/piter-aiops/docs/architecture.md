@@ -1,5 +1,19 @@
 # Architecture
 
+## PITER product flow
+
+```mermaid
+flowchart LR
+  alerts[IncomingAlerts] --> priority[PriorityCenter]
+  priority --> investigation[InvestigationWorkspace]
+  investigation --> triage[TriagePlan]
+  triage --> escalation[EscalationHub]
+  escalation --> resolution[ResolutionTracker]
+  resolution --> history[IncidentHistory]
+  kb[KnowledgeBase] --> investigation
+  analytics[AgentAnalytics] --> priority
+```
+
 ## Components
 
 | Layer | Choice | Why |
@@ -10,7 +24,7 @@
 | Fallback | **Bedrock `RetrieveAndGenerate`** | Set `RAG_BACKEND=retrieve_and_generate` when agent is not provisioned. |
 | Foundation model | **Claude Haiku (inference profile)** | Cheap, fast, great quality for MVP. |
 | Vector store | **OpenSearch Serverless** (KB-managed) | Auto-provisioned; no infrastructure to write. |
-| Source of truth | **S3** `projects/incidentIQ-midproject/data/sample_documents/` | Single canonical corpus (RB ids in doc headings); local RAG reads the same path |
+| Source of truth | **S3** `projects/piter-aiops/data/sample_documents/` | Single canonical corpus (RB ids in doc headings); local RAG reads the same path |
 | Container | **python:3.12-slim + non-root user** | Small, secure base. |
 | Host | **EC2 t3.micro + IAM instance profile** | Free-tier, no AWS keys on disk. |
 
@@ -23,7 +37,7 @@ flowchart LR
   factory --> agent["BedrockAgentClient"]
   agent -->|"invoke_agent"| bedrockAgent["Bedrock Agent"]
   bedrockAgent --> kb["Bedrock KB"]
-  bedrockAgent -->|"action group"| lambda["incidentiq-actions Lambda"]
+  bedrockAgent -->|"action group"| lambda["PITER AiOps-actions Lambda"]
   kb -->|"vector search"| oss[("OpenSearch Serverless")]
   kb -->|"loads chunks"| s3[("S3 runbooks")]
   bedrockAgent --> llm["Claude Haiku"]
@@ -43,7 +57,7 @@ flowchart LR
 ## Why this design impresses
 
 - **Managed Bedrock Agent** adds orchestration and session memory while reusing the same KB corpus.
-- **Lambda action group** (`incidentiq-ops`) for live environment status, alerts, and incident creation — see [`bedrock_action_group_setup.md`](bedrock_action_group_setup.md).
+- **Lambda action group** (`PITER AiOps-ops`) for live environment status, alerts, and incident creation — see [`bedrock_action_group_setup.md`](bedrock_action_group_setup.md).
 - **Same `RagAnswer` contract** — UI, workflow triage, and tests unchanged.
 - **Citations rendered as evidence cards** prove the answer is grounded.
 - **Graceful refusal** when no citations are returned — no hallucination.

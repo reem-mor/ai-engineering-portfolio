@@ -31,7 +31,7 @@ _VALIDATION_CODES = {"empty_question", "short_question", "oversize_question", "s
 
 
 def _app_config() -> Config:
-    cfg = current_app.config.get("INCIDENTIQ_CONFIG")
+    cfg = current_app.config.get("PITER_CONFIG")
     if isinstance(cfg, Config):
         return cfg
     return Config.from_env()

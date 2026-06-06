@@ -1,4 +1,4 @@
-# IncidentIQ Lambda Action Group
+# PITER AiOps Lambda Action Group
 
 Bedrock Agent action group for live NOC operations (environment status, alerts, incident creation).
 

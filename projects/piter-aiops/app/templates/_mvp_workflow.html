@@ -1,15 +1,14 @@
-<section id="mvp" class="section">
+<section id="priority-center" class="section">
   <div class="section-inner">
     <p class="section-kicker">
       <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      MVP workflow
+      PITER workflow
     </p>
-    <h2 class="section-title">From console alert → triage → resolve or escalate</h2>
+    <h2 class="section-title">Priority → Investigation → Triage → Escalation → Resolution</h2>
     <p class="section-lead">
-      The everyday on-call loop for DevOps, NOC, and SRE teams. Pick an alert from the console,
-      the assistant pulls the right runbook and past incidents from the Knowledge Base, suggests
-      next actions, and recommends whether Tier-1 can resolve it or it needs escalation — before
-      business impact grows.
+      PITER AiOps guides DevOps, NOC, and SRE teams through five stages: classify priority,
+      investigate with KB and enrichment tools, execute a triage plan, escalate when needed,
+      and track resolution — reducing MTTR and protecting revenue.
     </p>
 
     <div class="workflow-grid">
@@ -17,7 +16,7 @@
         <div class="alert-console-header">
           <span class="alert-console-title">
             <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            Incoming alerts
+            Priority Center · incoming alerts
           </span>
           <span>{{ workflow_alerts|length }}</span>
         </div>

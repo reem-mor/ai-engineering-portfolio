@@ -63,7 +63,7 @@ def main() -> int:
         resp = client.create_agent_alias(
             agentId=args.agent_id,
             agentAliasName=args.alias_name,
-            description="Production alias for IncidentIQ Flask app",
+            description="Production alias for PITER AiOps Flask app",
         )
         alias_id = resp["agentAlias"]["agentAliasId"]
         print(f"Created alias '{args.alias_name}': {alias_id}")

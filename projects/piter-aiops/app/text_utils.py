@@ -42,6 +42,17 @@ _SECTION_HEADINGS = {
     "why": re.compile(r"^(why\s+this\s+answer|why|sources?)\s*:?\s*$", re.I),
 }
 
+_PITER_SECTION_HEADINGS = {
+    "priority": re.compile(r"^priority\s*:?\s*$", re.I),
+    "investigation": re.compile(r"^investigation(\s+findings?)?\s*:?\s*$", re.I),
+    "triage": re.compile(r"^triage(\s+plan)?\s*:?\s*$", re.I),
+    "escalation_rec": re.compile(r"^escalation(\s+recommendation)?\s*:?\s*$", re.I),
+    "resolution": re.compile(r"^resolution(\s+plan)?\s*:?\s*$", re.I),
+    "business_impact": re.compile(r"^business\s+impact\s*:?\s*$", re.I),
+    "sources": re.compile(r"^sources?\s*:?\s*$", re.I),
+    "confidence": re.compile(r"^confidence(\s+and\s+uncertainty)?\s*:?\s*$", re.I),
+}
+
 _INLINE_WHY = re.compile(r"\bwhy\s+this\s+answer\s*:\s*", re.I)
 _INLINE_ESCALATION = re.compile(r"\bescalation\s*:\s*", re.I)
 _NUMBERED_SPLIT = re.compile(r"(?<=\s)(?=\d+\.\s)")
@@ -118,11 +129,97 @@ def _normalize_step_buckets(
     return flat_steps, flat_escalation, flat_why
 
 
+def _join_bucket(parts: list[str]) -> str:
+    return " ".join(parts).strip()
+
+
+def _parse_piter_sections(text: str) -> dict[str, Any] | None:
+    """Parse PITER-structured answers; returns None if no PITER headings found."""
+    lines = text.splitlines()
+    buckets: dict[str, list[str]] = {key: [] for key in _PITER_SECTION_HEADINGS}
+    current: str | None = None
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        matched_key = None
+        for key, pattern in _PITER_SECTION_HEADINGS.items():
+            if pattern.match(stripped):
+                matched_key = key
+                rest = pattern.sub("", stripped).strip()
+                if rest:
+                    buckets[key].append(rest)
+                break
+        if matched_key:
+            current = matched_key
+            continue
+
+        bullet = re.match(r"^[-*•]\s+(.+)$", stripped)
+        numbered = re.match(r"^\d+[.)]\s+(.+)$", stripped)
+        if current == "triage" and numbered:
+            buckets["triage"].append(numbered.group(1).strip())
+        elif current == "escalation_rec" and (bullet or numbered):
+            buckets["escalation_rec"].append(
+                (bullet or numbered).group(1).strip(),  # type: ignore[union-attr]
+            )
+        elif current == "triage" and bullet:
+            buckets["triage"].append(bullet.group(1).strip())
+        elif current == "escalation_rec" and bullet:
+            buckets["escalation_rec"].append(bullet.group(1).strip())
+        elif current:
+            buckets[current].append(stripped)
+
+    if not any(buckets.values()):
+        return None
+
+    # Legacy answers use Summary/Recommended steps — not PITER unless priority or
+    # investigation+triage pillars are present (avoids matching "Escalation:" alone).
+    if not buckets["priority"] and not (
+        buckets["investigation"] and buckets["triage"]
+    ):
+        return None
+
+    triage_steps, escalation_items, _ = _normalize_step_buckets(
+        buckets["triage"],
+        buckets["escalation_rec"],
+        [],
+    )
+    if not triage_steps:
+        triage_steps = parse_action_bullets(_join_bucket(buckets["triage"]))
+
+    piter = {
+        "priority": _join_bucket(buckets["priority"]),
+        "investigation": _join_bucket(buckets["investigation"]),
+        "triage_plan": triage_steps,
+        "escalation": escalation_items or _split_bullets(_join_bucket(buckets["escalation_rec"])),
+        "resolution": _join_bucket(buckets["resolution"]),
+        "business_impact": _join_bucket(buckets["business_impact"]),
+        "sources": _join_bucket(buckets["sources"]),
+        "confidence": _join_bucket(buckets["confidence"]),
+    }
+    summary_parts = [piter["priority"], piter["investigation"]]
+    summary = " ".join(p for p in summary_parts if p).strip()
+    why_parts = [piter["sources"], piter["confidence"]]
+    why = " ".join(p for p in why_parts if p).strip()
+    return {
+        "summary": summary,
+        "steps": triage_steps,
+        "escalation": piter["escalation"],
+        "why": why or "Based on retrieved runbook, alert history, or postmortem in the Knowledge Base.",
+        "piter_sections": piter,
+    }
+
+
 def format_answer_sections(raw: str) -> dict[str, Any]:
     """Parse structured answer sections or derive them from free text."""
     text = (raw or "").strip()
     if not text:
         return {"summary": "", "steps": [], "escalation": [], "why": ""}
+
+    piter_parsed = _parse_piter_sections(text)
+    if piter_parsed is not None:
+        return piter_parsed
 
     lines = text.splitlines()
     buckets: dict[str, list[str]] = {

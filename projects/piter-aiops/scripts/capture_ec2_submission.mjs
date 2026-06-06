@@ -54,11 +54,11 @@ const sgRows = (sg.IpPermissions ?? [])
   .join("");
 
 const html = consoleHtml(
-  "Amazon EC2 - IncidentIQ public demo",
+  "Amazon EC2 - PITER AiOps public demo",
   new Date().toISOString(),
   `<div class="card"><div class="value ok">${inst.State?.Name}</div>
    <table><tr><th>Name</th><th>Instance ID</th><th>Public IP</th><th>Type</th></tr>
-   <tr><td>${inst.Tags?.find((t) => t.Key === "Name")?.Value ?? "incidentiq-midproject-demo"}</td>
+   <tr><td>${inst.Tags?.find((t) => t.Key === "Name")?.Value ?? "piter-aiops-demo"}</td>
        <td>${inst.InstanceId}</td><td>${inst.PublicIpAddress}</td><td>${inst.InstanceType}</td></tr></table></div>
    <div class="card"><b>Security group ${sgId}</b>
    <table><tr><th>Protocol</th><th>Port</th><th>Source</th></tr>${sgRows}</table></div>

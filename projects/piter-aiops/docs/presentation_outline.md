@@ -1,4 +1,6 @@
-# IncidentIQ — 6-Slide Presentation Outline
+# PITER AiOps: AI-Powered Incident Operations for Faster Resolution
+
+6-slide presentation outline (5–7 minute live demo).
 
 A 5–7 minute live-demo deck. One slide per section, in the required order.
 
@@ -15,10 +17,11 @@ A 5–7 minute live-demo deck. One slide per section, in the required order.
 
 ## Slide 2 — Project Overview
 
-- **IncidentIQ**: an AI incident-triage assistant for NOC / SRE / DevOps teams.
+- **PITER AiOps**: five golden pillars — **Priority, Investigation, Triage, Escalation, Resolution**.
+- Tagline: *From Alert to Resolution, Faster.*
 - Input: a production alert (service, environment, severity, symptom).
-- Output: **one triage card** — cited runbook answer, recommended steps, likely
-  cause / suspect deploy, owner & escalation, business impact, similar incidents.
+- Output: **one PITER triage card** — priority class, investigation findings, triage plan,
+  escalation recommendation, resolution plan, business impact, sources, confidence.
 - Two backends, same UX: **local offline mode** (default, reliable demo) and an
   optional **Amazon Bedrock Agent + Knowledge Base** mode.
 - Demo scenario: *Postgres CPU 95% on `prod-db-1`, NJ-DGE, P2.*

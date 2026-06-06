@@ -23,7 +23,7 @@ const AGENT_ID = process.env.BEDROCK_AGENT_ID ?? "HH4YGSLZUE";
 const ALIAS_ID = process.env.BEDROCK_AGENT_ALIAS_ID ?? "O2EM03R4R3";
 const S3_BUCKET = process.env.S3_BUCKET ?? "reem-amdocs-ai-artifacts-3331";
 const S3_PREFIX =
-  process.env.S3_PREFIX ?? "projects/incidentIQ-midproject/data/sample_documents";
+  process.env.S3_PREFIX ?? "projects/piter-aiops/data/sample_documents";
 const APP_URL = (process.env.APP_URL ?? "http://127.0.0.1:8080").replace(/\/$/, "");
 const TRIAGE_TIMEOUT_MS = Number(process.env.TRIAGE_TIMEOUT_MS ?? 180_000);
 

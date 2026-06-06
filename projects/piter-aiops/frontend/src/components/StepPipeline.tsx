@@ -6,6 +6,8 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Target,
+  ArrowUpRight,
 } from "lucide-react";
 
 export type PipelineStepDef = {
@@ -79,16 +81,20 @@ export function StepPipeline({ stage, steps, order }: StepPipelineProps) {
 }
 
 export const WORKFLOW_PIPELINE_STEPS: PipelineStepDef[] = [
-  { key: "triage", label: "Match KB", icon: Search, color: "rag" },
-  { key: "suggest", label: "Suggest actions", icon: Sparkles, color: "interface" },
-  { key: "decide", label: "Recommend", icon: ShieldCheck, color: "agent" },
-  { key: "done", label: "Ready", icon: Clock, color: "resolution" },
+  { key: "priority", label: "Priority", icon: Target, color: "destructive" },
+  { key: "investigation", label: "Investigation", icon: Search, color: "rag" },
+  { key: "triage", label: "Triage", icon: Sparkles, color: "interface" },
+  { key: "escalation", label: "Escalation", icon: ArrowUpRight, color: "agent" },
+  { key: "resolution", label: "Resolution", icon: ShieldCheck, color: "resolution" },
+  { key: "done", label: "Complete", icon: Clock, color: "resolution" },
 ];
 
 export const WORKFLOW_PIPELINE_ORDER = [
   "idle",
+  "priority",
+  "investigation",
   "triage",
-  "suggest",
-  "decide",
+  "escalation",
+  "resolution",
   "done",
 ] as const;

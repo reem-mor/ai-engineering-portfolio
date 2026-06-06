@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: IncidentIQ Correlate
+  title: PITER AiOps Correlate
   version: 1.0.0
   description: Correlate recent deployments including dependency hops for incident triage.
 

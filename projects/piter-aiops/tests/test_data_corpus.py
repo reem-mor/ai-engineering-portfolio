@@ -51,7 +51,7 @@ def test_grouped_examples_cover_all_questions():
 
 def test_workflow_alerts_have_required_fields():
     alerts = load_workflow_alerts()
-    assert len(alerts) == 5
+    assert len(alerts) == 6
     ids = [a["id"] for a in alerts]
     assert len(ids) == len(set(ids))
     for alert in alerts:

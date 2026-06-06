@@ -10,7 +10,7 @@ This is a read-only snapshot of the EXISTING AWS resources used by the optional
 | Field | Value |
 |-------|-------|
 | KB ID | `RBTJM6NIG9` |
-| Name | `incidentiq-course-kb` |
+| Name | `PITER AiOps-course-kb` |
 | Status | `ACTIVE` |
 | Updated | 2026-05-28T08:11:22Z |
 | Data source ID | `YICXAB6WOG` |

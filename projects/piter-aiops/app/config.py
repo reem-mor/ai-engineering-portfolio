@@ -11,21 +11,34 @@ load_dotenv()
 
 _FALSE_VALUES = {"false", "0", "no", "off"}
 _TRUE_VALUES = {"true", "1", "yes", "on"}
+_DEFAULT_S3_PREFIX = "projects/piter-aiops/data/sample_documents"
 
 
 class ConfigError(RuntimeError):
     """Raised when required environment variables are missing or invalid."""
 
 
-def _require(name: str) -> str:
-    value = os.environ.get(name, "").strip()
+def _env(name: str, legacy: str | None = None, default: str = "") -> str:
+    """Resolve PITER_-prefixed variable with optional legacy fallback."""
+    piter_key = f"PITER_{name}" if not name.startswith("PITER_") else name
+    value = os.environ.get(piter_key, "").strip()
+    if not value and legacy:
+        value = os.environ.get(legacy, "").strip()
     if not value:
-        raise ConfigError(f"Missing required environment variable: {name}")
+        value = default
     return value
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    raw = os.environ.get(name, "").strip().lower()
+def _require(name: str, legacy: str | None = None) -> str:
+    value = _env(name, legacy=legacy)
+    if not value:
+        label = f"PITER_{name}" if legacy is None else f"PITER_{name} or {legacy}"
+        raise ConfigError(f"Missing required environment variable: {label}")
+    return value
+
+
+def _env_bool(name: str, default: bool, *, legacy: str | None = None) -> bool:
+    raw = _env(name, legacy=legacy).lower()
     if raw in _TRUE_VALUES:
         return True
     if raw in _FALSE_VALUES:
@@ -42,74 +55,93 @@ class Config:
     SECRET_KEY: str
     FLASK_ENV: str
     S3_BUCKET: str = ""
-    S3_PREFIX: str = "projects/incidentIQ-midproject/data/sample_documents"
+    S3_PREFIX: str = _DEFAULT_S3_PREFIX
     BEDROCK_DATA_SOURCE_ID: str = ""
     MAX_UPLOAD_BYTES: int = 5_242_880
     BEDROCK_AGENT_ID: str = ""
     BEDROCK_AGENT_ALIAS_ID: str = ""
     RAG_BACKEND: str = "agent"
     USE_BEDROCK: bool = True
+    MEMORY_ENABLED: bool = True
 
     @classmethod
     def from_env(cls) -> "Config":
-        max_upload = os.environ.get("MAX_UPLOAD_BYTES", "5242880").strip()
-        rag_backend = os.environ.get("RAG_BACKEND", "agent").strip().lower()
+        max_upload = _env("MAX_UPLOAD_BYTES", default="5242880")
+        rag_backend = _env("RAG_BACKEND", legacy="RAG_BACKEND", default="agent").lower()
         if rag_backend not in ("agent", "retrieve_and_generate"):
             raise ConfigError(
                 f"Invalid RAG_BACKEND={rag_backend!r}; use 'agent' or 'retrieve_and_generate'"
             )
-        agent_id = os.environ.get("BEDROCK_AGENT_ID", "").strip()
-        agent_alias = os.environ.get("BEDROCK_AGENT_ALIAS_ID", "").strip()
+        kb_id = (
+            _env("BEDROCK_KB_ID", legacy="BEDROCK_KB_ID")
+            or _env("KNOWLEDGE_BASE_ID", legacy="BEDROCK_KB_ID")
+        )
+        if not kb_id:
+            raise ConfigError(
+                "Missing required environment variable: PITER_BEDROCK_KB_ID "
+                "(or PITER_KNOWLEDGE_BASE_ID / legacy BEDROCK_KB_ID)"
+            )
+        agent_id = _env("BEDROCK_AGENT_ID", legacy="BEDROCK_AGENT_ID")
+        agent_alias = _env("BEDROCK_AGENT_ALIAS_ID", legacy="BEDROCK_AGENT_ALIAS_ID")
         if rag_backend == "agent" and (not agent_id or not agent_alias):
             raise ConfigError(
-                "RAG_BACKEND=agent requires BEDROCK_AGENT_ID and BEDROCK_AGENT_ALIAS_ID"
+                "RAG_BACKEND=agent requires PITER_BEDROCK_AGENT_ID and "
+                "PITER_BEDROCK_AGENT_ALIAS_ID (or legacy BEDROCK_AGENT_* vars)"
             )
+        use_bedrock = _env_bool("USE_BEDROCK", True, legacy="USE_BEDROCK")
+        if _env_bool("MOCK_MODE", False):
+            use_bedrock = False
         return cls(
-            AWS_REGION=_require("AWS_REGION"),
-            BEDROCK_KB_ID=_require("BEDROCK_KB_ID"),
-            BEDROCK_MODEL_ARN=_require("BEDROCK_MODEL_ARN"),
-            BEDROCK_NUM_RESULTS=int(os.environ.get("BEDROCK_NUM_RESULTS", "5")),
-            SECRET_KEY=_require("FLASK_SECRET_KEY"),
-            FLASK_ENV=os.environ.get("FLASK_ENV", "production"),
-            S3_BUCKET=os.environ.get("S3_BUCKET", "").strip(),
-            S3_PREFIX=os.environ.get(
-                "S3_PREFIX", "projects/incidentIQ-midproject/data/sample_documents"
-            ).strip(),
-            BEDROCK_DATA_SOURCE_ID=os.environ.get("BEDROCK_DATA_SOURCE_ID", "").strip(),
-            MAX_UPLOAD_BYTES=int(max_upload),
+            AWS_REGION=_require("AWS_REGION", legacy="AWS_REGION"),
+            BEDROCK_KB_ID=kb_id,
+            BEDROCK_MODEL_ARN=_require("BEDROCK_MODEL_ARN", legacy="BEDROCK_MODEL_ARN"),
+            BEDROCK_NUM_RESULTS=int(
+                _env("BEDROCK_NUM_RESULTS", legacy="BEDROCK_NUM_RESULTS", default="5") or "5"
+            ),
+            SECRET_KEY=_require("FLASK_SECRET_KEY", legacy="FLASK_SECRET_KEY"),
+            FLASK_ENV=_env("FLASK_ENV", legacy="FLASK_ENV", default="production"),
+            S3_BUCKET=_env("S3_BUCKET", legacy="S3_BUCKET"),
+            S3_PREFIX=_env("S3_PREFIX", legacy="S3_PREFIX", default=_DEFAULT_S3_PREFIX),
+            BEDROCK_DATA_SOURCE_ID=_env(
+                "BEDROCK_DATA_SOURCE_ID", legacy="BEDROCK_DATA_SOURCE_ID"
+            ),
+            MAX_UPLOAD_BYTES=int(max_upload or "5242880"),
             BEDROCK_AGENT_ID=agent_id,
             BEDROCK_AGENT_ALIAS_ID=agent_alias,
             RAG_BACKEND=rag_backend,
-            USE_BEDROCK=_env_bool("USE_BEDROCK", True),
+            USE_BEDROCK=use_bedrock,
+            MEMORY_ENABLED=_env_bool("MEMORY_ENABLED", True),
         )
 
     @classmethod
     def local(cls) -> "Config":
-        """Build an offline-safe config that never requires AWS credentials.
-
-        Used as the default startup path when Bedrock is disabled
-        (``USE_BEDROCK=false``) or AWS configuration is incomplete. The local
-        RAG + deterministic tools demo runs entirely from this config.
-        """
-        secret = os.environ.get("FLASK_SECRET_KEY", "").strip() or (
+        """Build an offline-safe config that never requires AWS credentials."""
+        secret = _env("FLASK_SECRET_KEY", legacy="FLASK_SECRET_KEY") or (
             "dev-local-" + secrets.token_hex(16)
         )
-        max_upload = os.environ.get("MAX_UPLOAD_BYTES", "5242880").strip()
+        max_upload = _env("MAX_UPLOAD_BYTES", default="5242880")
+        mock = _env_bool("MOCK_MODE", False)
         return cls(
-            AWS_REGION=os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1",
-            BEDROCK_KB_ID=os.environ.get("BEDROCK_KB_ID", "").strip(),
-            BEDROCK_MODEL_ARN=os.environ.get("BEDROCK_MODEL_ARN", "").strip(),
-            BEDROCK_NUM_RESULTS=int(os.environ.get("BEDROCK_NUM_RESULTS", "5") or "5"),
+            AWS_REGION=_env("AWS_REGION", legacy="AWS_REGION", default="us-east-1")
+            or "us-east-1",
+            BEDROCK_KB_ID=_env("BEDROCK_KB_ID", legacy="BEDROCK_KB_ID"),
+            BEDROCK_MODEL_ARN=_env("BEDROCK_MODEL_ARN", legacy="BEDROCK_MODEL_ARN"),
+            BEDROCK_NUM_RESULTS=int(
+                _env("BEDROCK_NUM_RESULTS", legacy="BEDROCK_NUM_RESULTS", default="5") or "5"
+            ),
             SECRET_KEY=secret,
-            FLASK_ENV=os.environ.get("FLASK_ENV", "development"),
-            S3_BUCKET=os.environ.get("S3_BUCKET", "").strip(),
-            S3_PREFIX=os.environ.get(
-                "S3_PREFIX", "projects/incidentIQ-midproject/data/sample_documents"
-            ).strip(),
-            BEDROCK_DATA_SOURCE_ID=os.environ.get("BEDROCK_DATA_SOURCE_ID", "").strip(),
+            FLASK_ENV=_env("FLASK_ENV", legacy="FLASK_ENV", default="development"),
+            S3_BUCKET=_env("S3_BUCKET", legacy="S3_BUCKET"),
+            S3_PREFIX=_env("S3_PREFIX", legacy="S3_PREFIX", default=_DEFAULT_S3_PREFIX),
+            BEDROCK_DATA_SOURCE_ID=_env(
+                "BEDROCK_DATA_SOURCE_ID", legacy="BEDROCK_DATA_SOURCE_ID"
+            ),
             MAX_UPLOAD_BYTES=int(max_upload or "5242880"),
-            BEDROCK_AGENT_ID=os.environ.get("BEDROCK_AGENT_ID", "").strip(),
-            BEDROCK_AGENT_ALIAS_ID=os.environ.get("BEDROCK_AGENT_ALIAS_ID", "").strip(),
+            BEDROCK_AGENT_ID=_env("BEDROCK_AGENT_ID", legacy="BEDROCK_AGENT_ID"),
+            BEDROCK_AGENT_ALIAS_ID=_env(
+                "BEDROCK_AGENT_ALIAS_ID", legacy="BEDROCK_AGENT_ALIAS_ID"
+            ),
             RAG_BACKEND="local",
             USE_BEDROCK=False,
+            MEMORY_ENABLED=_env_bool("MEMORY_ENABLED", True),
         )

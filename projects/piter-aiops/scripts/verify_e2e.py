@@ -136,7 +136,7 @@ def main() -> int:
             record("GET /api/bootstrap", False, str(exc))
     else:
         record("CSRF token loaded", bool(session.csrf))
-        for marker in ('id="mvp"', 'id="architecture"', 'id="document-upload"', 'id="live-kb"', "IncidentIQ", "topnav"):
+        for marker in ('id="priority-center"', 'id="architecture"', 'id="document-upload"', 'id="live-kb"', "PITER AiOps", "topnav"):
             record(f"Homepage contains {marker!r}", marker in html)
 
     found_ext = {p.suffix.lower() for p in CORPUS.iterdir() if p.is_file()}

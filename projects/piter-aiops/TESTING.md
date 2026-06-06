@@ -5,7 +5,7 @@ All unit tests run **offline** with mocked Bedrock (no AWS credentials required)
 ## Quick run
 
 ```powershell
-cd C:\dev\amdocs-ai-course\projects\incidentIQ-midproject
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
 py -3.12 -m compileall .
 py -3.12 -m pytest -q
 ```
@@ -22,7 +22,7 @@ npm run build
 ## Docker smoke test
 
 ```powershell
-cd C:\dev\amdocs-ai-course\projects\incidentIQ-midproject
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health
 # Browser: http://localhost:8080/#live-kb and /#mvp (5 alerts, structured answers)

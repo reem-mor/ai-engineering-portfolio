@@ -1,4 +1,15 @@
-import { MessageSquare, Activity, LayoutDashboard, Network } from "lucide-react";
+import {
+  MessageSquare,
+  Activity,
+  LayoutDashboard,
+  Network,
+  Target,
+  Search,
+  ShieldCheck,
+  ArrowUpRight,
+  CheckCircle2,
+  History,
+} from "lucide-react";
 import { scrollToSection } from "@/lib/workflow-utils";
 import { useDemoTour } from "@/context/demo-tour";
 
@@ -27,25 +38,45 @@ export function AppTopBar({
           <button
             type="button"
             className={navBtn}
-            onClick={() => scrollToSection("live-kb")}
+            onClick={() => scrollToSection("priority-center")}
           >
-            <MessageSquare className="size-3.5 text-[var(--tools)]" />
-            Incident Knowledge Base
+            <Target className="size-3.5 text-[var(--destructive)]" />
+            Priority Center
           </button>
-          <button type="button" className={navBtn} onClick={() => scrollToSection("mvp")}>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("investigation")}>
+            <Search className="size-3.5 text-[var(--rag)]" />
+            Investigation
+          </button>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("triage-plan")}>
             <Activity className="size-3.5 text-[var(--interface)]" />
-            Triage workflow
+            Triage Plan
+          </button>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("escalation")}>
+            <ArrowUpRight className="size-3.5 text-[var(--agent)]" />
+            Escalation Hub
+          </button>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("resolution")}>
+            <CheckCircle2 className="size-3.5 text-[var(--resolution)]" />
+            Resolution
           </button>
           <button
             type="button"
             className={navBtn}
             onClick={() => {
-              scrollToSection("demo-dashboard");
+              scrollToSection("agent-analytics");
               startDemoTour();
             }}
           >
-            <LayoutDashboard className="size-3.5 text-[var(--agent)]" />
-            Demo &amp; Dashboard
+            <LayoutDashboard className="size-3.5 text-[var(--tools)]" />
+            Agent Analytics
+          </button>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("live-kb")}>
+            <MessageSquare className="size-3.5 text-[var(--tools)]" />
+            Knowledge Base
+          </button>
+          <button type="button" className={navBtn} onClick={() => scrollToSection("incident-history")}>
+            <History className="size-3.5 text-[var(--ingest)]" />
+            History
           </button>
           <button
             type="button"
@@ -62,10 +93,10 @@ export function AppTopBar({
             <span className="font-semibold text-[var(--resolution)]">
               ${totalSavedDollars.toLocaleString()}
             </span>{" "}
-            impact saved (triaged)
+            cost avoided
           </span>
-          <span>{totalSavedMin} min MTTR avoided</span>
-          <span>{triageCount} triage{triageCount === 1 ? "" : "s"}</span>
+          <span>{totalSavedMin} min MTTR reduced</span>
+          <span>{triageCount} incident{triageCount === 1 ? "" : "s"}</span>
           {lastTriageAt && (
             <span className="hidden sm:inline">Last: {lastTriageAt}</span>
           )}

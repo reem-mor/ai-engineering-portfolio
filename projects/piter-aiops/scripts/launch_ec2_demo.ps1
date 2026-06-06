@@ -1,4 +1,4 @@
-# Launch public EC2 demo for IncidentIQ mid-project.
+# Launch public EC2 demo for PITER AiOps mid-project.
 # Usage: .\scripts\launch_ec2_demo.ps1
 $ErrorActionPreference = "Stop"
 $Profile = if ($env:AWS_PROFILE) { $env:AWS_PROFILE } else { "reemmor" }
@@ -23,7 +23,7 @@ if (-not $ami -or $ami -eq "None") {
 $myIp = (Invoke-RestMethod -Uri "https://checkip.amazonaws.com").Trim()
 $cidr = "$myIp/32"
 
-$sgName = "incidentiq-midproject-sg"
+$sgName = "piter-aiops-sg"
 $sgId = (Invoke-Aws @(
   "ec2", "describe-security-groups", "--filters", "Name=group-name,Values=$sgName",
   "--query", "SecurityGroups[0].GroupId", "--output", "text"
@@ -36,7 +36,7 @@ if (-not $sgId -or $sgId -eq "None") {
   )).Trim()
   $sgId = (Invoke-Aws @(
     "ec2", "create-security-group", "--group-name", $sgName,
-    "--description", "IncidentIQ midproject demo", "--vpc-id", $vpc,
+    "--description", "PITER AiOps midproject demo", "--vpc-id", $vpc,
     "--query", "GroupId", "--output", "text"
   )).Trim()
   Invoke-Aws @(
@@ -53,7 +53,7 @@ $secret = -join ((48..57) + (97..102) | Get-Random -Count 64 | ForEach-Object { 
 $userData = $userData.Replace("__FLASK_SECRET__", $secret)
 $userDataB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($userData))
 
-$tagJson = "ResourceType=instance,Tags=[{Key=Name,Value=incidentiq-midproject-demo},{Key=Project,Value=incidentIQ-midproject},{Key=Owner,Value=reemmor}]"
+$tagJson = "ResourceType=instance,Tags=[{Key=Name,Value=piter-aiops-demo},{Key=Project,Value=piter-aiops},{Key=Owner,Value=reemmor}]"
 $instanceId = (Invoke-Aws @(
   "ec2", "run-instances",
   "--image-id", $ami,

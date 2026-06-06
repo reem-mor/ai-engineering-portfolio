@@ -7,8 +7,8 @@
 services:
   web:
     build: .
-    image: incidentiq-midproject:dev
-    container_name: incidentiq-midproject
+    image: piter-aiops:dev
+    container_name: piter-aiops
     ports:
       - "8080:8080"
     environment:

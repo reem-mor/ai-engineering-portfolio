@@ -156,7 +156,7 @@ export default function App() {
     return (
       <main className="min-h-screen flex items-center justify-center text-muted-foreground">
         <Loader2 className="size-6 animate-spin mr-2" />
-        Loading IncidentIQ…
+        Loading PITER AiOps…
       </main>
     );
   }
@@ -190,25 +190,28 @@ function Hero() {
         >
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
             <Lightbulb className="size-3.5 text-[var(--tools)]" />
-            Mid-project · Incident triage RAG
+            From Alert to Resolution, Faster.
           </span>
           <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight">
-            AI-assisted <span className="text-[var(--tools)]">Incident Triage</span>
+            <span className="text-[var(--tools)]">PITER AiOps</span>
             <br />
-            powered by a Knowledge Base.
+            AI-Powered Incident Operations
           </h1>
-          <p className="mt-5 text-base md:text-lg text-muted-foreground leading-relaxed">
-            When an alert fires, on-call engineers waste minutes searching runbooks,
-            past incidents and Slack threads. I turn that knowledge into a Bedrock
-            Knowledge Base so the right answer is one question away:{" "}
-            <strong className="text-foreground">alerts &amp; runbooks → Knowledge Base → Flask → Docker → EC2 → public URL</strong>.
+          <p className="mt-3 text-sm md:text-base text-muted-foreground">
+            Priority. Investigation. Triage. Escalation. Resolution.
+          </p>
+          <p className="mt-4 text-base md:text-lg text-muted-foreground leading-relaxed">
+            Production incidents cost enterprise teams money, engineering time, customer trust,
+            and reputation. PITER AiOps applies a structured five-stage incident-response framework
+            to help operations teams prioritize, investigate, triage, escalate, and resolve
+            incidents faster — with RAG, tools, and guided workflows.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
-              href="#mvp"
+              href="#priority-center"
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
             >
-              Try the triage workflow <ArrowRight className="size-4" />
+              Run the PITER workflow <ArrowRight className="size-4" />
             </a>
             <a
               href="#architecture"
@@ -227,15 +230,15 @@ function Problem() {
   const items = [
     {
       icon: Target,
-      title: "The problem",
+      title: "Business impact",
       body:
-        "Alerts fire 24/7. On-call engineers spend the first 5–15 minutes of every incident hunting for the right runbook, past ticket, or post-mortem — that's pure business impact.",
+        "Unstructured incident response inflates MTTR, burns engineer hours, and amplifies revenue and reputational risk. Alert fatigue makes P1 signals harder to spot in the noise.",
     },
     {
       icon: Lightbulb,
-      title: "The idea",
+      title: "PITER framework",
       body:
-        "Feed all runbooks, alert histories and post-mortems into a Bedrock Knowledge Base. When an alert hits, the engineer asks a question and gets a grounded, cited answer in seconds.",
+        "PITER combines the five golden pillars of effective incident response: Priority, Investigation, Triage, Escalation, and Resolution — each stage enriched with knowledge-base evidence and operational tools.",
     },
     {
       icon: Layers,
@@ -840,7 +843,13 @@ function MvpWorkflow() {
   } = useWorkflowSession();
   const [activeId, setActiveId] = useState<string>("");
   const [stage, setStage] = useState<
-    "idle" | "triage" | "suggest" | "decide" | "done"
+    | "idle"
+    | "priority"
+    | "investigation"
+    | "triage"
+    | "escalation"
+    | "resolution"
+    | "done"
   >("idle");
   const [triageData, setTriageData] = useState<WorkflowTriagePayload | null>(null);
   const [triageError, setTriageError] = useState<string | null>(null);
@@ -894,12 +903,19 @@ function MvpWorkflow() {
     setTriageError(null);
     setTriageData(null);
     setFollowUpError(null);
-    setStage("triage");
+    setStage("priority");
     try {
       const payload = await triageAlert(alert.id, undefined, bedrockSessionId);
       setTriageData(payload);
       if (payload.session_id) setBedrockSessionId(payload.session_id);
-      for (const s of ["suggest", "decide", "done"] as const) {
+      for (const s of [
+        "priority",
+        "investigation",
+        "triage",
+        "escalation",
+        "resolution",
+        "done",
+      ] as const) {
         setStage(s);
         await delay(400);
       }
@@ -936,21 +952,19 @@ function MvpWorkflow() {
   const DIcon = dMeta.icon;
 
   return (
-    <section id="mvp" className="border-b border-border">
+    <section id="priority-center" className="border-b border-border">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--tools)]">
           <Activity className="size-3.5" />
-          MVP workflow
+          PITER workflow
         </div>
         <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          From console alert → triage → resolve or escalate
+          Priority → Investigation → Triage → Escalation → Resolution
         </h2>
         <p className="mt-2 text-muted-foreground max-w-3xl">
-          The everyday on-call loop for DevOps, NOC and SRE teams. Pick an
-          alert from the console, the assistant pulls the right runbook and
-          past incidents from the Knowledge Base, suggests the next actions,
-          and recommends whether Tier-1 can resolve it or it needs to be
-          escalated — before business impact grows.
+          Incoming alerts are classified P1–P4, enriched with logs, deployments, runbooks,
+          and history, then guided through triage, escalation, and resolution — reducing
+          MTTR and protecting revenue.
         </p>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[320px,1fr]">
@@ -959,7 +973,7 @@ function MvpWorkflow() {
             <div className="flex items-center justify-between px-2 py-1.5 text-xs uppercase tracking-wider text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Bell className="size-3.5" />
-                Incoming alerts
+                Priority Center · incoming alerts
               </span>
               <span>{alerts.length}</span>
             </div>
@@ -1043,8 +1057,8 @@ function MvpWorkflow() {
             </div>
           </div>
 
-          {/* Triage workspace */}
-          <div className="rounded-xl border border-border bg-card/60 p-5">
+          {/* Investigation + triage workspace */}
+          <div id="investigation" className="rounded-xl border border-border bg-card/60 p-5 scroll-mt-24">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -1065,7 +1079,7 @@ function MvpWorkflow() {
                   </>
                 ) : (
                   <>
-                    <Play className="size-4" /> Run triage
+                    <Play className="size-4" /> Run PITER workflow
                   </>
                 )}
               </button>
@@ -1086,17 +1100,19 @@ function MvpWorkflow() {
             )}
 
             <AnimatePresence>
-              {(stage === "suggest" ||
-                stage === "decide" ||
+              {(stage === "investigation" ||
+                stage === "triage" ||
+                stage === "escalation" ||
+                stage === "resolution" ||
                 stage === "done") && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-5 rounded-lg border border-border bg-background/60 p-4"
                 >
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+                  <div id="triage-plan" className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground scroll-mt-24">
                     <Database className="size-3.5 text-[var(--rag)]" />
-                    KB match
+                    Investigation &amp; Triage Plan
                   </div>
                   <div className="mt-2 text-sm">
                     <span className="text-muted-foreground">Question sent: </span>
@@ -1130,9 +1146,9 @@ function MvpWorkflow() {
                   />
 
                   {similarAlerts.length > 0 && (
-                    <div className="mt-4">
+                    <div id="incident-history" className="mt-4 scroll-mt-24">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Similar open alerts
+                        Incident History · similar open alerts
                       </div>
                       <ul className="mt-2 space-y-2">
                         {similarAlerts.map((a) => (
@@ -1169,11 +1185,12 @@ function MvpWorkflow() {
             </AnimatePresence>
 
             <AnimatePresence>
-              {(stage === "decide" || stage === "done") && (
+              {(stage === "escalation" || stage === "resolution" || stage === "done") && (
                 <motion.div
+                  id="escalation"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 rounded-lg border border-border bg-background/60 p-4"
+                  className="mt-4 rounded-lg border border-border bg-background/60 p-4 scroll-mt-24"
                   style={{
                     boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--${dMeta.color}) 40%, transparent)`,
                   }}
@@ -1187,7 +1204,7 @@ function MvpWorkflow() {
                       className="text-sm font-semibold"
                       style={{ color: `var(--${dMeta.color})` }}
                     >
-                      Recommendation: {dMeta.label}
+                      Escalation Hub · {dMeta.label}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
@@ -1224,6 +1241,7 @@ function MvpWorkflow() {
               )}
             </AnimatePresence>
 
+            <div id="resolution" className="scroll-mt-24">
             {stage === "done" && !resolved.has(alert.id) && (
               <motion.button
                 initial={{ opacity: 0 }}
@@ -1233,9 +1251,10 @@ function MvpWorkflow() {
                 className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-card px-3.5 py-2 text-sm hover:bg-background transition"
               >
                 <CheckCircle2 className="size-4 text-[var(--resolution)]" />
-                Mark alert as resolved
+                Resolution Tracker · mark incident resolved
               </motion.button>
             )}
+            </div>
             {resolved.has(alert.id) && (
               <div className="mt-4 text-xs text-[var(--resolution)] flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5" />

@@ -74,6 +74,43 @@ def test_format_answer_sections_inline_numbered_and_escalation():
     assert "runbook_queue_lag" in sections["why"]
 
 
+def test_format_answer_sections_parses_piter_headings():
+    raw = """Priority:
+P2 — Postgres CPU elevated on prod-db-1; revenue path indirectly affected.
+
+Investigation findings:
+Long-running queries detected; replica lag within SLO.
+
+Triage plan:
+1. Check pg_stat_activity for long queries.
+2. Cancel queries running longer than 5 minutes.
+
+Escalation recommendation:
+Page DBA on-call if CPU stays above 90% for 15 minutes.
+
+Resolution plan:
+Verify CPU normalizes after query cancellation; document in incident ticket.
+
+Business impact:
+Checkout latency risk if DB remains saturated.
+
+Sources:
+runbook_db_cpu.md
+
+Confidence and uncertainty:
+High confidence — steps match runbook; uncertain if index rebuild needed."""
+    sections = format_answer_sections(raw)
+    assert sections.get("piter_sections") is not None
+    piter = sections["piter_sections"]
+    assert "P2" in piter["priority"]
+    assert "Long-running" in piter["investigation"]
+    assert any("pg_stat_activity" in step for step in piter["triage_plan"])
+    assert len(piter["triage_plan"]) >= 2
+    assert any("DBA" in item for item in piter["escalation"])
+    assert "Postgres CPU" in sections["summary"] or "P2" in sections["summary"]
+    assert len(sections["steps"]) >= 2
+
+
 def test_extract_reference_metadata_score_and_chunk():
     ref = {
         "metadata": {"score": 0.87, "chunk_index": 3},

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: IncidentIQ Context
+  title: PITER AiOps Context
   version: 1.0.0
   description: Owner lookup and business impact scoring for triage.
 

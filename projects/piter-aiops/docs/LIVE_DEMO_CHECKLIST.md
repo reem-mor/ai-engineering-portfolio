@@ -1,4 +1,4 @@
-# IncidentIQ — Live Demo Checklist & Readiness Report
+# PITER AiOps — Live Demo Checklist & Readiness Report
 
 > Last verified: **2026-06-04** · Account `329597159579` · Region `us-east-1`
 > Surface: local Docker container on `:8080`, **live Bedrock** RAG via `.env`.
@@ -75,7 +75,7 @@ Alternative follow-ups that also hit memory: `what deploy caused this?`,
 ## 5. Commands to run before class
 
 ```powershell
-cd C:\dev\amdocs-ai-course\projects\incidentIQ-midproject
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
 
 # 1. Build + start the container (loads .env → USE_BEDROCK=true, live Bedrock)
 docker compose up --build -d
@@ -155,9 +155,14 @@ The demo cannot fail because of AWS:
 
 ## 8. What to say during the presentation
 
-1. “This is IncidentIQ — an AI incident-triage console for NOC/SRE teams.”
-2. “I’ll load a real production-style alert: Postgres at 95% CPU on `prod-db-1`,
-   P2, in our NJ-DGE environment.” *(click Load demo alert → Run triage)*
+1. “This is PITER AiOps — Priority, Investigation, Triage, Escalation, Resolution.”
+2. “Priority Center: mixed P1–P4 alerts; I’ll pick Postgres at 95% CPU on `prod-db-1`,
+   P2.” *(select alert → Run PITER workflow)*
+3. “Investigation: enrichment shows deploy correlation and similar incidents.”
+4. “Triage plan: grounded runbook steps with citations.”
+5. “Escalation Hub: owner and on-call path for P1–P3.”
+6. “Resolution Tracker: mark resolved; Agent Analytics KPIs update.”
+7. *(Legacy talking point)* “I’ll load a real production-style alert…” *(if needed for backup script)*
 3. “Notice the badge says **bedrock** — the cited answer is retrieved live from our
    AWS Bedrock Knowledge Base of runbooks, not made up. Here are the citations.”
 4. “Beyond RAG, four tools enriched the incident through MCP-style tool-calling:

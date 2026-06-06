@@ -10,7 +10,7 @@ Captured **2026-06-03** after local verification and EC2 launch.
 | Instance | `i-016d77ef747791213` |
 | Security group | `sg-0634549d8173ed78d` |
 | Region | `us-east-1` |
-| Tags | `Project=incidentIQ-midproject`, `Owner=reemmor` |
+| Tags | `Project=piter-aiops`, `Owner=reemmor` |
 | Image | `329597159579.dkr.ecr.us-east-1.amazonaws.com/incident-rag-bedrock:demo` (digest `d9609f805532…`) |
 
 Health: `GET /health` → `{"status":"ok"}`

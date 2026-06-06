@@ -31,7 +31,7 @@ def test_api_bootstrap(client):
     assert isinstance(data["example_groups"], dict)
     assert sum(len(v) for v in data["example_groups"].values()) >= len(data["examples"])
     assert "workflow_alerts" in data
-    assert len(data["workflow_alerts"]) == 5
+    assert len(data["workflow_alerts"]) == 6
     assert "max_len" in data
     assert "csrf_token" in data
 

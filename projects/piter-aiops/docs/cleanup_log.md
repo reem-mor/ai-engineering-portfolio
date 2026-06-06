@@ -22,8 +22,8 @@ Validated: `/health` → `{"status":"ok"}`, grounded `/ask` with citations, off-
 
 | Resource | Notes |
 |----------|--------|
-| Bedrock KB `RBTJM6NIG9` | Data source prefix `projects/incidentIQ-midproject/data/sample_documents/`; re-synced 2026-06-06 (job `G4U131YDRV`) — **24 docs scanned, 4 new, 8 modified, 0 failed** after RB corpus reconciliation |
-| S3 bucket `reem-amdocs-ai-artifacts-3331` | Canonical corpus at `projects/incidentIQ-midproject/data/sample_documents/` (see `evaluation/CORPUS_RECONCILIATION.md`) |
+| Bedrock KB `RBTJM6NIG9` | Data source prefix `projects/piter-aiops/data/sample_documents/`; re-synced 2026-06-06 (job `G4U131YDRV`) — **24 docs scanned, 4 new, 8 modified, 0 failed** after RB corpus reconciliation |
+| S3 bucket `reem-amdocs-ai-artifacts-3331` | Canonical corpus at `projects/piter-aiops/data/sample_documents/` (see `evaluation/CORPUS_RECONCILIATION.md`) |
 | Bedrock KB execution role S3 policy | `AmazonBedrockS3PolicyForKnowledgeBase_2q8xn` v2 — includes new prefix (see `infra/bedrock_kb_s3_policy.json`) |
 
 ## Prior cleanup (same day, earlier session)

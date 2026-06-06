@@ -60,7 +60,7 @@ python scripts/build_corpus.py
 
 ## S3 sync
 
-Upload to `s3://<bucket>/projects/incidentIQ-midproject/data/sample_documents/` and **Sync** the Bedrock data source after changes.
+Upload to `s3://<bucket>/projects/piter-aiops/data/sample_documents/` and **Sync** the Bedrock data source after changes.
 
 **Canonical corpus:** all runbooks (RB-001…RB-010) live here under stable filenames with `Runbook ID: RB-00N` in headings — not in a separate `knowledge_base/runbooks/` S3 prefix. See [`evaluation/CORPUS_RECONCILIATION.md`](../../evaluation/CORPUS_RECONCILIATION.md).
 

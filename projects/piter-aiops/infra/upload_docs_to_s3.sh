@@ -6,7 +6,7 @@ set -euo pipefail
 : "${BUCKET:?Set BUCKET env var, e.g. BUCKET=reem-amdocs-ai-artifacts-3331}"
 
 SRC="${SRC:-./data/sample_documents}"
-PREFIX="${PREFIX:-projects/incidentIQ-midproject/data/sample_documents}"
+PREFIX="${PREFIX:-projects/piter-aiops/data/sample_documents}"
 
 if [[ ! -d "$SRC" ]]; then
   echo "Source directory not found: $SRC" >&2

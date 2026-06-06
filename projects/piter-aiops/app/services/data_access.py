@@ -1,4 +1,4 @@
-"""Typed, validated loaders for the IncidentIQ data layer (Pandas + CSV + JSON).
+"""Typed, validated loaders for the PITER AiOps data layer (Pandas + CSV + JSON).
 
 Centralizes access to the CSV/JSON operational datasets so the tools and the
 local agent share one schema-validated source of truth. Each loader raises a

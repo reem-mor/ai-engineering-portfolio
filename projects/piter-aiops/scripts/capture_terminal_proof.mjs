@@ -48,7 +48,7 @@ async function shot(browser, html, name) {
 
 async function main() {
   fs.mkdirSync(SCREENSHOTS, { recursive: true });
-  const dockerPs = execSync("docker ps --filter name=incidentiq", {
+  const dockerPs = execSync("docker ps --filter name=PITER AiOps", {
     encoding: "utf8",
   });
   let pytestOut = "";
@@ -65,7 +65,7 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   await shot(
     browser,
-    termHtml("docker ps — IncidentIQ container", "docker ps --filter name=incidentiq", dockerPs),
+    termHtml("docker ps — PITER AiOps container", "docker ps --filter name=PITER AiOps", dockerPs),
     "11_docker_ps.png",
   );
   await shot(

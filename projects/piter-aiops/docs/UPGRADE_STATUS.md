@@ -10,7 +10,7 @@
 |------|--------|
 | KB ID | `RBTJM6NIG9` |
 | Data source | `YICXAB6WOG` |
-| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/incidentIQ-midproject/data/sample_documents/` |
+| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/` |
 | Corpus | **24 files** — canonical `data/sample_documents/` (RB-001…RB-010 merged or added; see `evaluation/CORPUS_RECONCILIATION.md`) |
 | Last ingestion | Re-sync after corpus reconciliation (2026-06-06) |
 | Retrieval check | Chunk from `runbook_db_cpu.md` (RB-007 Postgres CPU runbook) |
@@ -64,6 +64,6 @@ BEDROCK_KB_ID=RBTJM6NIG9
 
 ## Needs input
 
-- Remove duplicate test action group `incidentiq-ops-test` in console when convenient.
+- Remove duplicate test action group `PITER AiOps-ops-test` in console when convenient.
 - Point alias used by Flask: confirm `BEDROCK_AGENT_ALIAS_ID=O2EM03R4R3` after `ensure_agent_alias.py`.
 - Live `invoke_agent` E2E requires AWS creds (`AWS_PROFILE=reemmor`); run `docker compose up --build` for UI on :8080.

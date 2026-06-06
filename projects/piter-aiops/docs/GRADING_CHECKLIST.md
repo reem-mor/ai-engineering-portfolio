@@ -1,6 +1,6 @@
 # Grading checklist — course guideline alignment
 
-Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB + Flask + Docker + EC2) to this repository — **IncidentIQ mid-project with Bedrock Agent**.
+Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB + Flask + Docker + EC2) to this repository — **PITER AiOps mid-project with Bedrock Agent**.
 
 ## Topic and documents
 
@@ -8,7 +8,7 @@ Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB 
 |-------------|----------|
 | Personal topic | **Incident Operations / NOC** — runbooks, escalation, on-call handoff |
 | 5–15 meaningful documents | **17 files** in [`data/sample_documents/`](../data/sample_documents/) — see [`data/sample_documents/README.md`](../data/sample_documents/README.md) |
-| Documents synced to KB | S3 prefix `projects/incidentIQ-midproject/data/sample_documents/` (or shared KB prefix) — screenshot `screenshots/02_bedrock_kb_data_source_synced.png` |
+| Documents synced to KB | S3 prefix `projects/piter-aiops/data/sample_documents/` (or shared KB prefix) — screenshot `screenshots/02_bedrock_kb_data_source_synced.png` |
 
 ## Bedrock Knowledge Base + Agent
 
@@ -39,7 +39,7 @@ Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB 
 
 ## Automated verification
 
-Run from **project root** (`projects/incidentIQ-midproject`):
+Run from **project root** (`projects/piter-aiops`):
 
 ```powershell
 .\scripts\verify.ps1

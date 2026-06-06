@@ -1,4 +1,4 @@
-# IncidentIQ Mid-Project — Submission Checklist
+# PITER AiOps Mid-Project — Submission Checklist
 
 Requirements map (master prompt R1–R11) to repo evidence. Deploy/screenshots completed — see [`DEPLOY_STATUS.md`](DEPLOY_STATUS.md).
 
@@ -8,7 +8,7 @@ Requirements map (master prompt R1–R11) to repo evidence. Deploy/screenshots c
 |---|-------------|----------|
 | R1 | RAG over documents | KB `RBTJM6NIG9` + `data/sample_documents/` |
 | R2 | KB connected to agent | Agent `HH4YGSLZUE` + [`docs/bedrock_agent_setup.md`](bedrock_agent_setup.md) |
-| R3 | 2–4 Lambda functions | `iiq-correlate`, `iiq-context`, `iiq-similar` (+ optional `incidentiq-actions`) |
+| R3 | 2–4 Lambda functions | `iiq-correlate`, `iiq-context`, `iiq-similar` (+ optional `PITER AiOps-actions`) |
 | R4 | CSV/JSON + Pandas | [`app/enrichment_tools.py`](../app/enrichment_tools.py), [`data/agent_data/`](../data/agent_data/) |
 | R5 | MCP manages Lambdas | Path B: action groups — [`docs/MCP_PATH.md`](MCP_PATH.md) |
 | R6 | Session memory + follow-ups | [`app/bedrock_agent_client.py`](../app/bedrock_agent_client.py), SPA follow-up box |
@@ -21,7 +21,7 @@ Requirements map (master prompt R1–R11) to repo evidence. Deploy/screenshots c
 ## Local verification commands
 
 ```powershell
-cd projects\incidentIQ-midproject
+cd projects\piter-aiops
 
 # Python unit tests (offline)
 .\.venv\Scripts\python.exe -m pytest -q

@@ -2,7 +2,7 @@
 
 Backend-agnostic: callers pass an ``ask_fn(question) -> RagAnswer`` so the same
 orchestration drives both the local offline client and the Bedrock client (with
-fallback handled by the caller). The output matches the IncidentIQ triage card
+fallback handled by the caller). The output matches the PITER AiOps triage card
 JSON contract.
 """
 from __future__ import annotations
@@ -55,6 +55,26 @@ def _citations_payload(rag: RagAnswer) -> list[dict[str, Any]]:
     ]
 
 
+def _normalize_priority(alert: dict[str, Any], impact: dict[str, Any] | None) -> str:
+    """Map alert severity / impact to P1-P4."""
+    raw = str(alert.get("severity") or alert.get("priority") or "").upper().strip()
+    if raw in {"P1", "P2", "P3", "P4"}:
+        return raw
+    if isinstance(impact, dict):
+        sla = str(impact.get("sla_risk", "")).lower()
+        if "critical" in sla or "p1" in sla:
+            return "P1"
+        if "high" in sla or "p2" in sla:
+            return "P2"
+    if "critical" in raw or "sev1" in raw:
+        return "P1"
+    if "high" in raw or "sev2" in raw:
+        return "P2"
+    if "low" in raw or "sev4" in raw or "info" in raw:
+        return "P4"
+    return "P3"
+
+
 def _recommended_steps(rag: RagAnswer) -> list[str]:
     """Best-effort recommended steps: prefer the answer, then richest citation."""
     steps = parse_action_bullets(rag.answer)
@@ -89,6 +109,9 @@ def run_triage(
     citations = _citations_payload(rag)
     suspect_deploys = correlate.get("deployments", []) if isinstance(correlate, dict) else []
 
+    priority = _normalize_priority(alert, impact if isinstance(impact, dict) else None)
+    requires_escalation = priority in {"P1", "P2", "P3"}
+
     card: dict[str, Any] = {
         "answer": rag.answer,
         "citations": citations,
@@ -104,6 +127,15 @@ def run_triage(
         "memory_used": False,
         "mode": rag.mode,
         "alert": alert,
+        "priority": priority,
+        "requires_escalation": requires_escalation,
+        "piter_stages": {
+            "priority": "complete",
+            "investigation": "complete",
+            "triage": "complete",
+            "escalation": "complete" if requires_escalation else "skipped",
+            "resolution": "pending",
+        },
     }
 
     session_memory.save_triage(
