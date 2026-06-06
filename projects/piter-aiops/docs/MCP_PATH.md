@@ -6,6 +6,7 @@
 |------|--------|------|
 | **B — Bedrock action groups** | **Deployed** | Reliable tool path for `invoke_agent` (iiq-correlate, iiq-context, iiq-similar) |
 | **A — AgentCore Gateway (MCP)** | **Documented / probe** | Same Lambdas exposed as MCP tools with Cognito OAuth when account supports it |
+| **C — Cursor IDE (developer)** | **Configured** | AWS + Bedrock KB + docs + Playwright for local agent assistance (not used by `invoke_agent`) |
 
 The Bedrock Agent **always** uses action groups for enrichment during triage. Path A adds an MCP-native front for external clients (IDE, other agents) over the same Lambda implementations.
 
@@ -56,3 +57,38 @@ Manual steps (console / preview API):
 - `invoke_agent` action groups are stable, documented, and already integrated in Flask trace parsing.
 - AgentCore Gateway APIs vary by account/boto3 version; automating create without console access risks blocking the deadline.
 - Teacher demo value: KB citations + three enrichment tools + session memory — all via action groups.
+
+## Path C — Cursor IDE (developer MCP)
+
+Use this when **you** (not the Bedrock agent) want Cursor to inspect AWS, query the KB, or capture screenshots.
+
+**Prerequisites:** `uv` on PATH · AWS CLI profile `reemmor` in `~/.aws/credentials` · open workspace root `amdocs-ai-course` (not only `piter-aiops` subfolder).
+
+Install (once per machine):
+
+```powershell
+# From repo root — .cursor/ is gitignored; copy the committed template
+copy projects\piter-aiops\config\mcp.json.example .cursor\mcp.json
+```
+
+Then reload Cursor (**Settings → MCP** or window reload).
+
+| Server | Package / URL | Use for PITER AiOps |
+|--------|---------------|---------------------|
+| `aws-api` | `uvx awslabs.aws-api-mcp-server@latest` | Bedrock agent `HH4YGSLZUE`, Lambdas, S3 `reem-amdocs-ai-artifacts-3331`, EC2 demo |
+| `bedrock-kb` | `uvx awslabs.bedrock-kb-retrieval-mcp-server@latest` | Direct KB `RBTJM6NIG9` retrieval with citations |
+| `aws-knowledge` | `https://knowledge-mcp.global.api.aws` | Live AWS / Bedrock documentation (no credentials) |
+| `playwright` | `npx @playwright/mcp` | `scripts/capture_*.mjs` screenshot workflows |
+| `course-tools` | Lecture 08 stdio server | Course demo tools (`get_weather`, `get_joke`) — requires `lectures/08_mcp/.venv` |
+
+**Credential layout:** keys stay in `~/.aws/credentials`; MCP env uses `AWS_PROFILE=reemmor` and `AWS_REGION=us-east-1` only — same as [`docs/aws_credentials.md`](aws_credentials.md). Do **not** put access keys in `mcp.json`.
+
+**Avoid:** `@aws/mcp-server-aws-api` (npm 404) and `mcp-server-aws-lambda` (not on PyPI). Use `awslabs.*` packages via `uvx`.
+
+Verify:
+
+```powershell
+aws sts get-caller-identity --profile reemmor
+```
+
+In Cursor chat, confirm `call_aws` and KB retrieval tools appear under MCP.
