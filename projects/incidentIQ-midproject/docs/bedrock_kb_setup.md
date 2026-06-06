@@ -17,22 +17,22 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
    - Region: same as Bedrock (`us-east-1`)
    - Block all public access: ✅ keep enabled
    - Versioning: optional
-   - Object prefix for this project: `projects/incident-rag-bedrock/data/sample_documents/`
+   - Object prefix for this project: `projects/incidentIQ-midproject/data/sample_documents/`
 2. **Generate the corpus** (one-time; checked in for reference but easy to rebuild):
    ```bash
-   cd projects/incident-rag-bedrock
+   cd projects/incidentIQ-midproject
    pip install reportlab python-docx
    python scripts/build_corpus.py
    ```
-   This writes the 10 documents (MD/TXT/CSV/DOCX/PDF) into `data/sample_documents/`.
+   This writes documents (MD/TXT/CSV/DOCX/PDF) into `data/sample_documents/`.
 
-3. Upload to the bucket (defaults to prefix `projects/incident-rag-bedrock/data/sample_documents/`):
+3. Upload to the bucket (defaults to prefix `projects/incidentIQ-midproject/data/sample_documents/`):
    ```bash
    BUCKET=reem-amdocs-ai-artifacts-3331 ./infra/upload_docs_to_s3.sh
    ```
    Verify:
    ```bash
-   aws s3 ls s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
+   aws s3 ls s3://reem-amdocs-ai-artifacts-3331/projects/incidentIQ-midproject/data/sample_documents/
    ```
 
 ## 3. Enable model access in Bedrock
@@ -55,7 +55,7 @@ Bedrock model availability varies by region. **`us-east-1`** is the safest defau
 3. **Step 2 — Choose data source**
    - Source: **Amazon S3**
    - S3 URI: select the bucket from step 2
-   - **Inclusion prefix:** `projects/incident-rag-bedrock/data/sample_documents/` (do not ingest the whole bucket)
+   - **Inclusion prefix:** `projects/incidentIQ-midproject/data/sample_documents/` (do not ingest the whole bucket)
    - Parsing strategy: **Default**
 4. **Step 3 — Configure embeddings & vector store**
    - Embeddings model: **Titan Text Embeddings V2**
@@ -85,7 +85,7 @@ From the KB detail page, copy:
 - The full model ARN for Haiku → `BEDROCK_MODEL_ARN`
   (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0`)
 
-Then in `projects/incident-rag-bedrock/`:
+Then in `projects/incidentIQ-midproject/`:
 ```bash
 cp .env.example .env
 # Edit .env — set AWS_REGION, BEDROCK_KB_ID, BEDROCK_MODEL_ARN, FLASK_SECRET_KEY

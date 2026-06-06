@@ -42,7 +42,7 @@ def _chunk_to_citation(chunk: RetrievedChunk, index: int) -> Citation:
     snippet = _excerpt(chunk.excerpt)
     return Citation(
         snippet=snippet,
-        source_uri=f"local://knowledge_base/runbooks/{chunk.document}",
+        source_uri=f"local://data/sample_documents/{chunk.document}",
         source_label=chunk.document,
         index=index,
         score=chunk.score,

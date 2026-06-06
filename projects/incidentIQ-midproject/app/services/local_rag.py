@@ -1,8 +1,8 @@
 """Pure-Python TF-IDF + keyword retriever for offline RAG.
 
 This module powers the local demo mode so the application never depends on a
-network call to Amazon Bedrock. It loads markdown runbooks from
-``knowledge_base/runbooks/`` (falling back to ``data/sample_documents/``),
+network call to Amazon Bedrock. It loads markdown and text runbooks from
+``data/sample_documents/`` — the same canonical corpus synced to Bedrock KB,
 splits them into heading-delimited chunks, and ranks chunks against a query
 with a small TF-IDF cosine similarity implemented without third-party
 dependencies. Every hit carries the source document name and an excerpt so the
@@ -19,8 +19,7 @@ from pathlib import Path
 from app.validators import tokenize
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_PRIMARY_DIR = _PROJECT_ROOT / "knowledge_base" / "runbooks"
-_FALLBACK_DIR = _PROJECT_ROOT / "data" / "sample_documents"
+_CORPUS_DIR = _PROJECT_ROOT / "data" / "sample_documents"
 
 # Minimum cosine score for a chunk to count as a grounded retrieval. Below this
 # the retriever reports no match so the agent can refuse instead of guessing.
@@ -65,9 +64,7 @@ class LocalRetriever:
     """TF-IDF retriever over a directory of markdown/text runbooks."""
 
     def __init__(self, *, runbook_dir: Path | None = None) -> None:
-        self._dir = runbook_dir or (
-            _PRIMARY_DIR if _PRIMARY_DIR.is_dir() else _FALLBACK_DIR
-        )
+        self._dir = runbook_dir or _CORPUS_DIR
         self._documents: list[RetrievedChunk] = []
         self._chunk_tokens: list[list[str]] = []
         self._idf: dict[str, float] = {}
@@ -86,6 +83,8 @@ class LocalRetriever:
             return
         raw_chunks: list[tuple[str, int, str]] = []
         for path in sorted(self._dir.glob("*.md")) + sorted(self._dir.glob("*.txt")):
+            if path.name.upper() == "README.MD":
+                continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             for idx, chunk in enumerate(_split_chunks(text)):
                 raw_chunks.append((path.name, idx, chunk))

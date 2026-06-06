@@ -29,7 +29,7 @@ def test_run_triage_returns_full_contract():
         assert key in card, f"missing contract key: {key}"
     assert card["mode"] == "local"
     assert card["memory_used"] is False
-    assert card["citations"][0]["document"] == "RB-007-postgres-cpu-high.md"
+    assert card["citations"][0]["document"] == "runbook_db_cpu.md"
     assert card["owner"]["owner_team"] == "platform-dba"
     assert card["impact"]["cost_per_15min"] == 30000
     assert card["similar_incidents"]
@@ -39,7 +39,7 @@ def test_triage_persists_session():
     card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
     stored = session_memory.get_session(card["session_id"])
     assert stored is not None
-    assert stored["triage_card"]["matched_runbook"] == "RB-007-postgres-cpu-high.md"
+    assert stored["triage_card"]["matched_runbook"] == "runbook_db_cpu.md"
     assert "lookup_owner_and_escalation" in stored["tool_outputs"]
 
 

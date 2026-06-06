@@ -9,7 +9,7 @@ They are written as NOC / SRE wiki content — concrete commands, thresholds, an
 |---|---|
 | **Name** | Incident Operations knowledge-base corpus |
 | **Domain** | NOC / DevOps / SRE incident response (runbooks, SOPs, policies, history) |
-| **Documents** | 10 files · 5 formats (MD, TXT, CSV, DOCX, PDF) |
+| **Documents** | 24 files · 6 formats (MD, TXT, CSV, JSON, DOCX, PDF) |
 | **Provenance** | **Synthetic** — hand-authored for this course in `scripts/build_corpus.py`. Not scraped or copied from any third party. |
 | **PII / secrets** | **None.** All service names, hostnames, incident IDs, and people/roles are fictional. No real customer data, credentials, or secrets. |
 | **Intended use** | Source corpus for a grounded RAG demo: retrieve-and-cite from these docs, refuse when a question is out of corpus. Educational only. |
@@ -22,7 +22,11 @@ They are written as NOC / SRE wiki content — concrete commands, thresholds, an
 |---|---|
 | `runbook_db_cpu.md` | Postgres CPU is 95% on prod-db-1 — what is the runbook? |
 | `runbook_checkout_5xx.md` | API 5xx rate is above 2% on checkout — what should I check? |
-| `runbook_queue_lag.md` | Queue lag is above 30 seconds — what should I do? |
+| `runbook_queue_lag.md` | Email/worker queue lag (not Kafka) — scale workers, DLQ |
+| `runbook_kafka_consumer_lag.md` | Kafka settlement consumer lag (RB-009) |
+| `runbook_redis_token_store.md` | Redis token store degradation (RB-008) |
+| `runbook_promotions_engine_latency.md` | Promotions engine p95 latency (RB-006) |
+| `runbook_deployment_rollback.md` | Controlled deployment rollback (RB-010) |
 | `runbook_auth_login.md` | Users cannot log in after deployment — what should I check? |
 | `tier1_escalation_guide.md` | How do I decide if an alert should be resolved at Tier 1 or escalated? |
 | `alerts_last_3mo.json` | Historical alert A-1042 checkout 5xx context |
@@ -56,7 +60,9 @@ python scripts/build_corpus.py
 
 ## S3 sync
 
-Upload to `s3://<bucket>/projects/incident-rag-bedrock/data/sample_documents/` and **Sync** the Bedrock data source after changes.
+Upload to `s3://<bucket>/projects/incidentIQ-midproject/data/sample_documents/` and **Sync** the Bedrock data source after changes.
+
+**Canonical corpus:** all runbooks (RB-001…RB-010) live here under stable filenames with `Runbook ID: RB-00N` in headings — not in a separate `knowledge_base/runbooks/` S3 prefix. See [`evaluation/CORPUS_RECONCILIATION.md`](../../evaluation/CORPUS_RECONCILIATION.md).
 
 See also: [`data/demo_qa_expected.md`](../demo_qa_expected.md) for grader expected answer outlines.
 
