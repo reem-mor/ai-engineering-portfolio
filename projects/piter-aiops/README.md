@@ -280,9 +280,9 @@ flowchart TB
     end
 
     subgraph Tools["Enrichment — action groups MCP Path B"]
-        l1["iiq-correlate"]
-        l2["iiq-context"]
-        l3["iiq-similar"]
+        l1["piter-recent-deployments"]
+        l2["piter-service-context"]
+        l3["piter-similar-incidents"]
     end
 
     data[("agent_data CSV/JSON")]
@@ -657,9 +657,9 @@ Extras: `screenshots/extras/partA_*` (responsive crops). Archive: `screenshots/a
 Full walkthrough: [`docs/ec2_deployment.md`](docs/ec2_deployment.md)
 
 ```bash
-docker build -t incident-rag-bedrock:demo .
-docker tag incident-rag-bedrock:demo ghcr.io/reemmor/incident-rag-bedrock:demo
-docker push ghcr.io/reemmor/incident-rag-bedrock:demo
+docker build -t piter-aiops:demo .
+docker tag piter-aiops:demo ghcr.io/reemmor/piter-aiops:demo
+docker push ghcr.io/reemmor/piter-aiops:demo
 ```
 
 1. Launch EC2 **t3.micro** on Amazon Linux 2023.
@@ -712,7 +712,7 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 |-----------|-----------|
 | Knowledge Base | `RBTJM6NIG9` |
 | Bedrock Agent | `HH4YGSLZUE` |
-| Enrichment Lambdas | `iiq-correlate`, `iiq-context`, `iiq-similar` |
+| Enrichment Lambdas | Current deployed names: `iiq-correlate`, `iiq-context`, `iiq-similar`; final local target: `piter-recent-deployments`, `piter-service-context`, `piter-similar-incidents`, `piter-escalation` |
 | Ops Lambda (unchanged) | `PITER AiOps-actions` |
 
 ### System prompt
@@ -771,10 +771,10 @@ Latest re-deployment (2026-06-02), region `us-east-1` — torn down same day aft
 | Bedrock Knowledge Base `RBTJM6NIG9` (`S3_VECTORS`) | ✅ | 🟢 Retained for course reuse (negligible cost) |
 | S3 bucket `reem-amdocs-ai-artifacts-3331` | ✅ | 🟢 Retained; corpus prefix only |
 | EC2 instance `i-05cbc9f5604d6704e` (`t3.micro`, `98.80.119.235`) | ✅ | 🔴 **Terminated** after demo (billing stopped) |
-| Security group `sg-032f462d8ff507604` (`incident-rag-sg`, 8080/tcp 0.0.0.0/0) | ✅ | 🔴 **Deleted** after demo (closed public 8080) |
+| Security group `sg-032f462d8ff507604` (`piter-aiops-sg`, 8080/tcp 0.0.0.0/0) | ✅ | 🔴 **Deleted** after demo (closed public 8080) |
 | IAM role `IncidentRagBedrockEC2Role` (Bedrock+S3+ECR least-priv, SSM core) | ✅ | 🟢 Retained (free, reusable for redeploy) |
 | IAM instance profile `IncidentRagBedrockEC2Profile` | ✅ | 🟢 Retained (free) |
-| ECR repository `incident-rag-bedrock` (`:demo`, 165 MB) | ✅ | 🟢 Retained (free tier ≤500 MB; image ready for redeploy) |
+| ECR repository `piter-aiops` (`:demo`, 165 MB) | ✅ | 🟢 Retained (free tier ≤500 MB; image ready for redeploy) |
 
 Full log: [`docs/cleanup_log.md`](docs/cleanup_log.md) · Procedure: [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
 
@@ -793,7 +793,7 @@ docker ps -a
 docker image prune -f
 docker container prune -f
 # Remove project image only after confirming tag:
-# docker rmi incident-rag-bedrock:dev
+# docker rmi piter-aiops:dev
 ```
 
 4. Empty/delete S3 objects created only for this project (keep shared course bucket if reused)
@@ -816,7 +816,7 @@ aws iam delete-instance-profile --instance-profile-name IncidentRagBedrockEC2Pro
 aws iam delete-role-policy --role-name IncidentRagBedrockEC2Role --policy-name IncidentRagBedrockInline
 aws iam detach-role-policy --role-name IncidentRagBedrockEC2Role --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 aws iam delete-role --role-name IncidentRagBedrockEC2Role
-aws ecr delete-repository --repository-name incident-rag-bedrock --force
+aws ecr delete-repository --repository-name piter-aiops --force
 ```
 
 > [!CAUTION]

@@ -298,15 +298,15 @@ const BLOCKS: Record<BlockKey, BlockDemo> = {
     call: {
       lang: "bash",
       title: "Upload to S3",
-      code: `aws s3 cp ./kb/ s3://incident-kb/ \\
+      code: `aws s3 cp ./knowledge_base/ s3://piter-aiops-kb/ \\
   --recursive --exclude "*.DS_Store"`,
     },
     result: {
       title: "Upload report",
       lines: [
-        "upload: kb/runbook_db_cpu.md       →  s3://incident-kb/runbook_db_cpu.md",
-        "upload: kb/postmortem_2024_07.pdf  →  s3://incident-kb/postmortem_2024_07.pdf",
-        "upload: kb/alerts_last_3mo.json    →  s3://incident-kb/alerts_last_3mo.json",
+        "upload: knowledge_base/runbooks/postgres-cpu.md       →  s3://piter-aiops-kb/runbooks/postgres-cpu.md",
+        "upload: knowledge_base/incidents/postmortem_2024_07.md  →  s3://piter-aiops-kb/incidents/postmortem_2024_07.md",
+        "upload: knowledge_base/policies/alert-reference.md    →  s3://piter-aiops-kb/policies/alert-reference.md",
         "37 objects uploaded · 18.4 MB total",
       ],
     },
@@ -394,17 +394,17 @@ Content-Type: application/json
     call: {
       lang: "bash",
       title: "Build & run locally",
-      code: `docker build -t incident-rag:1.0 .
+      code: `docker build -t piter-aiops:1.0 .
 docker run -p 5000:5000 \\
   -e AWS_REGION=us-east-1 \\
   -e KB_ID=KB-ABC123 \\
-  incident-rag:1.0`,
+  piter-aiops:1.0`,
     },
     result: {
       title: "Container status",
       lines: [
         "Successfully built sha256:9f3a…",
-        "Successfully tagged incident-rag:1.0",
+        "Successfully tagged piter-aiops:1.0",
         "Container started · listening on 0.0.0.0:5000",
       ],
     },
@@ -427,15 +427,15 @@ docker run -p 5000:5000 \\
       title: "On the EC2 host",
       code: `ssh ec2-user@<public-ip>
 sudo yum install -y docker && sudo service docker start
-docker load -i incident-rag.tar
+docker load -i piter-aiops.tar
 docker run -d -p 80:5000 \\
-  --restart unless-stopped incident-rag:1.0`,
+  --restart unless-stopped piter-aiops:1.0`,
     },
     result: {
       title: "Host check",
       lines: [
         "CONTAINER ID   IMAGE             STATUS         PORTS",
-        "a91c2f5e8b1d   incident-rag:1.0  Up 12 seconds  0.0.0.0:80->5000/tcp",
+        "a91c2f5e8b1d   piter-aiops:1.0  Up 12 seconds  0.0.0.0:80->5000/tcp",
         "Security group: inbound 80/tcp from 0.0.0.0/0  ✓",
       ],
     },
@@ -1585,7 +1585,7 @@ function LiveKnowledgeBase() {
           Live Knowledge Base
         </div>
         <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-          Try the Incident Knowledge Base in real time
+          Try the PITER Knowledge Base in real time
         </h2>
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Ask incident questions against indexed runbooks and alert history. Responses are

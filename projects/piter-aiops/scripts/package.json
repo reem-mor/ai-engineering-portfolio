@@ -1,5 +1,5 @@
 {
-  "name": "incident-rag-bedrock-scripts",
+  "name": "piter-aiops-scripts",
   "private": true,
   "type": "module",
   "scripts": {
