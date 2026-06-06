@@ -85,6 +85,8 @@ Then reload Cursor (**Settings → MCP** or window reload).
 
 **Avoid:** `@aws/mcp-server-aws-api` (npm 404) and `mcp-server-aws-lambda` (not on PyPI). Use `awslabs.*` packages via `uvx`.
 
+**Windows:** If `aws-api` / `bedrock-kb` stay red in Settings → MCP, set `command` to the full `uvx.exe` path from `where.exe uvx` (Cursor may not inherit shell PATH).
+
 Verify:
 
 ```powershell
