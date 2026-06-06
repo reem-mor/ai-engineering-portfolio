@@ -153,7 +153,12 @@ def lambda_handler(event, context):
 
     subject = f"[PITER {severity}] {incident_id} — {service}"
     try:
-        dispatch_result = dispatch_live_safe(recipient, message, subject=subject)
+        dispatch_result = dispatch_live_safe(
+            recipient,
+            message,
+            subject=subject,
+            incident_id=incident_id,
+        )
     except NotificationDispatchError as exc:
         return _respond(
             event,

@@ -1,6 +1,42 @@
-# Notifications
+# Notifications (SNS + SES)
 
-Escalation notifications default to **mock** mode. SNS and SES dispatch only when every safety gate passes and `PITER_ENABLE_LIVE_DISPATCH=true`.
+Escalation notifications default to **mock** mode. Live SNS/SES dispatch requires explicit gates and `PITER_ENABLE_LIVE_DISPATCH=true`.
+
+## One-command AWS setup
+
+From `projects/piter-aiops`:
+
+```powershell
+python scripts/setup_notifications.py --sender-email reem.mor3@gmail.com --verify-recipients reem.mor3@gmail.com
+```
+
+For demo to a teacher (SES sandbox — both must verify):
+
+```powershell
+python scripts/setup_notifications.py `
+  --sender-email reem.mor3@gmail.com `
+  --verify-recipients teacher@school.edu
+```
+
+The script creates (idempotent):
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| SNS topic | `piter-aiops-escalation` | Optional fan-out; leave `PITER_SNS_TOPIC_ARN` empty for direct SMS |
+| SES configuration set | `piter-aiops-escalations` | Bounce/complaint metrics in CloudWatch |
+| SES identities | sender + recipients | Required before send; sandbox needs all recipients verified |
+| IAM policy | `PITER-AiOps-Notifications` | Least privilege for Lambda/EC2 role |
+
+Attach IAM policy to your runtime role:
+
+```powershell
+aws iam attach-role-policy `
+  --role-name "PITER AiOps-lambda-role" `
+  --policy-arn arn:aws:iam::329597159579:policy/PITER-AiOps-Notifications `
+  --profile reemmor
+```
+
+Local dev with `admin-reem` already has full access; the policy matters for EC2/Lambda in production.
 
 ## Environment variables
 
@@ -13,8 +49,10 @@ PITER_NOTIFICATION_ALLOWLIST=
 PITER_NOTIFICATION_ALLOWED_SEVERITIES=P1,P2
 PITER_DEMO_SMS_RECIPIENT=
 PITER_DEMO_EMAIL_RECIPIENT=
-PITER_SNS_TOPIC_ARN=
+PITER_SNS_TOPIC_ARN=                  # optional; empty = direct SMS to phone
 PITER_SES_SENDER_EMAIL=
+PITER_SES_CONFIGURATION_SET=piter-aiops-escalations
+PITER_SES_REPLY_TO=                   # optional Reply-To header
 PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT=1
 ```
 
@@ -25,6 +63,13 @@ PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT=1
 | `mock` | Preview only; `sent: false`; masked recipients in UI |
 | `preview` | Policy and recipient mask; no external dispatch |
 | `live` | Calls SNS/SES when `PITER_ENABLE_LIVE_DISPATCH=true` and all gates pass |
+
+## Best practices (implemented)
+
+- **SMS**: `AWS.SNS.SMS.SMSType=Transactional`, monthly spend limit set by setup script (default $1).
+- **Email**: configuration set for delivery/bounce tracking; optional `Reply-To`; incident tags for SES metrics.
+- **IAM**: scoped `sns:Publish` to topic + SMS-only publish; `ses:SendEmail` limited to verified identity ARN.
+- **App safety**: allowlist, confirmation token, idempotency, severity gate — unchanged.
 
 ## UI flow
 
@@ -50,23 +95,14 @@ All must pass before boto3 dispatch:
 7. Email: `PITER_SES_SENDER_EMAIL` set; SMS: optional `PITER_SNS_TOPIC_ARN` or direct phone publish
 8. Idempotency key not already sent
 
-## AWS setup checklist
+## SES sandbox checklist
 
-Use profile `reemmor` (or your local profile) in `us-east-1`.
+1. Run `setup_notifications.py` with `--sender-email` and `--verify-recipients`.
+2. Click AWS verification links in each inbox.
+3. Confirm: `aws sesv2 get-email-identity --email-identity you@example.com --region us-east-1 --profile reemmor`
+4. Request **production access** in SES console when you need to email unverified addresses.
 
-### SES (email)
-
-1. Verify sender identity in SES → set `PITER_SES_SENDER_EMAIL`.
-2. If the account is in **SES sandbox**, verify the recipient email too, or request production access.
-3. Add recipient to `PITER_NOTIFICATION_ALLOWLIST`.
-
-### SNS (SMS)
-
-1. Confirm SMS spending limit / regional support in SNS SMS preferences.
-2. For direct SMS, leave `PITER_SNS_TOPIC_ARN` empty; add E.164 phone to allowlist.
-3. Optional: publish via `PITER_SNS_TOPIC_ARN` instead of direct `PhoneNumber`.
-
-### Local `.env` example (do not commit)
+## Local `.env` example (do not commit)
 
 ```env
 PITER_NOTIFICATION_MODE=live
@@ -76,6 +112,8 @@ PITER_NOTIFICATION_ALLOWLIST=+15551234567,ops@example.com
 PITER_DEMO_SMS_RECIPIENT=+15551234567
 PITER_DEMO_EMAIL_RECIPIENT=ops@example.com
 PITER_SES_SENDER_EMAIL=noreply@yourdomain.com
+PITER_SES_CONFIGURATION_SET=piter-aiops-escalations
+PITER_SNS_TOPIC_ARN=arn:aws:sns:us-east-1:ACCOUNT_ID:piter-aiops-escalation
 ```
 
 ## Safety
