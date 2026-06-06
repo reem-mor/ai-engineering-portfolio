@@ -3,9 +3,18 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 SENT_IDEMPOTENCY_KEYS: set[str] = set()
+
+
+def _ensure_app_import_path() -> None:
+    root = Path(__file__).resolve().parents[2]
+    root_str = str(root)
+    if root_str not in sys.path:
+        sys.path.insert(0, root_str)
 
 
 def _params(event: dict) -> dict[str, str]:
@@ -44,6 +53,19 @@ def _mask_recipient(recipient: str) -> str:
     return f"{recipient[:2]}***{recipient[-2:]}"
 
 
+def _live_dispatch_enabled() -> bool:
+    return os.environ.get("PITER_ENABLE_LIVE_DISPATCH", "false").lower() in {
+        "true",
+        "1",
+        "yes",
+        "on",
+    }
+
+
+def _email_configured() -> bool:
+    return bool(os.environ.get("PITER_SES_SENDER_EMAIL", "").strip())
+
+
 def _policy_preview(service: str, severity: str, recipient: str) -> dict:
     return {
         "service": service,
@@ -51,7 +73,7 @@ def _policy_preview(service: str, severity: str, recipient: str) -> dict:
         "policy": "piter-standard-escalation",
         "recipient": _mask_recipient(recipient),
         "channels": ["sns", "ses"],
-        "live_dispatch_allowed": False,
+        "live_dispatch_allowed": _live_dispatch_enabled(),
     }
 
 
@@ -61,6 +83,8 @@ def _live_block_reasons(params: dict[str, str], key: str) -> list[str]:
     recipient = params.get("recipient", "")
     if os.environ.get("PITER_NOTIFICATION_MODE", "mock") != "live":
         reasons.append("PITER_NOTIFICATION_MODE is not live")
+    if not _live_dispatch_enabled():
+        reasons.append("PITER_ENABLE_LIVE_DISPATCH is not true")
     if os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "false").lower() != "true":
         reasons.append("confirmation requirement is not enabled")
     if params.get("confirmation_token", "") != os.environ.get("PITER_NOTIFICATION_CONFIRMATION_TOKEN", ""):
@@ -69,6 +93,8 @@ def _live_block_reasons(params: dict[str, str], key: str) -> list[str]:
         reasons.append("recipient is not allowlisted")
     if severity not in _csv_env("PITER_NOTIFICATION_ALLOWED_SEVERITIES", "P1,P2"):
         reasons.append("incident severity is not allowed")
+    if "@" in recipient and not _email_configured():
+        reasons.append("PITER_SES_SENDER_EMAIL is not configured")
     if key in SENT_IDEMPOTENCY_KEYS:
         reasons.append("message was already sent")
     return reasons
@@ -122,14 +148,34 @@ def lambda_handler(event, context):
             },
         )
 
+    _ensure_app_import_path()
+    from app.services.notification_dispatch import NotificationDispatchError, dispatch_live_safe
+
+    subject = f"[PITER {severity}] {incident_id} — {service}"
+    try:
+        dispatch_result = dispatch_live_safe(recipient, message, subject=subject)
+    except NotificationDispatchError as exc:
+        return _respond(
+            event,
+            403,
+            {
+                "mode": "live",
+                "sent": False,
+                "blocked": True,
+                "reasons": [exc.message],
+                "recipient": _mask_recipient(recipient),
+            },
+        )
+
     SENT_IDEMPOTENCY_KEYS.add(key)
     return _respond(
         event,
         200,
         {
             "mode": "live",
-            "sent": False,
-            "dispatch": "blocked_in_local_source",
+            "sent": True,
+            "channel": dispatch_result["channel"],
+            "message_id": dispatch_result.get("message_id"),
             "recipient": _mask_recipient(recipient),
             "idempotency_key": key,
             "timestamp": datetime.now(timezone.utc).isoformat(),

@@ -76,6 +76,12 @@ export interface BootstrapPayload {
     mode: string;
     require_confirmation: boolean;
     max_sends_per_incident: number;
+    live_dispatch_enabled?: boolean;
+    sms_configured?: boolean;
+    email_configured?: boolean;
+    allowlist_count?: number;
+    demo_sms_configured?: boolean;
+    demo_email_configured?: boolean;
   };
   alert_stream?: AlertStreamSummary;
 }
@@ -219,6 +225,20 @@ export interface WorkflowTriagePayload {
   session_id?: string | null;
   message?: string;
   reason?: string;
+}
+
+export interface EscalationNotifyResult {
+  ok: boolean;
+  sent: boolean;
+  mode?: string;
+  channel?: string;
+  blocked?: boolean;
+  reasons?: string[];
+  recipient?: string;
+  message_id?: string;
+  idempotency_key?: string;
+  error?: string;
+  message?: string;
 }
 
 export interface UploadResultPayload {

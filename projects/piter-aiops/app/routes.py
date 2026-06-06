@@ -24,6 +24,13 @@ from app.validators import MAX_QUESTION_LEN, validate_question
 from app.workflow import build_workflow_payload
 from app.services.alert_stream import load_alert_stream, p1_demo_alert, summarize_alert_stream
 from app.services.kb_manifest import kb_sections, load_kb_manifest
+from app.services.escalation_service import notify_demo_channel
+from app.services.notification_dispatch import (
+    allowlist_count,
+    email_configured,
+    live_dispatch_enabled,
+    sms_configured,
+)
 from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
 
 log = logging.getLogger(__name__)
@@ -110,6 +117,12 @@ def _notification_settings() -> dict:
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
         in {"true", "1", "yes"},
         "max_sends_per_incident": int(os.environ.get("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "1") or 1),
+        "live_dispatch_enabled": live_dispatch_enabled(),
+        "sms_configured": sms_configured(),
+        "email_configured": email_configured(),
+        "allowlist_count": allowlist_count(),
+        "demo_sms_configured": bool(os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()),
+        "demo_email_configured": bool(os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()),
     }
 
 
@@ -413,6 +426,53 @@ def api_triage():
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
     return jsonify(ok=True, **card), 200
+
+
+@bp.post("/api/escalation/notify")
+def api_escalation_notify():
+    """Trigger live escalation notify for allowlisted demo recipients only."""
+    body = request.get_json(silent=True) or {}
+    channel = str(body.get("channel") or "").strip().lower()
+    if channel not in {"sms", "email"}:
+        return jsonify(
+            ok=False,
+            reason="invalid_channel",
+            message="channel must be sms or email",
+        ), 400
+
+    incident_id = str(body.get("incident_id") or "INC-DEMO-STORM").strip()
+    service = str(body.get("service") or "bet-service").strip()
+    severity = str(body.get("severity") or "P1").strip()
+    confirmation_token = str(body.get("confirmation_token") or "").strip()
+    if not confirmation_token:
+        return jsonify(
+            ok=False,
+            reason="missing_confirmation",
+            message="A confirmation token is required for live dispatch.",
+        ), 400
+
+    message = str(body.get("message") or "").strip() or None
+    idempotency_key = str(body.get("idempotency_key") or "").strip() or None
+
+    try:
+        result = notify_demo_channel(
+            channel=channel,
+            incident_id=incident_id,
+            service=service,
+            severity=severity,
+            confirmation_token=confirmation_token,
+            message=message,
+            idempotency_key=idempotency_key,
+        )
+    except ValueError as exc:
+        return jsonify(ok=False, reason="invalid_channel", message=str(exc)), 400
+
+    http_status = int(result.pop("http_status", 502))
+    sent = bool(result.get("sent"))
+    ok = sent and http_status == 200
+    if "error" in result and not sent:
+        return jsonify(ok=False, **result), http_status if http_status >= 400 else 400
+    return jsonify(ok=ok, **result), http_status
 
 
 @bp.post("/api/follow-up")

@@ -39,6 +39,22 @@ import {
   triageToRagAnswer,
   uploadDocument,
 } from "@/lib/api";
+import {
+  AgentDecisionsLog,
+  AgentEnrichmentPipeline,
+  AlertStreamTable,
+  ChatThread,
+  DocTypeBadge,
+  EscalationNotifyModal,
+  EscalationTriggeredCard,
+  MemoryFlowPanel,
+  MetadataGrid,
+  NoisePatternCard,
+  P1CandidateCard,
+  UploadInstructions,
+  type ChatTurn,
+  type StreamRow,
+} from "@/components/piter/ops-ui";
 import { useBootstrap } from "@/context/bootstrap";
 import type { AlertStreamSummary, BootstrapPayload, Citation, KbDocumentMeta, RagAnswer, TriageCard } from "@/types/rag";
 
@@ -376,8 +392,10 @@ function AppShell() {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  const [chatTurns, setChatTurns] = useState<ChatTurn[]>([]);
   const [kbDocs, setKbDocs] = useState<KbDocumentMeta[]>([]);
   const [invStatuses, setInvStatuses] = useState<Record<string, string>>({});
+  const [escalationModalOpen, setEscalationModalOpen] = useState(false);
   const stormTimerRef = useRef<number | null>(null);
 
   const streamSummary: AlertStreamSummary = data?.alert_stream ?? {
@@ -400,6 +418,9 @@ function AppShell() {
     : data?.execution_mode_hint || data?.model_label || "Bedrock Agent / KB";
   const sessionId = triageCard?.session_id ?? answer?.session_id ?? "demo-session-preview";
   const notificationMode = data?.notification?.mode ?? "mock";
+  const liveDispatchEnabled = data?.notification?.live_dispatch_enabled ?? false;
+  const demoSmsConfigured = data?.notification?.demo_sms_configured ?? false;
+  const demoEmailConfigured = data?.notification?.demo_email_configured ?? false;
 
   useEffect(() => {
     return () => {
@@ -440,36 +461,51 @@ function AppShell() {
     setChatLoading(true);
     setChatError(null);
     setLastQuestion(q);
+    setChatTurns((prev) => [...prev, { role: "user", text: q }]);
     try {
       if (triageCard?.session_id) {
         const result = await followUp(triageCard.session_id, q);
         setMemoryUsed(result.memory_used);
+        const citations = (result.citations ?? []).map((c, index) => ({
+          snippet: c.excerpt,
+          source_uri: c.document,
+          source_label: c.document,
+          index: index + 1,
+          score: c.score ?? null,
+        }));
         setAnswer({
           answer: result.answer,
-          citations: (result.citations ?? []).map((c, index) => ({
-            snippet: c.excerpt,
-            source_uri: c.document,
-            source_label: c.document,
-            index: index + 1,
-            score: c.score ?? null,
-          })),
+          citations,
           session_id: result.session_id,
           grounded: true,
           latency_ms: 0,
           matched_runbook: triageCard.matched_runbook,
         });
+        setChatTurns((prev) => [...prev, { role: "assistant", text: result.answer, citations }]);
       } else {
         const result = await askQuestion(
           `For incident ${selected.id} (${selected.alert}), ${q}`,
           answer?.session_id ?? undefined,
         );
         setAnswer(result);
+        setChatTurns((prev) => [
+          ...prev,
+          { role: "assistant", text: result.answer, citations: result.citations },
+        ]);
       }
     } catch (exc) {
       setChatError(exc instanceof Error ? exc.message : "Agent request failed");
     } finally {
       setChatLoading(false);
     }
+  }
+
+  function resetMemoryPreview() {
+    setChatTurns([]);
+    setLastQuestion(null);
+    setMemoryUsed(false);
+    setAnswer(null);
+    setChatError(null);
   }
 
   function clearStormTimer() {
@@ -532,10 +568,18 @@ function AppShell() {
             duration_minutes: 45,
           };
       const card = await runTriageCard(alertPayload);
+      const rag = triageToRagAnswer(card);
       setTriageCard(card);
-      setAnswer(triageToRagAnswer(card));
+      setAnswer(rag);
       setMemoryUsed(false);
       setLastQuestion("What should I check first?");
+      setChatTurns([
+        {
+          role: "assistant",
+          text: rag.answer,
+          citations: rag.citations,
+        },
+      ]);
       setStormState("resolved");
     } catch (exc) {
       setChatError(exc instanceof Error ? exc.message : "Triage workflow failed");
@@ -617,20 +661,29 @@ function AppShell() {
                 selected={selected}
                 streamSummary={streamSummary}
                 notificationMode={notificationMode}
+                liveDispatchEnabled={liveDispatchEnabled}
+                onOpenEscalation={() => setEscalationModalOpen(true)}
+                onOpenChat={() => askAgent("What should I check first?")}
               />
             )}
             {active === "memory" && (
               <ContextMemory
                 sessionId={sessionId}
                 lastQuestion={lastQuestion}
+                lastAnswer={answer?.answer ?? null}
                 memoryUsed={memoryUsed}
                 triageCard={triageCard}
+                selected={selected}
+                chatTurns={chatTurns}
+                onReset={resetMemoryPreview}
               />
             )}
             {active === "knowledge" && (
               <KnowledgeBase
                 citations={answer?.citations ?? []}
                 kbDocs={kbDocs}
+                allowedTypes={data?.allowed_types ?? [".csv", ".json", ".md", ".txt", ".pdf", ".docx"]}
+                maxUploadMb={data?.max_upload_mb ?? 5}
                 onRefresh={() =>
                   fetchKbManifest()
                     .then((manifest) => setKbDocs(manifest.documents))
@@ -654,7 +707,6 @@ function AppShell() {
       </div>
       <AgentPanel
         selected={selected}
-        answer={answer}
         triageCard={triageCard}
         chatInput={chatInput}
         setChatInput={setChatInput}
@@ -664,6 +716,19 @@ function AppShell() {
         lastQuestion={lastQuestion}
         memoryUsed={memoryUsed}
         executionLabel={executionLabel}
+        chatTurns={chatTurns}
+        onResetMemory={resetMemoryPreview}
+      />
+      <EscalationNotifyModal
+        open={escalationModalOpen}
+        onClose={() => setEscalationModalOpen(false)}
+        incidentId={String(triageCard?.alert?.alert_id ?? selected.id)}
+        service={String(triageCard?.alert?.service ?? selected.service)}
+        severity={triageCard?.priority ?? selected.severity}
+        notificationMode={notificationMode}
+        liveDispatchEnabled={liveDispatchEnabled}
+        demoSmsConfigured={demoSmsConfigured}
+        demoEmailConfigured={demoEmailConfigured}
       />
     </main>
   );
@@ -1181,6 +1246,9 @@ function AlertStorm({
   selected,
   streamSummary,
   notificationMode,
+  liveDispatchEnabled,
+  onOpenEscalation,
+  onOpenChat,
 }: {
   stormState: StormState;
   startStorm: () => void;
@@ -1192,6 +1260,9 @@ function AlertStorm({
   selected: Investigation;
   streamSummary: AlertStreamSummary;
   notificationMode: string;
+  liveDispatchEnabled: boolean;
+  onOpenEscalation: () => void;
+  onOpenChat: () => void;
 }) {
   const progress =
     stormState === "idle"
@@ -1205,133 +1276,136 @@ function AlertStorm({
           : stormState === "investigating"
             ? 88
             : 100;
+
+  const enrichmentSteps =
+    stormState === "idle"
+      ? 0
+      : stormState === "streaming" || stormState === "paused"
+        ? 2
+        : stormState === "critical"
+          ? 5
+          : stormState === "investigating"
+            ? 7
+            : 8;
+
+  const showP1 =
+    stormState === "critical" ||
+    stormState === "investigating" ||
+    stormState === "resolved";
+
+  const streamRows = buildAlertStreamRows(stormState);
+  const ownerTeam =
+    (triageCard?.owner?.team as string | undefined) ?? "Betting Core Platform";
+
   return (
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Main recording flow"
         title="Alert Storm Demo"
-        body={`Simulated alert storm — ${streamSummary.total} deterministic alerts. Suppresses P3/P4 noise, detects a P1 on bet-service, and runs the full PITER workflow via /api/triage.`}
+        body={`Simulated alert storm — ${streamSummary.total} deterministic alerts over ~5 minutes. The agent suppresses P3/P4 noise, surfaces warning signals, detects a P1 on bet-service, and runs the full PITER workflow via /api/triage with visible citations.`}
       />
       <div className="flex flex-wrap items-center gap-2">
         <Pill tone="cyan">Phase: {stormPhaseLabel(stormState)}</Pill>
         <Pill tone="purple">{streamSummary.label}</Pill>
+        <Pill tone="green">Demo mode — AWS mock connected</Pill>
       </div>
-      <div className="grid grid-cols-[0.9fr_1.1fr] gap-4 max-[1100px]:grid-cols-1">
-        <Panel title="Storm controls" icon={Activity}>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={startStorm}
-              disabled={stormState === "investigating"}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
-            >
-              <Play className="size-4" />
-              Start Demo
-            </button>
-            <button
-              type="button"
-              onClick={pauseStorm}
-              disabled={stormState !== "streaming"}
-              className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
-            >
-              Pause
-            </button>
-            <button
-              type="button"
-              onClick={resetStorm}
-              className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={runWorkflow}
-              disabled={stormState === "idle"}
-              className="cursor-pointer rounded-md border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/20 disabled:opacity-40"
-            >
-              Run PITER workflow
-            </button>
-          </div>
-          <div className="mt-5">
-            <div className="mb-2 flex justify-between text-xs text-slate-400">
-              <span>Storm progress</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-cyan-300 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <MiniStat
-              label="Processed"
-              value={stormState === "idle" ? "0" : String(streamSummary.total)}
-            />
-            <MiniStat
-              label="Noise suppressed"
-              value={stormState === "idle" ? "0" : String(streamSummary.noise_suppressed)}
-            />
-            <MiniStat
-              label="Warning signals"
-              value={stormState === "idle" ? "0" : String(streamSummary.warning_signals)}
-            />
-            <MiniStat
-              label="P1 state"
-              value={
-                stormState === "critical" ||
-                stormState === "investigating" ||
-                stormState === "resolved"
-                  ? "active"
-                  : "waiting"
-              }
-            />
-          </div>
+
+      <div className="grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2 max-[560px]:grid-cols-1">
+        <MiniStat
+          label="Alerts received"
+          value={stormState === "idle" ? "0" : `${streamSummary.total}`}
+        />
+        <MiniStat
+          label="Noise suppressed"
+          value={stormState === "idle" ? "0" : String(streamSummary.noise_suppressed)}
+        />
+        <MiniStat
+          label="Active incidents"
+          value={showP1 ? "1" : "0"}
+        />
+        <MiniStat label="Escalations" value={stormState === "resolved" ? "1 (preview)" : "0"} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={startStorm}
+          disabled={stormState === "investigating"}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+        >
+          <Play className="size-4" />
+          Start 5-min alert storm
+        </button>
+        <button
+          type="button"
+          onClick={pauseStorm}
+          disabled={stormState !== "streaming"}
+          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+        >
+          Pause
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (stormState === "paused") startStorm();
+          }}
+          disabled={stormState !== "paused"}
+          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+        >
+          Continue live
+        </button>
+        <button
+          type="button"
+          onClick={resetStorm}
+          className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+        >
+          Reset
+        </button>
+      </div>
+
+      <P1CandidateCard
+        showActions={showP1}
+        title="P1 bet-service 100% error rate on GIB-UKGC"
+        description="Business risk: regulated betting unavailable during peak window. Revenue, customer trust, and SLA exposure are material. Alert storm paused for human review — run PITER analysis to produce a source-grounded action plan."
+        onAnalyze={runWorkflow}
+        onEscalate={onOpenEscalation}
+        onChat={onOpenChat}
+        onContinue={startStorm}
+      />
+
+      <div className="grid grid-cols-[1.1fr_0.9fr] gap-4 max-[1100px]:grid-cols-1">
+        <Panel title="Live alert stream" icon={TerminalSquare}>
+          <AlertStreamTable
+            rows={streamRows}
+            visibleTotal={streamRows.length}
+            total={streamSummary.total}
+          />
         </Panel>
-        <div className="grid gap-4">
-          <Panel title="Noise suppression" icon={TrendingDown}>
-            <p className="text-sm text-slate-400">
-              {stormState === "idle"
-                ? "Start the demo to group repeated P3/P4 patterns."
-                : `${streamSummary.noise_suppressed} alerts grouped as noise before human review.`}
-            </p>
-          </Panel>
-          <Panel title="P1 trigger" icon={AlertTriangle}>
-            <p className="text-sm text-red-100/90">
-              {stormState === "critical" ||
-              stormState === "investigating" ||
-              stormState === "resolved"
-                ? "CRITICAL: bet-service 100% error rate on GIB-UKGC — workflow eligible."
-                : "Waiting for warning signals to escalate into P1."}
-            </p>
-          </Panel>
-          <Panel title="Live alert stream" icon={TerminalSquare}>
-            <div className="max-h-[220px] space-y-2 overflow-y-auto">
-              {WARNING_ALERTS.map((alert, index) => {
-                const visible =
-                  stormState !== "idle" && (stormState !== "streaming" || index < 4);
-                const critical = index === WARNING_ALERTS.length - 1;
-                return (
-                  <div
-                    key={alert}
-                    className={classNames(
-                      "rounded-lg border px-3 py-2 text-sm transition",
-                      visible ? "opacity-100" : "opacity-30",
-                      critical
-                        ? "border-red-500/40 bg-red-500/10 text-red-100"
-                        : "border-slate-700 bg-slate-900/70 text-slate-300",
-                    )}
-                  >
-                    {alert}
-                  </div>
-                );
-              })}
-            </div>
-          </Panel>
+        <Panel title="Agent decisions" icon={Bot}>
+          <AgentDecisionsLog stormState={stormState} noiseSuppressed={streamSummary.noise_suppressed} />
+        </Panel>
+      </div>
+
+      <NoisePatternCard visible={stormState !== "idle"} suppressed={streamSummary.noise_suppressed} />
+
+      {(stormState === "investigating" || stormState === "resolved") && (
+        <AgentEnrichmentPipeline activeCount={enrichmentSteps} />
+      )}
+
+      <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-4">
+        <div className="mb-2 flex justify-between text-xs text-slate-400">
+          <span>Storm progress</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-slate-800">
+          <div
+            className="h-full rounded-full bg-cyan-300 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
-      <Panel title="PITER workflow result" icon={GitBranch}>
+
+      <Panel title="PITER workflow pipeline" icon={GitBranch}>
         <div className="grid grid-cols-5 gap-2 max-[900px]:grid-cols-1">
           {PIPELINE.map((step, index) => (
             <div
@@ -1340,7 +1414,7 @@ function AlertStorm({
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-cyan-100">{step.label}</span>
-                {stormState === "resolved" || index < 3 ? (
+                {stormState === "resolved" || index < enrichmentSteps ? (
                   <CheckCircle2 className="size-4 text-emerald-300" />
                 ) : (
                   <Clock3 className="size-4 text-slate-500" />
@@ -1351,24 +1425,60 @@ function AlertStorm({
           ))}
         </div>
       </Panel>
+
       {stormState === "resolved" && (
-        <Panel title="Post-demo KPI summary" icon={Target}>
-          <div className="grid grid-cols-4 gap-2 max-[900px]:grid-cols-2">
-            <MiniStat label="Alerts processed" value={String(streamSummary.total)} />
-            <MiniStat label="Noise suppressed" value={String(streamSummary.noise_suppressed)} />
-            <MiniStat label="Triage mode" value={triageCard?.mode ?? "pending"} />
-            <MiniStat label="Notifications" value={notificationMode} />
-          </div>
-        </Panel>
+        <>
+          <Panel title="Post-demo KPI summary" icon={Target}>
+            <div className="grid grid-cols-4 gap-2 max-[900px]:grid-cols-2">
+              <MiniStat label="Alerts processed" value={String(streamSummary.total)} />
+              <MiniStat label="Noise suppressed" value={String(streamSummary.noise_suppressed)} />
+              <MiniStat label="Triage mode" value={triageCard?.mode ?? "pending"} />
+              <MiniStat label="Notifications" value={notificationMode} />
+            </div>
+          </Panel>
+          <EscalationTriggeredCard
+            visible
+            incidentTitle="P1 — bet-service 100% error rate on GIB-UKGC"
+            ownerTeam={ownerTeam}
+            onCallRole="Platform SRE (masked in preview)"
+            notificationMode={notificationMode}
+            liveDispatchEnabled={liveDispatchEnabled}
+            onEscalateLive={onOpenEscalation}
+            payloadLines={[
+              "Affected service: bet-service",
+              "Business impact: regulated betting outage",
+              "Recent deploy correlation: via piter-recent-deployments",
+              "Top logs: error rate 100% on GIB-UKGC",
+              `Runbook sources: ${triageCard?.matched_runbook ?? "bet-service runbook"}`,
+              `Recommended first actions: ${(triageCard?.recommended_steps ?? []).length || 6} steps`,
+            ]}
+          />
+        </>
       )}
+
       <InvestigationDetail
         selected={selected}
         answer={answer}
         triageCard={triageCard}
         notificationMode={notificationMode}
+        streamSummary={streamSummary}
       />
     </div>
   );
+}
+
+function buildAlertStreamRows(stormState: StormState): StreamRow[] {
+  const base: StreamRow[] = [
+    { time: "10:01:02", service: "wallet-service", alert: "memory_utilization_high", severity: "P4", status: "streaming" },
+    { time: "10:01:08", service: "wallet-service", alert: "memory_utilization_high", severity: "P4", status: "suppressed" },
+    { time: "10:01:45", service: "bet-service", alert: "latency_p95_elevated", severity: "P2", status: "streaming" },
+    { time: "10:02:12", service: "bet-service", alert: "error_rate_warning", severity: "P2", status: "streaming" },
+    { time: "10:02:55", service: "bet-service", alert: "100% error rate GIB-UKGC", severity: "P1", status: "critical" },
+  ];
+  if (stormState === "idle") return [];
+  if (stormState === "streaming") return base.slice(0, 3);
+  if (stormState === "paused") return base.slice(0, 4);
+  return base;
 }
 
 function InvestigationDetail({
@@ -1376,11 +1486,13 @@ function InvestigationDetail({
   answer,
   triageCard,
   notificationMode = "mock",
+  streamSummary,
 }: {
   selected: Investigation;
   answer: RagAnswer | null;
   triageCard: TriageCard | null;
   notificationMode?: string;
+  streamSummary?: AlertStreamSummary;
 }) {
   const triageSteps = triageCard?.recommended_steps ?? [
     "Check bet-service health and circuit breaker state.",
@@ -1441,6 +1553,27 @@ function InvestigationDetail({
               material.
             </p>
           </div>
+          {triageCard && (
+            <MetadataGrid
+              items={[
+                { label: "Affected service", value: selected.service },
+                {
+                  label: "Noise reduction",
+                  value: `${streamSummary?.noise_suppressed ?? 366} duplicate alerts suppressed`,
+                },
+                {
+                  label: "Detected pattern",
+                  value: `${streamSummary?.warning_signals ?? 5} warning signals before P1`,
+                },
+                {
+                  label: "Recent deployment",
+                  value: deploys[0] ?? "via piter-recent-deployments",
+                },
+                { label: "Confidence", value: triageCard.grounded ? "High (grounded)" : "Medium" },
+                { label: "Execution mode", value: triageCard.mode ?? "preview" },
+              ]}
+            />
+          )}
           <div className="grid grid-cols-2 gap-3 max-[760px]:grid-cols-1">
             <EvidenceCard
               title="Investigation findings"
@@ -1574,53 +1707,88 @@ function EscalationPreview({
 function ContextMemory({
   sessionId,
   lastQuestion,
+  lastAnswer,
   memoryUsed,
   triageCard,
+  selected,
+  chatTurns,
+  onReset,
 }: {
   sessionId: string;
   lastQuestion: string | null;
+  lastAnswer: string | null;
   memoryUsed: boolean;
   triageCard: TriageCard | null;
+  selected: Investigation;
+  chatTurns: ChatTurn[];
+  onReset: () => void;
 }) {
   return (
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Session-aware investigations"
         title="Context Memory"
-        body="The system stores, summarizes, retrieves, and reuses relevant investigation context. It does not permanently train itself."
+        body="The system stores, summarizes, retrieves, and reuses relevant investigation context for follow-up questions. Memory is session-scoped — it does not permanently train the model."
       />
-      <div className="grid grid-cols-[0.8fr_1.2fr] gap-4 max-[1000px]:grid-cols-1">
-        <Panel title="Active memory context" icon={Brain}>
-          <div className="space-y-3 text-sm">
-            <MiniStat label="Current incident" value="INV-2026-0610-001" />
-            <MiniStat label="Session ID" value={sessionId} />
-            <MiniStat label="Memory used" value={memoryUsed ? "true" : triageCard ? "false" : "preview"} />
-            <MiniStat label="Last user question" value={lastQuestion ?? "No follow-up asked yet"} />
-            <MiniStat
-              label="Tools in session"
-              value={triageCard ? "4 piter-* tools" : "run workflow first"}
-            />
-          </div>
-        </Panel>
-        <Panel title="Reusable investigation history" icon={History}>
-          <div className="grid gap-2">
+      <div className="grid grid-cols-[0.85fr_1.15fr] gap-4 max-[1000px]:grid-cols-1">
+        <MemoryFlowPanel
+          sessionId={sessionId}
+          incidentLabel={selected.alert}
+          lastQuestion={lastQuestion}
+          lastAnswer={lastAnswer}
+          memoryUsed={memoryUsed}
+          onReset={onReset}
+        />
+        <Panel title="Memory logic flow" icon={Brain}>
+          <div className="space-y-2 text-sm">
             {[
-              "Same pattern detected today: warning shots before P1 outage.",
-              "Similar incident from history: connection pool exhaustion caused bet-service errors.",
-              "Past resolution reused: rollback plus dependency health validation reduced MTTR.",
-              "Previous agent decision: grouped 366 noise alerts before surfacing P1.",
-              "Memory rule: use incident context for follow-ups, do not store real personal contacts.",
+              { step: "1", text: "Operator runs /api/triage — session_id issued and stored" },
+              { step: "2", text: "Follow-up via /api/follow-up reuses incident context + citations" },
+              { step: "3", text: "memory_used=true when prior turn informs the answer" },
+              { step: "4", text: "Context expires with session — no persistent model training" },
             ].map((item) => (
               <div
-                key={item}
-                className="rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"
+                key={item.step}
+                className="flex gap-3 rounded-lg border border-slate-700 bg-slate-900/70 p-3"
               >
-                {item}
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10 text-xs font-bold text-cyan-200">
+                  {item.step}
+                </span>
+                <span className="text-slate-300">{item.text}</span>
               </div>
             ))}
           </div>
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Session transcript preview
+            </div>
+            <div className="mt-2 max-h-[280px] overflow-y-auto">
+              <ChatThread
+                turns={chatTurns}
+                emptyHint="Run the alert storm workflow or ask the agent to populate memory-backed turns."
+              />
+            </div>
+          </div>
         </Panel>
       </div>
+      <Panel title="Reusable investigation history" icon={History}>
+        <div className="grid gap-2">
+          {[
+            "Same pattern detected today: warning shots before P1 outage.",
+            "Similar incident from history: connection pool exhaustion caused bet-service errors.",
+            "Past resolution reused: rollback plus dependency health validation reduced MTTR.",
+            `Previous agent decision: grouped ${triageCard ? "366" : "—"} noise alerts before surfacing P1.`,
+            "Memory rule: use incident context for follow-ups, do not store real personal contacts.",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </Panel>
       <Panel title="Agent decision timeline" icon={Clock3}>
         <div className="space-y-2 text-sm text-slate-400">
           <div>T+0 — Alert storm ingested (399 deterministic alerts)</div>
@@ -1637,11 +1805,15 @@ function ContextMemory({
 function KnowledgeBase({
   citations,
   kbDocs,
+  allowedTypes,
+  maxUploadMb,
   onRefresh,
   onAskAboutDoc,
 }: {
   citations: Citation[];
   kbDocs: KbDocumentMeta[];
+  allowedTypes: string[];
+  maxUploadMb: number;
   onRefresh: () => void;
   onAskAboutDoc: (title: string) => void;
 }) {
@@ -1693,30 +1865,32 @@ function KnowledgeBase({
         title="Knowledge Base"
         body="Runbooks, environments, policies, incidents, glossary, and uploaded documents support RAG answers with visible citations."
       />
-      <Panel title="Upload document (local/demo RAG)" icon={Database}>
-        <p className="mb-3 text-xs text-slate-500">
-          Accepted: CSV, JSON, MD, TXT, PDF, DOCX — max size per server config. Upload indexes
-          locally for demo retrieval; Bedrock KB sync is not automatic unless configured.
-        </p>
+      <Panel title="Upload document" icon={Database}>
+        <UploadInstructions allowedTypes={allowedTypes} maxMb={maxUploadMb} />
         <div className="flex flex-wrap items-end gap-3">
           <label className="grid gap-1 text-xs text-slate-400">
-            Document file
+            <span className="font-medium text-slate-300">Select file</span>
             <input
               type="file"
-              accept=".csv,.json,.md,.txt,.pdf,.docx"
+              accept={allowedTypes.join(",")}
               onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-              className="cursor-pointer text-sm text-slate-300"
+              className="cursor-pointer rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-300"
             />
           </label>
           <button
             type="button"
-            disabled={uploading}
+            disabled={uploading || !uploadFile}
             onClick={handleUpload}
             className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
           >
-            {uploading ? "Uploading…" : "Upload"}
+            {uploading ? "Uploading…" : "Upload to demo corpus"}
           </button>
         </div>
+        {uploadFile && (
+          <p className="mt-2 text-xs text-slate-500">
+            Selected: {uploadFile.name} ({Math.ceil(uploadFile.size / 1024)} KB)
+          </p>
+        )}
         {uploadMsg && (
           <p className="mt-2 text-xs text-emerald-300">{uploadMsg}</p>
         )}
@@ -1747,7 +1921,9 @@ function KnowledgeBase({
               {rows.map((doc) => (
                 <tr key={doc.name} className="border-b border-slate-800">
                   <td className="px-3 py-3 text-cyan-100">{doc.name}</td>
-                  <td className="px-3 py-3">{doc.type}</td>
+                  <td className="px-3 py-3">
+                    <DocTypeBadge type={String(doc.type)} />
+                  </td>
                   <td className="px-3 py-3 text-slate-400">{doc.service}</td>
                   <td className="px-3 py-3 text-slate-400">{doc.env}</td>
                   <td className="px-3 py-3">{doc.severity}</td>
@@ -1898,15 +2074,53 @@ function Settings({
         <Panel title="Escalation and notification safety" icon={Lock}>
           <div className="space-y-3 text-sm">
             <InfoRow label="Default mode" value={notificationMode} />
-            <InfoRow label="Preview mode" value="safe escalation policy preview" />
             <InfoRow
-              label="Live mode"
-              value="blocked unless all environment and confirmation gates pass"
+              label="Live dispatch"
+              value={
+                data?.notification?.live_dispatch_enabled
+                  ? "enabled (PITER_ENABLE_LIVE_DISPATCH=true)"
+                  : "disabled — set PITER_ENABLE_LIVE_DISPATCH=true"
+              }
             />
-            <InfoRow label="Masked recipients" value="+972-**-***-1234, a***@example.com" />
+            <InfoRow
+              label="SMS ready"
+              value={
+                data?.notification?.demo_sms_configured
+                  ? "demo recipient configured"
+                  : "set PITER_DEMO_SMS_RECIPIENT"
+              }
+            />
+            <InfoRow
+              label="Email ready"
+              value={
+                data?.notification?.email_configured && data?.notification?.demo_email_configured
+                  ? "SES sender + demo recipient configured"
+                  : "set PITER_SES_SENDER_EMAIL and PITER_DEMO_EMAIL_RECIPIENT"
+              }
+            />
+            <InfoRow
+              label="Allowlist entries"
+              value={String(data?.notification?.allowlist_count ?? 0)}
+            />
             <InfoRow label="Confirmation required" value="yes for live dispatch" />
-            <InfoRow label="Idempotency" value="reserved per incident" />
-            <Pill tone="green">No real SNS or SES messages are sent by this UI</Pill>
+            <InfoRow label="Idempotency" value="one send per incident/channel key" />
+            <Pill tone={data?.notification?.live_dispatch_enabled ? "amber" : "green"}>
+              {data?.notification?.live_dispatch_enabled
+                ? "Live SNS/SES available when mode=live and token matches"
+                : "Safe defaults — preview/mock unless live gates pass"}
+            </Pill>
+          </div>
+        </Panel>
+        <Panel title="Knowledge Base upload policy" icon={Database}>
+          <div className="space-y-3 text-sm">
+            <InfoRow
+              label="Accepted types"
+              value={(data?.allowed_types ?? [".csv", ".json", ".md", ".txt", ".pdf", ".docx"]).join(", ")}
+            />
+            <InfoRow label="Max upload size" value={`${data?.max_upload_mb ?? 5} MB`} />
+            <InfoRow label="Default indexing" value="local demo corpus + optional Bedrock KB sync" />
+            <InfoRow label="CSV usage" value="tabular incident data, service owners, enrichment feeds" />
+            <InfoRow label="Runbook formats" value="Markdown (.md) preferred; PDF/DOCX supported" />
           </div>
         </Panel>
         <Panel title="Implemented vs mocked vs planned" icon={Archive}>
@@ -1917,11 +2131,11 @@ function Settings({
             />
             <InfoRow
               label="Mocked"
-              value="notification dispatch and deterministic alert storm visuals"
+              value="deterministic alert storm visuals; notifications unless live gates pass"
             />
             <InfoRow
               label="Planned"
-              value="real MCP server, AWS redeploy, live notifications after approval"
+              value="real MCP server, AWS redeploy, production allowlist management"
             />
           </div>
         </Panel>
@@ -1932,7 +2146,6 @@ function Settings({
 
 function AgentPanel({
   selected,
-  answer,
   triageCard,
   chatInput,
   setChatInput,
@@ -1942,9 +2155,10 @@ function AgentPanel({
   lastQuestion,
   memoryUsed,
   executionLabel,
+  chatTurns,
+  onResetMemory,
 }: {
   selected: Investigation;
-  answer: RagAnswer | null;
   triageCard: TriageCard | null;
   chatInput: string;
   setChatInput: (value: string) => void;
@@ -1954,6 +2168,8 @@ function AgentPanel({
   lastQuestion: string | null;
   memoryUsed: boolean;
   executionLabel: string;
+  chatTurns: ChatTurn[];
+  onResetMemory: () => void;
 }) {
   const prompts = [
     "What should I check first?",
@@ -1966,42 +2182,32 @@ function AgentPanel({
 
   return (
     <aside className="fixed bottom-5 right-5 top-[76px] z-30 flex w-[360px] flex-col rounded-xl border border-cyan-300/20 bg-[#07101d]/95 p-4 shadow-2xl backdrop-blur max-[1250px]:static max-[1250px]:m-5 max-[1250px]:w-auto">
-      <div className="flex items-center gap-2">
-        <div className="flex size-9 items-center justify-center rounded-md bg-cyan-300/15 text-cyan-200">
-          <Bot className="size-5" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex size-9 items-center justify-center rounded-md bg-cyan-300/15 text-cyan-200">
+            <Bot className="size-5" />
+          </div>
+          <div>
+            <div className="font-semibold">Incident Chat</div>
+            <div className="text-xs text-slate-500">{selected.id}</div>
+          </div>
         </div>
-        <div>
-          <div className="font-semibold">AI Analyst</div>
-          <div className="text-xs text-slate-500">Right-side agent panel</div>
-        </div>
+        <Pill tone={memoryUsed ? "green" : triageCard ? "cyan" : "slate"}>
+          {memoryUsed ? "Memory ON" : triageCard ? "Session ready" : "Preview"}
+        </Pill>
       </div>
-      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-xs">
-        <InfoRow label="Incident" value={selected.id} />
-        <InfoRow
-          label="Session ID"
-          value={triageCard?.session_id ?? answer?.session_id ?? "run workflow first"}
-        />
-        <InfoRow label="Memory used" value={memoryUsed ? "true" : triageCard ? "false" : "preview"} />
-        <InfoRow label="Execution" value={executionLabel} />
-        <InfoRow label="Last question" value={lastQuestion ?? "none"} />
-      </div>
-      <div className="mt-4 flex-1 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-        <div className="text-sm font-semibold text-cyan-100">Agent answer</div>
+      <div className="mt-2 truncate text-xs text-slate-400">{selected.alert}</div>
+      <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3">
         {error && (
-          <div className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">
+          <div className="mb-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">
             {error}
           </div>
         )}
-        {answer ? (
-          <div className="mt-3 space-y-3 text-sm text-slate-300">
-            <p className="leading-relaxed">{answer.answer}</p>
-            <CitationPreview citations={answer.citations} compact />
-          </div>
-        ) : (
-          <p className="mt-3 text-sm leading-relaxed text-slate-500">
-            Ask a follow-up to prove memory and retrieve a grounded answer with citations.
-          </p>
-        )}
+        <ChatThread
+          turns={chatTurns}
+          loading={loading}
+          emptyHint="Run the PITER workflow or ask a follow-up to see grounded answers with source citations."
+        />
       </div>
       <div className="mt-3 grid gap-2">
         <div className="flex flex-wrap gap-1.5">
@@ -2013,7 +2219,7 @@ function AgentPanel({
                 setChatInput(prompt);
                 askAgent(prompt);
               }}
-              className="rounded-full border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
+              className="cursor-pointer rounded-full border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
             >
               {prompt}
             </button>
@@ -2027,17 +2233,28 @@ function AgentPanel({
               if (event.key === "Enter") askAgent();
             }}
             className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-300/50"
-            placeholder="Ask about this incident"
+            placeholder="Ask about this incident…"
           />
           <button
             type="button"
             disabled={loading}
             onClick={() => askAgent()}
-            className="rounded-md bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
+            className="cursor-pointer rounded-md bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
-            {loading ? "..." : "Ask"}
+            {loading ? "…" : "Send"}
           </button>
         </div>
+        <div className="rounded-lg border border-slate-800 bg-slate-950/40 px-2 py-1.5 text-[10px] text-slate-500">
+          <InfoRow label="Execution" value={executionLabel} />
+          <InfoRow label="Last question" value={lastQuestion ?? "—"} />
+        </div>
+        <button
+          type="button"
+          onClick={onResetMemory}
+          className="cursor-pointer rounded-md border border-slate-700 px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-800"
+        >
+          Reset memory preview
+        </button>
       </div>
     </aside>
   );

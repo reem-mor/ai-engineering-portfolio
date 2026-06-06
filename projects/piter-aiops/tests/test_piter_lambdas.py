@@ -136,7 +136,7 @@ def test_escalation_live_blocked_without_required_safety_gates(monkeypatch):
     assert "PITER_NOTIFICATION_MODE is not live" in data["reasons"]
 
 
-def test_escalation_live_confirmed_remains_local_and_is_idempotent(monkeypatch):
+def test_escalation_live_confirmed_blocked_without_enable_flag(monkeypatch):
     mod = _load_lambda("piter-escalation")
     mod.SENT_IDEMPOTENCY_KEYS.clear()
     monkeypatch.setenv("PITER_NOTIFICATION_MODE", "live")
@@ -144,6 +144,7 @@ def test_escalation_live_confirmed_remains_local_and_is_idempotent(monkeypatch):
     monkeypatch.setenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "token-ok")
     monkeypatch.setenv("PITER_NOTIFICATION_ALLOWLIST", "role-primary-oncall")
     monkeypatch.setenv("PITER_NOTIFICATION_ALLOWED_SEVERITIES", "P1")
+    monkeypatch.delenv("PITER_ENABLE_LIVE_DISPATCH", raising=False)
 
     event = _event(
         "piter-escalation",
@@ -160,10 +161,49 @@ def test_escalation_live_confirmed_remains_local_and_is_idempotent(monkeypatch):
     )
     first = mod.lambda_handler(event, None)
     first_data = _body(first)
+    assert first["response"]["httpStatusCode"] == 403
+    assert first_data["blocked"] is True
+    assert first_data["sent"] is False
+    assert "PITER_ENABLE_LIVE_DISPATCH is not true" in first_data["reasons"]
+
+
+def test_escalation_live_dispatches_email_when_enabled(monkeypatch):
+    from unittest.mock import MagicMock, patch
+
+    mod = _load_lambda("piter-escalation")
+    mod.SENT_IDEMPOTENCY_KEYS.clear()
+    monkeypatch.setenv("PITER_NOTIFICATION_MODE", "live")
+    monkeypatch.setenv("PITER_ENABLE_LIVE_DISPATCH", "true")
+    monkeypatch.setenv("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true")
+    monkeypatch.setenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "token-ok")
+    monkeypatch.setenv("PITER_NOTIFICATION_ALLOWLIST", "ops@example.com")
+    monkeypatch.setenv("PITER_NOTIFICATION_ALLOWED_SEVERITIES", "P1")
+    monkeypatch.setenv("PITER_SES_SENDER_EMAIL", "noreply@example.com")
+
+    event = _event(
+        "piter-escalation",
+        operation="live_notify",
+        params={
+            "service": "wallet-service",
+            "severity": "P1",
+            "incident_id": "INC-1",
+            "recipient": "ops@example.com",
+            "message": "Escalation live test",
+            "confirmation_token": "token-ok",
+            "idempotency_key": "INC-1:email",
+        },
+    )
+
+    mock_ses = MagicMock()
+    mock_ses.send_email.return_value = {"MessageId": "msg-123"}
+
+    with patch("app.services.notification_dispatch.boto3.client", return_value=mock_ses):
+        first = mod.lambda_handler(event, None)
+    first_data = _body(first)
     assert first["response"]["httpStatusCode"] == 200
     assert first_data["mode"] == "live"
-    assert first_data["sent"] is False
-    assert first_data["dispatch"] == "blocked_in_local_source"
+    assert first_data["sent"] is True
+    assert first_data["message_id"] == "msg-123"
 
     second = mod.lambda_handler(event, None)
     second_data = _body(second)

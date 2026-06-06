@@ -1,6 +1,7 @@
 import type {
   AlertStreamSummary,
   BootstrapPayload,
+  EscalationNotifyResult,
   FollowUpResult,
   KbDocumentMeta,
   RagAnswer,
@@ -126,6 +127,24 @@ export async function followUp(sessionId: string, question: string): Promise<Fol
   const data = await parseJson<{ ok: boolean } & FollowUpResult>(response);
   if (!data.ok) throw new Error("Follow-up failed");
   return data;
+}
+
+export async function notifyEscalation(payload: {
+  channel: "sms" | "email";
+  incident_id: string;
+  service: string;
+  severity: string;
+  confirmation_token: string;
+  message?: string;
+  idempotency_key?: string;
+}): Promise<EscalationNotifyResult> {
+  const response = await fetch("/api/escalation/notify", {
+    method: "POST",
+    headers: withCsrf(JSON_HEADERS),
+    credentials: "same-origin",
+    body: JSON.stringify(payload),
+  });
+  return parseJson<EscalationNotifyResult>(response);
 }
 
 export function executionModeLabel(
