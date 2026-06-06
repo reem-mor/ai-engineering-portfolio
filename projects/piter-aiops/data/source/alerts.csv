@@ -1,0 +1,26 @@
+alert_id,timestamp,environment,service,severity,title,status,affected_users,error_rate_pct
+ALT-2026-06-06-001,2026-06-06T09:14:22Z,GIB-UKGC,wallet-service,P2,Replication lag exceeded 30s threshold,active,12000,2.4
+ALT-2026-06-06-002,2026-06-06T09:11:03Z,GIB-UKGC,wallet-service,P3,Slow query detected on transactions_log,acknowledged,12000,0.8
+ALT-2026-06-06-003,2026-06-06T09:08:45Z,GIB-UKGC,replication,P3,Replica node lag warning,active,0,0.0
+ALT-2026-06-06-004,2026-06-06T08:42:11Z,NJ-DGE,payments-service,P3,Payment gateway latency p95 > 2s,active,4500,1.1
+ALT-2026-06-06-005,2026-06-06T08:18:55Z,MGM,auth-service,P4,Memory utilization 82%,resolved,0,0.0
+ALT-2026-06-06-006,2026-06-06T07:55:30Z,GIB-UKGC,bet-service,P4,Connection pool 75% utilized,acknowledged,0,0.0
+ALT-2026-06-06-007,2026-06-06T07:22:18Z,MIRAGE,game-service,P3,Elevated 4xx response rate,resolved,2200,3.1
+ALT-2026-06-06-008,2026-06-06T06:48:09Z,NJ-DGE,auth-service,P4,Certificate expiring in 30 days,active,0,0.0
+ALT-2026-06-06-009,2026-06-06T05:30:42Z,MGM,wallet-service,P3,Cache hit rate dropped to 78%,resolved,8500,0.2
+ALT-2026-06-06-010,2026-06-06T04:15:11Z,GIB-UKGC,game-service,P4,Background job queue depth high,resolved,0,0.0
+ALT-2026-06-05-011,2026-06-05T22:10:33Z,NJ-DGE,bet-service,P2,Failed bet processing rate > 2%,resolved,18000,3.4
+ALT-2026-06-05-012,2026-06-05T19:45:22Z,MIRAGE,payments-service,P3,Deposit success rate dropped,resolved,2100,2.8
+ALT-2026-06-05-013,2026-06-05T16:22:08Z,GIB-UKGC,wallet-service,P3,Slow transaction commits,resolved,11500,0.9
+ALT-2026-06-05-014,2026-06-05T13:00:45Z,MGM,game-service,P2,Game state sync delay,resolved,19000,4.2
+ALT-2026-06-05-015,2026-06-05T10:30:11Z,NJ-DGE,wallet-service,P4,Disk usage at 78%,resolved,0,0.0
+ALT-2026-06-04-016,2026-06-04T15:15:00Z,NJ-DGE,game-service,P1,Service down on 2 of 4 nodes,resolved,28000,18.7
+ALT-2026-06-04-017,2026-06-04T11:42:30Z,GIB-UKGC,auth-service,P3,Login latency spike,resolved,48000,1.5
+ALT-2026-06-03-018,2026-06-03T20:18:22Z,MIRAGE,bet-service,P3,Bet acceptance latency increased,resolved,9000,2.0
+ALT-2026-06-03-019,2026-06-03T14:30:00Z,MGM,payments-service,P2,Withdrawal processing delayed,resolved,3800,4.5
+ALT-2026-06-02-020,2026-06-02T18:00:11Z,GIB-UKGC,game-service,P3,Asset CDN latency increased,resolved,26000,0.7
+ALT-2026-06-02-021,2026-06-02T09:15:33Z,NJ-DGE,replication,P4,Backup job took longer than usual,resolved,0,0.0
+ALT-2026-06-01-022,2026-06-01T16:45:00Z,MIRAGE,auth-service,P3,Session validation errors,resolved,45000,1.3
+ALT-2026-06-01-023,2026-06-01T12:08:18Z,GIB-UKGC,bet-service,P4,Slack notification webhook failed,resolved,0,0.0
+ALT-2026-05-31-024,2026-05-31T22:30:55Z,MGM,wallet-service,P2,Transaction commit timeouts,resolved,9200,3.8
+ALT-2026-05-31-025,2026-05-31T11:00:00Z,NJ-DGE,payments-service,P3,Refund processing slow,resolved,4100,1.8
