@@ -78,3 +78,22 @@ def test_health_deep(spa_client):
     data = spa_client.get("/health?deep=1").get_json()
     assert data["status"] in {"ok", "degraded"}
     assert "checks" in data
+
+
+def test_bootstrap_exposes_alert_stream_and_execution_hint(spa_client):
+    data = spa_client.get("/api/bootstrap").get_json()
+    stream = data.get("alert_stream") or {}
+    assert 390 <= stream.get("total", 0) <= 400
+    assert "399" in stream.get("label", "") or stream.get("total") == 399
+    assert data.get("execution_mode_hint")
+    assert data.get("notification", {}).get("mode") in {"mock", "preview"}
+
+
+def test_spa_assets_reference_storm_demo(spa_client):
+    assets = Path(__file__).resolve().parents[1] / "app" / "static" / "spa" / "assets"
+    js_files = list(assets.glob("index-*.js"))
+    if not js_files:
+        pytest.skip("SPA JS bundle missing")
+    bundle = js_files[0].read_text(encoding="utf-8")
+    assert "Alert Storm Demo" in bundle or "alert storm" in bundle.lower()
+    assert "399" in bundle or "Simulated alert storm" in bundle

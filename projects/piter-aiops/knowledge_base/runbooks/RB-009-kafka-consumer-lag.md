@@ -1,3 +1,15 @@
+---
+title: "Kafka consumer lag"
+doc_type: "runbook"
+services: ["settlement-svc", "kafka-settlement"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P1", "P2"]
+tags: ["kafka", "consumer-lag", "settlement"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-009: Kafka Consumer Lag
 
 **Severity:** P2 (P1 if settlement consumer)

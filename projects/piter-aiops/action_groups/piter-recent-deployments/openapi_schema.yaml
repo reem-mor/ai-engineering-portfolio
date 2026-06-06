@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: PITER Recent Deployments
+  version: 1.0.0
+  description: Recent deployments, correlation, and rollback availability for incident triage.
+
+paths:
+  /recent-deployments:
+    get:
+      summary: Correlate recent deployments
+      operationId: correlateDeployments
+      parameters:
+        - name: service
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: alert_time
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: lookback_hours
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deployment correlation result

@@ -69,6 +69,78 @@ export interface BootstrapPayload {
   sync_kb_default: boolean;
   csrf_token?: string;
   spa_enabled?: boolean;
+  use_bedrock?: boolean;
+  rag_backend?: string;
+  execution_mode_hint?: string;
+  notification?: {
+    mode: string;
+    require_confirmation: boolean;
+    max_sends_per_incident: number;
+  };
+  alert_stream?: AlertStreamSummary;
+}
+
+export interface AlertStreamSummary {
+  total: number;
+  label: string;
+  duration_seconds: number;
+  by_severity: Record<string, number>;
+  noise_suppressed: number;
+  warning_signals: number;
+  p1_trigger?: Record<string, string> | null;
+  p1_count: number;
+}
+
+export interface TriageCitation {
+  document: string;
+  excerpt: string;
+  score?: number | null;
+}
+
+export interface TriageCard {
+  answer: string;
+  citations: TriageCitation[];
+  recommended_steps: string[];
+  suspect_deploys: unknown[];
+  suspect_deployment?: unknown;
+  owner: Record<string, unknown>;
+  impact: Record<string, unknown>;
+  similar_incidents: SimilarIncident[];
+  grounded: boolean;
+  matched_runbook: string | null;
+  session_id: string;
+  memory_used: boolean;
+  mode: string;
+  alert?: Record<string, unknown>;
+  priority: string;
+  requires_escalation: boolean;
+  piter_stages?: Record<string, string>;
+}
+
+export interface FollowUpResult {
+  answer: string;
+  session_id: string;
+  memory_used: boolean;
+  mode: string;
+  kind?: string;
+  citations?: TriageCitation[];
+  owner?: Record<string, unknown>;
+  impact?: Record<string, unknown>;
+}
+
+export interface KbDocumentMeta {
+  id: string;
+  title: string;
+  doc_type: string;
+  services: string;
+  environments: string;
+  severity_applicable: string;
+  tags: string;
+  last_updated: string;
+  author: string;
+  version: string;
+  indexed: boolean;
+  sync_status: string;
 }
 
 export interface DeploymentMatch {

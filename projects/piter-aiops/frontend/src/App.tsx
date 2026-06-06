@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -30,9 +30,17 @@ import {
   Zap,
 } from "lucide-react";
 
-import { askQuestion } from "@/lib/api";
+import {
+  askQuestion,
+  executionModeLabel,
+  fetchKbManifest,
+  followUp,
+  runTriageCard,
+  triageToRagAnswer,
+  uploadDocument,
+} from "@/lib/api";
 import { useBootstrap } from "@/context/bootstrap";
-import type { Citation, RagAnswer } from "@/types/rag";
+import type { AlertStreamSummary, BootstrapPayload, Citation, KbDocumentMeta, RagAnswer, TriageCard } from "@/types/rag";
 
 type NavKey =
   | "dashboard"
@@ -44,9 +52,18 @@ type NavKey =
   | "architecture"
   | "settings";
 
+type ConclusionBadge =
+  | "Critical"
+  | "Malicious"
+  | "Suspicious"
+  | "Inconclusive"
+  | "Benign"
+  | "Noise";
+
 type Investigation = {
   id: string;
-  conclusion: string;
+  conclusion: ConclusionBadge;
+  conclusionDetail: string;
   alertTime: string;
   alert: string;
   service: string;
@@ -58,7 +75,7 @@ type Investigation = {
   impact: string;
 };
 
-type StormState = "idle" | "streaming" | "critical" | "investigating" | "resolved";
+type StormState = "idle" | "streaming" | "paused" | "critical" | "investigating" | "resolved";
 
 const NAV_ITEMS: {
   key: NavKey;
@@ -78,35 +95,38 @@ const NAV_ITEMS: {
 const INVESTIGATIONS: Investigation[] = [
   {
     id: "INV-2026-0610-001",
-    conclusion: "Critical betting outage detected; escalation preview prepared.",
+    conclusion: "Critical",
+    conclusionDetail: "Critical betting outage detected; escalation preview prepared.",
     alertTime: "10:02:55",
-    alert: "bet-service 100% error rate on GIB-UKGC",
+    alert: "P1 bet-service 100% error rate on GIB-UKGC",
     service: "bet-service",
     environment: "GIB-UKGC",
     entities: "bet-api, postgres, kafka-settlement",
-    source: "Bedrock KB + Lambda",
+    source: "Alert stream + Bedrock KB",
     status: "Escalated",
     priority: "P1",
-    impact: "$9.8k/min at risk",
+    impact: "$520k/hr regulated market exposure",
   },
   {
     id: "INV-2026-0610-002",
-    conclusion: "Noise grouped: repeated memory warnings under threshold.",
+    conclusion: "Noise",
+    conclusionDetail: "Noise grouped: repeated memory warnings under threshold.",
     alertTime: "10:01:13",
-    alert: "wallet-service memory utilization 78%",
+    alert: "P4 wallet-service memory utilization 78%",
     service: "wallet-service",
     environment: "NJ-DGE",
     entities: "wallet-worker-3",
-    source: "Local fallback",
+    source: "Noise suppression",
     status: "Noise Grouped",
     priority: "P4",
     impact: "No customer impact",
   },
   {
     id: "INV-2026-0610-003",
-    conclusion: "Known pattern: replication warning correlated with previous deploy.",
+    conclusion: "Suspicious",
+    conclusionDetail: "Known pattern: replication warning correlated with previous deploy.",
     alertTime: "09:58:42",
-    alert: "replication lag above 30s",
+    alert: "P2 replication lag above 30s",
     service: "replication",
     environment: "GIB-UKGC",
     entities: "read-replica-2, wallet-service",
@@ -117,36 +137,57 @@ const INVESTIGATIONS: Investigation[] = [
   },
   {
     id: "INV-2026-0610-004",
-    conclusion: "False positive: synthetic canary recovered before threshold.",
+    conclusion: "Benign",
+    conclusionDetail: "False positive: synthetic canary recovered before threshold.",
     alertTime: "09:55:07",
-    alert: "auth-service canary 502 spike",
+    alert: "P3 auth-service canary 502 spike",
     service: "auth-service",
     environment: "MGM",
     entities: "auth-api, edge",
-    source: "GuardDuty-style mock",
+    source: "Synthetic monitor",
     status: "False Positive",
     priority: "P3",
     impact: "No sustained impact",
   },
+  {
+    id: "INV-2026-0610-005",
+    conclusion: "Inconclusive",
+    conclusionDetail: "Kafka consumer lag elevated; awaiting dependency correlation.",
+    alertTime: "09:52:30",
+    alert: "P3 Kafka consumer lag on settlement topic",
+    service: "payments-service",
+    environment: "NJ-DGE",
+    entities: "kafka-settlement, payments-api",
+    source: "Metrics pipeline",
+    status: "In Review",
+    priority: "P3",
+    impact: "Settlement delay risk",
+  },
 ];
 
-const KPI_CARDS = [
+const KPI_CARDS_STATIC = [
   {
-    label: "Alerts Processed",
-    value: "399",
-    sub: "deterministic storm",
-    icon: Activity,
+    label: "Active Incidents",
+    value: "3",
+    sub: "1 critical in review",
+    icon: Flame,
+    tone: "red",
+  },
+  {
+    label: "P1 / P2 / P3",
+    value: "1 / 1 / 2",
+    sub: "priority mix",
+    icon: AlertTriangle,
+    tone: "amber",
+  },
+  {
+    label: "Median Triage Time",
+    value: "4.2 min",
+    sub: "demo assisted",
+    icon: Clock3,
     tone: "cyan",
   },
-  {
-    label: "Noise Suppressed",
-    value: "342",
-    sub: "P3/P4 grouped",
-    icon: TrendingDown,
-    tone: "green",
-  },
-  { label: "Active Incidents", value: "3", sub: "1 critical", icon: Flame, tone: "red" },
-  { label: "MTTR Reduced", value: "31 min", sub: "demo estimate", icon: Clock3, tone: "teal" },
+  { label: "MTTR Reduced", value: "31 min", sub: "vs baseline estimate", icon: TrendingDown, tone: "teal" },
   {
     label: "Cost Avoided",
     value: "$18.6k",
@@ -154,8 +195,8 @@ const KPI_CARDS = [
     icon: Target,
     tone: "green",
   },
-  { label: "Escalations", value: "1", sub: "mock preview only", icon: Bell, tone: "amber" },
-  { label: "Knowledge Sources", value: "5", sub: "KB sections", icon: Database, tone: "blue" },
+  { label: "Escalations Triggered", value: "1", sub: "mock preview only", icon: Bell, tone: "amber" },
+  { label: "Knowledge Sources", value: "11+", sub: "KB sections", icon: Database, tone: "blue" },
   { label: "Lambda Tools", value: "4", sub: "final tool map", icon: ServerCog, tone: "cyan" },
   { label: "Memory Sessions", value: "7", sub: "context reused", icon: Brain, tone: "purple" },
 ];
@@ -266,6 +307,38 @@ const WARNING_ALERTS = [
   "T+175s P1: bet-service nodes unresponsive, 100% error rate",
 ];
 
+function conclusionTone(conclusion: ConclusionBadge): string {
+  const map: Record<ConclusionBadge, string> = {
+    Critical: "red",
+    Malicious: "red",
+    Suspicious: "amber",
+    Inconclusive: "blue",
+    Benign: "green",
+    Noise: "slate",
+  };
+  return map[conclusion] ?? "cyan";
+}
+
+function statusTone(status: string): string {
+  if (status === "Escalated") return "red";
+  if (status === "Noise Grouped" || status === "Resolved" || status === "False Positive")
+    return "green";
+  if (status === "Investigating" || status === "In Process") return "cyan";
+  return "amber";
+}
+
+function stormPhaseLabel(state: StormState): string {
+  const map: Record<StormState, string> = {
+    idle: "Ready",
+    streaming: "Streaming alerts",
+    paused: "Paused",
+    critical: "P1 detected — auto-paused",
+    investigating: "Running PITER triage",
+    resolved: "Demo complete",
+  };
+  return map[state];
+}
+
 function classNames(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(" ");
 }
@@ -279,6 +352,7 @@ function toneClasses(tone: string) {
     cyan: "border-cyan-400/30 bg-cyan-400/10 text-cyan-100",
     blue: "border-blue-400/30 bg-blue-400/10 text-blue-100",
     purple: "border-violet-400/30 bg-violet-400/10 text-violet-100",
+    slate: "border-slate-500/30 bg-slate-500/10 text-slate-200",
   };
   return map[tone] ?? map.cyan;
 }
@@ -295,14 +369,70 @@ function AppShell() {
   const [active, setActive] = useState<NavKey>("dashboard");
   const [selected, setSelected] = useState<Investigation>(INVESTIGATIONS[0]);
   const [stormState, setStormState] = useState<StormState>("idle");
+  const [triageCard, setTriageCard] = useState<TriageCard | null>(null);
   const [answer, setAnswer] = useState<RagAnswer | null>(null);
+  const [memoryUsed, setMemoryUsed] = useState(false);
   const [chatInput, setChatInput] = useState("Who should I escalate this to?");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  const [kbDocs, setKbDocs] = useState<KbDocumentMeta[]>([]);
+  const [invStatuses, setInvStatuses] = useState<Record<string, string>>({});
+  const stormTimerRef = useRef<number | null>(null);
 
-  const modelLabel = data?.model_label || "Bedrock Agent / KB";
-  const sessionId = answer?.session_id ?? "demo-session-preview";
+  const streamSummary: AlertStreamSummary = data?.alert_stream ?? {
+    total: 399,
+    label: "Simulated alert storm (399 alerts)",
+    duration_seconds: 300,
+    by_severity: { P1: 1, P2: 32, P3: 88, P4: 278 },
+    noise_suppressed: 366,
+    warning_signals: 5,
+    p1_count: 1,
+  };
+
+  const executionLabel = executionModeLabel(
+    triageCard?.mode ?? answer?.session_id ? triageCard?.mode : undefined,
+    data?.rag_backend,
+    data?.use_bedrock,
+  );
+  const modelLabel = triageCard?.mode
+    ? executionModeLabel(triageCard.mode, data?.rag_backend, data?.use_bedrock)
+    : data?.execution_mode_hint || data?.model_label || "Bedrock Agent / KB";
+  const sessionId = triageCard?.session_id ?? answer?.session_id ?? "demo-session-preview";
+  const notificationMode = data?.notification?.mode ?? "mock";
+
+  useEffect(() => {
+    return () => {
+      if (stormTimerRef.current) window.clearTimeout(stormTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchKbManifest()
+      .then((manifest) => setKbDocs(manifest.documents))
+      .catch(() => setKbDocs([]));
+  }, []);
+
+  const kpiCards = useMemo(
+    () => [
+      {
+        label: "Alerts Processed",
+        value: String(streamSummary.total),
+        sub: "~400 alert storm",
+        icon: Activity,
+        tone: "cyan",
+      },
+      {
+        label: "Noise Suppressed",
+        value: String(streamSummary.noise_suppressed),
+        sub: "P3/P4 grouped",
+        icon: TrendingDown,
+        tone: "green",
+      },
+      ...KPI_CARDS_STATIC,
+    ],
+    [streamSummary],
+  );
 
   async function askAgent(question = chatInput) {
     const q = question.trim();
@@ -311,11 +441,30 @@ function AppShell() {
     setChatError(null);
     setLastQuestion(q);
     try {
-      const result = await askQuestion(
-        `For incident ${selected.id} (${selected.alert}), ${q}`,
-        answer?.session_id ?? undefined,
-      );
-      setAnswer(result);
+      if (triageCard?.session_id) {
+        const result = await followUp(triageCard.session_id, q);
+        setMemoryUsed(result.memory_used);
+        setAnswer({
+          answer: result.answer,
+          citations: (result.citations ?? []).map((c, index) => ({
+            snippet: c.excerpt,
+            source_uri: c.document,
+            source_label: c.document,
+            index: index + 1,
+            score: c.score ?? null,
+          })),
+          session_id: result.session_id,
+          grounded: true,
+          latency_ms: 0,
+          matched_runbook: triageCard.matched_runbook,
+        });
+      } else {
+        const result = await askQuestion(
+          `For incident ${selected.id} (${selected.alert}), ${q}`,
+          answer?.session_id ?? undefined,
+        );
+        setAnswer(result);
+      }
     } catch (exc) {
       setChatError(exc instanceof Error ? exc.message : "Agent request failed");
     } finally {
@@ -323,15 +472,75 @@ function AppShell() {
     }
   }
 
+  function clearStormTimer() {
+    if (stormTimerRef.current) {
+      window.clearTimeout(stormTimerRef.current);
+      stormTimerRef.current = null;
+    }
+  }
+
   function startStorm() {
+    clearStormTimer();
     setStormState("streaming");
-    window.setTimeout(() => setStormState("critical"), 650);
+    stormTimerRef.current = window.setTimeout(() => setStormState("critical"), 650);
+  }
+
+  function pauseStorm() {
+    if (stormState === "streaming") {
+      clearStormTimer();
+      setStormState("paused");
+    }
+  }
+
+  function resetStorm() {
+    clearStormTimer();
+    setStormState("idle");
+  }
+
+  function updateInvStatus(id: string, status: string) {
+    setInvStatuses((prev) => ({ ...prev, [id]: status }));
+  }
+
+  function getInvStatus(inv: Investigation) {
+    return invStatuses[inv.id] ?? inv.status;
   }
 
   async function runWorkflow() {
     setStormState("investigating");
-    await askAgent("What should I check first?");
-    setStormState("resolved");
+    setChatError(null);
+    try {
+      const trigger = streamSummary.p1_trigger;
+      const alertPayload = trigger
+        ? {
+            alert_id: trigger.alert_id,
+            service: trigger.service,
+            environment: trigger.environment,
+            severity: trigger.severity,
+            symptom: trigger.title,
+            description: trigger.title,
+            alert_time: trigger.timestamp,
+            duration_minutes: 45,
+          }
+        : {
+            alert_id: "ALT-DEMO-P1-001",
+            service: "bet-service",
+            environment: "GIB-UKGC",
+            severity: "P1",
+            symptom: "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
+            description: "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
+            alert_time: "2026-06-10T10:02:55.000Z",
+            duration_minutes: 45,
+          };
+      const card = await runTriageCard(alertPayload);
+      setTriageCard(card);
+      setAnswer(triageToRagAnswer(card));
+      setMemoryUsed(false);
+      setLastQuestion("What should I check first?");
+      setStormState("resolved");
+    } catch (exc) {
+      setChatError(exc instanceof Error ? exc.message : "Triage workflow failed");
+      setStormState("critical");
+    }
   }
 
   function openInvestigation(inv: Investigation) {
@@ -366,51 +575,95 @@ function AppShell() {
       <div className="grid min-h-screen grid-cols-[250px_minmax(0,1fr)] max-[980px]:grid-cols-1">
         <Sidebar active={active} setActive={setActive} />
         <section className="min-w-0">
-          <TopBar modelLabel={modelLabel} />
-          <div className="mx-auto max-w-[1540px] px-5 py-5">
+          <TopBar
+            modelLabel={modelLabel}
+            executionLabel={executionLabel}
+            notificationMode={notificationMode}
+            onAskAgent={() => askAgent()}
+          />
+          <div className="mx-auto max-w-[1540px] px-5 py-5 xl:pr-[380px]">
             {active === "dashboard" && (
               <Dashboard
                 startStorm={() => {
                   setActive("storm");
                   startStorm();
                 }}
+                kpiCards={kpiCards}
+                streamSummary={streamSummary}
+                onOpenInvestigations={() => setActive("investigations")}
               />
             )}
             {active === "investigations" && (
-              <Investigations selected={selected} openInvestigation={openInvestigation} />
+              <Investigations
+                selected={selected}
+                setSelected={setSelected}
+                openInvestigation={openInvestigation}
+                triageCard={triageCard}
+                answer={answer}
+                getInvStatus={getInvStatus}
+                updateInvStatus={updateInvStatus}
+                onAskAgent={() => askAgent()}
+              />
             )}
             {active === "storm" && (
               <AlertStorm
                 stormState={stormState}
                 startStorm={startStorm}
+                pauseStorm={pauseStorm}
+                resetStorm={resetStorm}
                 runWorkflow={runWorkflow}
                 answer={answer}
+                triageCard={triageCard}
                 selected={selected}
+                streamSummary={streamSummary}
+                notificationMode={notificationMode}
               />
             )}
             {active === "memory" && (
               <ContextMemory
                 sessionId={sessionId}
                 lastQuestion={lastQuestion}
-                memoryUsed={Boolean(answer?.session_id)}
+                memoryUsed={memoryUsed}
+                triageCard={triageCard}
               />
             )}
-            {active === "knowledge" && <KnowledgeBase citations={answer?.citations ?? []} />}
-            {active === "tools" && <ToolsPanel />}
-            {active === "architecture" && <Architecture />}
-            {active === "settings" && <Settings />}
+            {active === "knowledge" && (
+              <KnowledgeBase
+                citations={answer?.citations ?? []}
+                kbDocs={kbDocs}
+                onRefresh={() =>
+                  fetchKbManifest()
+                    .then((manifest) => setKbDocs(manifest.documents))
+                    .catch(() => setKbDocs([]))
+                }
+                onAskAboutDoc={(title) => {
+                  setChatInput(`Ask about uploaded document: ${title}`);
+                  askAgent(`Summarize relevance of ${title} for bet-service P1 on GIB-UKGC`);
+                }}
+              />
+            )}
+            {active === "tools" && (
+              <ToolsPanel triageCard={triageCard} notificationMode={notificationMode} />
+            )}
+            {active === "architecture" && <Architecture data={data} />}
+            {active === "settings" && (
+              <Settings notificationMode={notificationMode} data={data} />
+            )}
           </div>
         </section>
       </div>
       <AgentPanel
         selected={selected}
         answer={answer}
+        triageCard={triageCard}
         chatInput={chatInput}
         setChatInput={setChatInput}
         askAgent={askAgent}
         loading={chatLoading}
         error={chatError}
         lastQuestion={lastQuestion}
+        memoryUsed={memoryUsed}
+        executionLabel={executionLabel}
       />
     </main>
   );
@@ -466,7 +719,17 @@ function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKe
   );
 }
 
-function TopBar({ modelLabel }: { modelLabel: string }) {
+function TopBar({
+  modelLabel,
+  executionLabel,
+  notificationMode,
+  onAskAgent,
+}: {
+  modelLabel: string;
+  executionLabel: string;
+  notificationMode: string;
+  onAskAgent: () => void;
+}) {
   return (
     <header className="sticky top-0 z-20 border-b border-cyan-300/10 bg-[#08111f]/95 px-5 py-3 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -474,26 +737,126 @@ function TopBar({ modelLabel }: { modelLabel: string }) {
           <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/70">
             Priority / Investigation / Triage / Escalation / Resolution
           </div>
-          <h1 className="text-xl font-semibold">PITER AiOps Operations Console</h1>
+          <h1 className="text-xl font-semibold">PITER AiOps Dashboard</h1>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Autonomous incident operations for faster MTTR
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Pill tone="green">Health 200</Pill>
-          <Pill tone="cyan">{modelLabel}</Pill>
-          <Pill tone="amber">Notifications: mock</Pill>
+          <Pill tone="cyan">{executionLabel || modelLabel}</Pill>
+          <Pill tone="purple">Memory: session</Pill>
+          <Pill tone="amber">Notifications: {notificationMode}</Pill>
+          <button
+            type="button"
+            onClick={onAskAgent}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-cyan-100 transition-colors hover:bg-cyan-300/20"
+          >
+            <MessageSquare className="size-3.5" />
+            Ask Agent
+          </button>
         </div>
       </div>
     </header>
   );
 }
 
-function Dashboard({ startStorm }: { startStorm: () => void }) {
+function Dashboard({
+  startStorm,
+  kpiCards,
+  streamSummary,
+  onOpenInvestigations,
+}: {
+  startStorm: () => void;
+  kpiCards: typeof KPI_CARDS_STATIC;
+  streamSummary: AlertStreamSummary;
+  onOpenInvestigations: () => void;
+}) {
+  const severityEntries = Object.entries(streamSummary.by_severity ?? {});
   return (
     <div className="grid gap-5">
-      <HeroCard startStorm={startStorm} />
-      <div className="grid grid-cols-3 gap-3 max-[1100px]:grid-cols-2 max-[680px]:grid-cols-1">
-        {KPI_CARDS.map((card) => (
+      <SectionHeader
+        eyebrow="Enterprise operations"
+        title="PITER AiOps Dashboard"
+        body="Autonomous incident operations for faster MTTR — noise suppression, enrichment, memory, and safe escalation preview."
+      />
+      <FilterBar>
+        <FilterSelect label="Period" defaultValue="Last 30 days" />
+        <FilterSelect label="Priority" defaultValue="All" />
+        <FilterSelect label="Status" defaultValue="All" />
+        <FilterSelect label="Source" defaultValue="All" />
+      </FilterBar>
+      <HeroCard startStorm={startStorm} streamSummary={streamSummary} />
+      <div className="grid grid-cols-3 gap-3 max-[1280px]:grid-cols-2 max-[680px]:grid-cols-1">
+        {kpiCards.map((card) => (
           <MetricCard key={card.label} {...card} />
         ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4 max-[1100px]:grid-cols-1">
+        <Panel title="Alert volume by severity" icon={Activity}>
+          <div className="space-y-3">
+            {severityEntries.map(([sev, count]) => (
+              <ValueBar
+                key={sev}
+                label={`${sev} (${count})`}
+                value={Math.round((count / streamSummary.total) * 100)}
+              />
+            ))}
+          </div>
+        </Panel>
+        <Panel title="Response metrics" icon={Clock3}>
+          <div className="grid grid-cols-2 gap-2">
+            <MiniStat label="Median triage" value="4.2 min" />
+            <MiniStat label="MTTR reduced" value="31 min" />
+            <MiniStat label="Escalations" value="1 (preview)" />
+            <MiniStat label="Tool latency p50" value="42 ms" />
+          </div>
+        </Panel>
+        <Panel title="Unreviewed investigations" icon={Search}>
+          <div className="space-y-2 text-sm text-slate-300">
+            <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2">
+              <span>INV-2026-0610-005 — Kafka consumer lag</span>
+              <Pill tone="amber">In Review</Pill>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenInvestigations}
+              className="cursor-pointer text-xs text-cyan-300 hover:text-cyan-100"
+            >
+              Open investigation queue →
+            </button>
+          </div>
+        </Panel>
+        <Panel title="Top noisy services" icon={TrendingDown}>
+          <div className="space-y-2 text-sm">
+            {[
+              ["wallet-service", "142 grouped warnings"],
+              ["auth-service", "89 synthetic spikes"],
+              ["metrics-agent", "67 health checks"],
+            ].map(([svc, note]) => (
+              <div
+                key={svc}
+                className="flex justify-between rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2"
+              >
+                <span className="text-slate-200">{svc}</span>
+                <span className="text-xs text-slate-500">{note}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
+        <Panel title="Agent decisions" icon={Bot}>
+          <div className="space-y-2 text-xs text-slate-300">
+            <div>Grouped {streamSummary.noise_suppressed} P3/P4 alerts as noise</div>
+            <div>Detected P1 on bet-service after {streamSummary.warning_signals} warnings</div>
+            <div>Matched runbook + 4 enrichment tools on triage</div>
+          </div>
+        </Panel>
+        <Panel title="Business impact" icon={Target}>
+          <ValueBar label="Regulated market exposure modeled" value={72} />
+          <div className="mt-3 text-sm text-slate-400">
+            Estimated cost avoided in demo: $18.6k via early P1 detection and rollback guidance.
+          </div>
+        </Panel>
       </div>
       <div className="grid grid-cols-[1.35fr_0.65fr] gap-4 max-[1100px]:grid-cols-1">
         <Panel title="PITER alert-to-resolution pipeline" icon={GitBranch}>
@@ -525,7 +888,36 @@ function Dashboard({ startStorm }: { startStorm: () => void }) {
   );
 }
 
-function HeroCard({ startStorm }: { startStorm: () => void }) {
+function FilterBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-900/40 p-2">
+      {children}
+    </div>
+  );
+}
+
+function FilterSelect({ label, defaultValue }: { label: string; defaultValue: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 bg-slate-950/60 px-2.5 py-1.5 text-xs text-slate-300">
+      <span className="text-slate-500">{label}</span>
+      <select
+        defaultValue={defaultValue}
+        className="cursor-pointer bg-transparent text-slate-200 outline-none"
+        aria-label={label}
+      >
+        <option>{defaultValue}</option>
+      </select>
+    </label>
+  );
+}
+
+function HeroCard({
+  startStorm,
+  streamSummary,
+}: {
+  startStorm: () => void;
+  streamSummary: AlertStreamSummary;
+}) {
   return (
     <section className="overflow-hidden rounded-xl border border-cyan-300/15 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(8,47,73,0.55))] p-5">
       <div className="grid grid-cols-[1.3fr_0.7fr] gap-5 max-[900px]:grid-cols-1">
@@ -572,10 +964,10 @@ function HeroCard({ startStorm }: { startStorm: () => void }) {
             </p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <MiniStat label="Warnings" value="4" />
-            <MiniStat label="Alerts" value="399" />
-            <MiniStat label="Suppressed" value="342" />
-            <MiniStat label="Session" value="memory on" />
+            <MiniStat label="Warnings" value={String(streamSummary.warning_signals)} />
+            <MiniStat label="Alerts" value={String(streamSummary.total)} />
+            <MiniStat label="Suppressed" value={String(streamSummary.noise_suppressed)} />
+            <MiniStat label="Storm" value={`Simulated alert storm (${streamSummary.total})`} />
           </div>
         </div>
       </div>
@@ -585,11 +977,43 @@ function HeroCard({ startStorm }: { startStorm: () => void }) {
 
 function Investigations({
   selected,
+  setSelected,
   openInvestigation,
+  triageCard,
+  answer,
+  getInvStatus,
+  updateInvStatus,
+  onAskAgent,
 }: {
   selected: Investigation;
+  setSelected: (inv: Investigation) => void;
   openInvestigation: (inv: Investigation) => void;
+  triageCard: TriageCard | null;
+  answer: RagAnswer | null;
+  getInvStatus: (inv: Investigation) => string;
+  updateInvStatus: (id: string, status: string) => void;
+  onAskAgent: () => void;
 }) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const statuses = INVESTIGATIONS.map((inv) => getInvStatus(inv));
+  const counters = {
+    inReview: statuses.filter((s) => s === "In Review").length,
+    reviewed: statuses.filter((s) => s === "Resolved" || s === "False Positive").length,
+    all: INVESTIGATIONS.length,
+    queued: 2,
+    running: statuses.filter((s) => s === "Investigating" || s === "In Process").length,
+    stopped: statuses.filter((s) => s === "Noise Grouped").length,
+  };
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   return (
     <div className="grid gap-5">
       <SectionHeader
@@ -597,12 +1021,40 @@ function Investigations({
         title="Investigation queue"
         body="Noise grouping, priority classification, RAG evidence, and tool enrichment in one operator table."
       />
+      <div className="flex flex-wrap gap-2 text-xs">
+        {[
+          ["In Review", counters.inReview, "amber"],
+          ["Reviewed", counters.reviewed, "green"],
+          ["All", counters.all, "cyan"],
+          ["Queued", counters.queued, "slate"],
+          ["Running", counters.running, "cyan"],
+          ["Stopped", counters.stopped, "green"],
+        ].map(([label, count, tone]) => (
+          <Pill key={String(label)} tone={String(tone)}>
+            {label}: {count}
+          </Pill>
+        ))}
+      </div>
+      <FilterBar>
+        <FilterSelect label="Conclusion" defaultValue="All" />
+        <FilterSelect label="Alert Type" defaultValue="All" />
+        <FilterSelect label="Source" defaultValue="All" />
+        <FilterSelect label="Date" defaultValue="Today" />
+        <input
+          type="search"
+          placeholder="Search investigations…"
+          className="min-w-[180px] flex-1 rounded-md border border-slate-700 bg-slate-950/60 px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-cyan-300/40"
+          aria-label="Search investigations"
+        />
+        <FilterSelect label="Sort" defaultValue="ID" />
+      </FilterBar>
       <Panel title="Investigation table" icon={Search}>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-left text-sm">
+          <table className="w-full min-w-[1200px] text-left text-sm">
             <thead className="border-b border-slate-700 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 {[
+                  "",
                   "Conclusion",
                   "Alert Time",
                   "ID",
@@ -615,90 +1067,139 @@ function Investigations({
                   "Priority",
                   "Actions",
                 ].map((h) => (
-                  <th key={h} className="px-3 py-2 font-medium">
+                  <th key={h || "select"} className="px-3 py-2 font-medium">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {INVESTIGATIONS.map((inv) => (
-                <tr
-                  key={inv.id}
-                  className={classNames(
-                    "border-b border-slate-800",
-                    selected.id === inv.id && "bg-cyan-300/5",
-                  )}
-                >
-                  <td className="max-w-[250px] px-3 py-3 text-slate-200">{inv.conclusion}</td>
-                  <td className="px-3 py-3 font-mono text-xs text-slate-400">{inv.alertTime}</td>
-                  <td className="px-3 py-3 font-mono text-xs text-cyan-200">{inv.id}</td>
-                  <td className="px-3 py-3">{inv.alert}</td>
-                  <td className="px-3 py-3">{inv.service}</td>
-                  <td className="px-3 py-3">{inv.environment}</td>
-                  <td className="px-3 py-3 text-slate-400">{inv.entities}</td>
-                  <td className="px-3 py-3 text-slate-300">{inv.source}</td>
-                  <td className="px-3 py-3">
-                    <Pill
-                      tone={
-                        inv.status === "Escalated"
-                          ? "red"
-                          : inv.status === "Noise Grouped"
-                            ? "green"
-                            : "cyan"
-                      }
-                    >
-                      {inv.status}
-                    </Pill>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span
-                      className={classNames(
-                        "rounded-full border px-2 py-1 text-xs font-semibold",
-                        priorityClasses(inv.priority),
-                      )}
-                    >
-                      {inv.priority}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <button
-                      type="button"
-                      onClick={() => openInvestigation(inv)}
-                      className="rounded-md border border-cyan-300/30 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-300/10"
-                    >
-                      Open Investigation
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {INVESTIGATIONS.map((inv) => {
+                const status = getInvStatus(inv);
+                return (
+                  <tr
+                    key={inv.id}
+                    className={classNames(
+                      "border-b border-slate-800",
+                      selected.id === inv.id && "bg-cyan-300/5",
+                    )}
+                  >
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(inv.id)}
+                        onChange={() => toggleRow(inv.id)}
+                        className="size-4 cursor-pointer accent-cyan-400"
+                        aria-label={`Select ${inv.id}`}
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <Pill tone={conclusionTone(inv.conclusion)}>{inv.conclusion}</Pill>
+                      <p className="mt-1 max-w-[220px] text-xs text-slate-500">{inv.conclusionDetail}</p>
+                    </td>
+                    <td className="px-3 py-3 font-mono text-xs text-slate-400">{inv.alertTime}</td>
+                    <td className="px-3 py-3 font-mono text-xs text-cyan-200">{inv.id}</td>
+                    <td className="px-3 py-3">{inv.alert}</td>
+                    <td className="px-3 py-3">{inv.service}</td>
+                    <td className="px-3 py-3">{inv.environment}</td>
+                    <td className="px-3 py-3 text-slate-400">{inv.entities}</td>
+                    <td className="px-3 py-3 text-slate-300">{inv.source}</td>
+                    <td className="px-3 py-3">
+                      <Pill tone={statusTone(status)}>{status}</Pill>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={classNames(
+                          "rounded-full border px-2 py-1 text-xs font-semibold",
+                          priorityClasses(inv.priority),
+                        )}
+                      >
+                        {inv.priority}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        <ActionBtn
+                          label="Open"
+                          onClick={() => {
+                            setSelected(inv);
+                            openInvestigation(inv);
+                          }}
+                        />
+                        <ActionBtn label="Ask Agent" onClick={onAskAgent} />
+                        <ActionBtn
+                          label="In Process"
+                          onClick={() => updateInvStatus(inv.id, "In Process")}
+                        />
+                        <ActionBtn
+                          label="Resolve"
+                          onClick={() => updateInvStatus(inv.id, "Resolved")}
+                        />
+                        <ActionBtn
+                          label="Escalate"
+                          onClick={() => updateInvStatus(inv.id, "Escalated")}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </Panel>
-      <InvestigationDetail selected={selected} answer={null} />
+      <InvestigationDetail
+        selected={selected}
+        answer={answer}
+        triageCard={triageCard}
+        notificationMode="mock"
+      />
     </div>
+  );
+}
+
+function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer rounded-md border border-cyan-300/25 px-2 py-1 text-[11px] text-cyan-100 transition-colors hover:bg-cyan-300/10"
+    >
+      {label}
+    </button>
   );
 }
 
 function AlertStorm({
   stormState,
   startStorm,
+  pauseStorm,
+  resetStorm,
   runWorkflow,
   answer,
+  triageCard,
   selected,
+  streamSummary,
+  notificationMode,
 }: {
   stormState: StormState;
   startStorm: () => void;
+  pauseStorm: () => void;
+  resetStorm: () => void;
   runWorkflow: () => void;
   answer: RagAnswer | null;
+  triageCard: TriageCard | null;
   selected: Investigation;
+  streamSummary: AlertStreamSummary;
+  notificationMode: string;
 }) {
   const progress =
     stormState === "idle"
       ? 0
-      : stormState === "streaming"
-        ? 62
+      : stormState === "streaming" || stormState === "paused"
+        ? stormState === "paused"
+          ? 55
+          : 62
         : stormState === "critical"
           ? 74
           : stormState === "investigating"
@@ -709,22 +1210,44 @@ function AlertStorm({
       <SectionHeader
         eyebrow="Main recording flow"
         title="Alert Storm Demo"
-        body="A deterministic storm processes around 400 alerts, suppresses P3/P4 noise, detects a P1 on bet-service, and runs the full PITER workflow."
+        body={`Simulated alert storm — ${streamSummary.total} deterministic alerts. Suppresses P3/P4 noise, detects a P1 on bet-service, and runs the full PITER workflow via /api/triage.`}
       />
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill tone="cyan">Phase: {stormPhaseLabel(stormState)}</Pill>
+        <Pill tone="purple">{streamSummary.label}</Pill>
+      </div>
       <div className="grid grid-cols-[0.9fr_1.1fr] gap-4 max-[1100px]:grid-cols-1">
         <Panel title="Storm controls" icon={Activity}>
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={startStorm}
-              className="rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+              disabled={stormState === "investigating"}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
             >
-              Start alert storm
+              <Play className="size-4" />
+              Start Demo
+            </button>
+            <button
+              type="button"
+              onClick={pauseStorm}
+              disabled={stormState !== "streaming"}
+              className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+            >
+              Pause
+            </button>
+            <button
+              type="button"
+              onClick={resetStorm}
+              className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+            >
+              Reset
             </button>
             <button
               type="button"
               onClick={runWorkflow}
-              className="rounded-md border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/20"
+              disabled={stormState === "idle"}
+              className="cursor-pointer rounded-md border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-500/20 disabled:opacity-40"
             >
               Run PITER workflow
             </button>
@@ -736,15 +1259,24 @@ function AlertStorm({
             </div>
             <div className="h-2 rounded-full bg-slate-800">
               <div
-                className="h-full rounded-full bg-cyan-300 transition-all"
+                className="h-full rounded-full bg-cyan-300 transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-2">
-            <MiniStat label="Processed" value={stormState === "idle" ? "0" : "399"} />
-            <MiniStat label="Noise suppressed" value={stormState === "idle" ? "0" : "342"} />
-            <MiniStat label="Warning signals" value={stormState === "idle" ? "0" : "4"} />
+            <MiniStat
+              label="Processed"
+              value={stormState === "idle" ? "0" : String(streamSummary.total)}
+            />
+            <MiniStat
+              label="Noise suppressed"
+              value={stormState === "idle" ? "0" : String(streamSummary.noise_suppressed)}
+            />
+            <MiniStat
+              label="Warning signals"
+              value={stormState === "idle" ? "0" : String(streamSummary.warning_signals)}
+            />
             <MiniStat
               label="P1 state"
               value={
@@ -757,28 +1289,47 @@ function AlertStorm({
             />
           </div>
         </Panel>
-        <Panel title="Live alert stream" icon={TerminalSquare}>
-          <div className="space-y-2">
-            {WARNING_ALERTS.map((alert, index) => {
-              const visible = stormState !== "idle" && (stormState !== "streaming" || index < 4);
-              const critical = index === WARNING_ALERTS.length - 1;
-              return (
-                <div
-                  key={alert}
-                  className={classNames(
-                    "rounded-lg border px-3 py-2 text-sm transition",
-                    visible ? "opacity-100" : "opacity-30",
-                    critical
-                      ? "border-red-500/40 bg-red-500/10 text-red-100"
-                      : "border-slate-700 bg-slate-900/70 text-slate-300",
-                  )}
-                >
-                  {alert}
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
+        <div className="grid gap-4">
+          <Panel title="Noise suppression" icon={TrendingDown}>
+            <p className="text-sm text-slate-400">
+              {stormState === "idle"
+                ? "Start the demo to group repeated P3/P4 patterns."
+                : `${streamSummary.noise_suppressed} alerts grouped as noise before human review.`}
+            </p>
+          </Panel>
+          <Panel title="P1 trigger" icon={AlertTriangle}>
+            <p className="text-sm text-red-100/90">
+              {stormState === "critical" ||
+              stormState === "investigating" ||
+              stormState === "resolved"
+                ? "CRITICAL: bet-service 100% error rate on GIB-UKGC — workflow eligible."
+                : "Waiting for warning signals to escalate into P1."}
+            </p>
+          </Panel>
+          <Panel title="Live alert stream" icon={TerminalSquare}>
+            <div className="max-h-[220px] space-y-2 overflow-y-auto">
+              {WARNING_ALERTS.map((alert, index) => {
+                const visible =
+                  stormState !== "idle" && (stormState !== "streaming" || index < 4);
+                const critical = index === WARNING_ALERTS.length - 1;
+                return (
+                  <div
+                    key={alert}
+                    className={classNames(
+                      "rounded-lg border px-3 py-2 text-sm transition",
+                      visible ? "opacity-100" : "opacity-30",
+                      critical
+                        ? "border-red-500/40 bg-red-500/10 text-red-100"
+                        : "border-slate-700 bg-slate-900/70 text-slate-300",
+                    )}
+                  >
+                    {alert}
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        </div>
       </div>
       <Panel title="PITER workflow result" icon={GitBranch}>
         <div className="grid grid-cols-5 gap-2 max-[900px]:grid-cols-1">
@@ -800,7 +1351,22 @@ function AlertStorm({
           ))}
         </div>
       </Panel>
-      <InvestigationDetail selected={selected} answer={answer} />
+      {stormState === "resolved" && (
+        <Panel title="Post-demo KPI summary" icon={Target}>
+          <div className="grid grid-cols-4 gap-2 max-[900px]:grid-cols-2">
+            <MiniStat label="Alerts processed" value={String(streamSummary.total)} />
+            <MiniStat label="Noise suppressed" value={String(streamSummary.noise_suppressed)} />
+            <MiniStat label="Triage mode" value={triageCard?.mode ?? "pending"} />
+            <MiniStat label="Notifications" value={notificationMode} />
+          </div>
+        </Panel>
+      )}
+      <InvestigationDetail
+        selected={selected}
+        answer={answer}
+        triageCard={triageCard}
+        notificationMode={notificationMode}
+      />
     </div>
   );
 }
@@ -808,10 +1374,48 @@ function AlertStorm({
 function InvestigationDetail({
   selected,
   answer,
+  triageCard,
+  notificationMode = "mock",
 }: {
   selected: Investigation;
   answer: RagAnswer | null;
+  triageCard: TriageCard | null;
+  notificationMode?: string;
 }) {
+  const triageSteps = triageCard?.recommended_steps ?? [
+    "Check bet-service health and circuit breaker state.",
+    "Compare deploy timestamp with first warning shot.",
+    "Validate database and Kafka dependency health.",
+  ];
+  const impactText =
+    (triageCard?.impact?.business_impact as string | undefined) ?? selected.impact;
+  const ownerTeam =
+    (triageCard?.owner?.team as string | undefined) ?? "Betting Core";
+  const similar =
+    triageCard?.similar_incidents?.slice(0, 2).map((s) => {
+      const label = s.incident_id ?? s.root_cause ?? "similar incident";
+      return String(label);
+    }) ?? [];
+  const deploys =
+    triageCard?.suspect_deploys?.slice(0, 2).map((d) => {
+      const dep = d as Record<string, unknown>;
+      return String(dep.version ?? dep.deploy_id ?? dep.service ?? "deploy");
+    }) ?? [];
+
+  const postMortem = {
+    summary: selected.alert,
+    timeline: WARNING_ALERTS.join(" → "),
+    customerImpact: "Betting unavailable for regulated GIB-UKGC users during peak window.",
+    businessImpact: impactText,
+    rootCause:
+      triageCard?.answer?.slice(0, 120) ??
+      "Root-cause hypothesis: bad deploy or dependency saturation on bet-service.",
+    actionsTaken: triageSteps.slice(0, 3).join("; "),
+    validation: "Monitor error rate, settlement lag, and rollback health for 10 minutes.",
+    followUp: "Add pre-P1 warning detector; review connection pool sizing.",
+    prevention: "Canary deploy gates + automated rollback playbook for bet-service.",
+  };
+
   return (
     <div className="grid grid-cols-[1.15fr_0.85fr] gap-4 max-[1100px]:grid-cols-1">
       <Panel title="Investigation workspace" icon={FileText}>
@@ -819,9 +1423,7 @@ function InvestigationDetail({
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-xs uppercase tracking-wider text-red-100/70">
-                  Incident summary
-                </div>
+                <div className="text-xs uppercase tracking-wider text-red-100/70">Priority</div>
                 <h3 className="mt-1 text-xl font-semibold text-red-50">{selected.alert}</h3>
               </div>
               <span
@@ -843,17 +1445,22 @@ function InvestigationDetail({
             <EvidenceCard
               title="Investigation findings"
               items={[
-                "Four warning signals preceded the P1.",
-                "Recent deployment correlation is available.",
-                "Similar incidents show rollback reduced MTTR.",
+                `${streamSummaryFallbackWarnings()} warning signals preceded the P1.`,
+                deploys.length
+                  ? `Recent deploy correlation: ${deploys.join(", ")}`
+                  : "Recent deployment correlation is available via piter-recent-deployments.",
+                similar.length
+                  ? `Similar incidents: ${similar.join("; ")}`
+                  : "Similar incidents show rollback reduced MTTR.",
               ]}
             />
+            <EvidenceCard title="Triage plan" items={triageSteps.slice(0, 4)} />
             <EvidenceCard
-              title="Triage steps"
+              title="Escalation recommendation"
               items={[
-                "Check bet-service health and circuit breaker state.",
-                "Compare deploy timestamp with first warning shot.",
-                "Validate database and Kafka dependency health.",
+                `Owner team: ${ownerTeam}`,
+                "On-call: Platform SRE (masked in preview)",
+                `Notification mode: ${notificationMode} — live dispatch blocked by default`,
               ]}
             />
             <EvidenceCard
@@ -864,12 +1471,13 @@ function InvestigationDetail({
                 "Watch error rate and settlement lag for 10 minutes.",
               ]}
             />
+            <PostMortemCard postMortem={postMortem} />
             <EvidenceCard
-              title="Post-mortem draft"
+              title="Confidence and uncertainty"
               items={[
-                "Root-cause hypothesis: bad deploy or dependency saturation.",
-                "Impact: GIB-UKGC betting unavailable.",
-                "Follow-up: add pre-P1 warning detector.",
+                triageCard?.grounded ? "Grounded answer with citations" : "Awaiting triage run",
+                `Execution: ${triageCard?.mode ?? "preview"}`,
+                "Uncertainty: dependency saturation vs deploy regression",
               ]}
             />
           </div>
@@ -877,20 +1485,88 @@ function InvestigationDetail({
       </Panel>
       <Panel title="Evidence, tools, and impact" icon={Layers}>
         <div className="grid gap-3">
-          <MiniStat label="Business impact" value={selected.impact} />
-          <MiniStat label="Regulatory exposure" value="UKGC / GIB" />
-          <MiniStat label="Recent deployment" value="DEP-2026-06-06-014" />
-          <MiniStat label="Previous MTTR" value="41 min" />
+          <MiniStat label="Business impact" value={impactText} />
+          <MiniStat label="Execution mode" value={triageCard?.mode ?? "preview"} />
+          <MiniStat label="Matched runbook" value={triageCard?.matched_runbook ?? "pending triage"} />
           <CitationPreview citations={answer?.citations ?? []} />
-          <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-sm text-amber-100">
-            <div className="font-semibold">Escalation preview</div>
-            <div className="mt-1 text-xs leading-relaxed text-amber-100/80">
-              Owner: Betting Core. Recipient: a***@example.com. Mode: mock. Live dispatch: blocked
-              until explicit confirmation and allowlist gates pass.
-            </div>
-          </div>
+          {deploys.length > 0 && (
+            <EvidenceCard title="Recent deployments" items={deploys.map((d) => String(d))} />
+          )}
+          {similar.length > 0 && (
+            <EvidenceCard title="Similar incidents" items={similar.map((s) => String(s))} />
+          )}
+          <EscalationPreview ownerTeam={ownerTeam} notificationMode={notificationMode} />
         </div>
       </Panel>
+    </div>
+  );
+}
+
+function streamSummaryFallbackWarnings() {
+  return 4;
+}
+
+function PostMortemCard({
+  postMortem,
+}: {
+  postMortem: {
+    summary: string;
+    timeline: string;
+    customerImpact: string;
+    businessImpact: string;
+    rootCause: string;
+    actionsTaken: string;
+    validation: string;
+    followUp: string;
+    prevention: string;
+  };
+}) {
+  return (
+    <div className="rounded-lg border border-violet-400/25 bg-violet-400/5 p-3">
+      <div className="text-sm font-semibold text-violet-100">Post-mortem draft</div>
+      <dl className="mt-2 space-y-1.5 text-xs text-slate-400">
+        {[
+          ["Incident summary", postMortem.summary],
+          ["Timeline", postMortem.timeline],
+          ["Customer impact", postMortem.customerImpact],
+          ["Business impact", postMortem.businessImpact],
+          ["Root-cause hypothesis", postMortem.rootCause],
+          ["Actions taken", postMortem.actionsTaken],
+          ["Resolution validation", postMortem.validation],
+          ["Follow-up actions", postMortem.followUp],
+          ["Prevention", postMortem.prevention],
+        ].map(([k, v]) => (
+          <div key={k}>
+            <dt className="font-medium text-slate-500">{k}</dt>
+            <dd className="mt-0.5 text-slate-300">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function EscalationPreview({
+  ownerTeam,
+  notificationMode,
+}: {
+  ownerTeam: string;
+  notificationMode: string;
+}) {
+  return (
+    <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-sm text-amber-100">
+      <div className="font-semibold">Escalation preview (safe)</div>
+      <div className="mt-2 space-y-1 text-xs leading-relaxed text-amber-100/85">
+        <div>Policy: P1 regulated market — immediate owner notification</div>
+        <div>Owner team: {ownerTeam}</div>
+        <div>On-call role: Platform SRE</div>
+        <div>Recipient: +972-**-***-1234, a***@example.com (masked)</div>
+        <div>Mode: {notificationMode} — idempotency key reserved</div>
+        <div>Delivery: preview only — not sent</div>
+      </div>
+      <p className="mt-2 text-[11px] text-amber-100/70">
+        Real notification sending requires explicit live mode and confirmation.
+      </p>
     </div>
   );
 }
@@ -899,10 +1575,12 @@ function ContextMemory({
   sessionId,
   lastQuestion,
   memoryUsed,
+  triageCard,
 }: {
   sessionId: string;
   lastQuestion: string | null;
   memoryUsed: boolean;
+  triageCard: TriageCard | null;
 }) {
   return (
     <div className="grid gap-5">
@@ -916,8 +1594,12 @@ function ContextMemory({
           <div className="space-y-3 text-sm">
             <MiniStat label="Current incident" value="INV-2026-0610-001" />
             <MiniStat label="Session ID" value={sessionId} />
-            <MiniStat label="Memory used" value={memoryUsed ? "true" : "preview"} />
+            <MiniStat label="Memory used" value={memoryUsed ? "true" : triageCard ? "false" : "preview"} />
             <MiniStat label="Last user question" value={lastQuestion ?? "No follow-up asked yet"} />
+            <MiniStat
+              label="Tools in session"
+              value={triageCard ? "4 piter-* tools" : "run workflow first"}
+            />
           </div>
         </Panel>
         <Panel title="Reusable investigation history" icon={History}>
@@ -926,6 +1608,7 @@ function ContextMemory({
               "Same pattern detected today: warning shots before P1 outage.",
               "Similar incident from history: connection pool exhaustion caused bet-service errors.",
               "Past resolution reused: rollback plus dependency health validation reduced MTTR.",
+              "Previous agent decision: grouped 366 noise alerts before surfacing P1.",
               "Memory rule: use incident context for follow-ups, do not store real personal contacts.",
             ].map((item) => (
               <div
@@ -938,21 +1621,110 @@ function ContextMemory({
           </div>
         </Panel>
       </div>
+      <Panel title="Agent decision timeline" icon={Clock3}>
+        <div className="space-y-2 text-sm text-slate-400">
+          <div>T+0 — Alert storm ingested (399 deterministic alerts)</div>
+          <div>T+1 — Noise suppression applied to P3/P4 repeats</div>
+          <div>T+2 — P1 bet-service detected; stream paused for triage</div>
+          <div>T+3 — RAG + Lambda/MCP-style tools enriched incident</div>
+          <div>T+4 — Escalation preview generated (mock mode)</div>
+        </div>
+      </Panel>
     </div>
   );
 }
 
-function KnowledgeBase({ citations }: { citations: Citation[] }) {
+function KnowledgeBase({
+  citations,
+  kbDocs,
+  onRefresh,
+  onAskAboutDoc,
+}: {
+  citations: Citation[];
+  kbDocs: KbDocumentMeta[];
+  onRefresh: () => void;
+  onAskAboutDoc: (title: string) => void;
+}) {
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+
+  const rows =
+    kbDocs.length > 0
+      ? kbDocs.map((doc) => ({
+          name: doc.title || doc.id,
+          type: doc.doc_type,
+          service: doc.services,
+          env: doc.environments,
+          severity: doc.severity_applicable,
+          status: doc.sync_status,
+          score: doc.indexed ? "indexed" : "local",
+          updated: doc.last_updated,
+        }))
+      : KB_DOCS.map((doc) => ({ ...doc, updated: "demo" }));
+
+  async function handleUpload() {
+    if (!uploadFile) {
+      setUploadErr("Select a file first.");
+      return;
+    }
+    setUploading(true);
+    setUploadErr(null);
+    setUploadMsg(null);
+    try {
+      const result = await uploadDocument(uploadFile, false);
+      setUploadMsg(
+        result.message ??
+          "Uploaded to local/demo corpus. Automatic Bedrock KB sync only when explicitly enabled server-side.",
+      );
+      onRefresh();
+    } catch (exc) {
+      setUploadErr(exc instanceof Error ? exc.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Grounded retrieval"
         title="Knowledge Base"
-        body="Organized runbooks, environments, policies, incidents, and glossary documents support RAG answers with visible citations."
+        body="Runbooks, environments, policies, incidents, glossary, and uploaded documents support RAG answers with visible citations."
       />
-      <Panel title='Retrieval tester: "bet-service 100% error rate GIB-UKGC"' icon={Database}>
+      <Panel title="Upload document (local/demo RAG)" icon={Database}>
+        <p className="mb-3 text-xs text-slate-500">
+          Accepted: CSV, JSON, MD, TXT, PDF, DOCX — max size per server config. Upload indexes
+          locally for demo retrieval; Bedrock KB sync is not automatic unless configured.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="grid gap-1 text-xs text-slate-400">
+            Document file
+            <input
+              type="file"
+              accept=".csv,.json,.md,.txt,.pdf,.docx"
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              className="cursor-pointer text-sm text-slate-300"
+            />
+          </label>
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={handleUpload}
+            className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          >
+            {uploading ? "Uploading…" : "Upload"}
+          </button>
+        </div>
+        {uploadMsg && (
+          <p className="mt-2 text-xs text-emerald-300">{uploadMsg}</p>
+        )}
+        {uploadErr && <p className="mt-2 text-xs text-red-300">{uploadErr}</p>}
+      </Panel>
+      <Panel title='Inventory — "bet-service 100% error rate GIB-UKGC"' icon={Database}>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table className="w-full min-w-[920px] text-left text-sm">
             <thead className="border-b border-slate-700 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 {[
@@ -962,6 +1734,7 @@ function KnowledgeBase({ citations }: { citations: Citation[] }) {
                   "Environments",
                   "Severity",
                   "Status",
+                  "Updated",
                   "Relevance",
                 ].map((h) => (
                   <th key={h} className="px-3 py-2 font-medium">
@@ -971,7 +1744,7 @@ function KnowledgeBase({ citations }: { citations: Citation[] }) {
               </tr>
             </thead>
             <tbody>
-              {KB_DOCS.map((doc) => (
+              {rows.map((doc) => (
                 <tr key={doc.name} className="border-b border-slate-800">
                   <td className="px-3 py-3 text-cyan-100">{doc.name}</td>
                   <td className="px-3 py-3">{doc.type}</td>
@@ -981,7 +1754,16 @@ function KnowledgeBase({ citations }: { citations: Citation[] }) {
                   <td className="px-3 py-3">
                     <Pill tone="green">{doc.status}</Pill>
                   </td>
-                  <td className="px-3 py-3 font-mono text-cyan-200">{doc.score}</td>
+                  <td className="px-3 py-3 text-xs text-slate-500">{doc.updated}</td>
+                  <td className="px-3 py-3">
+                    <button
+                      type="button"
+                      onClick={() => onAskAboutDoc(doc.name)}
+                      className="cursor-pointer font-mono text-cyan-200 hover:underline"
+                    >
+                      {doc.score}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -993,13 +1775,30 @@ function KnowledgeBase({ citations }: { citations: Citation[] }) {
   );
 }
 
-function ToolsPanel() {
+function ToolsPanel({
+  triageCard,
+  notificationMode,
+}: {
+  triageCard: TriageCard | null;
+  notificationMode: string;
+}) {
+  const enriched = Boolean(
+    triageCard?.similar_incidents?.length || triageCard?.suspect_deploys?.length,
+  );
+  const toolMode = (name: string) =>
+    name === "piter-escalation"
+      ? notificationMode === "mock"
+        ? "mock"
+        : "preview / live-blocked"
+      : triageCard
+        ? "mock / preview"
+        : "mock";
   return (
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Action groups and tool use"
         title="MCP / Lambda Tools"
-        body="Bedrock action groups backed by AWS Lambda demonstrate the MCP/tools concept. A real MCP server is optional future work."
+        body="Bedrock Action Groups backed by AWS Lambda are the production tool path. MCP is represented as a standardized tool-contract layer for local/demo and future integrations — not automatically equivalent to Bedrock Action Groups."
       />
       <div className="grid grid-cols-2 gap-4 max-[980px]:grid-cols-1">
         {TOOLS.map((tool) => (
@@ -1011,9 +1810,10 @@ function ToolsPanel() {
               <InfoRow label="Status" value={tool.status} />
               <div className="flex flex-wrap gap-2">
                 <Pill tone="cyan">last call {tool.latency}</Pill>
-                <Pill tone={tool.used ? "green" : "amber"}>
-                  {tool.used ? "used in current incident" : "idle"}
+                <Pill tone={tool.used || enriched ? "green" : "amber"}>
+                  {tool.used || enriched ? "used in current incident" : "idle"}
                 </Pill>
+                <Pill tone="purple">mode: {toolMode(tool.name)}</Pill>
               </div>
             </div>
           </Panel>
@@ -1023,7 +1823,7 @@ function ToolsPanel() {
   );
 }
 
-function Architecture() {
+function Architecture({ data }: { data: BootstrapPayload | null | undefined }) {
   return (
     <div className="grid gap-5">
       <SectionHeader
@@ -1031,6 +1831,14 @@ function Architecture() {
         title="PITER AiOps Architecture"
         body="A Flask backend serves the React console, connects to Bedrock through boto3, uses RAG citations, invokes tool-style enrichment, and falls back locally."
       />
+      <div className="flex flex-wrap gap-2">
+        <Pill tone="cyan">RAG: {data?.rag_backend ?? "retrieve_and_generate"}</Pill>
+        <Pill tone={data?.use_bedrock ? "green" : "amber"}>
+          Bedrock: {data?.use_bedrock ? "enabled" : "local fallback path"}
+        </Pill>
+        <Pill tone="purple">KB: {data?.kb_id ? "configured" : "local corpus"}</Pill>
+        <Pill tone="amber">Lambda tools: mock/demo unless deployed</Pill>
+      </div>
       <div className="grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2 max-[650px]:grid-cols-1">
         {[
           ["React/Vite UI", "Recording-ready SOC console, investigation workspace, agent chat."],
@@ -1058,7 +1866,13 @@ function Architecture() {
   );
 }
 
-function Settings() {
+function Settings({
+  notificationMode,
+  data,
+}: {
+  notificationMode: string;
+  data: BootstrapPayload | null | undefined;
+}) {
   return (
     <div className="grid gap-5">
       <SectionHeader
@@ -1067,15 +1881,31 @@ function Settings() {
         body="Presentation-safe defaults for notification mode, AWS boundaries, and live-demo controls."
       />
       <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
+        <Panel title="Backend / AWS status" icon={ServerCog}>
+          <div className="space-y-3 text-sm">
+            <InfoRow
+              label="Execution mode"
+              value={data?.execution_mode_hint ?? "Direct Bedrock KB / local fallback"}
+            />
+            <InfoRow label="RAG backend" value={data?.rag_backend ?? "retrieve_and_generate"} />
+            <InfoRow label="Knowledge Base" value={data?.kb_id || "local demo corpus"} />
+            <InfoRow label="Guardrails" value="configured server-side when Bedrock enabled" />
+            <InfoRow label="Lambda tools" value="mock/demo — deploy blocked in presentation" />
+            <InfoRow label="Memory" value="session-scoped follow-up via /api/follow-up" />
+            <InfoRow label="Docker / local" value="localhost:8080 — /health returns 200" />
+          </div>
+        </Panel>
         <Panel title="Escalation and notification safety" icon={Lock}>
           <div className="space-y-3 text-sm">
-            <InfoRow label="Default mode" value="mock" />
+            <InfoRow label="Default mode" value={notificationMode} />
             <InfoRow label="Preview mode" value="safe escalation policy preview" />
             <InfoRow
               label="Live mode"
               value="blocked unless all environment and confirmation gates pass"
             />
             <InfoRow label="Masked recipients" value="+972-**-***-1234, a***@example.com" />
+            <InfoRow label="Confirmation required" value="yes for live dispatch" />
+            <InfoRow label="Idempotency" value="reserved per incident" />
             <Pill tone="green">No real SNS or SES messages are sent by this UI</Pill>
           </div>
         </Panel>
@@ -1103,21 +1933,27 @@ function Settings() {
 function AgentPanel({
   selected,
   answer,
+  triageCard,
   chatInput,
   setChatInput,
   askAgent,
   loading,
   error,
   lastQuestion,
+  memoryUsed,
+  executionLabel,
 }: {
   selected: Investigation;
   answer: RagAnswer | null;
+  triageCard: TriageCard | null;
   chatInput: string;
   setChatInput: (value: string) => void;
   askAgent: (question?: string) => void;
   loading: boolean;
   error: string | null;
   lastQuestion: string | null;
+  memoryUsed: boolean;
+  executionLabel: string;
 }) {
   const prompts = [
     "What should I check first?",
@@ -1141,8 +1977,12 @@ function AgentPanel({
       </div>
       <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-xs">
         <InfoRow label="Incident" value={selected.id} />
-        <InfoRow label="Session ID" value={answer?.session_id ?? "created after first follow-up"} />
-        <InfoRow label="Memory used" value={answer?.session_id ? "true" : "preview"} />
+        <InfoRow
+          label="Session ID"
+          value={triageCard?.session_id ?? answer?.session_id ?? "run workflow first"}
+        />
+        <InfoRow label="Memory used" value={memoryUsed ? "true" : triageCard ? "false" : "preview"} />
+        <InfoRow label="Execution" value={executionLabel} />
         <InfoRow label="Last question" value={lastQuestion ?? "none"} />
       </div>
       <div className="mt-4 flex-1 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3">

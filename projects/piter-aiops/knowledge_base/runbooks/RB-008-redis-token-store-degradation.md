@@ -1,3 +1,15 @@
+---
+title: "Redis token store degradation"
+doc_type: "runbook"
+services: ["redis-cache", "auth-api"]
+environments: ["NJ-DGE", "GIB-UKGC", "MGM"]
+severity_applicable: ["P1", "P2"]
+tags: ["redis", "auth", "cache"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-008: Redis / Token-Store Degradation
 
 **Severity:** P1 (auth impact) / P2 (cache only)

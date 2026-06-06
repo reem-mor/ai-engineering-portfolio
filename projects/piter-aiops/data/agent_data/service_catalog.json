@@ -64,6 +64,19 @@
       "environments": ["NJ-DGE", "GIB"],
       "depends_on": [],
       "depended_by": ["checkout-api", "auth-api"]
+    },
+    {
+      "name": "bet-service",
+      "display_name": "Bet Service",
+      "owner_team": "Betting Core",
+      "on_call": "Tom Friedman",
+      "secondary_oncall": "Liat Goldberg",
+      "slack_channel": "#betting-core",
+      "escalation_path": "Betting Core -> Yossi Avraham -> PD-BET-001",
+      "pagerduty_service": "PD-BET-001",
+      "environments": ["NJ-DGE", "GIB-UKGC", "MGM", "MIRAGE"],
+      "depends_on": ["auth-api", "postgres"],
+      "depended_by": ["game-service"]
     }
   ]
 }

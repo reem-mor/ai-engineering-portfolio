@@ -1,3 +1,15 @@
+---
+title: "Deployment rollback procedure"
+doc_type: "runbook"
+services: []
+environments: ["NJ-DGE", "GIB-UKGC", "MGM", "MIRAGE"]
+severity_applicable: ["P1", "P2"]
+tags: ["rollback", "deploy", "change-management"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-010: Deployment Rollback Procedure
 
 **Severity:** Procedure (applies to any P1/P2 caused by a deploy)

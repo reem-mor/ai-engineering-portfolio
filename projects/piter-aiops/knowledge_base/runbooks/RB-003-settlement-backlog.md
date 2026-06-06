@@ -1,3 +1,15 @@
+---
+title: "Settlement backlog"
+doc_type: "runbook"
+services: ["settlement-svc"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P1", "P2"]
+tags: ["settlement", "kafka", "payments"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-003: Settlement Backlog / Payment Errors
 
 **Severity:** P1

@@ -42,7 +42,7 @@ def test_knowledge_base_markdown_has_required_front_matter():
     docs = [
         path
         for path in KB.rglob("*.md")
-        if path.is_file() and (not path.name.startswith("RB-") or path.name == "README.md")
+        if path.is_file() and path.name != "README.md"
     ]
     assert docs
     for path in docs:

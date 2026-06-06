@@ -1,3 +1,15 @@
+---
+title: "Postgres replica lag"
+doc_type: "runbook"
+services: ["postgres"]
+environments: ["NJ-DGE", "GIB-UKGC"]
+severity_applicable: ["P2", "P3"]
+tags: ["postgres", "replication", "database"]
+last_updated: "2026-06-07"
+author: "PITER AiOps"
+version: "1.0"
+---
+
 # RB-004: PostgreSQL Replica Lag
 
 **Severity:** P2

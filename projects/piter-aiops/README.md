@@ -564,7 +564,12 @@ See [`TESTING.md`](TESTING.md) for the full checklist.
 | Method | Path | Description |
 |:------:|------|-------------|
 | `GET` | `/` | React SPA (`app/static/spa`) or legacy Jinja homepage |
-| `GET` | `/api/bootstrap` | JSON: examples, workflow alerts, upload limits, `csrf_token` |
+| `GET` | `/api/bootstrap` | JSON: examples, workflow alerts, upload limits, `alert_stream`, execution mode, notification mode |
+| `GET` | `/api/alert-stream` | Deterministic storm summary (399 alerts); optional `?include_rows=true` |
+| `GET` | `/api/kb/manifest` | Knowledge base document metadata from `knowledge_base/` |
+| `GET` | `/console` | Legacy Jinja demo (redirects to SPA when `PITER_CONSOLE_REDIRECT_SPA=true`) |
+| `POST` | `/api/triage` | Full incident triage card (RAG + tools + session) |
+| `POST` | `/api/follow-up` | Session-aware follow-up questions |
 | `GET` | `/health` | `{"status":"ok"}`; optional `?deep=1` for config checks |
 | `POST` | `/ask` | JSON or HTMX: grounded answer + citations; optional `session_id` for follow-ups |
 | `POST` | `/api/workflow/triage` | JSON: alert triage (Bedrock-backed) |
