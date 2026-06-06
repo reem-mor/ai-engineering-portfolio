@@ -1,4 +1,4 @@
-﻿"""IncidentIQ enrichment tools â€” correlate, context, similar incidents."""
+"""IncidentIQ enrichment tools â€” correlate, context, similar incidents."""
 from __future__ import annotations
 
 import csv
