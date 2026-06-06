@@ -116,3 +116,4 @@ See [`infra/ec2_user_data_demo.sh`](../infra/ec2_user_data_demo.sh).
 | Flask on EC2 | IAM instance profile | `/home/ec2-user/.env` |
 | `scripts/setup_*.py` (laptop) | `~/.aws` | `.env` for IDs / bucket |
 | pytest | Mocked | `tests/conftest.py` |
+| Cursor MCP (Path C) | `~/.aws` + `AWS_PROFILE=reemmor` in `.cursor/mcp.json` | [`config/mcp.json.example`](../config/mcp.json.example) · [`docs/MCP_PATH.md`](MCP_PATH.md) |
