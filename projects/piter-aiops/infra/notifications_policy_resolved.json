@@ -1,0 +1,49 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SnsEscalationTopicPublish",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "arn:aws:sns:us-east-1:329597159579:piter-aiops-escalation"
+    },
+    {
+      "Sid": "SnsDirectSmsPublish",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "sns:Protocol": "sms"
+        }
+      }
+    },
+    {
+      "Sid": "SesSendFromVerifiedIdentity",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": [
+        "arn:aws:ses:us-east-1:329597159579:identity/fontex331@gmail.com",
+        "arn:aws:ses:us-east-1:329597159579:configuration-set/piter-aiops-escalations"
+      ]
+    },
+    {
+      "Sid": "SesSendQuotaRead",
+      "Effect": "Allow",
+      "Action": [
+        "ses:GetAccount",
+        "ses:GetSendQuota",
+        "sesv2:GetAccount",
+        "sesv2:GetEmailIdentity"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

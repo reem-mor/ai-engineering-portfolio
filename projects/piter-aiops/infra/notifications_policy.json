@@ -1,0 +1,49 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SnsEscalationTopicPublish",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "arn:aws:sns:REGION:ACCOUNT_ID:piter-aiops-escalation"
+    },
+    {
+      "Sid": "SnsDirectSmsPublish",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "sns:Protocol": "sms"
+        }
+      }
+    },
+    {
+      "Sid": "SesSendFromVerifiedIdentity",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": [
+        "arn:aws:ses:REGION:ACCOUNT_ID:identity/SENDER_EMAIL",
+        "arn:aws:ses:REGION:ACCOUNT_ID:configuration-set/piter-aiops-escalations"
+      ]
+    },
+    {
+      "Sid": "SesSendQuotaRead",
+      "Effect": "Allow",
+      "Action": [
+        "ses:GetAccount",
+        "ses:GetSendQuota",
+        "sesv2:GetAccount",
+        "sesv2:GetEmailIdentity"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
