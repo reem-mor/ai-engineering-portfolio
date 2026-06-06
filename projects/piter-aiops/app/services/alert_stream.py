@@ -37,7 +37,7 @@ def summarize_alert_stream(path: str | None = None) -> dict:
 
     return {
         "total": len(rows),
-        "label": f"Simulated alert storm ({len(rows)} alerts)",
+        "label": f"Alert storm corpus ({len(rows)} alerts)",
         "duration_seconds": 300,
         "by_severity": by_severity,
         "noise_suppressed": noise_count,

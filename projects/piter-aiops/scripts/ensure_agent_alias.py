@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -36,7 +37,9 @@ def main() -> int:
         agentId=args.agent_id,
         agentName=agent["agentName"],
         agentResourceRoleArn=agent["agentResourceRoleArn"],
-        foundationModel=agent["foundationModel"],
+        foundationModel=os.environ.get("PITER_BEDROCK_AGENT_MODEL")
+        or os.environ.get("PITER_BEDROCK_MODEL_ARN")
+        or agent["foundationModel"],
         instruction=AGENT_INSTRUCTION,
     )
     print("Updated agent instruction from AGENT_INSTRUCTION")
