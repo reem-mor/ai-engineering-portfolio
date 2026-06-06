@@ -1,8 +1,21 @@
-API GATEWAY — 5xx STORM RUNBOOK
-===============================
+RB-001: API GATEWAY — 5xx STORM RUNBOOK
+=======================================
+Runbook ID: RB-001
+Severity: P1 (customer-facing) / P2 (single client)
+Applies to: api-gateway edge tier in NJ-DGE, GIB
+Alert: ApiGateway5xxHigh — 5xx rate > 2% over 5 minutes
+         (also: ApiGateway5xxStorm — 5xx > 10% over 3 minutes)
 
 Trigger: AWS API Gateway returns 5xx for more than 10% of requests over
 a 3-minute window, OR the CloudWatch alarm "ApiGateway5xxStorm" fires.
+
+Detection checks (before triage)
+--------------------------------
+1. Confirm alert scope: route, stage, environment.
+2. Check integration latency vs. backend health.
+3. Inspect recent deploys with correlate_deployments.
+4. Verify custom domain TLS certificate is valid (expired certs cause total 5xx).
+5. Check WAF rules for false-positive blocks.
 
 STEP 1 — Identify the failing route
 -----------------------------------
@@ -15,7 +28,7 @@ STEP 2 — Decide: gateway issue or backend issue?
 Compare the gateway 5xx rate with the integration target's own 5xx rate
 (Lambda errors, ECS task errors, or upstream HTTP service).
   - If backend errors mirror gateway errors -> the backend is the cause,
-    jump to that service's runbook.
+    jump to that service's runbook (e.g. runbook_checkout_5xx.md).
   - If backend is healthy but gateway still 5xxs -> usage plan throttle
     or integration timeout. Continue to step 3.
 
@@ -24,12 +37,16 @@ STEP 3 — Check throttling
 API Gateway -> Usage Plans -> verify that no plan is at its throttle
 limit. If a known customer is exceeding their quota, that is expected;
 document and move on.
+  - Do NOT bump rate limits to "unlimited"; this can amplify a downstream outage.
 
-STEP 4 — Check integration timeout
-----------------------------------
+STEP 4 — Check integration timeout and WAF
+------------------------------------------
 Default integration timeout is 29 seconds. If backend latency has crept
 above 25 seconds, gateway will return 504. Roll back the backend if a
-recent deploy is suspect, OR scale the backend horizontally.
+recent deploy is suspect (runbook_deployment_rollback.md), OR scale
+the backend horizontally.
+If a WAF rule is over-blocking, move it to count mode for the affected
+client only — do NOT disable WAF globally.
 
 STEP 5 — Recovery validation
 ----------------------------
@@ -38,7 +55,18 @@ After the fix, monitor for 10 minutes:
   - p99 latency must return to baseline
   - No new alerts firing for the same route
 
+Example commands
+----------------
+aws logs tail /aws/apigateway/edge --since 10m --filter-pattern '"status":5'
+echo | openssl s_client -connect api.example.com:443 2>/dev/null | openssl x509 -noout -dates
+
 DO NOT
 ------
 Do not delete deployment stages to "reset" the gateway. This severs all
 custom domain mappings and triggers a much larger incident.
+
+Escalation
+----------
+Tier-1: Steps 1–4 when a single route or client is affected.
+edge-oncall: Gateway-origin 5xx above 2% for 10 minutes.
+P1: Checkout or auth blocked company-wide.

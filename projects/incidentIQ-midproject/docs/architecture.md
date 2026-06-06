@@ -10,7 +10,7 @@
 | Fallback | **Bedrock `RetrieveAndGenerate`** | Set `RAG_BACKEND=retrieve_and_generate` when agent is not provisioned. |
 | Foundation model | **Claude Haiku (inference profile)** | Cheap, fast, great quality for MVP. |
 | Vector store | **OpenSearch Serverless** (KB-managed) | Auto-provisioned; no infrastructure to write. |
-| Source of truth | **S3 bucket** of runbook docs | Single source the KB syncs from. |
+| Source of truth | **S3** `projects/incidentIQ-midproject/data/sample_documents/` | Single canonical corpus (RB ids in doc headings); local RAG reads the same path |
 | Container | **python:3.12-slim + non-root user** | Small, secure base. |
 | Host | **EC2 t3.micro + IAM instance profile** | Free-tier, no AWS keys on disk. |
 

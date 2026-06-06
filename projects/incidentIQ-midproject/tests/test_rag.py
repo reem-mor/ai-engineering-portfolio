@@ -7,20 +7,20 @@ from app.services.local_rag import LocalRetriever, get_retriever
 
 def test_retriever_indexes_runbooks():
     r = get_retriever()
-    assert r.runbook_dir.name == "runbooks"
-    assert r.document_count() == 10
+    assert r.runbook_dir.name == "sample_documents"
+    assert r.document_count() >= 18
 
 
 def test_search_returns_db_cpu_runbook_for_demo_query():
     hits = get_retriever().search("Postgres CPU is 95% on prod-db-1 what is the runbook", top_k=3)
     assert hits
-    assert hits[0].document == "RB-007-postgres-cpu-high.md"
+    assert hits[0].document == "runbook_db_cpu.md"
     assert hits[0].score > 0
 
 
 def test_search_returns_auth_runbook():
     hits = get_retriever().search("authentication login failures users cannot log in error rate", top_k=3)
-    assert any("RB-002" in h.document for h in hits)
+    assert any("runbook_auth_login" in h.document for h in hits)
 
 
 def test_local_client_answer_is_grounded_and_cited():
@@ -29,9 +29,9 @@ def test_local_client_answer_is_grounded_and_cited():
     assert ans.grounded is True
     assert ans.mode == "local"
     assert ans.citations
-    assert ans.matched_runbook == "RB-007-postgres-cpu-high.md"
+    assert ans.matched_runbook == "runbook_db_cpu.md"
     payload = ans.to_dict()
-    assert payload["citations"][0]["source_label"].startswith("RB-007")
+    assert payload["citations"][0]["source_label"] == "runbook_db_cpu.md"
 
 
 def test_local_client_refuses_off_topic():

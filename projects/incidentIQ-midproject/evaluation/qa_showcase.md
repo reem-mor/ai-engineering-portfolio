@@ -1,63 +1,65 @@
 # Sample Questions and Answers — Live Bedrock KB
 
-- **Run at:** 2026-06-04 07:55:10 UTC
+- **Run at:** 2026-06-06 07:58:18 UTC
 - **Model:** `arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0`
 - **Corpus:** s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
 - **Cases:** 4 grounded runbook answers + 1 off-topic refusal
 
 ## 1. Postgres CPU is 95% on prod-db-1 — what is the runbook?
 
-- **Grounded:** `True` · **Citations:** 2
-- **Sources:** `monitoring_alerts_reference.md`, `runbook_db_cpu.md`
+- **Grounded:** `True` · **Citations:** 1
+- **Sources:** `runbook_db_cpu.md`
 
 **Answer:**
 
 Summary:
 
-The runbook for Postgres CPU above 90% on prod-db-1 is `runbook_db_cpu.md`.
+Follow RB-007 (Postgres CPU above 90% on prod-db-* hosts) to diagnose and resolve the high CPU on prod-db-1.
 
 Recommended steps:
 
-1. Confirm the alert and connect to the affected primary through the bastion host
+1. Confirm the alert and connect to prod-db-1 through the bastion host.
 
-2. Query `pg_stat_activity` to identify long-running queries and their duration
+2. Identify long-running queries using `pg_stat_activity` and find active queries ordered by duration.
 
-3. Cancel queries running longer than 5 minutes using `pg_cancel_backend(pid)`
+3. Cancel queries running longer than 5 minutes using `pg_cancel_backend()`.
 
-4. Terminate backends only if cancel fails
+4. Terminate the backend only if cancel fails, using `pg_terminate_backend()`.
 
-5. Check for missing indexes by reviewing `seq_scan` vs `idx_scan` ratios in `pg_stat_user_tables`
+5. Check for missing indexes using `pg_stat_user_tables`.
 
-6. If load persists, fail over to the replica using Patroni (`patronictl failover`)
+6. If load persists, fail over to the replica using Patroni (`patronictl failover`).
+
+7. Escalate to DBA on-call if CPU remains above 90% for 15 minutes.
 
 Escalation:
 
-- Escalate to DBA on-call if CPU remains above 90% for 15 minutes, if failover is required, or if cancel/terminate commands are ineffec…
+- When to escalate: CPU > 9…
 
 ---
 
 ## 2. API 5xx rate is above 2% on checkout — what should I check?
 
-- **Grounded:** `True` · **Citations:** 2
-- **Sources:** `runbook_checkout_5xx.md`, `postmortem_2024_07.md`
+- **Grounded:** `True` · **Citations:** 3
+- **Sources:** `runbook_checkout_5xx.md`, `postmortem_2024_07.md`, `api_gateway_5xx_runbook.txt`
 
 **Answer:**
 
 Summary:
 
-Check recent deployments, service logs, database CPU, and dependencies in that order to identify why checkout API is returning errors above the 2% threshold. Recommended steps:
+Check recent deployments, service logs, database CPU, and dependencies in that order, then roll back if a bad deploy is found. Recommended steps:
 
 1. Check recent deployments — correlate the 5xx spike with the last release timestamp
 
 2. Check service logs — tail checkout-api and gateway logs for ERROR messages and stack traces
 
-3. Check database CPU and slow queries — run the database CPU runbook if Postgres is under load
+3. Check database CPU and slow queries — run the database CPU runbook if Postgres is hot (a prior checkout outage was caused by an N+1 query saturating database CPU)
 
 4. Check dependency errors — verify payment service, inventory, and auth token validation are healthy
 
-5. Roll back the recent deployment if the issue clearly correlates with it
+5. Roll back the deployment if the issue matches a recent bad release Escalation:
 
-6. If error rate persists above 2% for 10 minutes, page the checkout service own…
+- When to escalate: If error rate…
 
 ---
 
@@ -70,46 +72,44 @@ Check recent deployments, service logs, database CPU, and dependencies in that o
 
 Summary:
 
-Check worker health and queue depth, then scale workers if needed; escalate if lag continues to grow or the dead-letter queue shows abnormal activity. Recommended steps:
+Check worker health and queue depth, then scale workers if needed to reduce lag below 30 seconds. Recommended steps:
 
-1. Check worker pod status for restarts or out-of-memory kills in the worker namespace
+1. Check worker health — verify pod status, restarts, and out-of-memory kills in the worker namespace
 
-2. Compare current queue depth to your baseline for this time of day
+2. Check queue depth — compare current depth to baseline for this time of day
 
-3. Review recent worker deployments for slower handlers or configuration changes
+3. Check recent deploys — a new worker version may have slower handlers or bad configuration
 
-4. Scale up worker replicas within your autoscaling limits
+4. Scale workers if allowed — increase replica count within autoscaling limits
 
-5. Inspect the dead-letter queue for failed or poison-pill messages that may be blocking progress
+5. Inspect dead-letter queue — failed messages may block progress or indicate poison pills
 
-6. Escalate if lag continues increasing after scaling or if DLQ activity is abnormal Escalation:
+6. Escalate if lag keeps increasing after scale-up or dead-letter queue rate is abnormal Escalation:
 
-- Tier-1 can handle scaling and DLQ replay when st…
+- When to escalate: If lag continues to increase a…
 
 ---
 
 ## 4. Users cannot log in after deployment — what should I check?
 
 - **Grounded:** `True` · **Citations:** 4
-- **Sources:** `auth_service_runbook.md`, `runbook_auth_login.md`, `monitoring_alerts_reference.md`, `alerts_last_3mo.json`
+- **Sources:** `auth_service_runbook.md`, `runbook_auth_login.md`, `auth_service_runbook.md`, `runbook_auth_login.md`
 
 **Answer:**
 
 Summary:
 
-Check if the recent deployment caused the login failure, then verify auth service health and upstream dependencies (Redis and Postgres). Recommended steps:
+Check if the latest deployment to auth-api occurred within the last 30 minutes, as post-deployment login failures are usually caused by the recent rollout.
 
-1. Confirm the scope by checking the auth service dashboard for global error rate — if above 5% over 5 minutes, it's P2; above 25% is P1.
+Recommended steps:
 
-2. Check recent deployments with `kubectl -n auth get deploy -o wide` — if the latest rollout is less than 30 minutes old, treat it as the likely cause.
+1. Confirm the scope by checking the auth service dashboard for error rate — if login errors exceed 5% over 5 minutes, declare P2; above 25% declare P1.
 
-3. Verify auth-service health endpoints return 200 by hitting `/health` and `/ready`.
+2. Check recent deployments using `kubectl -n auth get deploy -o wide` — if the latest rollout is less than 30 minutes old, treat it as the likely cause.
 
-4. Check auth-service logs for OIDC, token, and database connection errors.
+3. Check upstream dependencies (Redis session store and Postgres user table) are healthy via the Service Map view.
 
-5. Validate critical environment variables: `JWT_SECRET`, `AUTH_DB_URL`, and `TOKEN_ISSUER`.
-
-6. Confir…
+4. Validate the OIDC discovery document with `curl -sS https://auth.example.com/.well-known/openid-configuration…
 
 ---
 

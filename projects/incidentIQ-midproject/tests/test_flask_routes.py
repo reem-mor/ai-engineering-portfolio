@@ -42,7 +42,7 @@ def test_triage_returns_card(local_client):
     assert body["ok"] is True
     assert body["mode"] == "local"
     assert body["grounded"] is True
-    assert body["citations"][0]["document"] == "RB-007-postgres-cpu-high.md"
+    assert body["citations"][0]["document"] == "runbook_db_cpu.md"
     for key in ("recommended_steps", "owner", "impact", "similar_incidents", "session_id"):
         assert key in body
 
@@ -100,7 +100,7 @@ def test_ask_falls_back_to_local(fake_config):
     body = resp.get_json()
     assert body["ok"] is True
     assert body["mode"] == "local"
-    assert body["citations"][0]["source_label"].startswith("RB-007")
+    assert body["citations"][0]["source_label"] == "runbook_db_cpu.md"
 
 
 def test_validation_error_not_masked_by_fallback(fake_config):

@@ -1,4 +1,7 @@
-# Runbook: Queue lag above 30 seconds
+# Runbook: Email / worker queue lag (not Kafka)
+
+**Note:** This runbook covers **email-worker / generic message queue** lag.
+For **Kafka settlement consumer lag**, use `runbook_kafka_consumer_lag.md` (RB-009).
 
 **Severity:** P3 (P2 if lag > 2 minutes or DLQ growing)  
 **Service:** email-worker / message queue consumers  
@@ -21,5 +24,6 @@
 
 ## Related documents
 
+- `runbook_kafka_consumer_lag.md` — Kafka consumer groups (settlement stream)
 - `alerts_last_3mo.json` — alert A-1199 (email-worker lag)
 - `monitoring_alerts_reference.md` — severity routing

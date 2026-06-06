@@ -11,8 +11,9 @@
 | KB ID | `RBTJM6NIG9` |
 | Data source | `YICXAB6WOG` |
 | S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/incidentIQ-midproject/data/sample_documents/` |
-| Last ingestion | Job `GP8P1A7LWI` — COMPLETE |
-| Retrieval check | Chunk from `runbook_db_cpu.md` (Postgres CPU runbook) |
+| Corpus | **24 files** — canonical `data/sample_documents/` (RB-001…RB-010 merged or added; see `evaluation/CORPUS_RECONCILIATION.md`) |
+| Last ingestion | Re-sync after corpus reconciliation (2026-06-06) |
+| Retrieval check | Chunk from `runbook_db_cpu.md` (RB-007 Postgres CPU runbook) |
 
 Runbooks added: `runbook_settlement.md`, `runbook_replication_lag.md`, `runbook_connection_pool.md`.
 
