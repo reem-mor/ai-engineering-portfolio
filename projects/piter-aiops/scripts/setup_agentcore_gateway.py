@@ -24,7 +24,7 @@ import boto3  # noqa: E402
 from botocore.exceptions import ClientError, UnknownServiceError  # noqa: E402
 
 LAMBDA_TOOLS = ("iiq-correlate", "iiq-context", "iiq-similar")
-TAGS = {"Project": "incidentIQ-midproject", "Owner": "reemmor"}
+TAGS = {"Project": "piter-aiops", "Owner": "reemmor"}
 
 
 def _try_agentcore_client(region: str):

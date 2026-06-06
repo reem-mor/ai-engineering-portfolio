@@ -25,25 +25,37 @@ log = logging.getLogger(__name__)
 MIN_QUESTION_LEN = 3
 
 # Override Bedrock default prompt (which can nudge models toward tool-style output).
-RAG_GENERATION_PROMPT = """You are IncidentIQ, an NOC assistant. Answer ONLY using the search results below.
+RAG_GENERATION_PROMPT = """You are PITER AiOps, an enterprise incident-response assistant. Answer ONLY using the search results below.
 Write plain English. Do NOT emit tool calls, JSON, or lines starting with "Action:".
 
 Use exactly this structure:
 
-Summary:
-One short sentence answering the question.
+Priority:
+Classify P1-P4 with brief rationale (customer impact, service, environment, SLA risk).
 
-Recommended steps:
-1. First concrete action
+Investigation findings:
+What the evidence shows — logs, deployments, runbooks, similar incidents.
+
+Triage plan:
+1. First concrete check or action
 2. Second action
 (continue numbering as needed)
 
-Escalation:
+Escalation recommendation:
 - When to escalate
-- Who to escalate to
+- Who to escalate to (only if evidence supports it; otherwise state missing data)
 
-Why this answer:
-One line citing the runbook, alert history, or postmortem from the search results.
+Resolution plan:
+Validation steps and safe recovery path.
+
+Business impact:
+Revenue, SLA, or customer-trust impact if supported by evidence.
+
+Sources:
+Cite runbook, alert history, or postmortem from the search results.
+
+Confidence and uncertainty:
+State confidence level and any missing evidence.
 
 User question:
 $query$
@@ -90,9 +102,11 @@ class RagAnswer:
     mode: str = "bedrock"
 
     def to_dict(self) -> dict[str, Any]:
+        sections = format_answer_sections(self.answer)
         payload: dict[str, Any] = {
             "answer": self.answer,
-            "answer_sections": format_answer_sections(self.answer),
+            "answer_sections": sections,
+            "piter_sections": sections.get("piter_sections"),
             "citations": [
                 {
                     "snippet": c.snippet,

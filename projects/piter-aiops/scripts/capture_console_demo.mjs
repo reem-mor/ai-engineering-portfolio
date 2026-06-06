@@ -1,5 +1,5 @@
 /**
- * Capture the IncidentIQ live-demo screenshots from the `/console` surface.
+ * Capture the PITER AiOps live-demo screenshots from the `/console` surface.
  *
  * These map 1:1 to the class live-demo validation points and live in
  * `screenshots/console_demo/`. They are SEPARATE from the React SPA
@@ -216,7 +216,7 @@ async function captureTerminalProof(browser) {
   if (fs.existsSync(pytestFile)) {
     await renderTextToPng(
       browser,
-      "pytest — IncidentIQ unit + integration suite",
+      "pytest — PITER AiOps unit + integration suite",
       fs.readFileSync(pytestFile, "utf8"),
       "11_pytest.png",
     );

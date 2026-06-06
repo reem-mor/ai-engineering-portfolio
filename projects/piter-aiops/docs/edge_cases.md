@@ -1,4 +1,4 @@
-# Edge cases — IncidentIQ (Flask + HTMX + Bedrock KB)
+# Edge cases — PITER AiOps (Flask + HTMX + Bedrock KB)
 
 Application-level behavior for validation, retrieval, and UI. Corpus ingestion edge cases (empty PDF, malformed DOCX) are handled by Bedrock during sync; the app documents how those show up at query time.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy IncidentIQ Lambda action group and wire it to an existing Bedrock Agent.
+"""Deploy PITER AiOps Lambda action group and wire it to an existing Bedrock Agent.
 
 Idempotent: creates IAM roles, Lambda, S3 OpenAPI upload, action group, prepares agent.
 
@@ -31,6 +31,7 @@ import boto3  # noqa: E402
 from botocore.exceptions import ClientError  # noqa: E402
 
 INFRA = ROOT / "infra"
+# Folder kept as incidentiq-ops; new deploys use piter-aiops-* resource names.
 ACTION_GROUP_DIR = ROOT / "action_groups" / "incidentiq-ops"
 LAMBDA_SOURCE = ACTION_GROUP_DIR / "lambda_function.py"
 OPENAPI_SOURCE = ACTION_GROUP_DIR / "openapi_schema.yaml"
@@ -106,8 +107,8 @@ def _ensure_role(
         iam.create_role(
             RoleName=role_name,
             AssumeRolePolicyDocument=json.dumps(trust_policy),
-            Description="IncidentIQ Bedrock action group / agent resource role",
-            Tags=[{"Key": "Project", "Value": "IncidentIQ"}],
+            Description="PITER AiOps Bedrock action group / agent resource role",
+            Tags=[{"Key": "Project", "Value": "PITER AiOps"}],
         )
         print(f"  Created IAM role: {role_name}")
 
@@ -131,7 +132,7 @@ def _ensure_lambda_role(iam, *, role_name: str, region: str, account: str, dry_r
         iam,
         role_name=role_name,
         trust_policy=trust,
-        inline_policy_name="incidentiq-lambda-execution",
+        inline_policy_name="PITER AiOps-lambda-execution",
         inline_policy=policy,
         account=account,
         dry_run=dry_run,
@@ -279,7 +280,7 @@ def _ensure_agent_role(
         iam,
         role_name=role_name,
         trust_policy=trust,
-        inline_policy_name="incidentiq-agent-resource",
+        inline_policy_name="PITER AiOps-agent-resource",
         inline_policy=policy,
         account=account,
         dry_run=dry_run,
@@ -328,8 +329,8 @@ def _deploy_lambda(
             Timeout=15,
             MemorySize=256,
             Architectures=["arm64"],
-            Description="IncidentIQ Bedrock action group (ops tools)",
-            Tags={"Project": "IncidentIQ"},
+            Description="PITER AiOps Bedrock action group (ops tools)",
+            Tags={"Project": "PITER AiOps"},
         )
         print(f"  Created Lambda: {function_name}")
 
@@ -481,7 +482,7 @@ def _sync_agent(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Deploy IncidentIQ Lambda action group")
+    parser = argparse.ArgumentParser(description="Deploy PITER AiOps Lambda action group")
     parser.add_argument("--agent-id", help="Override BEDROCK_AGENT_ID from .env")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--skip-lambda", action="store_true")
@@ -503,11 +504,11 @@ def main() -> int:
         print("S3_BUCKET required in .env for OpenAPI schema upload", file=sys.stderr)
         return 1
 
-    lambda_fn = args.lambda_function_name or os.environ.get("LAMBDA_FUNCTION_NAME", "incidentiq-actions")
-    action_group_name = args.action_group_name or os.environ.get("ACTION_GROUP_NAME", "incidentiq-ops")
-    openapi_key = os.environ.get("ACTION_GROUP_OPENAPI_S3_KEY", "agent/incidentiq-ops/openapi_schema.yaml")
-    lambda_role_name = os.environ.get("LAMBDA_EXECUTION_ROLE_NAME", "incidentiq-lambda-role")
-    agent_role_name = os.environ.get("BEDROCK_AGENT_RESOURCE_ROLE_NAME", "incidentiq-agent-role")
+    lambda_fn = args.lambda_function_name or os.environ.get("LAMBDA_FUNCTION_NAME", "PITER AiOps-actions")
+    action_group_name = args.action_group_name or os.environ.get("ACTION_GROUP_NAME", "piter-aiops-ops")
+    openapi_key = os.environ.get("ACTION_GROUP_OPENAPI_S3_KEY", "agent/piter-aiops-ops/openapi_schema.yaml")
+    lambda_role_name = os.environ.get("LAMBDA_EXECUTION_ROLE_NAME", "PITER AiOps-lambda-role")
+    agent_role_name = os.environ.get("BEDROCK_AGENT_RESOURCE_ROLE_NAME", "PITER AiOps-agent-role")
 
     region = cfg.AWS_REGION
     session = boto3.Session(region_name=region)

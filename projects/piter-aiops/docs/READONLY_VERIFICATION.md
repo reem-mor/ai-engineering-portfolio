@@ -10,7 +10,7 @@
 | `pytest -q` | **PASS** | 140 tests, `.venv` Python 3.12 |
 | `npm ci && npm run build` | **PASS** | Bundle `app/static/spa/assets/index-CVCjA5m8.js` |
 | SPA contains `/api/workflow/triage` | **PASS** | Grep on built JS |
-| `docker compose build` | **PASS** | Image `incidentiq-midproject:dev` |
+| `docker compose build` | **PASS** | Image `piter-aiops:dev` |
 | `.env` gitignored | **PASS** | `.gitignore` lists `.env`, `.env.production` |
 | Secret scan (repo) | **PASS** | No `AKIA…` / API keys in tracked source; docs mention not putting keys on EC2 |
 
@@ -19,7 +19,7 @@
 | Resource | ID / name | Status |
 |----------|-----------|--------|
 | Account | `329597159579` | `sts get-caller-identity` OK |
-| Knowledge Base | `RBTJM6NIG9` (`incidentiq-course-kb`) | **ACTIVE** |
+| Knowledge Base | `RBTJM6NIG9` (`PITER AiOps-course-kb`) | **ACTIVE** |
 | Bedrock Agent | `HH4YGSLZUE` (`agent-quick-reemmnor`) | **PREPARED** |
 | Agent alias `live` | `O2EM03R4R3` | Listed |
 | Lambda `iiq-correlate` | — | Exists |
@@ -45,7 +45,7 @@ python scripts\agent_smoke_test.py
 
 - Frontend: `EnrichmentPanel`, triage `session_id` + follow-up box
 - SPA rebuilt to `app/static/spa/`
-- `incidentiq_architecture.mermaid` + README agent diagram
+- `PITER AiOps_architecture.mermaid` + README agent diagram
 - `docs/SUBMISSION_CHECKLIST.md`, agent screenshot list in `screenshots/README.md`
 
 ## Not performed (requires explicit approval)

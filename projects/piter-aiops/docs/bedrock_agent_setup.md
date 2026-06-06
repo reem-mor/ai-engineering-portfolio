@@ -19,7 +19,7 @@ End-to-end steps to create a **managed Amazon Bedrock Agent** that uses your exi
 From project root:
 
 ```powershell
-cd projects\incidentIQ-midproject
+cd projects\piter-aiops
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -43,7 +43,7 @@ BEDROCK_AGENT_ALIAS_ID=YYYYYYYYYY
 ## Option B — AWS Console
 
 1. **Bedrock → Agents → Create agent**
-   - Name: `incidentiq-noc-agent`
+   - Name: `PITER AiOps-noc-agent`
    - Model: same inference profile as `.env` (`BEDROCK_MODEL_ARN`)
    - Instructions: NOC triage persona (see `AGENT_INSTRUCTION` in [`app/bedrock_agent_client.py`](../app/bedrock_agent_client.py))
 

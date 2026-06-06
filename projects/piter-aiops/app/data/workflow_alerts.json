@@ -107,5 +107,25 @@
     "baseline_min": 8,
     "assisted_min": 2,
     "impact_per_min": 15
+  },
+  {
+    "id": "A-2046",
+    "severity": "P4",
+    "service": "staging-metrics",
+    "title": "Non-prod scrape timeout (noise)",
+    "fired_at": "14:28 UTC",
+    "source": "Prometheus · scrape_duration",
+    "question": "Staging metrics scrape is slow — is this actionable?",
+    "matched_runbook": "monitoring_alerts_reference.md",
+    "actions": [
+      "Confirm environment is non-production",
+      "Suppress or snooze if below SLO impact threshold",
+      "Log for weekly hygiene review"
+    ],
+    "decision": "auto-resolve",
+    "decision_reason": "P4 noise — no customer impact. Safe to suppress after environment check.",
+    "baseline_min": 3,
+    "assisted_min": 0,
+    "impact_per_min": 0
   }
 ]

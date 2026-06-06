@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🛰️ IncidentIQ — Bedrock Agent Mid-Project
+# 🛰️ PITER AiOps — Bedrock Agent Mid-Project
 
-### Ask in plain English. Answer from your runbooks via a managed Bedrock Agent. Cite every chunk. Refuse when unsure.
+### From Alert to Resolution, Faster.
 
-*A topic-based RAG web app for NOC / SRE incident operations —*
+*Priority · Investigation · Triage · Escalation · Resolution — a topic-based RAG web app for NOC / SRE incident operations —*
 *built on **Amazon Bedrock Agent · Knowledge Base · Flask · boto3 · React · Docker · EC2**.*
 
 <br/>
@@ -76,7 +76,7 @@
 
 ## 🎯 Overview
 
-On-call engineers waste **5–15 minutes per incident** searching for the right runbook, past ticket, or post-mortem. **IncidentIQ** links that corpus to a **managed Amazon Bedrock Agent** — ask a question, get a **grounded, cited answer in seconds**.
+On-call engineers waste **5–15 minutes per incident** searching for the right runbook, past ticket, or post-mortem. **PITER AiOps** links that corpus to a **managed Amazon Bedrock Agent** — ask a question, get a **grounded, cited answer in seconds**.
 
 > [!NOTE]
 > Every answer is grounded in retrieved source chunks and **cites the document it came from**. When the Knowledge Base has no relevant content, the app shows a visible **"Not in knowledge base"** state instead of hallucinating.
@@ -126,7 +126,7 @@ End-to-end on-call loop: pick an alert, run triage, get grounded steps from the 
 
 ## 🖥️ Local-First Mode & Mid-Project Requirements
 
-IncidentIQ runs a **reliable offline demo by default** — no AWS, no keys, no
+PITER AiOps runs a **reliable offline demo by default** — no AWS, no keys, no
 network. Bedrock is optional and, when enabled, auto-falls back to local mode if
 it is unavailable, so a live demo never fails.
 
@@ -313,7 +313,7 @@ flowchart TB
 
 **Primary backend:** `invoke_agent` via [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (not direct `RetrieveAndGenerate`). **Tools:** three enrichment Lambdas wired as Bedrock action groups ([`docs/MCP_PATH.md`](docs/MCP_PATH.md) — Path B landed; AgentCore Gateway is optional Path A). **Memory:** `sessionId` + `sessionAttributes` on triage and follow-up `/ask`.
 
-Source diagram: [`incidentiq_architecture.mermaid`](incidentiq_architecture.mermaid)
+Source diagram: [`PITER AiOps_architecture.mermaid`](PITER AiOps_architecture.mermaid)
 
 **Deployment path:** `Runbooks → S3 → KB sync → Agent + tools → Flask/React → Docker → EC2 → Cleanup`
 
@@ -338,7 +338,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
      |        |
      |        v  reads source chunks
      |      S3 Bucket (reem-amdocs-ai-artifacts-3331)
-     |        `-- projects/incidentIQ-midproject/data/sample_documents/
+     |        `-- projects/piter-aiops/data/sample_documents/
      |
      +--> LLM (inference profile / Claude Haiku compatible model)
               |
@@ -414,7 +414,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
 
 </details>
 
-**S3 location:** `s3://reem-amdocs-ai-artifacts-3331/projects/incidentIQ-midproject/data/sample_documents/`
+**S3 location:** `s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/`
 
 > [!TIP]
 > **Recommended S3 tags:** `Project=Amdocs-AI-Course`, `Environment=Course`, `Owner=Reem`, `Purpose=Bedrock-Knowledge-Base`. Keep **Block Public Access** enabled on the bucket.
@@ -518,12 +518,12 @@ Set `FORCE_LEGACY_UI=1` to fall back to the original Jinja + HTMX templates (use
 
 <br/>
 
-Run from the **project root** (`projects/incidentIQ-midproject`). The Python venv is `.venv` here — not under `frontend/`.
+Run from the **project root** (`projects/piter-aiops`). The Python venv is `.venv` here — not under `frontend/`.
 
 **Windows (PowerShell):**
 
 ```powershell
-cd projects\incidentIQ-midproject
+cd projects\piter-aiops
 .\scripts\verify.ps1
 # Offline only (no AWS): .\scripts\verify.ps1 -SkipLiveAws -SkipE2e
 ```
@@ -712,7 +712,7 @@ docker push ghcr.io/reemmor/incident-rag-bedrock:demo
 | Knowledge Base | `RBTJM6NIG9` |
 | Bedrock Agent | `HH4YGSLZUE` |
 | Enrichment Lambdas | `iiq-correlate`, `iiq-context`, `iiq-similar` |
-| Ops Lambda (unchanged) | `incidentiq-actions` |
+| Ops Lambda (unchanged) | `PITER AiOps-actions` |
 
 ### System prompt
 
@@ -835,7 +835,7 @@ The EC2 setup mattered too: an IAM instance profile kept long-lived AWS keys off
 
 ## 🎓 Course Context
 
-Built for the **AI-Augmented Software Engineering** course mid-project: *IncidentIQ with Amazon Bedrock Agent, Knowledge Base, Flask, Docker, and EC2.*
+Built for the **AI-Augmented Software Engineering** course mid-project: *PITER AiOps with Amazon Bedrock Agent, Knowledge Base, Flask, Docker, and EC2.*
 
 > [!NOTE]
 > Primary backend: **`invoke_agent`** via [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py). Set `RAG_BACKEND=retrieve_and_generate` to use direct KB [`RetrieveAndGenerate`](app/bedrock_client.py). Agent setup: [`docs/bedrock_agent_setup.md`](docs/bedrock_agent_setup.md).
@@ -876,6 +876,6 @@ See also [`../README.md`](../README.md) at the repo projects index.
 
 <sub>Built with Amazon Bedrock · Flask · React · Docker · EC2 — grounded answers, real citations, honest refusals.</sub>
 
-[⬆ Back to top](#%EF%B8%8F-incidentiq--bedrock-agent-mid-project)
+[⬆ Back to top](#%EF%B8%8F-PITER AiOps--bedrock-agent-mid-project)
 
 </div>

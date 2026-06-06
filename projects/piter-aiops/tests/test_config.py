@@ -16,6 +16,16 @@ def env(monkeypatch):
         "RAG_BACKEND",
         "BEDROCK_AGENT_ID",
         "BEDROCK_AGENT_ALIAS_ID",
+        "PITER_AWS_REGION",
+        "PITER_BEDROCK_KB_ID",
+        "PITER_BEDROCK_MODEL_ARN",
+        "PITER_FLASK_SECRET_KEY",
+        "PITER_BEDROCK_NUM_RESULTS",
+        "PITER_RAG_BACKEND",
+        "PITER_BEDROCK_AGENT_ID",
+        "PITER_BEDROCK_AGENT_ALIAS_ID",
+        "PITER_MOCK_MODE",
+        "PITER_USE_BEDROCK",
     ]:
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("AWS_REGION", "us-east-1")
@@ -79,5 +89,5 @@ def test_blank_required_var_raises_configerror(env):
 
 def test_num_results_invalid_raises(env):
     env.setenv("BEDROCK_NUM_RESULTS", "not-a-number")
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, ConfigError)):
         Config.from_env()

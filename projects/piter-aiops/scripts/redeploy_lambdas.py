@@ -1,4 +1,4 @@
-"""Redeploy the EXISTING IncidentIQ action-group Lambdas (code only).
+"""Redeploy the EXISTING PITER AiOps action-group Lambdas (code only).
 
 Packages each action_groups/iiq-* folder (handler + enrichment tools + data
 files) and calls update_function_code on the already-existing function. It does

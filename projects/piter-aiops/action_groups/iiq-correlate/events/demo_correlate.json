@@ -1,6 +1,6 @@
 {
   "messageVersion": "1.0",
-  "agent": {"name": "incidentiq-noc-agent", "id": "TEST", "alias": "live", "version": "DRAFT"},
+  "agent": {"name": "PITER AiOps-noc-agent", "id": "TEST", "alias": "live", "version": "DRAFT"},
   "actionGroup": "iiq-correlate",
   "apiPath": "/correlate",
   "httpMethod": "GET",

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: IncidentIQ Similar Incidents
+  title: PITER AiOps Similar Incidents
   version: 1.0.0
   description: Find similar historical incidents for pattern matching.
 

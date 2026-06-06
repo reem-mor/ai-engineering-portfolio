@@ -1,4 +1,4 @@
-"""Unit tests for the IncidentIQ ops Lambda action group handler."""
+"""Unit tests for the PITER AiOps ops Lambda action group handler."""
 from __future__ import annotations
 
 import json
@@ -17,8 +17,8 @@ import lambda_function as ops  # noqa: E402
 def _base_event(*, method: str, path: str, parameters: list | None = None, request_body: dict | None = None) -> dict:
     event = {
         "messageVersion": "1.0",
-        "agent": {"name": "incidentiq-noc-agent", "id": "TESTAGENT", "alias": "live", "version": "DRAFT"},
-        "actionGroup": "incidentiq-ops",
+        "agent": {"name": "PITER AiOps-noc-agent", "id": "TESTAGENT", "alias": "live", "version": "DRAFT"},
+        "actionGroup": "piter-aiops-ops",
         "apiPath": path,
         "httpMethod": method,
         "parameters": parameters or [],
@@ -43,7 +43,7 @@ def test_environment_status_gib_degraded():
     )
     resp = ops.lambda_handler(event, None)
     assert resp["messageVersion"] == "1.0"
-    assert resp["response"]["actionGroup"] == "incidentiq-ops"
+    assert resp["response"]["actionGroup"] == "piter-aiops-ops"
     assert resp["response"]["httpStatusCode"] == 200
     data = _body(resp)
     assert data["status"] == "DEGRADED"
@@ -67,7 +67,7 @@ def test_recent_alerts_gib():
         path="/environments/{environment}/alerts",
         parameters=[
             {"name": "environment", "type": "string", "value": "GIB"},
-            {"name": "hours", "type": "integer", "value": "24"},
+            {"name": "hours", "type": "integer", "value": "168"},
         ],
     )
     resp = ops.lambda_handler(event, None)

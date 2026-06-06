@@ -42,7 +42,7 @@ def fake_config():
         SECRET_KEY="test-secret",
         FLASK_ENV="testing",
         S3_BUCKET="test-bucket",
-        S3_PREFIX="projects/incidentIQ-midproject/data/sample_documents",
+        S3_PREFIX="projects/piter-aiops/data/sample_documents",
         BEDROCK_DATA_SOURCE_ID="ds-test",
         MAX_UPLOAD_BYTES=5242880,
         BEDROCK_AGENT_ID="agent-test",

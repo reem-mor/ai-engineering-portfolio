@@ -44,7 +44,7 @@ ENRICHMENT_GROUPS = (
 )
 
 TAGS = [
-    {"Key": "Project", "Value": "incidentIQ-midproject"},
+    {"Key": "Project", "Value": "piter-aiops"},
     {"Key": "Owner", "Value": "reemmor"},
 ]
 
@@ -86,7 +86,7 @@ def _deploy_lambda(lambda_client, *, name: str, role_arn: str, folder: str, dry_
             Timeout=15,
             MemorySize=256,
             Architectures=["arm64"],
-            Description=f"IncidentIQ enrichment — {folder}",
+            Description=f"PITER AiOps enrichment — {folder}",
             Tags={t["Key"]: t["Value"] for t in TAGS},
         )
         print(f"  Created Lambda: {name}")
@@ -186,7 +186,7 @@ def main() -> int:
     if not bucket:
         print("S3_BUCKET required", file=sys.stderr)
         return 1
-    lambda_role = os.environ.get("LAMBDA_EXECUTION_ROLE_NAME", "incidentiq-lambda-role")
+    lambda_role = os.environ.get("LAMBDA_EXECUTION_ROLE_NAME", "PITER AiOps-lambda-role")
     session = boto3.Session(region_name=region)
     sts = session.client("sts")
     account = sts.get_caller_identity()["Account"]

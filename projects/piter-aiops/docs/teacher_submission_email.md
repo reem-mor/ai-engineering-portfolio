@@ -7,11 +7,11 @@
 
 **To:** [Teacher email]  
 **From:** Re'em Mor <reem.mor3@gmail.com>  
-**Subject:** Mid-course project (Milestone 1) — IncidentIQ Bedrock RAG: repo, dataset, and sample Q&A
+**Subject:** Mid-course project (Milestone 1) — PITER AiOps Bedrock RAG: repo, dataset, and sample Q&A
 
 Hi [Teacher name],
 
-Thank you for the chat on Friday and for approving the idea. As we discussed, here is **Milestone 1** of my mid-course project — **IncidentIQ · Bedrock RAG**, a topic-based RAG web app for incident operations (Amazon Bedrock Knowledge Base + Flask + Docker + EC2). It answers **only from my own document corpus, cites the source for every answer, and refuses instead of hallucinating** when a question is out of scope.
+Thank you for the chat on Friday and for approving the idea. As we discussed, here is **Milestone 1** of my mid-course project — **PITER AiOps · Bedrock RAG**, a topic-based RAG web app for incident operations (Amazon Bedrock Knowledge Base + Flask + Docker + EC2). It answers **only from my own document corpus, cites the source for every answer, and refuses instead of hallucinating** when a question is out of scope.
 
 **Repository:** https://github.com/reem-mor/amdocs-ai-course/tree/main/projects/incident-rag-bedrock  
 (README has full run/deploy instructions, architecture, and the component breakdown.)

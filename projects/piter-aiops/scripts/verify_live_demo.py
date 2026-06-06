@@ -101,7 +101,7 @@ def main() -> int:
     from app import create_app  # imported after sys.path setup
 
     app_a = create_app()
-    cfg_a = app_a.config.get("INCIDENTIQ_CONFIG")
+    cfg_a = app_a.config.get("PITER_CONFIG")
     use_bedrock = getattr(cfg_a, "USE_BEDROCK", None)
     backend = getattr(cfg_a, "RAG_BACKEND", None)
     check("[A] app configured for live Bedrock",
@@ -118,8 +118,10 @@ def main() -> int:
     print("PHASE B — simulated AWS-down (bad KB id) -> local fallback")
     print("=" * 64)
     os.environ["USE_BEDROCK"] = "true"
+    os.environ["PITER_USE_BEDROCK"] = "true"
     os.environ["RAG_BACKEND"] = "retrieve_and_generate"
     os.environ["BEDROCK_KB_ID"] = "ZZZZZZZZZZ"  # valid format, does not exist
+    os.environ["PITER_BEDROCK_KB_ID"] = "ZZZZZZZZZZ"
     # Fresh app: create_app() re-reads Config.from_env() with the broken KB id,
     # so the Bedrock call raises ResourceNotFoundException and the app falls back.
     app_b = create_app()

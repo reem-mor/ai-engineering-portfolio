@@ -1,6 +1,6 @@
 # Phase 0 — Folder & Document Audit
 
-**Project:** `projects/incidentIQ-midproject/`  
+**Project:** `projects/piter-aiops/`  
 **Region:** `us-east-1` · **Profile:** `reemmor` · **Account:** `329597159579`
 
 ## Key directories (one-line purpose)
@@ -8,7 +8,7 @@
 | Path | Purpose |
 |------|---------|
 | `app/` | Flask app: routes, Bedrock clients, workflow, config |
-| `action_groups/incidentiq-ops/` | Legacy mock-ops Lambda (env status, alerts, create incident) |
+| `action_groups/PITER AiOps-ops/` | Legacy mock-ops Lambda (env status, alerts, create incident) |
 | `data/sample_documents/` | KB corpus (runbooks, CSV, PDF, JSON) |
 | `data/agent_data/` | Enrichment tool datasets (deploys, catalog, impact) — **created in Phase 2** |
 | `docs/` | Setup guides, architecture, cleanup |
@@ -21,9 +21,9 @@
 
 | Resource | ID / name | Status |
 |----------|-----------|--------|
-| Knowledge Base | `RBTJM6NIG9` (`incidentiq-course-kb`) | ACTIVE |
+| Knowledge Base | `RBTJM6NIG9` (`PITER AiOps-course-kb`) | ACTIVE |
 | Bedrock Agent | `HH4YGSLZUE` (`agent-quick-reemmnor`) | PREPARED |
-| Lambda | `incidentiq-actions` | Mock ops handler |
+| Lambda | `PITER AiOps-actions` | Mock ops handler |
 | S3 bucket | `reem-amdocs-ai-artifacts-3331` | Corpus prefix |
 
 ## Four data files (enrichment)

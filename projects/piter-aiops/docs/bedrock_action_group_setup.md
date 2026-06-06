@@ -1,6 +1,6 @@
 # Bedrock Agent Action Group — Setup Walkthrough
 
-Deploy the **incidentiq-ops** Lambda action group so your existing Bedrock Agent can query live environment status, list alerts, and create incident tickets (mock backend in v1).
+Deploy the **PITER AiOps-ops** Lambda action group so your existing Bedrock Agent can query live environment status, list alerts, and create incident tickets (mock backend in v1).
 
 > Prerequisites: Bedrock Agent already provisioned ([`bedrock_agent_setup.md`](bedrock_agent_setup.md)), `BEDROCK_AGENT_ID` and `BEDROCK_KB_ID` in `.env`, `S3_BUCKET` set.
 
@@ -12,7 +12,7 @@ Deploy the **incidentiq-ops** Lambda action group so your existing Bedrock Agent
 flowchart LR
   flask["Flask invoke_agent"] --> agent["Bedrock Agent"]
   agent --> kb["Knowledge Base"]
-  agent -->|"action group"| lambda["incidentiq-actions Lambda"]
+  agent -->|"action group"| lambda["PITER AiOps-actions Lambda"]
   lambda --> mock["Mock status/alerts/tickets"]
   kb --> s3corpus[("S3 runbooks")]
   agent -->|"reads schema"| s3schema[("S3 OpenAPI YAML")]
@@ -20,10 +20,10 @@ flowchart LR
 
 | Component | Purpose |
 |-----------|---------|
-| [`action_groups/incidentiq-ops/lambda_function.py`](../action_groups/incidentiq-ops/lambda_function.py) | Routes Bedrock action calls by `apiPath` + `httpMethod` |
-| [`action_groups/incidentiq-ops/openapi_schema.yaml`](../action_groups/incidentiq-ops/openapi_schema.yaml) | Tool definitions for the agent |
-| `incidentiq-lambda-role` | Lambda execution (CloudWatch logs) |
-| `incidentiq-agent-role` | Agent resource role: KB retrieve, Lambda invoke, S3 schema read, model invoke |
+| [`action_groups/PITER AiOps-ops/lambda_function.py`](../action_groups/PITER AiOps-ops/lambda_function.py) | Routes Bedrock action calls by `apiPath` + `httpMethod` |
+| [`action_groups/PITER AiOps-ops/openapi_schema.yaml`](../action_groups/PITER AiOps-ops/openapi_schema.yaml) | Tool definitions for the agent |
+| `PITER AiOps-lambda-role` | Lambda execution (CloudWatch logs) |
+| `PITER AiOps-agent-role` | Agent resource role: KB retrieve, Lambda invoke, S3 schema read, model invoke |
 
 ---
 
@@ -32,7 +32,7 @@ flowchart LR
 From project root:
 
 ```powershell
-cd projects\incidentIQ-midproject
+cd projects\piter-aiops
 .\.venv\Scripts\Activate.ps1
 # .env must include BEDROCK_AGENT_ID, BEDROCK_AGENT_ALIAS_ID, BEDROCK_KB_ID, S3_BUCKET, BEDROCK_MODEL_ARN
 
@@ -51,9 +51,9 @@ Optional flags:
 
 ## Manual fallback (Console)
 
-1. **IAM** — Create `incidentiq-lambda-role` (Lambda trust) and `incidentiq-agent-role` (Bedrock trust). Attach policies from [`infra/`](../infra/).
-2. **Lambda** — Create `incidentiq-actions`, Python 3.12, arm64, handler `lambda_function.lambda_handler`, upload zip of `lambda_function.py`.
-3. **S3** — Upload `openapi_schema.yaml` to `s3://<bucket>/agent/incidentiq-ops/openapi_schema.yaml`.
+1. **IAM** — Create `PITER AiOps-lambda-role` (Lambda trust) and `PITER AiOps-agent-role` (Bedrock trust). Attach policies from [`infra/`](../infra/).
+2. **Lambda** — Create `PITER AiOps-actions`, Python 3.12, arm64, handler `lambda_function.lambda_handler`, upload zip of `lambda_function.py`.
+3. **S3** — Upload `openapi_schema.yaml` to `s3://<bucket>/agent/PITER AiOps-ops/openapi_schema.yaml`.
 4. **Lambda permission** — Allow `bedrock.amazonaws.com` to invoke, source ARN scoped to your agent.
 5. **Bedrock Agent** — Action groups → Add → Define with API schemas → select Lambda + S3 schema → **Prepare**.
 6. **Agent resource role** — Must include `lambda:InvokeFunction`, `bedrock:Retrieve` on KB, `s3:GetObject` on schema prefix.

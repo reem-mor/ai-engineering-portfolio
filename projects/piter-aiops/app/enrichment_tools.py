@@ -1,4 +1,4 @@
-"""IncidentIQ enrichment tools — correlate, context, similar incidents."""
+"""PITER AiOps enrichment tools — correlate, context, similar incidents."""
 from __future__ import annotations
 
 import csv

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provision a Bedrock Agent linked to the IncidentIQ Knowledge Base.
+"""Provision a Bedrock Agent linked to the PITER AiOps Knowledge Base.
 
 Creates agent, associates KB, prepares, and creates a 'live' alias.
 Requires AWS credentials with bedrock-agent control-plane permissions.
@@ -38,8 +38,8 @@ def _wait_prepared(agent_client, agent_id: str, *, timeout_s: int = 300) -> None
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create Bedrock Agent for IncidentIQ")
-    parser.add_argument("--agent-name", default="incidentiq-noc-agent")
+    parser = argparse.ArgumentParser(description="Create Bedrock Agent for PITER AiOps")
+    parser.add_argument("--agent-name", default="PITER AiOps-noc-agent")
     parser.add_argument("--alias-name", default="live")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -59,7 +59,7 @@ def main() -> int:
         agentName=args.agent_name,
         foundationModel=cfg.BEDROCK_MODEL_ARN,
         instruction=AGENT_INSTRUCTION,
-        description="IncidentIQ NOC triage agent backed by incident-ops KB",
+        description="PITER AiOps NOC triage agent backed by incident-ops KB",
         idleSessionTTLInSeconds=600,
     )
     agent_id = create_resp["agent"]["agentId"]
@@ -81,7 +81,7 @@ def main() -> int:
     alias_resp = agent_ctrl.create_agent_alias(
         agentId=agent_id,
         agentAliasName=args.alias_name,
-        description="Production alias for IncidentIQ Flask app",
+        description="Production alias for PITER AiOps Flask app",
     )
     alias_id = alias_resp["agentAlias"]["agentAliasId"]
     print(f"Created alias '{args.alias_name}': {alias_id}")

@@ -20,7 +20,7 @@ The Bedrock Agent **always** uses action groups for enrichment during triage. Pa
 Deploy:
 
 ```powershell
-cd projects/incidentIQ-midproject
+cd projects/piter-aiops
 python scripts/setup_enrichment_lambdas.py --agent-id HH4YGSLZUE
 python scripts/setup_action_group.py --agent-id HH4YGSLZUE
 ```
@@ -30,7 +30,7 @@ python scripts/setup_action_group.py --agent-id HH4YGSLZUE
 | `iiq-correlate` | `iiq-correlate` | `POST /correlate` |
 | `iiq-context` | `iiq-context` | `POST /owner`, `POST /impact` |
 | `iiq-similar` | `iiq-similar` | `POST /similar` |
-| `incidentiq-ops` | `incidentiq-actions` | mock NOC ops (unchanged) |
+| `PITER AiOps-ops` | `PITER AiOps-actions` | mock NOC ops (unchanged) |
 
 OpenAPI schemas: `s3://reem-amdocs-ai-artifacts-3331/agent/iiq-*/openapi_schema.yaml`
 

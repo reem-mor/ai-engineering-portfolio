@@ -1,4 +1,4 @@
-# PLAN — IncidentIQ: Answer UI Redesign + AWS/Docker + Screenshots
+# PLAN — PITER AiOps: Answer UI Redesign + AWS/Docker + Screenshots
 
 Scope: only `projects/incident-rag-bedrock/`. Do not change overall theme/nav/layout.
 

@@ -19,7 +19,7 @@ BEDROCK_MODEL_ARN=arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.am
 BEDROCK_NUM_RESULTS=5
 BEDROCK_DATA_SOURCE_ID=YICXAB6WOG
 S3_BUCKET=reem-amdocs-ai-artifacts-3331
-S3_PREFIX=projects/incidentIQ-midproject/data/sample_documents
+S3_PREFIX=projects/piter-aiops/data/sample_documents
 MAX_UPLOAD_BYTES=5242880
 FLASK_ENV=production
 FLASK_SECRET_KEY=__FLASK_SECRET__
@@ -32,7 +32,7 @@ IMAGE="329597159579.dkr.ecr.us-east-1.amazonaws.com/incident-rag-bedrock:demo"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 329597159579.dkr.ecr.us-east-1.amazonaws.com
 docker pull "$IMAGE"
 docker run -d \
-  --name incidentiq-midproject \
+  --name piter-aiops \
   --restart unless-stopped \
   -p 8080:8080 \
   --env-file /home/ec2-user/.env \

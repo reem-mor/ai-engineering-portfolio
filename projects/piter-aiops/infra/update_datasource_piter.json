@@ -1,0 +1,24 @@
+{
+  "knowledgeBaseId": "RBTJM6NIG9",
+  "dataSourceId": "YICXAB6WOG",
+  "name": "piter-aiops-runbooks-datasource",
+  "dataSourceConfiguration": {
+    "type": "S3",
+    "s3Configuration": {
+      "bucketArn": "arn:aws:s3:::reem-amdocs-ai-artifacts-3331",
+      "inclusionPrefixes": [
+        "projects/piter-aiops/data/sample_documents/"
+      ]
+    }
+  },
+  "vectorIngestionConfiguration": {
+    "chunkingConfiguration": {
+      "chunkingStrategy": "FIXED_SIZE",
+      "fixedSizeChunkingConfiguration": {
+        "maxTokens": 500,
+        "overlapPercentage": 15
+      }
+    }
+  },
+  "dataDeletionPolicy": "RETAIN"
+}

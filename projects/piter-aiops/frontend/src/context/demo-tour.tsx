@@ -12,17 +12,38 @@ import { scrollToSection } from "@/lib/workflow-utils";
 
 export type BlockKey = "documents" | "kb" | "flask" | "docker" | "ec2" | "public";
 
-export type DemoNodeId = "replay" | "ctrl" | "bus" | "feed" | "kpi" | "onc" | "drill";
+export type DemoNodeId =
+  | "priority"
+  | "investigation"
+  | "triage"
+  | "escalation"
+  | "resolution"
+  | "analytics"
+  | "kb"
+  | "history";
+
+/** PITER live-demo story: scroll sections in order. */
+export const PITER_TOUR_SECTIONS: { id: string; node: DemoNodeId; label: string }[] = [
+  { id: "priority-center", node: "priority", label: "Priority Center" },
+  { id: "investigation", node: "investigation", label: "Investigation Workspace" },
+  { id: "triage-plan", node: "triage", label: "Triage Plan" },
+  { id: "escalation", node: "escalation", label: "Escalation Hub" },
+  { id: "resolution", node: "resolution", label: "Resolution Tracker" },
+  { id: "incident-history", node: "history", label: "Incident History" },
+  { id: "agent-analytics", node: "analytics", label: "Agent Analytics" },
+  { id: "live-kb", node: "kb", label: "Knowledge Base" },
+];
 
 export const DEMO_NODE_TO_BLOCK: Partial<Record<DemoNodeId, BlockKey>> = {
-  replay: "documents",
-  bus: "kb",
-  feed: "flask",
-  drill: "kb",
-  kpi: "docker",
+  priority: "documents",
+  investigation: "kb",
+  triage: "flask",
+  escalation: "docker",
+  resolution: "ec2",
+  analytics: "docker",
+  kb: "kb",
+  history: "flask",
 };
-
-export const DEMO_TOUR_SEQUENCE: DemoNodeId[] = ["replay", "bus", "feed", "drill"];
 
 export const ARCHITECTURE_FLOW: BlockKey[] = [
   "documents",
@@ -53,7 +74,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const [tourRunning, setTourRunning] = useState(false);
   const [tourPaused, setTourPaused] = useState(false);
   const [tourStep, setTourStep] = useState(0);
-  const [phase, setPhase] = useState<"demo" | "arch">("demo");
+  const [phase, setPhase] = useState<"piter" | "arch">("piter");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -64,22 +85,22 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const advance = useCallback(() => {
-    if (phase === "demo") {
+    if (phase === "piter") {
       const next = tourStep + 1;
-      if (next >= DEMO_TOUR_SEQUENCE.length) {
+      if (next >= PITER_TOUR_SECTIONS.length) {
         setPhase("arch");
         setTourStep(0);
         scrollToSection("architecture");
         const block = ARCHITECTURE_FLOW[0];
         setArchitectureBlock(block);
-        const node = Object.entries(DEMO_NODE_TO_BLOCK).find(([, b]) => b === block)?.[0];
-        if (node) setActiveDemoNode(node as DemoNodeId);
+        setActiveDemoNode("priority");
         return;
       }
-      const node = DEMO_TOUR_SEQUENCE[next];
+      const step = PITER_TOUR_SECTIONS[next];
       setTourStep(next);
-      setActiveDemoNode(node);
-      const block = DEMO_NODE_TO_BLOCK[node];
+      setActiveDemoNode(step.node);
+      scrollToSection(step.id);
+      const block = DEMO_NODE_TO_BLOCK[step.node];
       if (block) setArchitectureBlock(block);
       return;
     }
@@ -98,13 +119,14 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const startDemoTour = useCallback(() => {
     clearTimer();
     setTourStep(0);
-    setPhase("demo");
+    setPhase("piter");
     setTourRunning(true);
     setTourPaused(false);
-    setActiveDemoNode(DEMO_TOUR_SEQUENCE[0]);
-    const block = DEMO_NODE_TO_BLOCK[DEMO_TOUR_SEQUENCE[0]];
+    const first = PITER_TOUR_SECTIONS[0];
+    setActiveDemoNode(first.node);
+    const block = DEMO_NODE_TO_BLOCK[first.node];
     if (block) setArchitectureBlock(block);
-    scrollToSection("demo-dashboard");
+    scrollToSection(first.id);
   }, [clearTimer]);
 
   const pauseDemoTour = useCallback(() => {

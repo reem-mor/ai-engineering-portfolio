@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Play, FileText } from "lucide-react";
-import type { AnswerSections, Citation } from "@/types/rag";
+import type { AnswerSections, Citation, PiterSections } from "@/types/rag";
 import { segmentText, isCommandStep, coalesceSteps, type Segment } from "@/lib/answer-format";
 import { CodeBlock, CodeSession } from "@/components/CodeBlock";
 
@@ -88,6 +88,66 @@ export function FormattedAnswer({
   };
 
   const steps = useMemo(() => coalesceSteps(s.steps), [s.steps]);
+  const piter = s.piter_sections as PiterSections | undefined;
+  const piterTriageSteps = useMemo(
+    () => coalesceSteps(piter?.triage_plan ?? []),
+    [piter?.triage_plan],
+  );
+
+  if (piter) {
+    return (
+      <div className="space-y-4 text-sm leading-relaxed">
+        {piter.priority && (
+          <Section title="Priority" first>
+            <p className="text-foreground/95">{piter.priority}</p>
+          </Section>
+        )}
+        {piter.investigation && (
+          <Section title="Investigation findings">
+            <p className="text-foreground/95">{piter.investigation}</p>
+          </Section>
+        )}
+        {piterTriageSteps.length > 0 && (
+          <Section title="Triage plan">
+            <ul className="space-y-4">
+              {piterTriageSteps.map((step, i) => (
+                <StepItem key={i} step={step} index={i} />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {piter.escalation.length > 0 && (
+          <Section title="Escalation recommendation">
+            <ul className="list-disc space-y-1 pl-5 text-foreground/90">
+              {piter.escalation.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </Section>
+        )}
+        {piter.resolution && (
+          <Section title="Resolution plan">
+            <p className="text-foreground/90">{piter.resolution}</p>
+          </Section>
+        )}
+        {piter.business_impact && (
+          <Section title="Business impact">
+            <p className="text-foreground/90">{piter.business_impact}</p>
+          </Section>
+        )}
+        {piter.sources && (
+          <Section title="Sources">
+            <p className="text-foreground/80">{piter.sources}</p>
+          </Section>
+        )}
+        {piter.confidence && (
+          <Section title="Confidence and uncertainty">
+            <p className="text-foreground/80">{piter.confidence}</p>
+          </Section>
+        )}
+      </div>
+    );
+  }
 
   if (!grounded) {
     return (

@@ -1,5 +1,5 @@
 """
-IncidentIQ — Bedrock Agent action group Lambda.
+PITER AiOps — Bedrock Agent action group Lambda.
 
 One Lambda hosts multiple operations. Bedrock routes each call to us with
 `apiPath` + `httpMethod`; we route internally and return a strict response

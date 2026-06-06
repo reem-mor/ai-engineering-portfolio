@@ -1,7 +1,7 @@
 # Corpus Reconciliation Report
 
 **Generated:** 2026-06-06  
-**Scope:** `knowledge_base/runbooks/RB-001` … `RB-010` vs `data/sample_documents/` (20 ingestible files) vs active S3 prefix `projects/incidentIQ-midproject/data/sample_documents/`  
+**Scope:** `knowledge_base/runbooks/RB-001` … `RB-010` vs `data/sample_documents/` (20 ingestible files) vs active S3 prefix `projects/piter-aiops/data/sample_documents/`  
 **Bedrock KB:** `RBTJM6NIG9` · data source `YICXAB6WOG` · **single inclusion prefix** (no second prefix needed after reconciliation)
 
 ---
@@ -188,7 +188,7 @@ These remain in the Bedrock corpus as-is; no reconciliation needed.
 ## AWS sync requirements (unchanged infrastructure)
 
 - **No** new bucket, KB, or vector store.
-- **Single** data source prefix: `projects/incidentIQ-midproject/data/sample_documents/`
+- **Single** data source prefix: `projects/piter-aiops/data/sample_documents/`
 - IAM policy already allows this prefix (v3); no second prefix required.
 - After S3 sync: `start-ingestion-job` → **0 failed**, ~23 scanned.
 - Retest: `py -3.12 scripts/kb_smoke_test.py` (7/7) + retrieval spot checks for RB-tagged topics and new unique scenarios (promotions, redis, kafka).
@@ -245,7 +245,7 @@ Update [`app/services/local_rag.py`](app/services/local_rag.py):
 
 | File | Fix |
 |------|-----|
-| `docs/bedrock_kb_setup.md` | `incidentIQ-midproject` prefix; single canonical corpus |
+| `docs/bedrock_kb_setup.md` | `piter-aiops` prefix; single canonical corpus |
 | `data/sample_documents/README.md` | S3 path + RB id convention |
 | `docs/cleanup_log.md`, `code_review.md`, `teacher_submission_email.md` | Remove `incident-rag-bedrock` references |
 | `docs/architecture.md`, `UPGRADE_STATUS.md` | One corpus, one prefix |

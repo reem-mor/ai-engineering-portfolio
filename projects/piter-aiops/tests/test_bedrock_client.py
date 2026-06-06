@@ -305,6 +305,7 @@ def test_to_dict_shape(config):
     assert set(d.keys()) == {
         "answer",
         "answer_sections",
+        "piter_sections",
         "citations",
         "session_id",
         "grounded",

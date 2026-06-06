@@ -8,7 +8,7 @@ from app.errors import BedrockError
 def test_index_renders(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert b"IncidentIQ" in response.data
+    assert b"PITER AiOps" in response.data
     assert b"runbooks" in response.data
 
 

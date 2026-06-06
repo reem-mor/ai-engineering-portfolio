@@ -22,9 +22,13 @@ def _resolve_config() -> Config:
     and gracefully degrade to local mode if AWS configuration is incomplete so
     the demo never fails to boot.
     """
-    raw = os.environ.get("USE_BEDROCK", "").strip().lower()
+    mock = os.environ.get("PITER_MOCK_MODE", "").strip().lower()
+    if mock in {"true", "1", "yes", "on"}:
+        log.info("PITER_MOCK_MODE enabled — starting PITER AiOps in LOCAL mode")
+        return Config.local()
+    raw = os.environ.get("PITER_USE_BEDROCK", os.environ.get("USE_BEDROCK", "")).strip().lower()
     if raw in {"false", "0", "no", "off"}:
-        log.info("USE_BEDROCK disabled — starting IncidentIQ in LOCAL mode")
+        log.info("USE_BEDROCK disabled — starting PITER AiOps in LOCAL mode")
         return Config.local()
     try:
         return Config.from_env()
@@ -41,7 +45,7 @@ def create_app(config: Config | None = None) -> Flask:
     app.config.from_object(config_obj)
     # Keep the resolved Config object so request handlers select the right RAG
     # backend (local vs Bedrock) instead of re-reading the environment.
-    app.config["INCIDENTIQ_CONFIG"] = config_obj
+    app.config["PITER_CONFIG"] = config_obj
 
     app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
     app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")

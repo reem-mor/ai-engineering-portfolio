@@ -1,4 +1,4 @@
-# IncidentIQ — Live AWS Smoke Summary (pre-class)
+# PITER AiOps — Live AWS Smoke Summary (pre-class)
 
 - **Run at:** 2026-06-04 (UTC)
 - **Account:** `329597159579` (`admin-reem`)

@@ -1,6 +1,6 @@
 # Screenshots
 
-Submission proof captures for **IncidentIQ Bedrock Agent mid-project**. PNGs use the exact filenames below.
+Submission proof captures for **PITER AiOps Bedrock Agent mid-project**. PNGs use the exact filenames below.
 
 ## Agent architecture set (prompt #3 — preferred for mid-project)
 
@@ -12,7 +12,7 @@ Capture when EC2/demo is approved. Files live in `screenshots/`:
 | 2 | `02_kb_sync.png` | KB `RBTJM6NIG9` data source **Available** |
 | 3 | `03_mcp.png` | Action groups (Path B) or AgentCore Gateway (Path A) |
 | 4 | `04_lambdas.png` | `iiq-correlate`, `iiq-context`, `iiq-similar` |
-| 5 | `05_s3.png` | S3 runbook prefix under `incidentIQ-midproject` |
+| 5 | `05_s3.png` | S3 runbook prefix under `piter-aiops` |
 | 6 | `06_ec2.png` | EC2 public IP + security group |
 | 7 | `07_app_home.png` | SPA homepage |
 | 8 | `08_qa.png` | Triage card — Postgres CPU scenario |
@@ -48,7 +48,7 @@ Regenerate (Docker on `:8080`, `.env` with `USE_BEDROCK=true` for the live set;
 falls back to local mode automatically if AWS is down):
 
 ```powershell
-cd projects/incidentIQ-midproject
+cd projects/piter-aiops
 docker compose up --build -d
 .\.venv\Scripts\python.exe -m pytest -ra --tb=short -o console_output_style=count *> evaluation\pytest_output.txt
 cd scripts
