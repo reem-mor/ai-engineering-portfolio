@@ -1,6 +1,6 @@
 # PLAN — PITER AiOps: Answer UI Redesign + AWS/Docker + Screenshots
 
-Scope: only `projects/incident-rag-bedrock/`. Do not change overall theme/nav/layout.
+Scope: only `projects/piter-aiops/`. Do not change overall theme/nav/layout.
 
 ## PART A — Answer output section (fully in my control)
 Targets: `frontend/src/components/FormattedAnswer.tsx` (+ new `CodeBlock.tsx`,
