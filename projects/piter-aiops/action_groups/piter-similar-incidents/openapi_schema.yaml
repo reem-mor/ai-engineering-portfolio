@@ -1,0 +1,30 @@
+openapi: 3.0.0
+info:
+  title: PITER Similar Incidents
+  version: 1.0.0
+  description: Historical incident matching with root cause and resolution metadata.
+
+paths:
+  /similar-incidents:
+    get:
+      summary: Find similar past incidents
+      operationId: findSimilarIncidents
+      parameters:
+        - name: service
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: symptom
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Similar incidents list

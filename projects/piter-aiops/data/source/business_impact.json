@@ -1,0 +1,86 @@
+{
+  "services": {
+    "wallet-service": {
+      "revenue_per_minute_usd": 4200,
+      "active_users_typical": 12000,
+      "sla_target_uptime_pct": 99.95,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE"
+      ],
+      "p1_cost_per_minute_usd": 4200,
+      "p2_cost_per_minute_usd": 1800,
+      "p3_cost_per_minute_usd": 400,
+      "p4_cost_per_minute_usd": 0
+    },
+    "bet-service": {
+      "revenue_per_minute_usd": 9800,
+      "active_users_typical": 32000,
+      "sla_target_uptime_pct": 99.95,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE",
+        "MGM"
+      ],
+      "p1_cost_per_minute_usd": 9800,
+      "p2_cost_per_minute_usd": 4100,
+      "p3_cost_per_minute_usd": 800,
+      "p4_cost_per_minute_usd": 0
+    },
+    "auth-service": {
+      "revenue_per_minute_usd": 14000,
+      "active_users_typical": 50000,
+      "sla_target_uptime_pct": 99.99,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE"
+      ],
+      "p1_cost_per_minute_usd": 14000,
+      "p2_cost_per_minute_usd": 6200,
+      "p3_cost_per_minute_usd": 1200,
+      "p4_cost_per_minute_usd": 0
+    },
+    "payments-service": {
+      "revenue_per_minute_usd": 2100,
+      "active_users_typical": 4500,
+      "sla_target_uptime_pct": 99.9,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE",
+        "PCI-DSS"
+      ],
+      "p1_cost_per_minute_usd": 2100,
+      "p2_cost_per_minute_usd": 900,
+      "p3_cost_per_minute_usd": 200,
+      "p4_cost_per_minute_usd": 0
+    },
+    "game-service": {
+      "revenue_per_minute_usd": 6500,
+      "active_users_typical": 28000,
+      "sla_target_uptime_pct": 99.9,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE",
+        "MGM"
+      ],
+      "p1_cost_per_minute_usd": 6500,
+      "p2_cost_per_minute_usd": 2700,
+      "p3_cost_per_minute_usd": 600,
+      "p4_cost_per_minute_usd": 0
+    },
+    "replication": {
+      "revenue_per_minute_usd": 0,
+      "active_users_typical": 0,
+      "sla_target_uptime_pct": 99.99,
+      "regulatory_exposure": [
+        "UKGC",
+        "DGE"
+      ],
+      "p1_cost_per_minute_usd": 8000,
+      "p2_cost_per_minute_usd": 3500,
+      "p3_cost_per_minute_usd": 800,
+      "p4_cost_per_minute_usd": 0,
+      "note": "no direct revenue but underlies wallet, bet, payments"
+    }
+  }
+}

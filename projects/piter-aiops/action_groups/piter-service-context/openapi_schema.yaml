@@ -1,0 +1,30 @@
+openapi: 3.0.0
+info:
+  title: PITER Service Context
+  version: 1.0.0
+  description: Ownership, on-call role, impact, priority, and regulatory exposure.
+
+paths:
+  /service-context:
+    get:
+      summary: Resolve service ownership and impact
+      operationId: getServiceContext
+      parameters:
+        - name: service
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: severity
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Service context payload
