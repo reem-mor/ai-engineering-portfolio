@@ -103,6 +103,10 @@ The template uses the lecture venv Python at `lectures/08_mcp/.venv/Scripts/pyth
 
 **Linux/macOS:** Change `command` in `.cursor/mcp.json` to `${workspaceFolder}/lectures/08_mcp/.venv/bin/python`.
 
+**Optional — Lovable remote MCP:** To control Lovable projects from Cursor (create, iterate, deploy), add the `lovable` entry from [`config/mcp.lovable.json.example`](config/mcp.lovable.json.example) into the same `.cursor/mcp.json` `mcpServers` object (do not replace other servers). Requires a Lovable account and OAuth on first connect. Official docs: https://docs.lovable.dev/integrations/lovable-mcp-server
+
+**Merge, don't replace:** Project `.cursor/mcp.json` is one file — adding Lovable means appending a `lovable` key alongside `course-tools`, `playwright`, AWS servers, etc. It does not automatically inherit servers from a separate global config if the project file omits them.
+
 **Windows fallback:** If the venv path fails, set `command` to the full path of your lecture venv Python:
 
 ```json
@@ -160,6 +164,7 @@ cd lectures\08_mcp
 | Path | Purpose |
 |------|---------|
 | `config/mcp.json.example` | Committed Cursor MCP template |
+| `config/mcp.lovable.json.example` | Optional Lovable remote MCP (`https://mcp.lovable.dev`) |
 | `server/tools_server.py` | Stdio MCP server (FastMCP) |
 | `demos/tool_calling_demo.py` | Gemini JSON tool-calling contrast demo |
 | `demos/inspect_server.md` | MCP Inspector instructions |
