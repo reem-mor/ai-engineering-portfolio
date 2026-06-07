@@ -77,7 +77,9 @@ visible execution mode / citations / tool results / memory / notification mode. 
 fallback retained. Optional future work: explicit 9-section nav + browser screenshots.
 
 ## 17. Tests passed
-**245 passed** (`python -m pytest`) — was 238; +7 MCP tests. Stable across repeated runs.
+**246 passed** (`python -m pytest`) — was 238; +7 MCP tests, +1 escalation regression test.
+Stable across repeated runs. A full code review (`PITER_CODE_REVIEW.md`) exercised every endpoint
+live and found/fixed one real HTTP 500 bug in the escalation route.
 
 ## 18. verify_live_demo result
 **28/29 in this sandbox** — the single gap is `[A] served by bedrock` (needs real AWS creds). Phase B
@@ -113,11 +115,15 @@ docker compose build && docker compose up -d && curl localhost:8080/health
   optional 9-section UI nav, correlation-id logging, persistent memory store.
 
 ---
-### Commits in this pass (not pushed)
+### Commits in this pass
 1. `fix(notifications)` — offline-safe SMS readiness check
 2. `docs(review)` — PITER audit/compliance report set
 3. `security(pii)` — redact personal email/phone
 4. `chore(branding)` — neutralize external brand comment
 5. `docs(kb)` — KB author front matter
 6. `feat(mcp)` — read-only MCP server + tests
-7. `docs(review)` — this final readiness report
+7. `docs(review)` — final readiness report
+8. `fix(escalation)` — prevent HTTP 500 on `ok` key collision (+ regression test)
+9. `docs(arch,readme)` — complete architecture flow, fix broken README link, document MCP
+10. `docs(screenshots)` — fresh current-UI captures featured in README
+11. `docs(review)` — code review report
