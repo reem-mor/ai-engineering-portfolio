@@ -616,6 +616,12 @@ See **[Demo Questions](#-demo-questions)** above and [`evaluation/qa_showcase.md
 
 All proof screenshots live in [`screenshots/`](screenshots/). See [`screenshots/README.md`](screenshots/README.md) for capture instructions.
 
+**Current UI (freshly captured):**
+
+![PITER AiOps dashboard](screenshots/20_app_dashboard_current.png)
+
+*Operations Center dashboard — alert-storm KPIs (399 alerts / 361 noise-suppressed / 1 P1), execution-mode badge, PITER alert-to-resolution pipeline, business-value cards, and the incident chat panel. Triage console: [`screenshots/21_console_current.png`](screenshots/21_console_current.png).*
+
 **What to submit:** Tier 1 — `01`–`10` plus `08b_app_citations_expanded.png` (11 files). Tier 2 (`11`–`19`) and `extras/partA_*` are optional depth. Details in [`screenshots/README.md`](screenshots/README.md).
 
 <details>
