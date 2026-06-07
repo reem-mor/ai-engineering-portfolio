@@ -1,0 +1,102 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ingest: var(--ingest);
+  --color-interface: var(--interface);
+  --color-agent: var(--agent);
+  --color-tools: var(--tools);
+  --color-rag: var(--rag);
+  --color-resolution: var(--resolution);
+  --color-grid-line: var(--grid-line);
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Enterprise dark — restrained SOC/NOC palette */
+  --background: oklch(0.14 0.015 265);
+  --foreground: oklch(0.94 0.01 250);
+  --card: oklch(0.18 0.018 265);
+  --card-foreground: oklch(0.94 0.01 250);
+  --popover: oklch(0.17 0.018 265);
+  --popover-foreground: oklch(0.94 0.01 250);
+  --primary: oklch(0.62 0.16 275);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.24 0.02 265);
+  --secondary-foreground: oklch(0.94 0.01 250);
+  --muted: oklch(0.22 0.018 265);
+  --muted-foreground: oklch(0.68 0.02 260);
+  --accent: oklch(0.26 0.03 265);
+  --accent-foreground: oklch(0.94 0.01 250);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 250);
+  --border: oklch(0.28 0.02 265 / 70%);
+  --input: oklch(0.24 0.02 265);
+  --ring: oklch(0.62 0.16 275);
+
+  --ingest: oklch(0.62 0.16 25);
+  --interface: oklch(0.6 0.14 245);
+  --agent: oklch(0.62 0.16 275);
+  --tools: oklch(0.58 0.12 200);
+  --rag: oklch(0.6 0.12 165);
+  --resolution: oklch(0.62 0.14 145);
+  --grid-line: oklch(0.28 0.02 265 / 35%);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body { background-color: var(--color-background); color: var(--color-foreground); overflow-x: hidden; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Inter", sans-serif;
+    background-image: linear-gradient(180deg, oklch(0.15 0.018 265), oklch(0.13 0.015 265));
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .grid-bg {
+    background-image:
+      linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .glass {
+    background: color-mix(in oklab, var(--card) 85%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+  }
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply cursor-pointer rounded-md border border-slate-600 bg-slate-900/50 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-800 disabled:opacity-40;
+  }
+}

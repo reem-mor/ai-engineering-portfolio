@@ -1,0 +1,12 @@
+{
+  "name": "piter-aiops-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots": "node capture_screenshots.mjs",
+    "screenshots:pytest": "node capture_screenshots.mjs --pytest-only"
+  },
+  "devDependencies": {
+    "playwright": "^1.51.0"
+  }
+}

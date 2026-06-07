@@ -1,0 +1,72 @@
+{
+  "factors": {
+    "customer_impact_pct": {
+      "weight": 0.3,
+      "description": "% of active users impacted"
+    },
+    "revenue_per_minute_usd": {
+      "weight": 0.25,
+      "description": "estimated $ loss per minute of degradation"
+    },
+    "regulatory_exposure": {
+      "weight": 0.2,
+      "description": "presence of regulated markets (UKGC/DGE/MGM)"
+    },
+    "sla_risk": {
+      "weight": 0.15,
+      "description": "proximity to SLA breach"
+    },
+    "alert_frequency": {
+      "weight": 0.1,
+      "description": "noise vs signal \u2014 repeated alerts raise priority"
+    }
+  },
+  "thresholds": {
+    "P1": {
+      "customer_impact_pct": ">=20",
+      "revenue_per_minute_usd": ">=5000",
+      "any_regulatory": true,
+      "description": "Customer-facing outage with revenue and regulatory exposure"
+    },
+    "P2": {
+      "customer_impact_pct": ">=5",
+      "revenue_per_minute_usd": ">=1500",
+      "any_regulatory": false,
+      "description": "Major degradation, single market impacted"
+    },
+    "P3": {
+      "customer_impact_pct": ">=1",
+      "revenue_per_minute_usd": ">=300",
+      "any_regulatory": false,
+      "description": "Partial degradation, recoverable without escalation"
+    },
+    "P4": {
+      "customer_impact_pct": "<1",
+      "revenue_per_minute_usd": "<300",
+      "any_regulatory": false,
+      "description": "Minor issue, no customer impact"
+    }
+  },
+  "examples": [
+    {
+      "alert": "wallet-service down on GIB-UKGC",
+      "priority": "P1",
+      "rationale": "100% wallet impact, UKGC regulatory exposure"
+    },
+    {
+      "alert": "replication lag 30s on GIB-UKGC wallet",
+      "priority": "P2",
+      "rationale": "degraded but online, single market"
+    },
+    {
+      "alert": "slow query on transactions_log",
+      "priority": "P3",
+      "rationale": "elevated latency but no failures"
+    },
+    {
+      "alert": "memory 82% on MGM auth-service",
+      "priority": "P4",
+      "rationale": "no user impact, capacity warning"
+    }
+  ]
+}

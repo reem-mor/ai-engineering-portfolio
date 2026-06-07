@@ -1,0 +1,15 @@
+{
+  "messageVersion": "1.0",
+  "agent": {"name": "PITER AiOps-noc-agent", "id": "TEST", "alias": "live", "version": "DRAFT"},
+  "actionGroup": "iiq-correlate",
+  "apiPath": "/correlate",
+  "httpMethod": "GET",
+  "parameters": [
+    {"name": "service", "type": "string", "value": "postgres"},
+    {"name": "environment", "type": "string", "value": "NJ-DGE"},
+    {"name": "alert_time", "type": "string", "value": "2026-06-10T09:00:00Z"},
+    {"name": "lookback_hours", "type": "integer", "value": "6"}
+  ],
+  "sessionAttributes": {},
+  "promptSessionAttributes": {}
+}

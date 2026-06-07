@@ -1,0 +1,400 @@
+alert_id,seconds_offset,timestamp,environment,service,severity,title,status,affected_users,error_rate_pct,is_trigger
+ALT-DEMO-0001,0.0,2026-06-10T10:00:00.000Z,MGM,wallet-service,P4,wallet-service cache hit rate 65%,active,0,0.0,false
+ALT-DEMO-0002,1.01,2026-06-10T10:00:01.010Z,MIRAGE,game-service,P4,game-service memory utilization 45%,active,0,0.0,false
+ALT-DEMO-0003,1.7,2026-06-10T10:00:01.700Z,MIRAGE,replication,P4,replication cache hit rate 82%,auto-resolved,0,0.0,false
+ALT-DEMO-0004,1.71,2026-06-10T10:00:01.710Z,MIRAGE,replication,P3,Replication lag 2.4s on replication,active,1500,0.33,false
+ALT-DEMO-0005,2.04,2026-06-10T10:00:02.040Z,NJ-DGE,auth-service,P4,Auto-scaling event triggered for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0006,2.4,2026-06-10T10:00:02.400Z,MGM,replication,P4,Health check warning: replication response time 65ms,auto-resolved,0,0.0,false
+ALT-DEMO-0007,2.47,2026-06-10T10:00:02.470Z,GIB-UKGC,wallet-service,P4,TLS handshake duration elevated for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0008,3.82,2026-06-10T10:00:03.820Z,GIB-UKGC,auth-service,P4,DNS resolution intermittent for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0009,3.87,2026-06-10T10:00:03.870Z,GIB-UKGC,game-service,P4,Background job queue depth at 82,auto-resolved,0,0.0,false
+ALT-DEMO-0010,4.64,2026-06-10T10:00:04.640Z,MGM,replication,P4,TLS handshake duration elevated for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0011,4.66,2026-06-10T10:00:04.660Z,NJ-DGE,auth-service,P4,auth-service cache hit rate 200%,acknowledged,0,0.0,false
+ALT-DEMO-0012,5.46,2026-06-10T10:00:05.460Z,MIRAGE,replication,P4,Background job queue depth at 70,active,0,0.0,false
+ALT-DEMO-0013,6.04,2026-06-10T10:00:06.040Z,MIRAGE,payments-service,P3,Replication lag 2.1s on payments-service,acknowledged,0,0.86,false
+ALT-DEMO-0014,6.08,2026-06-10T10:00:06.080Z,GIB-UKGC,replication,P4,Webhook delivery retried for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0015,6.44,2026-06-10T10:00:06.440Z,MGM,game-service,P2,game-service 5xx rate above 2% (2.4%),active,28000,3.83,false
+ALT-DEMO-0016,6.75,2026-06-10T10:00:06.750Z,MIRAGE,bet-service,P4,bet-service memory utilization 500%,acknowledged,0,0.0,false
+ALT-DEMO-0017,7.27,2026-06-10T10:00:07.270Z,MGM,wallet-service,P4,TLS handshake duration elevated for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0018,7.63,2026-06-10T10:00:07.630Z,NJ-DGE,game-service,P4,Health check warning: game-service response time 75ms,auto-resolved,0,0.0,false
+ALT-DEMO-0019,7.96,2026-06-10T10:00:07.960Z,GIB-UKGC,auth-service,P2,auth-service 5xx rate above 2% (3.2%),active,28000,4.36,false
+ALT-DEMO-0020,8.46,2026-06-10T10:00:08.460Z,GIB-UKGC,game-service,P4,Background job queue depth at 350,auto-resolved,0,0.0,false
+ALT-DEMO-0021,8.69,2026-06-10T10:00:08.690Z,GIB-UKGC,payments-service,P3,Queue depth elevated on payments-service,acknowledged,0,1.13,false
+ALT-DEMO-0022,9.53,2026-06-10T10:00:09.530Z,MIRAGE,game-service,P4,game-service certificate expiring in 65 days,active,0,0.0,false
+ALT-DEMO-0023,10.19,2026-06-10T10:00:10.190Z,NJ-DGE,bet-service,P4,bet-service certificate expiring in 500 days,auto-resolved,0,0.0,false
+ALT-DEMO-0024,11.96,2026-06-10T10:00:11.960Z,GIB-UKGC,wallet-service,P3,Connection pool exhausted briefly on wallet-service,active,8000,0.37,false
+ALT-DEMO-0025,12.6,2026-06-10T10:00:12.600Z,MIRAGE,payments-service,P4,payments-service cache hit rate 52%,active,0,0.0,false
+ALT-DEMO-0026,13.01,2026-06-10T10:00:13.010Z,NJ-DGE,replication,P4,DNS resolution intermittent for replication,acknowledged,0,0.0,false
+ALT-DEMO-0027,13.4,2026-06-10T10:00:13.400Z,GIB-UKGC,wallet-service,P4,wallet-service cache hit rate 65%,auto-resolved,0,0.0,false
+ALT-DEMO-0028,13.55,2026-06-10T10:00:13.550Z,MIRAGE,wallet-service,P4,Webhook delivery retried for wallet-service,acknowledged,0,0.0,false
+ALT-DEMO-0029,14.34,2026-06-10T10:00:14.340Z,NJ-DGE,wallet-service,P4,wallet-service backup completed in 750s,acknowledged,0,0.0,false
+ALT-DEMO-0030,14.84,2026-06-10T10:00:14.840Z,NJ-DGE,payments-service,P4,Background job queue depth at 78,active,0,0.0,false
+ALT-DEMO-0031,16.8,2026-06-10T10:00:16.800Z,MIRAGE,auth-service,P3,Failed deploy on staging for auth-service,acknowledged,8000,1.06,false
+ALT-DEMO-0032,16.96,2026-06-10T10:00:16.960Z,NJ-DGE,wallet-service,P4,Auto-scaling event triggered for wallet-service,active,0,0.0,false
+ALT-DEMO-0033,17.48,2026-06-10T10:00:17.480Z,NJ-DGE,bet-service,P3,Queue depth elevated on bet-service,acknowledged,0,0.97,false
+ALT-DEMO-0034,17.68,2026-06-10T10:00:17.680Z,GIB-UKGC,game-service,P4,Health check warning: game-service response time 200ms,active,0,0.0,false
+ALT-DEMO-0035,18.48,2026-06-10T10:00:18.480Z,MGM,auth-service,P4,auth-service cache hit rate 350%,auto-resolved,0,0.0,false
+ALT-DEMO-0036,18.86,2026-06-10T10:00:18.860Z,MIRAGE,auth-service,P4,Log rotation completed on auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0037,18.97,2026-06-10T10:00:18.970Z,NJ-DGE,wallet-service,P4,GC pause 65ms on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0038,19.3,2026-06-10T10:00:19.300Z,MGM,bet-service,P4,Connection pool 58% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0039,19.57,2026-06-10T10:00:19.570Z,NJ-DGE,replication,P2,Payment gateway latency >3s on replication,active,8000,2.51,false
+ALT-DEMO-0040,20.58,2026-06-10T10:00:20.580Z,GIB-UKGC,auth-service,P4,Auto-scaling event triggered for auth-service,active,0,0.0,false
+ALT-DEMO-0041,20.81,2026-06-10T10:00:20.810Z,NJ-DGE,wallet-service,P4,DNS resolution intermittent for wallet-service,acknowledged,0,0.0,false
+ALT-DEMO-0042,20.9,2026-06-10T10:00:20.900Z,GIB-UKGC,auth-service,P4,Auto-scaling event triggered for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0043,20.9,2026-06-10T10:00:20.900Z,GIB-UKGC,replication,P4,GC pause 45ms on replication,acknowledged,0,0.0,false
+ALT-DEMO-0044,21.02,2026-06-10T10:00:21.020Z,MGM,auth-service,P4,auth-service backup completed in 750s,acknowledged,0,0.0,false
+ALT-DEMO-0045,21.11,2026-06-10T10:00:21.110Z,NJ-DGE,replication,P4,Log rotation completed on replication,auto-resolved,0,0.0,false
+ALT-DEMO-0046,23.84,2026-06-10T10:00:23.840Z,GIB-UKGC,bet-service,P4,Webhook delivery retried for bet-service,active,0,0.0,false
+ALT-DEMO-0047,23.99,2026-06-10T10:00:23.990Z,GIB-UKGC,payments-service,P2,Payment gateway latency >3s on payments-service,active,4500,2.83,false
+ALT-DEMO-0048,24.09,2026-06-10T10:00:24.090Z,MGM,payments-service,P4,Connection pool 1200% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0049,24.11,2026-06-10T10:00:24.110Z,MGM,auth-service,P4,TLS handshake duration elevated for auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0050,24.88,2026-06-10T10:00:24.880Z,MGM,game-service,P4,game-service memory utilization 52%,acknowledged,0,0.0,false
+ALT-DEMO-0051,25.53,2026-06-10T10:00:25.530Z,NJ-DGE,wallet-service,P2,Authentication failures spike on wallet-service,active,12000,2.98,false
+ALT-DEMO-0052,25.62,2026-06-10T10:00:25.620Z,MGM,bet-service,P3,bet-service latency p95 increased to 70s,active,8000,1.4,false
+ALT-DEMO-0053,26.57,2026-06-10T10:00:26.570Z,GIB-UKGC,replication,P3,Replication lag 3.5s on replication,active,12000,1.4,false
+ALT-DEMO-0054,27.39,2026-06-10T10:00:27.390Z,MGM,auth-service,P4,DNS resolution intermittent for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0055,28.0,2026-06-10T10:00:28.000Z,MIRAGE,replication,P4,DNS resolution intermittent for replication,acknowledged,0,0.0,false
+ALT-DEMO-0056,28.26,2026-06-10T10:00:28.260Z,MGM,wallet-service,P4,Connection pool 65% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0057,29.06,2026-06-10T10:00:29.060Z,GIB-UKGC,payments-service,P4,GC pause 82ms on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0058,30.06,2026-06-10T10:00:30.060Z,MGM,auth-service,P4,auth-service certificate expiring in 1200 days,acknowledged,0,0.0,false
+ALT-DEMO-0059,30.34,2026-06-10T10:00:30.340Z,NJ-DGE,bet-service,P3,bet-service latency p95 increased to 2.1s,acknowledged,8000,1.3,false
+ALT-DEMO-0060,30.74,2026-06-10T10:00:30.740Z,MIRAGE,bet-service,P4,Disk usage at 78% on bet-service,active,0,0.0,false
+ALT-DEMO-0061,30.74,2026-06-10T10:00:30.740Z,MIRAGE,wallet-service,P3,wallet-service cache hit rate dropped to 1.8%,acknowledged,12000,0.87,false
+ALT-DEMO-0062,30.96,2026-06-10T10:00:30.960Z,GIB-UKGC,payments-service,P3,payments-service read replica falling behind,active,8000,0.97,false
+ALT-DEMO-0063,32.63,2026-06-10T10:00:32.630Z,MIRAGE,replication,P4,TLS handshake duration elevated for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0064,34.11,2026-06-10T10:00:34.110Z,MGM,bet-service,P4,Webhook delivery retried for bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0065,34.35,2026-06-10T10:00:34.350Z,GIB-UKGC,auth-service,P4,Connection pool 75% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0066,34.46,2026-06-10T10:00:34.460Z,GIB-UKGC,replication,P4,Auto-scaling event triggered for replication,active,0,0.0,false
+ALT-DEMO-0067,35.05,2026-06-10T10:00:35.050Z,MIRAGE,bet-service,P4,Slow query detected (750ms) on bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0068,36.5,2026-06-10T10:00:36.500Z,MIRAGE,payments-service,P3,payments-service latency p95 increased to 3.0s,active,4500,1.31,false
+ALT-DEMO-0069,36.91,2026-06-10T10:00:36.910Z,GIB-UKGC,game-service,P3,game-service read replica falling behind,active,4500,0.24,false
+ALT-DEMO-0070,37.76,2026-06-10T10:00:37.760Z,MIRAGE,bet-service,P4,bet-service backup completed in 58s,acknowledged,0,0.0,false
+ALT-DEMO-0071,39.54,2026-06-10T10:00:39.540Z,NJ-DGE,replication,P4,replication certificate expiring in 350 days,auto-resolved,0,0.0,false
+ALT-DEMO-0072,39.7,2026-06-10T10:00:39.700Z,GIB-UKGC,auth-service,P4,Disk usage at 75% on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0073,39.94,2026-06-10T10:00:39.940Z,MGM,payments-service,P2,Failed transaction rate 90% on payments-service,active,4500,3.82,false
+ALT-DEMO-0074,42.22,2026-06-10T10:00:42.220Z,NJ-DGE,wallet-service,P4,Webhook delivery retried for wallet-service,acknowledged,0,0.0,false
+ALT-DEMO-0075,42.23,2026-06-10T10:00:42.230Z,MIRAGE,bet-service,P4,DNS resolution intermittent for bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0076,43.13,2026-06-10T10:00:43.130Z,NJ-DGE,bet-service,P3,Slow transaction commits on bet-service,active,0,1.41,false
+ALT-DEMO-0077,44.92,2026-06-10T10:00:44.920Z,GIB-UKGC,replication,P4,replication certificate expiring in 200 days,auto-resolved,0,0.0,false
+ALT-DEMO-0078,45.0,2026-06-10T10:00:45.000Z,NJ-DGE,replication,P3,Memory pressure on replication (75%),active,8000,0.76,false
+ALT-DEMO-0079,45.53,2026-06-10T10:00:45.530Z,MIRAGE,payments-service,P4,payments-service certificate expiring in 78 days,acknowledged,0,0.0,false
+ALT-DEMO-0080,46.86,2026-06-10T10:00:46.860Z,GIB-UKGC,payments-service,P3,Failed deploy on staging for payments-service,acknowledged,1500,1.0,false
+ALT-DEMO-0081,47.97,2026-06-10T10:00:47.970Z,MGM,replication,P4,Log rotation completed on replication,active,0,0.0,false
+ALT-DEMO-0082,48.22,2026-06-10T10:00:48.220Z,MIRAGE,payments-service,P4,Log rotation completed on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0083,48.72,2026-06-10T10:00:48.720Z,MGM,auth-service,P4,Connection pool 200% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0084,48.73,2026-06-10T10:00:48.730Z,GIB-UKGC,wallet-service,P2,Authentication failures spike on wallet-service,active,28000,3.85,false
+ALT-DEMO-0085,49.51,2026-06-10T10:00:49.510Z,NJ-DGE,wallet-service,P4,Connection pool 65% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0086,50.32,2026-06-10T10:00:50.320Z,MGM,game-service,P4,Slow query detected (500ms) on game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0087,50.78,2026-06-10T10:00:50.780Z,NJ-DGE,bet-service,P4,Auto-scaling event triggered for bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0088,53.04,2026-06-10T10:00:53.040Z,GIB-UKGC,bet-service,P4,Auto-scaling event triggered for bet-service,active,0,0.0,false
+ALT-DEMO-0089,54.11,2026-06-10T10:00:54.110Z,GIB-UKGC,wallet-service,P4,Connection pool 65% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0090,55.03,2026-06-10T10:00:55.030Z,NJ-DGE,wallet-service,P4,GC pause 70ms on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0091,56.55,2026-06-10T10:00:56.550Z,MGM,wallet-service,P4,Disk usage at 82% on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0092,56.59,2026-06-10T10:00:56.590Z,NJ-DGE,payments-service,P2,Failed transaction rate 88% on payments-service,active,18000,2.0,false
+ALT-DEMO-0093,56.63,2026-06-10T10:00:56.630Z,MGM,game-service,P4,game-service certificate expiring in 65 days,active,0,0.0,false
+ALT-DEMO-0094,57.33,2026-06-10T10:00:57.330Z,MIRAGE,bet-service,P3,bet-service read replica falling behind,active,8000,1.49,false
+ALT-DEMO-0095,58.06,2026-06-10T10:00:58.060Z,NJ-DGE,replication,P4,Webhook delivery retried for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0096,58.12,2026-06-10T10:00:58.120Z,NJ-DGE,game-service,P4,Background job queue depth at 45,auto-resolved,0,0.0,false
+ALT-DEMO-0097,58.6,2026-06-10T10:00:58.600Z,MGM,auth-service,P4,Auto-scaling event triggered for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0098,60.53,2026-06-10T10:01:00.530Z,GIB-UKGC,replication,P3,Failed login rate increased on replication,active,12000,0.39,false
+ALT-DEMO-0099,60.65,2026-06-10T10:01:00.650Z,MGM,auth-service,P4,Disk usage at 52% on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0100,61.03,2026-06-10T10:01:01.030Z,MIRAGE,game-service,P4,Disk usage at 52% on game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0101,62.03,2026-06-10T10:01:02.030Z,NJ-DGE,wallet-service,P4,wallet-service cache hit rate 350%,acknowledged,0,0.0,false
+ALT-DEMO-0102,64.29,2026-06-10T10:01:04.290Z,MGM,replication,P2,replication 5xx rate above 2% (2.8%),active,18000,3.2,false
+ALT-DEMO-0103,64.53,2026-06-10T10:01:04.530Z,MIRAGE,payments-service,P2,Failed transaction rate 90% on payments-service,active,12000,2.9,false
+ALT-DEMO-0104,64.61,2026-06-10T10:01:04.610Z,MIRAGE,payments-service,P4,Connection pool 350% utilized,acknowledged,0,0.0,false
+ALT-DEMO-0105,65.21,2026-06-10T10:01:05.210Z,MGM,auth-service,P4,Log rotation completed on auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0106,65.76,2026-06-10T10:01:05.760Z,MIRAGE,replication,P2,Authentication failures spike on replication,active,8000,3.2,false
+ALT-DEMO-0107,66.27,2026-06-10T10:01:06.270Z,GIB-UKGC,wallet-service,P4,Connection pool 85% utilized,active,0,0.0,false
+ALT-DEMO-0108,67.87,2026-06-10T10:01:07.870Z,GIB-UKGC,wallet-service,P4,Auto-scaling event triggered for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0109,67.96,2026-06-10T10:01:07.960Z,MIRAGE,wallet-service,P4,wallet-service certificate expiring in 350 days,acknowledged,0,0.0,false
+ALT-DEMO-0110,68.91,2026-06-10T10:01:08.910Z,MIRAGE,auth-service,P4,TLS handshake duration elevated for auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0111,69.51,2026-06-10T10:01:09.510Z,GIB-UKGC,game-service,P4,TLS handshake duration elevated for game-service,active,0,0.0,false
+ALT-DEMO-0112,69.91,2026-06-10T10:01:09.910Z,MGM,game-service,P2,game-service 5xx rate above 2% (3.5%),active,12000,4.06,false
+ALT-DEMO-0113,70.72,2026-06-10T10:01:10.720Z,MIRAGE,payments-service,P3,Replication lag 3.0s on payments-service,active,8000,0.69,false
+ALT-DEMO-0114,72.24,2026-06-10T10:01:12.240Z,MIRAGE,bet-service,P2,bet-service sync delay exceeding SLA,active,4500,2.66,false
+ALT-DEMO-0115,74.08,2026-06-10T10:01:14.080Z,GIB-UKGC,replication,P4,Disk usage at 45% on replication,active,0,0.0,false
+ALT-DEMO-0116,74.38,2026-06-10T10:01:14.380Z,NJ-DGE,payments-service,P4,GC pause 82ms on payments-service,active,0,0.0,false
+ALT-DEMO-0117,75.92,2026-06-10T10:01:15.920Z,MIRAGE,wallet-service,P2,Payment gateway latency >3s on wallet-service,active,28000,3.67,false
+ALT-DEMO-0118,77.35,2026-06-10T10:01:17.350Z,MIRAGE,game-service,P3,Replication lag 65s on game-service,acknowledged,4500,1.33,false
+ALT-DEMO-0119,77.41,2026-06-10T10:01:17.410Z,GIB-UKGC,auth-service,P4,Auto-scaling event triggered for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0120,78.16,2026-06-10T10:01:18.160Z,GIB-UKGC,payments-service,P3,Failed deploy on staging for payments-service,acknowledged,0,0.62,false
+ALT-DEMO-0121,78.49,2026-06-10T10:01:18.490Z,MIRAGE,bet-service,P4,Health check warning: bet-service response time 350ms,auto-resolved,0,0.0,false
+ALT-DEMO-0122,78.55,2026-06-10T10:01:18.550Z,GIB-UKGC,game-service,P3,game-service read replica falling behind,active,4500,1.03,false
+ALT-DEMO-0123,79.38,2026-06-10T10:01:19.380Z,MGM,payments-service,P3,Intermittent timeouts to upstream on payments-service,active,4500,1.43,false
+ALT-DEMO-0124,79.65,2026-06-10T10:01:19.650Z,MGM,replication,P2,replication circuit breaker tripped briefly,active,8000,4.5,false
+ALT-DEMO-0125,79.73,2026-06-10T10:01:19.730Z,MGM,auth-service,P4,Auto-scaling event triggered for auth-service,active,0,0.0,false
+ALT-DEMO-0126,80.11,2026-06-10T10:01:20.110Z,NJ-DGE,replication,P4,replication backup completed in 200s,auto-resolved,0,0.0,false
+ALT-DEMO-0127,81.86,2026-06-10T10:01:21.860Z,MGM,bet-service,P3,bet-service cache hit rate dropped to 65%,active,1500,1.08,false
+ALT-DEMO-0128,82.66,2026-06-10T10:01:22.660Z,NJ-DGE,replication,P3,Intermittent timeouts to upstream on replication,active,4500,0.24,false
+ALT-DEMO-0129,82.77,2026-06-10T10:01:22.770Z,MIRAGE,auth-service,P3,Slow transaction commits on auth-service,active,8000,1.34,false
+ALT-DEMO-0130,83.29,2026-06-10T10:01:23.290Z,MGM,bet-service,P4,bet-service backup completed in 1200s,acknowledged,0,0.0,false
+ALT-DEMO-0131,83.56,2026-06-10T10:01:23.560Z,MIRAGE,wallet-service,P3,Elevated 4xx response rate on wallet-service,acknowledged,0,1.32,false
+ALT-DEMO-0132,86.49,2026-06-10T10:01:26.490Z,MGM,game-service,P2,Failed transaction rate 88% on game-service,active,4500,2.51,false
+ALT-DEMO-0133,86.83,2026-06-10T10:01:26.830Z,MIRAGE,auth-service,P3,Intermittent timeouts to upstream on auth-service,active,0,0.81,false
+ALT-DEMO-WARN-01,90,2026-06-10T10:01:30.000Z,GIB-UKGC,bet-service,P3,bet-service latency p95 increased to 2.4s,active,32000,0.8,false
+ALT-DEMO-0134,92.98,2026-06-10T10:01:32.980Z,GIB-UKGC,game-service,P4,DNS resolution intermittent for game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0135,93.89,2026-06-10T10:01:33.890Z,GIB-UKGC,wallet-service,P4,wallet-service memory utilization 45%,auto-resolved,0,0.0,false
+ALT-DEMO-0136,93.97,2026-06-10T10:01:33.970Z,MIRAGE,bet-service,P3,bet-service read replica falling behind,active,12000,1.11,false
+ALT-DEMO-0137,94.63,2026-06-10T10:01:34.630Z,NJ-DGE,payments-service,P3,payments-service read replica falling behind,active,1500,0.24,false
+ALT-DEMO-0138,95.07,2026-06-10T10:01:35.070Z,NJ-DGE,auth-service,P2,Replication lag exceeded 30s threshold on auth-service,active,4500,2.87,false
+ALT-DEMO-0139,95.17,2026-06-10T10:01:35.170Z,NJ-DGE,payments-service,P3,Intermittent timeouts to upstream on payments-service,active,8000,1.46,false
+ALT-DEMO-0140,95.47,2026-06-10T10:01:35.470Z,GIB-UKGC,game-service,P2,Failed transaction rate 3.2% on game-service,active,28000,2.38,false
+ALT-DEMO-0141,95.77,2026-06-10T10:01:35.770Z,NJ-DGE,game-service,P4,Connection pool 1200% utilized,acknowledged,0,0.0,false
+ALT-DEMO-0142,96.35,2026-06-10T10:01:36.350Z,NJ-DGE,wallet-service,P3,Slow transaction commits on wallet-service,active,0,0.97,false
+ALT-DEMO-0143,96.43,2026-06-10T10:01:36.430Z,NJ-DGE,payments-service,P4,Auto-scaling event triggered for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0144,96.97,2026-06-10T10:01:36.970Z,GIB-UKGC,game-service,P4,Health check warning: game-service response time 45ms,auto-resolved,0,0.0,false
+ALT-DEMO-0145,97.78,2026-06-10T10:01:37.780Z,NJ-DGE,replication,P4,replication memory utilization 82%,acknowledged,0,0.0,false
+ALT-DEMO-0146,97.86,2026-06-10T10:01:37.860Z,NJ-DGE,payments-service,P3,Elevated 4xx response rate on payments-service,active,0,0.36,false
+ALT-DEMO-0147,98.52,2026-06-10T10:01:38.520Z,MGM,payments-service,P3,payments-service read replica falling behind,active,0,1.23,false
+ALT-DEMO-0148,99.32,2026-06-10T10:01:39.320Z,GIB-UKGC,game-service,P3,Failed login rate increased on game-service,acknowledged,4500,0.64,false
+ALT-DEMO-0149,99.72,2026-06-10T10:01:39.720Z,MGM,payments-service,P4,DNS resolution intermittent for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0150,101.64,2026-06-10T10:01:41.640Z,NJ-DGE,wallet-service,P4,Slow query detected (52ms) on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0151,101.75,2026-06-10T10:01:41.750Z,MGM,game-service,P4,DNS resolution intermittent for game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0152,103.87,2026-06-10T10:01:43.870Z,NJ-DGE,replication,P4,Connection pool 200% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0153,104.4,2026-06-10T10:01:44.400Z,GIB-UKGC,payments-service,P4,TLS handshake duration elevated for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0154,104.5,2026-06-10T10:01:44.500Z,MIRAGE,bet-service,P4,TLS handshake duration elevated for bet-service,acknowledged,0,0.0,false
+ALT-DEMO-0155,105.21,2026-06-10T10:01:45.210Z,MGM,wallet-service,P4,wallet-service memory utilization 58%,active,0,0.0,false
+ALT-DEMO-0156,107.12,2026-06-10T10:01:47.120Z,GIB-UKGC,bet-service,P4,Health check warning: bet-service response time 350ms,auto-resolved,0,0.0,false
+ALT-DEMO-0157,107.87,2026-06-10T10:01:47.870Z,GIB-UKGC,replication,P4,Slow query detected (78ms) on replication,auto-resolved,0,0.0,false
+ALT-DEMO-0158,108.15,2026-06-10T10:01:48.150Z,NJ-DGE,game-service,P4,game-service backup completed in 45s,active,0,0.0,false
+ALT-DEMO-0159,108.19,2026-06-10T10:01:48.190Z,MIRAGE,payments-service,P4,Disk usage at 200% on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0160,109.24,2026-06-10T10:01:49.240Z,NJ-DGE,payments-service,P4,Connection pool 350% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0161,110.07,2026-06-10T10:01:50.070Z,NJ-DGE,payments-service,P4,payments-service memory utilization 65%,auto-resolved,0,0.0,false
+ALT-DEMO-0162,110.18,2026-06-10T10:01:50.180Z,NJ-DGE,auth-service,P4,auth-service memory utilization 82%,auto-resolved,0,0.0,false
+ALT-DEMO-0163,110.54,2026-06-10T10:01:50.540Z,MGM,game-service,P3,Elevated 4xx response rate on game-service,acknowledged,0,0.77,false
+ALT-DEMO-0164,110.6,2026-06-10T10:01:50.600Z,MIRAGE,payments-service,P4,Auto-scaling event triggered for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0165,110.61,2026-06-10T10:01:50.610Z,MIRAGE,game-service,P4,TLS handshake duration elevated for game-service,acknowledged,0,0.0,false
+ALT-DEMO-0166,112.01,2026-06-10T10:01:52.010Z,MIRAGE,game-service,P4,GC pause 52ms on game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0167,112.32,2026-06-10T10:01:52.320Z,NJ-DGE,bet-service,P4,GC pause 350ms on bet-service,active,0,0.0,false
+ALT-DEMO-0168,114.09,2026-06-10T10:01:54.090Z,GIB-UKGC,replication,P4,replication cache hit rate 52%,active,0,0.0,false
+ALT-DEMO-0169,114.79,2026-06-10T10:01:54.790Z,NJ-DGE,replication,P3,Slow transaction commits on replication,active,4500,1.18,false
+ALT-DEMO-0170,115.23,2026-06-10T10:01:55.230Z,MGM,game-service,P2,Replication lag exceeded 30s threshold on game-service,active,18000,1.98,false
+ALT-DEMO-0171,115.5,2026-06-10T10:01:55.500Z,MGM,wallet-service,P4,GC pause 52ms on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0172,115.55,2026-06-10T10:01:55.550Z,NJ-DGE,wallet-service,P3,Memory pressure on wallet-service (18%),active,4500,0.95,false
+ALT-DEMO-0173,116.55,2026-06-10T10:01:56.550Z,GIB-UKGC,game-service,P4,Log rotation completed on game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0174,116.6,2026-06-10T10:01:56.600Z,NJ-DGE,auth-service,P4,GC pause 350ms on auth-service,active,0,0.0,false
+ALT-DEMO-0175,117.03,2026-06-10T10:01:57.030Z,GIB-UKGC,game-service,P4,Log rotation completed on game-service,acknowledged,0,0.0,false
+ALT-DEMO-0176,118.15,2026-06-10T10:01:58.150Z,MGM,wallet-service,P4,wallet-service certificate expiring in 75 days,active,0,0.0,false
+ALT-DEMO-0177,118.4,2026-06-10T10:01:58.400Z,GIB-UKGC,replication,P3,Replication lag 1.5s on replication,active,0,1.39,false
+ALT-DEMO-0178,119.2,2026-06-10T10:01:59.200Z,NJ-DGE,bet-service,P4,Connection pool 85% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0179,120.46,2026-06-10T10:02:00.460Z,NJ-DGE,replication,P4,DNS resolution intermittent for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0180,120.8,2026-06-10T10:02:00.800Z,MGM,bet-service,P4,Webhook delivery retried for bet-service,active,0,0.0,false
+ALT-DEMO-0181,120.92,2026-06-10T10:02:00.920Z,NJ-DGE,wallet-service,P4,DNS resolution intermittent for wallet-service,acknowledged,0,0.0,false
+ALT-DEMO-0182,121.61,2026-06-10T10:02:01.610Z,GIB-UKGC,bet-service,P4,Auto-scaling event triggered for bet-service,active,0,0.0,false
+ALT-DEMO-0183,122.56,2026-06-10T10:02:02.560Z,MGM,game-service,P2,game-service circuit breaker tripped briefly,active,28000,2.45,false
+ALT-DEMO-WARN-02,125,2026-06-10T10:02:05.000Z,GIB-UKGC,bet-service,P3,Connection pool exhausted briefly on bet-service,active,32000,1.4,false
+ALT-DEMO-0184,127.71,2026-06-10T10:02:07.710Z,MGM,bet-service,P3,Intermittent timeouts to upstream on bet-service,acknowledged,4500,1.2,false
+ALT-DEMO-0185,128.23,2026-06-10T10:02:08.230Z,GIB-UKGC,bet-service,P4,Webhook delivery retried for bet-service,active,0,0.0,false
+ALT-DEMO-0186,129.0,2026-06-10T10:02:09.000Z,NJ-DGE,game-service,P3,Failed deploy on staging for game-service,acknowledged,1500,0.31,false
+ALT-DEMO-0187,129.45,2026-06-10T10:02:09.450Z,NJ-DGE,payments-service,P4,payments-service backup completed in 65s,acknowledged,0,0.0,false
+ALT-DEMO-0188,131.45,2026-06-10T10:02:11.450Z,MGM,payments-service,P4,payments-service cache hit rate 78%,acknowledged,0,0.0,false
+ALT-DEMO-0189,131.47,2026-06-10T10:02:11.470Z,MGM,replication,P2,Deposit success rate dropped to 2.8%,active,4500,2.57,false
+ALT-DEMO-0190,132.37,2026-06-10T10:02:12.370Z,MIRAGE,replication,P4,Disk usage at 200% on replication,active,0,0.0,false
+ALT-DEMO-0191,132.59,2026-06-10T10:02:12.590Z,MIRAGE,game-service,P3,Elevated 4xx response rate on game-service,active,1500,0.36,false
+ALT-DEMO-0192,133.35,2026-06-10T10:02:13.350Z,NJ-DGE,wallet-service,P4,TLS handshake duration elevated for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0193,133.45,2026-06-10T10:02:13.450Z,MGM,bet-service,P4,Slow query detected (45ms) on bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0194,133.86,2026-06-10T10:02:13.860Z,MGM,wallet-service,P4,wallet-service certificate expiring in 85 days,auto-resolved,0,0.0,false
+ALT-DEMO-0195,134.39,2026-06-10T10:02:14.390Z,NJ-DGE,payments-service,P4,DNS resolution intermittent for payments-service,acknowledged,0,0.0,false
+ALT-DEMO-0196,134.4,2026-06-10T10:02:14.400Z,GIB-UKGC,auth-service,P3,Failed deploy on staging for auth-service,active,8000,1.16,false
+ALT-DEMO-0197,134.43,2026-06-10T10:02:14.430Z,GIB-UKGC,replication,P4,TLS handshake duration elevated for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0198,134.92,2026-06-10T10:02:14.920Z,NJ-DGE,bet-service,P4,Auto-scaling event triggered for bet-service,acknowledged,0,0.0,false
+ALT-DEMO-0199,134.99,2026-06-10T10:02:14.990Z,MGM,wallet-service,P3,Connection pool exhausted briefly on wallet-service,active,8000,0.82,false
+ALT-DEMO-0200,135.11,2026-06-10T10:02:15.110Z,MGM,wallet-service,P4,Connection pool 52% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0201,135.49,2026-06-10T10:02:15.490Z,MGM,payments-service,P4,Background job queue depth at 82,auto-resolved,0,0.0,false
+ALT-DEMO-0202,136.69,2026-06-10T10:02:16.690Z,MIRAGE,wallet-service,P4,wallet-service certificate expiring in 78 days,auto-resolved,0,0.0,false
+ALT-DEMO-0203,137.28,2026-06-10T10:02:17.280Z,MGM,wallet-service,P4,DNS resolution intermittent for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0204,137.7,2026-06-10T10:02:17.700Z,MIRAGE,auth-service,P4,auth-service memory utilization 500%,acknowledged,0,0.0,false
+ALT-DEMO-0205,142.42,2026-06-10T10:02:22.420Z,NJ-DGE,wallet-service,P4,DNS resolution intermittent for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0206,143.45,2026-06-10T10:02:23.450Z,GIB-UKGC,wallet-service,P4,TLS handshake duration elevated for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0207,143.56,2026-06-10T10:02:23.560Z,MGM,replication,P4,Log rotation completed on replication,acknowledged,0,0.0,false
+ALT-DEMO-0208,143.62,2026-06-10T10:02:23.620Z,MGM,auth-service,P4,Disk usage at 750% on auth-service,active,0,0.0,false
+ALT-DEMO-0209,143.96,2026-06-10T10:02:23.960Z,GIB-UKGC,auth-service,P4,auth-service certificate expiring in 45 days,auto-resolved,0,0.0,false
+ALT-DEMO-0210,144.33,2026-06-10T10:02:24.330Z,MGM,auth-service,P4,Auto-scaling event triggered for auth-service,active,0,0.0,false
+ALT-DEMO-0211,145.22,2026-06-10T10:02:25.220Z,NJ-DGE,bet-service,P2,Deposit success rate dropped to 2.4%,active,18000,2.27,false
+ALT-DEMO-0212,149.64,2026-06-10T10:02:29.640Z,MGM,auth-service,P3,Failed deploy on staging for auth-service,active,1500,1.36,false
+ALT-DEMO-0213,150.58,2026-06-10T10:02:30.580Z,GIB-UKGC,replication,P2,Replication lag exceeded 30s threshold on replication,active,4500,4.46,false
+ALT-DEMO-0214,150.78,2026-06-10T10:02:30.780Z,MGM,auth-service,P4,Disk usage at 750% on auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0215,152.4,2026-06-10T10:02:32.400Z,MIRAGE,payments-service,P4,GC pause 78ms on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0216,152.46,2026-06-10T10:02:32.460Z,NJ-DGE,replication,P2,replication circuit breaker tripped briefly,active,28000,2.73,false
+ALT-DEMO-WARN-03,155,2026-06-10T10:02:35.000Z,GIB-UKGC,bet-service,P2,bet-service 5xx rate above 2% (3.8%),active,32000,3.8,false
+ALT-DEMO-0217,157.59,2026-06-10T10:02:37.590Z,GIB-UKGC,bet-service,P4,Slow query detected (85ms) on bet-service,acknowledged,0,0.0,false
+ALT-DEMO-0218,157.69,2026-06-10T10:02:37.690Z,GIB-UKGC,bet-service,P4,Log rotation completed on bet-service,active,0,0.0,false
+ALT-DEMO-0219,158.24,2026-06-10T10:02:38.240Z,MGM,wallet-service,P4,wallet-service cache hit rate 350%,acknowledged,0,0.0,false
+ALT-DEMO-0220,158.98,2026-06-10T10:02:38.980Z,GIB-UKGC,wallet-service,P4,Health check warning: wallet-service response time 200ms,active,0,0.0,false
+ALT-DEMO-0221,159.93,2026-06-10T10:02:39.930Z,NJ-DGE,game-service,P4,TLS handshake duration elevated for game-service,active,0,0.0,false
+ALT-DEMO-0222,160.05,2026-06-10T10:02:40.050Z,GIB-UKGC,replication,P4,Webhook delivery retried for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0223,160.56,2026-06-10T10:02:40.560Z,MGM,auth-service,P4,Disk usage at 65% on auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0224,160.83,2026-06-10T10:02:40.830Z,GIB-UKGC,wallet-service,P4,Disk usage at 78% on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0225,161.53,2026-06-10T10:02:41.530Z,MGM,replication,P4,Auto-scaling event triggered for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0226,162.6,2026-06-10T10:02:42.600Z,MGM,wallet-service,P4,wallet-service cache hit rate 82%,active,0,0.0,false
+ALT-DEMO-0227,162.71,2026-06-10T10:02:42.710Z,MIRAGE,payments-service,P4,payments-service cache hit rate 1200%,acknowledged,0,0.0,false
+ALT-DEMO-0228,164.75,2026-06-10T10:02:44.750Z,GIB-UKGC,bet-service,P4,Disk usage at 85% on bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0229,165.27,2026-06-10T10:02:45.270Z,MIRAGE,payments-service,P4,payments-service cache hit rate 65%,auto-resolved,0,0.0,false
+ALT-DEMO-0230,165.34,2026-06-10T10:02:45.340Z,MIRAGE,replication,P4,Connection pool 85% utilized,active,0,0.0,false
+ALT-DEMO-0231,165.45,2026-06-10T10:02:45.450Z,MIRAGE,auth-service,P4,Log rotation completed on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0232,165.61,2026-06-10T10:02:45.610Z,MIRAGE,wallet-service,P4,GC pause 82ms on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-WARN-04,170,2026-06-10T10:02:50.000Z,GIB-UKGC,bet-service,P2,bet-service circuit breaker tripped briefly,active,32000,7.2,false
+ALT-DEMO-0233,173.0,2026-06-10T10:02:53.000Z,GIB-UKGC,wallet-service,P4,wallet-service certificate expiring in 78 days,auto-resolved,0,0.0,false
+ALT-DEMO-P1-001,175,2026-06-10T10:02:55.000Z,GIB-UKGC,bet-service,P1,CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC,active,32000,100.0,true
+ALT-DEMO-0234,177.61,2026-06-10T10:02:57.610Z,GIB-UKGC,bet-service,P4,Health check warning: bet-service response time 85ms,auto-resolved,0,0.0,false
+ALT-DEMO-0235,177.67,2026-06-10T10:02:57.670Z,MIRAGE,payments-service,P3,Slow transaction commits on payments-service,acknowledged,0,0.63,false
+ALT-DEMO-0236,177.8,2026-06-10T10:02:57.800Z,MGM,replication,P2,Replication lag exceeded 30s threshold on replication,active,28000,2.61,false
+ALT-DEMO-0237,178.15,2026-06-10T10:02:58.150Z,MGM,payments-service,P4,Webhook delivery retried for payments-service,acknowledged,0,0.0,false
+ALT-DEMO-0238,178.83,2026-06-10T10:02:58.830Z,GIB-UKGC,replication,P4,Auto-scaling event triggered for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0239,179.57,2026-06-10T10:02:59.570Z,GIB-UKGC,payments-service,P4,TLS handshake duration elevated for payments-service,active,0,0.0,false
+ALT-DEMO-0240,180.48,2026-06-10T10:03:00.480Z,MGM,payments-service,P4,Slow query detected (58ms) on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0241,181.0,2026-06-10T10:03:01.000Z,NJ-DGE,payments-service,P4,Auto-scaling event triggered for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0242,185.71,2026-06-10T10:03:05.710Z,MGM,payments-service,P4,Background job queue depth at 82,acknowledged,0,0.0,false
+ALT-DEMO-0243,186.03,2026-06-10T10:03:06.030Z,MGM,replication,P3,Memory pressure on replication (8%),active,0,0.56,false
+ALT-DEMO-0244,188.16,2026-06-10T10:03:08.160Z,GIB-UKGC,auth-service,P2,auth-service circuit breaker tripped briefly,active,18000,2.74,false
+ALT-DEMO-0245,189.35,2026-06-10T10:03:09.350Z,MIRAGE,wallet-service,P4,wallet-service backup completed in 78s,acknowledged,0,0.0,false
+ALT-DEMO-0246,190.58,2026-06-10T10:03:10.580Z,NJ-DGE,auth-service,P4,Log rotation completed on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0247,190.76,2026-06-10T10:03:10.760Z,MGM,auth-service,P3,Slow transaction commits on auth-service,active,8000,0.51,false
+ALT-DEMO-0248,192.53,2026-06-10T10:03:12.530Z,NJ-DGE,bet-service,P4,bet-service certificate expiring in 78 days,auto-resolved,0,0.0,false
+ALT-DEMO-0249,193.38,2026-06-10T10:03:13.380Z,GIB-UKGC,game-service,P4,Slow query detected (350ms) on game-service,acknowledged,0,0.0,false
+ALT-DEMO-0250,193.87,2026-06-10T10:03:13.870Z,MGM,auth-service,P4,Connection pool 350% utilized,active,0,0.0,false
+ALT-DEMO-0251,194.66,2026-06-10T10:03:14.660Z,NJ-DGE,replication,P4,replication backup completed in 58s,auto-resolved,0,0.0,false
+ALT-DEMO-0252,196.7,2026-06-10T10:03:16.700Z,MIRAGE,payments-service,P4,Background job queue depth at 500,acknowledged,0,0.0,false
+ALT-DEMO-0253,198.27,2026-06-10T10:03:18.270Z,NJ-DGE,game-service,P4,game-service backup completed in 75s,active,0,0.0,false
+ALT-DEMO-0254,198.86,2026-06-10T10:03:18.860Z,MIRAGE,bet-service,P4,Connection pool 65% utilized,acknowledged,0,0.0,false
+ALT-DEMO-0255,199.84,2026-06-10T10:03:19.840Z,GIB-UKGC,replication,P4,replication memory utilization 500%,auto-resolved,0,0.0,false
+ALT-DEMO-0256,200.68,2026-06-10T10:03:20.680Z,MIRAGE,game-service,P4,TLS handshake duration elevated for game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0257,201.51,2026-06-10T10:03:21.510Z,MIRAGE,bet-service,P4,Log rotation completed on bet-service,active,0,0.0,false
+ALT-DEMO-0258,201.96,2026-06-10T10:03:21.960Z,MGM,auth-service,P4,Health check warning: auth-service response time 500ms,auto-resolved,0,0.0,false
+ALT-DEMO-0259,202.29,2026-06-10T10:03:22.290Z,NJ-DGE,replication,P4,Disk usage at 70% on replication,active,0,0.0,false
+ALT-DEMO-0260,204.22,2026-06-10T10:03:24.220Z,NJ-DGE,auth-service,P3,Intermittent timeouts to upstream on auth-service,active,0,0.48,false
+ALT-DEMO-0261,204.34,2026-06-10T10:03:24.340Z,MGM,game-service,P3,Failed login rate increased on game-service,active,4500,1.18,false
+ALT-DEMO-0262,205.65,2026-06-10T10:03:25.650Z,NJ-DGE,replication,P3,Queue depth elevated on replication,active,1500,0.3,false
+ALT-DEMO-0263,205.7,2026-06-10T10:03:25.700Z,GIB-UKGC,game-service,P4,Health check warning: game-service response time 85ms,active,0,0.0,false
+ALT-DEMO-0264,206.25,2026-06-10T10:03:26.250Z,MIRAGE,bet-service,P4,bet-service certificate expiring in 85 days,auto-resolved,0,0.0,false
+ALT-DEMO-0265,206.36,2026-06-10T10:03:26.360Z,NJ-DGE,game-service,P4,GC pause 82ms on game-service,auto-resolved,0,0.0,false
+ALT-DEMO-0266,206.37,2026-06-10T10:03:26.370Z,GIB-UKGC,wallet-service,P4,Health check warning: wallet-service response time 52ms,active,0,0.0,false
+ALT-DEMO-0267,206.42,2026-06-10T10:03:26.420Z,MIRAGE,wallet-service,P2,wallet-service 5xx rate above 2% (3.5%),active,18000,2.29,false
+ALT-DEMO-0268,207.19,2026-06-10T10:03:27.190Z,MGM,payments-service,P3,Failed login rate increased on payments-service,acknowledged,4500,0.69,false
+ALT-DEMO-0269,208.0,2026-06-10T10:03:28.000Z,MGM,replication,P4,replication certificate expiring in 58 days,acknowledged,0,0.0,false
+ALT-DEMO-0270,208.11,2026-06-10T10:03:28.110Z,NJ-DGE,wallet-service,P2,Payment gateway latency >3s on wallet-service,active,28000,2.95,false
+ALT-DEMO-0271,208.3,2026-06-10T10:03:28.300Z,MGM,bet-service,P4,bet-service cache hit rate 500%,auto-resolved,0,0.0,false
+ALT-DEMO-0272,208.42,2026-06-10T10:03:28.420Z,GIB-UKGC,wallet-service,P4,wallet-service cache hit rate 52%,active,0,0.0,false
+ALT-DEMO-0273,208.53,2026-06-10T10:03:28.530Z,GIB-UKGC,wallet-service,P3,Failed deploy on staging for wallet-service,active,0,0.9,false
+ALT-DEMO-0274,209.65,2026-06-10T10:03:29.650Z,GIB-UKGC,auth-service,P4,TLS handshake duration elevated for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0275,210.76,2026-06-10T10:03:30.760Z,MGM,bet-service,P3,Slow transaction commits on bet-service,active,4500,0.59,false
+ALT-DEMO-0276,212.99,2026-06-10T10:03:32.990Z,MIRAGE,bet-service,P3,Queue depth elevated on bet-service,active,1500,1.42,false
+ALT-DEMO-0277,214.14,2026-06-10T10:03:34.140Z,MIRAGE,payments-service,P4,Background job queue depth at 70,auto-resolved,0,0.0,false
+ALT-DEMO-0278,214.62,2026-06-10T10:03:34.620Z,GIB-UKGC,auth-service,P3,auth-service read replica falling behind,active,4500,0.92,false
+ALT-DEMO-0279,214.83,2026-06-10T10:03:34.830Z,NJ-DGE,replication,P4,replication backup completed in 82s,acknowledged,0,0.0,false
+ALT-DEMO-0280,215.8,2026-06-10T10:03:35.800Z,MIRAGE,auth-service,P4,DNS resolution intermittent for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0281,215.95,2026-06-10T10:03:35.950Z,GIB-UKGC,replication,P3,replication read replica falling behind,acknowledged,1500,0.59,false
+ALT-DEMO-0282,216.13,2026-06-10T10:03:36.130Z,NJ-DGE,replication,P4,Auto-scaling event triggered for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0283,216.83,2026-06-10T10:03:36.830Z,MGM,bet-service,P4,Webhook delivery retried for bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0284,217.16,2026-06-10T10:03:37.160Z,MIRAGE,game-service,P4,Disk usage at 52% on game-service,acknowledged,0,0.0,false
+ALT-DEMO-0285,218.24,2026-06-10T10:03:38.240Z,MGM,bet-service,P4,Log rotation completed on bet-service,active,0,0.0,false
+ALT-DEMO-0286,219.25,2026-06-10T10:03:39.250Z,MIRAGE,game-service,P4,Connection pool 58% utilized,active,0,0.0,false
+ALT-DEMO-0287,219.88,2026-06-10T10:03:39.880Z,MGM,game-service,P4,Connection pool 750% utilized,acknowledged,0,0.0,false
+ALT-DEMO-0288,220.65,2026-06-10T10:03:40.650Z,MGM,bet-service,P4,Background job queue depth at 58,auto-resolved,0,0.0,false
+ALT-DEMO-0289,222.52,2026-06-10T10:03:42.520Z,NJ-DGE,replication,P4,GC pause 45ms on replication,acknowledged,0,0.0,false
+ALT-DEMO-0290,223.8,2026-06-10T10:03:43.800Z,MIRAGE,wallet-service,P4,Background job queue depth at 1200,auto-resolved,0,0.0,false
+ALT-DEMO-0291,223.92,2026-06-10T10:03:43.920Z,MGM,payments-service,P4,payments-service memory utilization 200%,auto-resolved,0,0.0,false
+ALT-DEMO-0292,225.75,2026-06-10T10:03:45.750Z,NJ-DGE,wallet-service,P4,GC pause 85ms on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0293,225.87,2026-06-10T10:03:45.870Z,NJ-DGE,auth-service,P4,GC pause 1200ms on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0294,227.98,2026-06-10T10:03:47.980Z,GIB-UKGC,wallet-service,P4,wallet-service cache hit rate 65%,auto-resolved,0,0.0,false
+ALT-DEMO-0295,228.31,2026-06-10T10:03:48.310Z,MGM,wallet-service,P3,Failed login rate increased on wallet-service,active,12000,0.49,false
+ALT-DEMO-0296,229.72,2026-06-10T10:03:49.720Z,NJ-DGE,replication,P4,replication certificate expiring in 78 days,auto-resolved,0,0.0,false
+ALT-DEMO-0297,229.76,2026-06-10T10:03:49.760Z,NJ-DGE,bet-service,P4,Disk usage at 1200% on bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0298,230.39,2026-06-10T10:03:50.390Z,NJ-DGE,wallet-service,P3,wallet-service cache hit rate dropped to 2.1%,acknowledged,12000,1.35,false
+ALT-DEMO-0299,230.42,2026-06-10T10:03:50.420Z,NJ-DGE,auth-service,P4,Background job queue depth at 1200,auto-resolved,0,0.0,false
+ALT-DEMO-0300,231.09,2026-06-10T10:03:51.090Z,MIRAGE,replication,P3,Elevated 4xx response rate on replication,active,0,0.94,false
+ALT-DEMO-0301,231.93,2026-06-10T10:03:51.930Z,GIB-UKGC,payments-service,P4,Webhook delivery retried for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0302,234.68,2026-06-10T10:03:54.680Z,GIB-UKGC,payments-service,P4,TLS handshake duration elevated for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0303,237.0,2026-06-10T10:03:57.000Z,NJ-DGE,auth-service,P4,DNS resolution intermittent for auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0304,237.2,2026-06-10T10:03:57.200Z,MIRAGE,payments-service,P4,Background job queue depth at 350,auto-resolved,0,0.0,false
+ALT-DEMO-0305,238.31,2026-06-10T10:03:58.310Z,NJ-DGE,bet-service,P4,bet-service certificate expiring in 70 days,active,0,0.0,false
+ALT-DEMO-0306,239.06,2026-06-10T10:03:59.060Z,MGM,auth-service,P3,Elevated 4xx response rate on auth-service,active,1500,0.78,false
+ALT-DEMO-0307,239.14,2026-06-10T10:03:59.140Z,MIRAGE,payments-service,P4,GC pause 85ms on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0308,239.21,2026-06-10T10:03:59.210Z,MGM,game-service,P4,TLS handshake duration elevated for game-service,active,0,0.0,false
+ALT-DEMO-0309,240.35,2026-06-10T10:04:00.350Z,GIB-UKGC,game-service,P3,Memory pressure on game-service (12%),active,4500,0.42,false
+ALT-DEMO-0310,240.58,2026-06-10T10:04:00.580Z,MIRAGE,bet-service,P4,Connection pool 78% utilized,active,0,0.0,false
+ALT-DEMO-0311,240.92,2026-06-10T10:04:00.920Z,MIRAGE,replication,P2,replication sync delay exceeding SLA,active,4500,2.17,false
+ALT-DEMO-0312,241.01,2026-06-10T10:04:01.010Z,MGM,payments-service,P3,payments-service read replica falling behind,active,12000,1.47,false
+ALT-DEMO-0313,241.3,2026-06-10T10:04:01.300Z,MIRAGE,bet-service,P2,Replication lag exceeded 30s threshold on bet-service,active,18000,4.42,false
+ALT-DEMO-0314,242.19,2026-06-10T10:04:02.190Z,GIB-UKGC,game-service,P4,Log rotation completed on game-service,active,0,0.0,false
+ALT-DEMO-0315,242.53,2026-06-10T10:04:02.530Z,GIB-UKGC,bet-service,P2,bet-service 5xx rate above 2% (90%),active,8000,2.98,false
+ALT-DEMO-0316,243.41,2026-06-10T10:04:03.410Z,MIRAGE,payments-service,P3,Slow transaction commits on payments-service,active,1500,1.06,false
+ALT-DEMO-0317,244.58,2026-06-10T10:04:04.580Z,MIRAGE,game-service,P4,Health check warning: game-service response time 78ms,auto-resolved,0,0.0,false
+ALT-DEMO-0318,246.11,2026-06-10T10:04:06.110Z,MGM,wallet-service,P4,Auto-scaling event triggered for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0319,246.17,2026-06-10T10:04:06.170Z,MGM,replication,P3,Slow transaction commits on replication,active,8000,1.48,false
+ALT-DEMO-0320,246.56,2026-06-10T10:04:06.560Z,NJ-DGE,payments-service,P3,payments-service latency p95 increased to 1.5s,active,8000,1.17,false
+ALT-DEMO-0321,247.43,2026-06-10T10:04:07.430Z,MIRAGE,auth-service,P4,Disk usage at 750% on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0322,247.55,2026-06-10T10:04:07.550Z,NJ-DGE,payments-service,P2,Payment gateway latency >3s on payments-service,active,4500,2.11,false
+ALT-DEMO-0323,247.67,2026-06-10T10:04:07.670Z,GIB-UKGC,payments-service,P4,GC pause 82ms on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0324,248.63,2026-06-10T10:04:08.630Z,MGM,wallet-service,P4,wallet-service memory utilization 750%,auto-resolved,0,0.0,false
+ALT-DEMO-0325,248.71,2026-06-10T10:04:08.710Z,GIB-UKGC,bet-service,P4,GC pause 58ms on bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0326,249.13,2026-06-10T10:04:09.130Z,GIB-UKGC,payments-service,P4,Background job queue depth at 350,auto-resolved,0,0.0,false
+ALT-DEMO-0327,250.13,2026-06-10T10:04:10.130Z,MIRAGE,payments-service,P3,Failed login rate increased on payments-service,acknowledged,0,0.56,false
+ALT-DEMO-0328,251.32,2026-06-10T10:04:11.320Z,GIB-UKGC,game-service,P4,Log rotation completed on game-service,active,0,0.0,false
+ALT-DEMO-0329,252.16,2026-06-10T10:04:12.160Z,MGM,replication,P4,Health check warning: replication response time 78ms,auto-resolved,0,0.0,false
+ALT-DEMO-0330,252.48,2026-06-10T10:04:12.480Z,GIB-UKGC,game-service,P3,Intermittent timeouts to upstream on game-service,acknowledged,8000,0.97,false
+ALT-DEMO-0331,252.76,2026-06-10T10:04:12.760Z,GIB-UKGC,wallet-service,P4,Log rotation completed on wallet-service,active,0,0.0,false
+ALT-DEMO-0332,253.44,2026-06-10T10:04:13.440Z,GIB-UKGC,payments-service,P4,Disk usage at 350% on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0333,255.44,2026-06-10T10:04:15.440Z,MIRAGE,bet-service,P4,Connection pool 58% utilized,active,0,0.0,false
+ALT-DEMO-0334,256.17,2026-06-10T10:04:16.170Z,MIRAGE,wallet-service,P3,Slow transaction commits on wallet-service,acknowledged,8000,0.86,false
+ALT-DEMO-0335,257.03,2026-06-10T10:04:17.030Z,MIRAGE,payments-service,P4,Background job queue depth at 52,auto-resolved,0,0.0,false
+ALT-DEMO-0336,257.22,2026-06-10T10:04:17.220Z,MGM,bet-service,P4,Background job queue depth at 750,auto-resolved,0,0.0,false
+ALT-DEMO-0337,258.31,2026-06-10T10:04:18.310Z,NJ-DGE,wallet-service,P4,Connection pool 750% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0338,258.89,2026-06-10T10:04:18.890Z,MIRAGE,replication,P3,Queue depth elevated on replication,acknowledged,0,1.16,false
+ALT-DEMO-0339,259.11,2026-06-10T10:04:19.110Z,MIRAGE,wallet-service,P3,Connection pool exhausted briefly on wallet-service,acknowledged,0,0.77,false
+ALT-DEMO-0340,260.23,2026-06-10T10:04:20.230Z,MGM,replication,P4,TLS handshake duration elevated for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0341,260.95,2026-06-10T10:04:20.950Z,NJ-DGE,bet-service,P3,Memory pressure on bet-service (3.0%),active,8000,0.9,false
+ALT-DEMO-0342,261.86,2026-06-10T10:04:21.860Z,NJ-DGE,auth-service,P4,Background job queue depth at 750,auto-resolved,0,0.0,false
+ALT-DEMO-0343,265.53,2026-06-10T10:04:25.530Z,GIB-UKGC,bet-service,P3,bet-service cache hit rate dropped to 1.8%,acknowledged,0,1.19,false
+ALT-DEMO-0344,266.03,2026-06-10T10:04:26.030Z,MIRAGE,auth-service,P4,Slow query detected (82ms) on auth-service,active,0,0.0,false
+ALT-DEMO-0345,267.13,2026-06-10T10:04:27.130Z,MGM,replication,P4,Auto-scaling event triggered for replication,auto-resolved,0,0.0,false
+ALT-DEMO-0346,267.78,2026-06-10T10:04:27.780Z,NJ-DGE,replication,P3,Failed deploy on staging for replication,active,12000,0.67,false
+ALT-DEMO-0347,268.36,2026-06-10T10:04:28.360Z,GIB-UKGC,payments-service,P4,Disk usage at 70% on payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0348,268.95,2026-06-10T10:04:28.950Z,MGM,payments-service,P4,payments-service backup completed in 350s,auto-resolved,0,0.0,false
+ALT-DEMO-0349,269.06,2026-06-10T10:04:29.060Z,NJ-DGE,wallet-service,P3,Slow transaction commits on wallet-service,active,4500,0.46,false
+ALT-DEMO-0350,269.17,2026-06-10T10:04:29.170Z,MGM,bet-service,P4,bet-service certificate expiring in 350 days,auto-resolved,0,0.0,false
+ALT-DEMO-0351,269.99,2026-06-10T10:04:29.990Z,MIRAGE,wallet-service,P4,DNS resolution intermittent for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0352,270.41,2026-06-10T10:04:30.410Z,NJ-DGE,wallet-service,P4,wallet-service cache hit rate 82%,active,0,0.0,false
+ALT-DEMO-0353,270.96,2026-06-10T10:04:30.960Z,MGM,wallet-service,P4,TLS handshake duration elevated for wallet-service,acknowledged,0,0.0,false
+ALT-DEMO-0354,271.07,2026-06-10T10:04:31.070Z,NJ-DGE,payments-service,P4,Auto-scaling event triggered for payments-service,active,0,0.0,false
+ALT-DEMO-0355,272.66,2026-06-10T10:04:32.660Z,GIB-UKGC,bet-service,P4,bet-service certificate expiring in 85 days,auto-resolved,0,0.0,false
+ALT-DEMO-0356,272.8,2026-06-10T10:04:32.800Z,GIB-UKGC,bet-service,P4,bet-service backup completed in 78s,auto-resolved,0,0.0,false
+ALT-DEMO-0357,272.98,2026-06-10T10:04:32.980Z,NJ-DGE,bet-service,P3,Memory pressure on bet-service (70%),active,4500,0.61,false
+ALT-DEMO-0358,273.22,2026-06-10T10:04:33.220Z,MGM,game-service,P4,Webhook delivery retried for game-service,active,0,0.0,false
+ALT-DEMO-0359,274.79,2026-06-10T10:04:34.790Z,GIB-UKGC,game-service,P4,Auto-scaling event triggered for game-service,active,0,0.0,false
+ALT-DEMO-0360,276.5,2026-06-10T10:04:36.500Z,MIRAGE,payments-service,P2,Failed transaction rate 3.2% on payments-service,active,18000,3.52,false
+ALT-DEMO-0361,278.15,2026-06-10T10:04:38.150Z,MGM,auth-service,P4,Background job queue depth at 78,acknowledged,0,0.0,false
+ALT-DEMO-0362,278.49,2026-06-10T10:04:38.490Z,NJ-DGE,payments-service,P4,payments-service memory utilization 200%,active,0,0.0,false
+ALT-DEMO-0363,278.52,2026-06-10T10:04:38.520Z,MGM,payments-service,P4,DNS resolution intermittent for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0364,279.43,2026-06-10T10:04:39.430Z,GIB-UKGC,game-service,P4,Connection pool 52% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0365,279.6,2026-06-10T10:04:39.600Z,MGM,game-service,P3,Failed login rate increased on game-service,active,12000,1.09,false
+ALT-DEMO-0366,280.5,2026-06-10T10:04:40.500Z,NJ-DGE,bet-service,P3,bet-service cache hit rate dropped to 1.5%,acknowledged,0,0.79,false
+ALT-DEMO-0367,280.77,2026-06-10T10:04:40.770Z,GIB-UKGC,replication,P3,Elevated 4xx response rate on replication,acknowledged,12000,0.21,false
+ALT-DEMO-0368,281.09,2026-06-10T10:04:41.090Z,MGM,replication,P4,Background job queue depth at 75,active,0,0.0,false
+ALT-DEMO-0369,281.33,2026-06-10T10:04:41.330Z,MGM,wallet-service,P3,Failed login rate increased on wallet-service,active,1500,1.13,false
+ALT-DEMO-0370,281.39,2026-06-10T10:04:41.390Z,NJ-DGE,auth-service,P4,Disk usage at 1200% on auth-service,auto-resolved,0,0.0,false
+ALT-DEMO-0371,281.61,2026-06-10T10:04:41.610Z,NJ-DGE,game-service,P4,game-service cache hit rate 500%,auto-resolved,0,0.0,false
+ALT-DEMO-0372,281.74,2026-06-10T10:04:41.740Z,MGM,payments-service,P4,Slow query detected (58ms) on payments-service,active,0,0.0,false
+ALT-DEMO-0373,281.77,2026-06-10T10:04:41.770Z,MIRAGE,replication,P3,replication cache hit rate dropped to 3.0%,active,12000,0.62,false
+ALT-DEMO-0374,282.41,2026-06-10T10:04:42.410Z,NJ-DGE,replication,P4,Background job queue depth at 65,acknowledged,0,0.0,false
+ALT-DEMO-0375,284.72,2026-06-10T10:04:44.720Z,MGM,payments-service,P4,Webhook delivery retried for payments-service,auto-resolved,0,0.0,false
+ALT-DEMO-0376,285.18,2026-06-10T10:04:45.180Z,MGM,auth-service,P4,Auto-scaling event triggered for auth-service,active,0,0.0,false
+ALT-DEMO-0377,287.85,2026-06-10T10:04:47.850Z,GIB-UKGC,bet-service,P2,Deposit success rate dropped to 2.1%,active,18000,1.86,false
+ALT-DEMO-0378,288.61,2026-06-10T10:04:48.610Z,MGM,wallet-service,P4,wallet-service memory utilization 750%,auto-resolved,0,0.0,false
+ALT-DEMO-0379,289.59,2026-06-10T10:04:49.590Z,GIB-UKGC,game-service,P4,Slow query detected (82ms) on game-service,acknowledged,0,0.0,false
+ALT-DEMO-0380,289.7,2026-06-10T10:04:49.700Z,GIB-UKGC,wallet-service,P4,wallet-service backup completed in 1200s,auto-resolved,0,0.0,false
+ALT-DEMO-0381,290.05,2026-06-10T10:04:50.050Z,NJ-DGE,wallet-service,P2,Deposit success rate dropped to 88%,active,4500,3.4,false
+ALT-DEMO-0382,290.86,2026-06-10T10:04:50.860Z,MGM,auth-service,P4,TLS handshake duration elevated for auth-service,acknowledged,0,0.0,false
+ALT-DEMO-0383,292.2,2026-06-10T10:04:52.200Z,MGM,payments-service,P4,payments-service cache hit rate 52%,acknowledged,0,0.0,false
+ALT-DEMO-0384,293.3,2026-06-10T10:04:53.300Z,GIB-UKGC,wallet-service,P4,Disk usage at 82% on wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0385,293.64,2026-06-10T10:04:53.640Z,MGM,payments-service,P3,payments-service read replica falling behind,acknowledged,0,0.4,false
+ALT-DEMO-0386,294.95,2026-06-10T10:04:54.950Z,GIB-UKGC,wallet-service,P4,TLS handshake duration elevated for wallet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0387,295.16,2026-06-10T10:04:55.160Z,NJ-DGE,game-service,P4,DNS resolution intermittent for game-service,active,0,0.0,false
+ALT-DEMO-0388,295.19,2026-06-10T10:04:55.190Z,GIB-UKGC,payments-service,P4,payments-service certificate expiring in 82 days,active,0,0.0,false
+ALT-DEMO-0389,295.29,2026-06-10T10:04:55.290Z,GIB-UKGC,bet-service,P4,bet-service cache hit rate 1200%,auto-resolved,0,0.0,false
+ALT-DEMO-0390,297.37,2026-06-10T10:04:57.370Z,MGM,game-service,P4,game-service backup completed in 1200s,active,0,0.0,false
+ALT-DEMO-0391,297.53,2026-06-10T10:04:57.530Z,NJ-DGE,bet-service,P4,bet-service backup completed in 1200s,acknowledged,0,0.0,false
+ALT-DEMO-0392,297.56,2026-06-10T10:04:57.560Z,MIRAGE,bet-service,P4,TLS handshake duration elevated for bet-service,auto-resolved,0,0.0,false
+ALT-DEMO-0393,297.68,2026-06-10T10:04:57.680Z,GIB-UKGC,bet-service,P4,Connection pool 70% utilized,auto-resolved,0,0.0,false
+ALT-DEMO-0394,298.4,2026-06-10T10:04:58.400Z,MGM,replication,P4,Disk usage at 78% on replication,acknowledged,0,0.0,false
