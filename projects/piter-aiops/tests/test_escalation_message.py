@@ -46,8 +46,9 @@ def test_format_escalation_sms_is_concise():
     }
     sms = format_escalation_messages(ctx, channel="sms")["body"]
     assert "Tom Friedman" in sms
-    assert "#war-room" in sms
-    assert len(sms) <= 640
+    assert "war-room" in sms
+    assert "@" not in sms
+    assert len(sms) <= 160
 
 
 def test_enrich_escalation_context_fills_owner_from_catalog():

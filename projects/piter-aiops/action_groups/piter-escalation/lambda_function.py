@@ -183,6 +183,7 @@ def lambda_handler(event, context):
             "sent": True,
             "channel": dispatch_result["channel"],
             "message_id": dispatch_result.get("message_id"),
+            "route": dispatch_result.get("route"),
             "recipient": _mask_recipient(recipient),
             "idempotency_key": key,
             "timestamp": datetime.now(timezone.utc).isoformat(),

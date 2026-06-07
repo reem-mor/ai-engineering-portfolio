@@ -174,12 +174,13 @@ def _check_sms_topic_route(*, phone: str | None = None, region: str | None = Non
 
 
 def _sms_publish_route(phone: str) -> str:
+    """Direct PhoneNumber publish is default; topic fan-out is opt-in only."""
     topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
-    if not topic_arn:
+    if not topic_arn or not sms_use_topic():
         return "direct"
     if not check_sms_account_ready(phone=phone).get("ready"):
         return "direct"
-    if sms_use_topic() or _check_sms_topic_route(phone=phone).get("ready"):
+    if _check_sms_topic_route(phone=phone).get("ready"):
         return "topic"
     return "direct"
 
@@ -204,12 +205,12 @@ def check_sms_account_ready(*, region: str | None = None, phone: str | None = No
                 "console_url": SMS_CONSOLE_URL,
                 "attributes": attrs,
             }
-        route = "topic" if topic_status and topic_status.get("ready") else "direct"
+        use_topic = sms_use_topic() and topic_status and topic_status.get("ready")
         return {
             "ready": True,
             "reason": None,
             "message": None,
-            "route": route,
+            "route": "topic" if use_topic else "direct",
             "console_url": SMS_CONSOLE_URL,
             "attributes": attrs,
             **(
