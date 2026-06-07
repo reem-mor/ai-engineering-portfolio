@@ -6,7 +6,7 @@ environments: ["NJ-DGE", "GIB-UKGC"]
 severity_applicable: ["P2", "P3"]
 tags: ["postgres", "replication", "database"]
 last_updated: "2026-06-07"
-author: "PITER AiOps"
+author: "Re'em Mor"
 version: "1.0"
 ---
 

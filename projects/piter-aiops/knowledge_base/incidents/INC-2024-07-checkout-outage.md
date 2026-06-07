@@ -6,7 +6,7 @@ environments: ["NJ-DGE", "GIB-UKGC"]
 severity_applicable: ["P1"]
 tags: ["postmortem", "checkout", "5xx", "rollback"]
 last_updated: "2026-06-06"
-author: "PITER AiOps"
+author: "Re'em Mor"
 version: "1.0"
 ---
 
