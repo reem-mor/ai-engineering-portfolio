@@ -122,8 +122,21 @@ def main() -> int:
     os.environ["RAG_BACKEND"] = "retrieve_and_generate"
     os.environ["BEDROCK_KB_ID"] = "ZZZZZZZZZZ"  # valid format, does not exist
     os.environ["PITER_BEDROCK_KB_ID"] = "ZZZZZZZZZZ"
+    # Phase B only needs enough config for Config.from_env() to build; the bad KB id
+    # forces the Bedrock call to fail so the app falls back to LOCAL. Supply harmless
+    # defaults so this phase runs even with no .env / no AWS credentials at all.
+    os.environ.setdefault("AWS_REGION", "us-east-1")
+    os.environ.setdefault("PITER_AWS_REGION", os.environ["AWS_REGION"])
+    os.environ.setdefault(
+        "BEDROCK_MODEL_ARN",
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+    )
+    os.environ.setdefault("PITER_BEDROCK_MODEL_ARN", os.environ["BEDROCK_MODEL_ARN"])
+    os.environ.setdefault("FLASK_SECRET_KEY", "verify-local-fallback")
+    os.environ.setdefault("PITER_FLASK_SECRET_KEY", os.environ["FLASK_SECRET_KEY"])
     # Fresh app: create_app() re-reads Config.from_env() with the broken KB id,
-    # so the Bedrock call raises ResourceNotFoundException and the app falls back.
+    # so the Bedrock call fails (ResourceNotFound live, or auth/endpoint error
+    # offline) and the app falls back to the local knowledge base.
     app_b = create_app()
     _drive_triage_flow(app_b.test_client(), expected_mode="local", phase="B")
 
