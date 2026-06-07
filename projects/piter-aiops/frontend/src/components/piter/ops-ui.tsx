@@ -267,6 +267,8 @@ export function P1CandidateCard({
   onChat,
   onContinue,
   showActions,
+  analyzing = false,
+  triageComplete = false,
 }: {
   title: string;
   description: string;
@@ -275,6 +277,8 @@ export function P1CandidateCard({
   onChat: () => void;
   onContinue: () => void;
   showActions: boolean;
+  analyzing?: boolean;
+  triageComplete?: boolean;
 }) {
   if (!showActions) return null;
   return (
@@ -284,6 +288,16 @@ export function P1CandidateCard({
         <span className="rounded-full border border-red-500/40 bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-100">
           P1 INCIDENT CANDIDATE DETECTED
         </span>
+        {analyzing ? (
+          <span className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 text-xs font-medium text-cyan-100">
+            Running Bedrock triage…
+          </span>
+        ) : null}
+        {triageComplete ? (
+          <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-medium text-emerald-100">
+            Triage complete — review & resolve
+          </span>
+        ) : null}
       </div>
       <h3 className="mt-3 text-xl font-semibold text-white">{title}</h3>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">{description}</p>
@@ -291,9 +305,10 @@ export function P1CandidateCard({
         <button
           type="button"
           onClick={onAnalyze}
-          className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+          disabled={analyzing || triageComplete}
+          className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Run PITER analysis
+          {analyzing ? "Analyzing…" : triageComplete ? "Analysis complete" : "Run PITER analysis"}
         </button>
         <button
           type="button"

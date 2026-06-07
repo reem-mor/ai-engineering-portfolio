@@ -19,9 +19,15 @@ from __future__ import annotations
 import os
 import sys
 
+from dotenv import load_dotenv
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+# Shell env (e.g. RAG_BACKEND=agent from pytest) overrides .env by default in
+# app.config.load_dotenv(). Reload project .env so Phase A matches Docker/demo.
+load_dotenv(os.path.join(REPO_ROOT, ".env"), override=True)
 
 SCENARIO = {
     "alert_id": "ALERT-DEMO-PG-CPU",

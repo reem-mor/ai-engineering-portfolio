@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -19,6 +19,7 @@ import {
   Lock,
   MessageSquare,
   Network,
+  Paperclip,
   Play,
   Search,
   ServerCog,
@@ -182,6 +183,16 @@ const INVESTIGATIONS: Investigation[] = [
     impact: "Settlement delay risk",
   },
 ];
+
+const STORM_INVESTIGATION_ID = "INV-2026-0610-001";
+
+function averageMttrMinutes(triageCard: TriageCard | null): number | null {
+  const values = (triageCard?.similar_incidents ?? [])
+    .map((item) => item.mttr_minutes)
+    .filter((value): value is number => typeof value === "number" && value > 0);
+  if (!values.length) return null;
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
 
 const KPI_CARDS_STATIC = [
   {
@@ -400,8 +411,12 @@ function AppShell() {
   const [escalationModalOpen, setEscalationModalOpen] = useState(false);
   const [alertCorpus, setAlertCorpus] = useState<Record<string, string>[]>([]);
   const [stormVisibleCount, setStormVisibleCount] = useState(12);
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+  const [stormMarkedResolved, setStormMarkedResolved] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const stormTimerRef = useRef<number | null>(null);
   const stormTickRef = useRef<number | null>(null);
+  const chatUploadRef = useRef<HTMLInputElement | null>(null);
 
   const streamSummary: AlertStreamSummary = data?.alert_stream ?? {
     total: 400,
@@ -454,8 +469,39 @@ function AppShell() {
       .catch(() => setKbDocs([]));
   }, []);
 
-  const kpiCards = useMemo(
-    () => [
+  const mttrMinutes = useMemo(() => averageMttrMinutes(triageCard), [triageCard]);
+
+  const kpiCards = useMemo(() => {
+    const stormResolved =
+      (invStatuses[STORM_INVESTIGATION_ID] ?? INVESTIGATIONS[0].status) === "Resolved";
+    const dynamicStatic = KPI_CARDS_STATIC.map((card, index) => {
+      if (index === 0 && triageCard) {
+        return {
+          ...card,
+          value: stormResolved ? "2" : "3",
+          sub: stormResolved ? "storm incident closed" : "1 critical in review",
+        };
+      }
+      if (index === 2 && triageCard) {
+        return {
+          ...card,
+          value: workflowLoading ? "…" : triageCard.mode === "local" ? "0.8s" : "~11s",
+          sub: "last PITER triage",
+        };
+      }
+      if (index === 3 && mttrMinutes) {
+        return {
+          ...card,
+          value: `${mttrMinutes} min`,
+          sub: "similar incidents baseline",
+        };
+      }
+      if (index === 5 && stormState === "resolved") {
+        return { ...card, value: "1", sub: "storm workflow" };
+      }
+      return card;
+    });
+    return [
       {
         label: "Alerts Processed",
         value: String(streamSummary.total),
@@ -470,10 +516,9 @@ function AppShell() {
         icon: TrendingDown,
         tone: "green",
       },
-      ...KPI_CARDS_STATIC,
-    ],
-    [streamSummary],
-  );
+      ...dynamicStatic,
+    ];
+  }, [streamSummary, triageCard, mttrMinutes, workflowLoading, stormState, invStatuses]);
 
   async function askAgent(question = chatInput) {
     const q = question.trim();
@@ -543,6 +588,8 @@ function AppShell() {
     clearStormTimer();
     setStormVisibleCount(8);
     setStormState("streaming");
+    setStormMarkedResolved(false);
+    setSelected(INVESTIGATIONS[0]);
     stormTickRef.current = window.setInterval(() => {
       setStormVisibleCount((n) => Math.min(n + 4, 48));
     }, 400);
@@ -563,6 +610,8 @@ function AppShell() {
     clearStormTimer();
     setStormVisibleCount(12);
     setStormState("idle");
+    setStormMarkedResolved(false);
+    setWorkflowLoading(false);
   }
 
   function updateInvStatus(id: string, status: string) {
@@ -573,9 +622,78 @@ function AppShell() {
     return invStatuses[inv.id] ?? inv.status;
   }
 
+  function markStormResolved() {
+    updateInvStatus(STORM_INVESTIGATION_ID, "Resolved");
+    setStormMarkedResolved(true);
+    setChatTurns((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        text: "Incident marked resolved. Validation checklist complete; post-mortem draft and MTTR metrics are recorded for this session.",
+      },
+    ]);
+  }
+
+  async function handleChatUpload(file: File) {
+    setUploadLoading(true);
+    setChatError(null);
+    try {
+      const result = await uploadDocument(file, true);
+      setChatTurns((prev) => [...prev, { role: "user", text: `Uploaded: ${file.name}` }]);
+      fetchKbManifest()
+        .then((manifest) => setKbDocs(manifest.documents))
+        .catch(() => undefined);
+      if (triageCard?.session_id) {
+        const question = `How does the uploaded document "${file.name}" relate to this ${selected.service} incident?`;
+        setChatLoading(true);
+        setLastQuestion(question);
+        const followUpResult = await followUp(triageCard.session_id, question);
+        setMemoryUsed(followUpResult.memory_used);
+        const citations = (followUpResult.citations ?? []).map((c, index) => ({
+          snippet: c.excerpt,
+          source_uri: c.document,
+          source_label: c.document,
+          index: index + 1,
+          score: c.score ?? null,
+        }));
+        setAnswer({
+          answer: followUpResult.answer,
+          citations,
+          session_id: followUpResult.session_id,
+          grounded: true,
+          latency_ms: 0,
+          matched_runbook: triageCard.matched_runbook,
+        });
+        setChatTurns((prev) => [
+          ...prev,
+          { role: "assistant", text: followUpResult.answer, citations },
+        ]);
+      } else {
+        setChatTurns((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            text:
+              result.message ??
+              "Document indexed to the knowledge base. Run PITER analysis to query it in incident context.",
+          },
+        ]);
+      }
+    } catch (exc) {
+      setChatError(exc instanceof Error ? exc.message : "Upload failed");
+    } finally {
+      setUploadLoading(false);
+      setChatLoading(false);
+    }
+  }
+
   async function runWorkflow() {
+    setWorkflowLoading(true);
     setStormState("investigating");
     setChatError(null);
+    setStormMarkedResolved(false);
+    setSelected(INVESTIGATIONS[0]);
+    updateInvStatus(STORM_INVESTIGATION_ID, "In Process");
     try {
       const trigger = streamSummary.p1_trigger;
       const alertPayload = trigger
@@ -612,10 +730,13 @@ function AppShell() {
           citations: rag.citations,
         },
       ]);
+      updateInvStatus(STORM_INVESTIGATION_ID, "Escalated");
       setStormState("resolved");
     } catch (exc) {
       setChatError(exc instanceof Error ? exc.message : "Triage workflow failed");
       setStormState("critical");
+    } finally {
+      setWorkflowLoading(false);
     }
   }
 
@@ -689,6 +810,10 @@ function AppShell() {
                 pauseStorm={pauseStorm}
                 resetStorm={resetStorm}
                 runWorkflow={runWorkflow}
+                workflowLoading={workflowLoading}
+                stormMarkedResolved={stormMarkedResolved}
+                onMarkResolved={markStormResolved}
+                mttrMinutes={mttrMinutes}
                 answer={answer}
                 triageCard={triageCard}
                 selected={selected}
@@ -746,13 +871,22 @@ function AppShell() {
         chatInput={chatInput}
         setChatInput={setChatInput}
         askAgent={askAgent}
-        loading={chatLoading}
+        loading={chatLoading || uploadLoading}
         error={chatError}
         lastQuestion={lastQuestion}
         memoryUsed={memoryUsed}
         executionLabel={executionLabel}
         chatTurns={chatTurns}
         onResetMemory={resetMemoryPreview}
+        allowedTypes={data?.allowed_types ?? [".csv", ".json", ".md", ".txt", ".pdf", ".docx"]}
+        maxUploadMb={data?.max_upload_mb ?? 5}
+        uploadLoading={uploadLoading}
+        onUpload={handleChatUpload}
+        uploadInputRef={chatUploadRef}
+        canMarkResolved={stormState === "resolved" && Boolean(triageCard) && !stormMarkedResolved}
+        onMarkResolved={markStormResolved}
+        stormMarkedResolved={stormMarkedResolved}
+        mttrMinutes={mttrMinutes}
       />
       <EscalationNotifyModal
         open={escalationModalOpen}
@@ -1280,6 +1414,10 @@ function AlertStorm({
   pauseStorm,
   resetStorm,
   runWorkflow,
+  workflowLoading,
+  stormMarkedResolved,
+  onMarkResolved,
+  mttrMinutes,
   answer,
   triageCard,
   selected,
@@ -1296,6 +1434,10 @@ function AlertStorm({
   pauseStorm: () => void;
   resetStorm: () => void;
   runWorkflow: () => void;
+  workflowLoading: boolean;
+  stormMarkedResolved: boolean;
+  onMarkResolved: () => void;
+  mttrMinutes: number | null;
   answer: RagAnswer | null;
   triageCard: TriageCard | null;
   selected: Investigation;
@@ -1385,7 +1527,7 @@ function AlertStorm({
         <button
           type="button"
           onClick={startStorm}
-          disabled={stormState === "investigating"}
+          disabled={stormState === "investigating" || workflowLoading}
           className="btn-primary"
         >
           <Play className="size-4" />
@@ -1426,6 +1568,8 @@ function AlertStorm({
         onEscalate={onOpenEscalation}
         onChat={onOpenChat}
         onContinue={startStorm}
+        analyzing={workflowLoading}
+        triageComplete={stormState === "resolved" && Boolean(triageCard)}
       />
 
       <div className="grid grid-cols-[1.1fr_0.9fr] gap-4 max-[1100px]:grid-cols-1">
@@ -1488,7 +1632,33 @@ function AlertStorm({
               <MiniStat label="Alerts processed" value={String(streamSummary.total)} />
               <MiniStat label="Noise suppressed" value={String(streamSummary.noise_suppressed)} />
               <MiniStat label="Triage mode" value={triageCard?.mode ?? "pending"} />
-              <MiniStat label="Notifications" value={notificationMode} />
+              <MiniStat
+                label="Historical MTTR"
+                value={mttrMinutes ? `${mttrMinutes} min` : "—"}
+              />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {stormMarkedResolved ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-medium text-emerald-100">
+                  <CheckCircle2 className="size-4" />
+                  Incident resolved
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onMarkResolved}
+                  className="cursor-pointer rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300"
+                >
+                  Mark incident resolved
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onOpenChat}
+                className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Continue in agent chat
+              </button>
             </div>
           </Panel>
           <EscalationTriggeredCard
@@ -2270,6 +2440,15 @@ function AgentPanel({
   executionLabel,
   chatTurns,
   onResetMemory,
+  allowedTypes,
+  maxUploadMb,
+  uploadLoading,
+  onUpload,
+  uploadInputRef,
+  canMarkResolved,
+  onMarkResolved,
+  stormMarkedResolved,
+  mttrMinutes,
 }: {
   selected: Investigation;
   triageCard: TriageCard | null;
@@ -2283,6 +2462,15 @@ function AgentPanel({
   executionLabel: string;
   chatTurns: ChatTurn[];
   onResetMemory: () => void;
+  allowedTypes: string[];
+  maxUploadMb: number;
+  uploadLoading: boolean;
+  onUpload: (file: File) => void;
+  uploadInputRef: RefObject<HTMLInputElement | null>;
+  canMarkResolved: boolean;
+  onMarkResolved: () => void;
+  stormMarkedResolved: boolean;
+  mttrMinutes: number | null;
 }) {
   const prompts = [
     "What should I check first?",
@@ -2310,6 +2498,11 @@ function AgentPanel({
         </Pill>
       </div>
       <div className="mt-2 truncate text-xs text-slate-400">{selected.alert}</div>
+      {mttrMinutes ? (
+        <div className="mt-2 text-[11px] text-teal-200/80">
+          Similar-incident MTTR baseline: {mttrMinutes} min
+        </div>
+      ) : null}
       <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3">
         {error && (
           <div className="mb-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">
@@ -2340,6 +2533,26 @@ function AgentPanel({
         </div>
         <div className="flex gap-2">
           <input
+            ref={uploadInputRef}
+            type="file"
+            className="hidden"
+            accept={allowedTypes.join(",")}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onUpload(file);
+              event.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            disabled={loading || uploadLoading}
+            onClick={() => uploadInputRef.current?.click()}
+            className="cursor-pointer rounded-md border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800 disabled:opacity-60"
+            title={`Upload to KB (${allowedTypes.join(", ")}, max ${maxUploadMb}MB)`}
+          >
+            <Paperclip className="size-4" />
+          </button>
+          <input
             value={chatInput}
             onChange={(event) => setChatInput(event.target.value)}
             onKeyDown={(event) => {
@@ -2357,6 +2570,19 @@ function AgentPanel({
             {loading ? "…" : "Send"}
           </button>
         </div>
+        {canMarkResolved ? (
+          <button
+            type="button"
+            onClick={onMarkResolved}
+            className="cursor-pointer rounded-md bg-emerald-400 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300"
+          >
+            Mark incident resolved
+          </button>
+        ) : stormMarkedResolved ? (
+          <div className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
+            Incident marked resolved for {selected.id}
+          </div>
+        ) : null}
         <div className="rounded-lg border border-slate-800 bg-slate-950/40 px-2 py-1.5 text-[10px] text-slate-500">
           <InfoRow label="Execution" value={executionLabel} />
           <InfoRow label="Last question" value={lastQuestion ?? "—"} />

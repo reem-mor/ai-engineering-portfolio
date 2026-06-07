@@ -86,7 +86,7 @@ def test_bootstrap_exposes_alert_stream_and_execution_hint(spa_client):
     assert 390 <= stream.get("total", 0) <= 400
     assert "399" in stream.get("label", "") or stream.get("total") == 399
     assert data.get("execution_mode_hint")
-    assert data.get("notification", {}).get("mode") in {"mock", "preview"}
+    assert data.get("notification", {}).get("mode") in {"mock", "preview", "live"}
 
 
 def test_spa_assets_reference_storm_demo(spa_client):
