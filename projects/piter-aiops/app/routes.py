@@ -488,6 +488,9 @@ def api_escalation_notify():
     reasons = result.get("reasons")
     if isinstance(reasons, list) and reasons and not result.get("message"):
         result["message"] = "; ".join(str(item) for item in reasons)
+    # The dispatch result may already carry its own "ok"; drop it so it does not
+    # collide with the explicit ok= keyword passed to jsonify().
+    result.pop("ok", None)
     if "error" in result and not sent:
         return jsonify(ok=False, **result), http_status if http_status >= 400 else 400
     if not sent and http_status >= 400:
