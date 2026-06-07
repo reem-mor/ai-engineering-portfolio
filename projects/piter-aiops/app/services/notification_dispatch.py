@@ -107,9 +107,88 @@ def _pinpoint_not_enabled(message: str) -> bool:
     return "PinpointSmsVoiceV2" in message or "SubscriptionRequiredException" in message
 
 
-def check_sms_account_ready(*, region: str | None = None) -> dict:
+def _confirmed_sms_subscriptions(topic_arn: str, *, region: str | None = None) -> list[dict]:
+    sns = boto3.client("sns", region_name=region or _aws_region())
+    confirmed: list[dict] = []
+    for page in sns.get_paginator("list_subscriptions_by_topic").paginate(TopicArn=topic_arn):
+        for item in page.get("Subscriptions", []):
+            arn = str(item.get("SubscriptionArn") or "")
+            if item.get("Protocol") != "sms":
+                continue
+            if not arn.startswith("arn:aws:sns:"):
+                continue
+            confirmed.append(item)
+    return confirmed
+
+
+def _check_sms_topic_route(*, phone: str | None = None, region: str | None = None) -> dict:
+    """SMS via SNS topic fan-out (works when End User Messaging API status is unavailable)."""
+    topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
+    if not topic_arn:
+        return {"ready": False, "reason": "no_topic_arn"}
+
+    try:
+        confirmed = _confirmed_sms_subscriptions(topic_arn, region=region)
+    except ClientError as exc:
+        err = exc.response.get("Error", {})
+        return {
+            "ready": False,
+            "reason": err.get("Code") or "topic_check_failed",
+            "message": err.get("Message", str(exc)),
+            "topic_arn": topic_arn,
+        }
+
+    if not confirmed:
+        return {
+            "ready": False,
+            "reason": "topic_no_confirmed_sms",
+            "message": (
+                f"SNS topic {topic_arn} has no confirmed SMS subscriptions. "
+                "Add your phone under Subscriptions with protocol SMS."
+            ),
+            "topic_arn": topic_arn,
+        }
+
+    if phone:
+        phone = phone.strip()
+        if not any(item.get("Endpoint") == phone for item in confirmed):
+            return {
+                "ready": False,
+                "reason": "topic_phone_not_subscribed",
+                "message": (
+                    f"{phone} is not a confirmed SMS subscriber on {topic_arn}. "
+                    "Subscribe the number in the SNS console."
+                ),
+                "topic_arn": topic_arn,
+            }
+
+    return {
+        "ready": True,
+        "reason": None,
+        "message": None,
+        "route": "topic",
+        "topic_arn": topic_arn,
+        "confirmed_subscribers": len(confirmed),
+        "console_url": SMS_CONSOLE_URL,
+    }
+
+
+def _sms_publish_route(phone: str) -> str:
+    topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
+    if not topic_arn:
+        return "direct"
+    if not check_sms_account_ready(phone=phone).get("ready"):
+        return "direct"
+    if sms_use_topic() or _check_sms_topic_route(phone=phone).get("ready"):
+        return "topic"
+    return "direct"
+
+
+def check_sms_account_ready(*, region: str | None = None, phone: str | None = None) -> dict:
     """Probe whether this AWS account can deliver SMS (End User Messaging enabled)."""
     sns = boto3.client("sns", region_name=region or _aws_region())
+    topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
+    topic_status = _check_sms_topic_route(phone=phone, region=region) if topic_arn else None
     try:
         response = sns.get_sms_attributes(attributes=["MonthlySpendLimit", "DefaultSMSType"])
         attrs = response.get("attributes", {})
@@ -125,29 +204,43 @@ def check_sms_account_ready(*, region: str | None = None) -> dict:
                 "console_url": SMS_CONSOLE_URL,
                 "attributes": attrs,
             }
+        route = "topic" if topic_status and topic_status.get("ready") else "direct"
         return {
             "ready": True,
             "reason": None,
             "message": None,
+            "route": route,
             "console_url": SMS_CONSOLE_URL,
             "attributes": attrs,
+            **(
+                {
+                    "topic_arn": topic_status.get("topic_arn"),
+                    "confirmed_subscribers": topic_status.get("confirmed_subscribers"),
+                }
+                if topic_status and topic_status.get("ready")
+                else {}
+            ),
         }
     except ClientError as exc:
         err = exc.response.get("Error", {})
         code = err.get("Code", "")
         message = err.get("Message", str(exc))
         if _pinpoint_not_enabled(message) or code == "UserError":
-            return {
+            details: dict = {
                 "ready": False,
                 "reason": "sms_service_not_enabled",
                 "message": (
-                    "AWS End User Messaging SMS is not enabled for this account. "
-                    "Open the SMS console (accept terms + set spend limit), or run: "
-                    "python scripts/fix_sms_subscription.py"
+                    "AWS End User Messaging SMS is not enabled. SNS may return MessageId but "
+                    "CloudWatch shows 0 deliveries until you accept SMS terms and set a spend "
+                    "limit in the console. A confirmed SNS topic subscription is not enough."
                 ),
                 "console_url": SMS_CONSOLE_URL,
                 "billing_url": SMS_BILLING_RESUBSCRIBE_URL,
             }
+            if topic_status and topic_status.get("ready"):
+                details["topic_subscribers"] = topic_status.get("confirmed_subscribers")
+                details["topic_arn"] = topic_status.get("topic_arn")
+            return details
         return {
             "ready": False,
             "reason": code or "sms_check_failed",
@@ -282,7 +375,7 @@ def dispatch_sms(phone: str, message: str, *, incident_id: str | None = None) ->
         )
 
     if sms_preflight_enabled():
-        status = check_sms_account_ready()
+        status = check_sms_account_ready(phone=phone)
         if not status.get("ready"):
             if whatsapp_configured():
                 logger.warning("sms_unavailable_falling_back_to_whatsapp reason=%s", status.get("reason"))
@@ -301,13 +394,13 @@ def dispatch_sms(phone: str, message: str, *, incident_id: str | None = None) ->
     if incident_id:
         attrs["incident_id"] = {"DataType": "String", "StringValue": incident_id}
 
-    if sms_use_topic() and topic_arn:
+    route = _sms_publish_route(phone)
+    if route == "topic" and topic_arn:
         response = sns.publish(
             TopicArn=topic_arn,
             Message=message,
             MessageAttributes=attrs,
         )
-        route = "topic"
     else:
         response = sns.publish(
             PhoneNumber=phone,
