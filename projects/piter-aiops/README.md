@@ -375,7 +375,7 @@ Amazon Bedrock Agent (linked Knowledge Base)
 |-----------|---------|---------------------|
 | **Python** | 3.12 | Application language |
 | **Flask** | 3.0.3 | Web framework, JSON API, optional legacy Jinja/HTMX |
-| **React** | 19 | SPA UI ported from [`incident-iq-compass`](https://github.com/reem-mor/incident-iq-compass) |
+| **React** | 19 | SPA UI; Lovable design companion [`piter-aiops`](https://lovable.dev/projects/45406342-f6e0-4ad6-8e49-bb456a6c47d0) (see `lovable.project.json`) |
 | **Vite** | 7 | Frontend build; dev proxy to Flask `:8080` |
 | **shadcn/ui** | — | Component library under `frontend/src/components/ui/` |
 | **boto3** | 1.35.49 | AWS SDK; calls `bedrock-agent-runtime` |
@@ -504,7 +504,7 @@ gunicorn -b 0.0.0.0:8080 wsgi:app
 
 <br/>
 
-The production UI lives in `frontend/` (design ported from **incident-iq-compass**). Build output is written to `app/static/spa/` and served by Flask when present.
+The production UI lives in `frontend/` (`App.tsx` → `app/static/spa/`). The linked Lovable project is recorded in [`lovable.project.json`](lovable.project.json) ([editor](https://lovable.dev/projects/45406342-f6e0-4ad6-8e49-bb456a6c47d0)). Build output is served by Flask at `/console` when present.
 
 ```bash
 # Terminal 1 — API

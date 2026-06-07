@@ -13,7 +13,7 @@ from app.config import Config
 
 CHECKS = [
     ("RB-006 promotions", "Promotions engine p95 latency above 800ms cache miss promo rules", ["runbook_promotions", "RB-006"]),
-    ("RB-008 redis", "Redis token store eviction storm auth login failures FLUSHALL", ["runbook_redis", "RB-008"]),
+    ("RB-008 redis", "Redis token store eviction storm auth login failures token store degradation", ["runbook_redis", "RB-008"]),
     ("RB-009 kafka", "Kafka consumer lag settlement group offset reset do not skip", ["runbook_kafka", "RB-009"]),
     ("RB-010 rollback", "deployment rollback forward-only migration kubectl rollout undo", ["runbook_deployment_rollback", "RB-010"]),
     ("RB-001 gateway", "API Gateway 5xx WAF throttle integration timeout RB-001", ["api_gateway_5xx", "RB-001"]),

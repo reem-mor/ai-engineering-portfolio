@@ -10,9 +10,13 @@ from __future__ import annotations
 import os
 import sys
 
+from dotenv import load_dotenv
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+load_dotenv(os.path.join(REPO_ROOT, ".env"), override=True)
 
 from app.services.alert_stream import p1_demo_alert  # noqa: E402
 
