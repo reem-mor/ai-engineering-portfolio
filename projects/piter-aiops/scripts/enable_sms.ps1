@@ -11,7 +11,8 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $Python = Join-Path $Root ".venv\Scripts\python.exe"
 
-if (-not $Phone) { $Phone = "+972526775754" }
+if (-not $Phone) { $Phone = $env:PITER_DEMO_SMS_RECIPIENT }
+if (-not $Phone) { throw "Set -Phone or the PITER_DEMO_SMS_RECIPIENT env var (E.164, e.g. +10000000000)" }
 if (-not $Profile) { $Profile = "reemmor" }
 
 $env:AWS_PROFILE = $Profile

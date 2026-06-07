@@ -22,7 +22,7 @@ from app.services.notification_dispatch import (  # noqa: E402
 
 
 def main() -> int:
-    phone = __import__("os").environ.get("PITER_DEMO_SMS_RECIPIENT", "+972526775754").strip()
+    phone = __import__("os").environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
     status = check_sms_account_ready()
     report = {
         "demo_phone": phone,

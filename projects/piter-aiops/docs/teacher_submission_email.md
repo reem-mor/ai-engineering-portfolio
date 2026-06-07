@@ -6,7 +6,7 @@
 ---
 
 **To:** [Teacher email]  
-**From:** Re'em Mor <reem.mor3@gmail.com>  
+**From:** Re'em Mor <[your-email]>  
 **Subject:** Mid-course project (Milestone 1) — PITER AiOps Bedrock RAG: repo, dataset, and sample Q&A
 
 Hi [Teacher name],
@@ -87,4 +87,4 @@ Happy to give a short live demo whenever convenient.
 
 Best regards,  
 **Re'em Mor**  
-reem.mor3@gmail.com · GitHub: @reem-mor
+[your-email] · GitHub: @reem-mor

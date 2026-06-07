@@ -263,7 +263,7 @@ def _print_env_snippet(*, topic_arn: str, sender: str) -> None:
     print("# Optional - leave empty to use direct SNS SMS publish to phone:")
     print("# PITER_SNS_TOPIC_ARN=")
     print("PITER_DEMO_EMAIL_RECIPIENT=<recipient-from-allowlist>")
-    print("PITER_DEMO_SMS_RECIPIENT=+972526775754")
+    print("PITER_DEMO_SMS_RECIPIENT=<your-e164-phone>")
 
 
 def main() -> int:

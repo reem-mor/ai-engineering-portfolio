@@ -39,8 +39,8 @@
         "ses:SendRawEmail"
       ],
       "Resource": [
-        "arn:aws:ses:us-east-1:329597159579:identity/fontex331@gmail.com",
-        "arn:aws:ses:us-east-1:329597159579:identity/reem.mor3@gmail.com",
+        "arn:aws:ses:us-east-1:329597159579:identity/sender@example.com",
+        "arn:aws:ses:us-east-1:329597159579:identity/oncall@example.com",
         "arn:aws:ses:us-east-1:329597159579:configuration-set/piter-aiops-escalations"
       ]
     },

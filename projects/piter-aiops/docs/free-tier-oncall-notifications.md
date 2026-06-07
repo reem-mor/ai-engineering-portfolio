@@ -6,7 +6,7 @@ PITER escalation uses **SES (email)** and **SNS (SMS)**. Both work on a Free Tie
 
 | Channel | Free Tier | Your status |
 |---------|-----------|-------------|
-| **Email (SES)** | Sandbox: 200 emails/day; verify sender + each recipient | **Ready** — `fontex331@gmail.com` → `reem.mor3@gmail.com` |
+| **Email (SES)** | Sandbox: 200 emails/day; verify sender + each recipient | **Ready** — `sender@example.com` → `oncall@example.com` |
 | **SMS (SNS)** | No free SMS; ~$0.05+ per message; **$1/month cap** recommended | **Blocked** until End User Messaging SMS is enabled in console |
 
 Your `.env` is already correct for live dispatch:
@@ -14,10 +14,10 @@ Your `.env` is already correct for live dispatch:
 ```env
 PITER_NOTIFICATION_MODE=live
 PITER_ENABLE_LIVE_DISPATCH=true
-PITER_NOTIFICATION_ALLOWLIST=+972526775754,fontex331@gmail.com,reem.mor3@gmail.com
-PITER_SES_SENDER_EMAIL=fontex331@gmail.com
-PITER_DEMO_EMAIL_RECIPIENT=reem.mor3@gmail.com
-PITER_DEMO_SMS_RECIPIENT=+972526775754
+PITER_NOTIFICATION_ALLOWLIST=+10000000000,sender@example.com,oncall@example.com
+PITER_SES_SENDER_EMAIL=sender@example.com
+PITER_DEMO_EMAIL_RECIPIENT=oncall@example.com
+PITER_DEMO_SMS_RECIPIENT=+10000000000
 ```
 
 Use IAM user **`admin-reem`** (profile `reemmor`) — **not root**.
@@ -25,7 +25,7 @@ Use IAM user **`admin-reem`** (profile `reemmor`) — **not root**.
 Run setup once — it creates the managed policy **and attaches it** to `admin-reem`, `IncidentRagBedrockEC2Role`, and `incidentiq-lambda-role`:
 
 ```powershell
-python scripts/setup_notifications.py --sender-email fontex331@gmail.com --verify-recipients reem.mor3@gmail.com --profile reemmor
+python scripts/setup_notifications.py --sender-email sender@example.com --verify-recipients oncall@example.com --profile reemmor
 ```
 
 ## One-command setup
@@ -57,7 +57,7 @@ AWS cannot enable SMS via API on first use. In the console:
 
 1. [End User Messaging SMS](https://us-east-1.console.aws.amazon.com/sms-voice/home?region=us-east-1#/overview) — accept terms
 2. **Text messaging preferences** — monthly spend limit **$1** (enough for demos)
-3. **SMS sandbox** — add `+972526775754`, enter OTP from your phone
+3. **SMS sandbox** — add `+10000000000`, enter OTP from your phone
 4. Re-run:
 
 ```powershell
@@ -70,7 +70,7 @@ Then **Send SMS** in the escalation modal works.
 
 ## Free Tier limits (what to expect)
 
-- **SES sandbox**: only verified addresses (`fontex331@gmail.com`, `reem.mor3@gmail.com`). No production access needed for your demo.
+- **SES sandbox**: only verified addresses (`sender@example.com`, `oncall@example.com`). No production access needed for your demo.
 - **SES cost**: effectively $0 at demo volume (within 200/day sandbox quota).
 - **SMS cost**: not in Free Tier; each alert is a few cents. The $1 monthly cap prevents surprises.
 - **No root user** required; `Administrators` group IAM user is sufficient.
