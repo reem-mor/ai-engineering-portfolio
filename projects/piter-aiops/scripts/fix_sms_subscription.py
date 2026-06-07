@@ -45,7 +45,7 @@ def _region() -> str:
 
 
 def _phone() -> str:
-    return os.environ.get("PITER_DEMO_SMS_RECIPIENT", "+972526775754").strip()
+    return os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
 
 
 def _open_console() -> None:

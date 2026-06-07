@@ -35,14 +35,15 @@ status when enabled.
 ## Secrets / PII status
 | Item | Before | Action |
 | ---- | ------ | ------ |
-| Personal emails (`reem.mor3@`, `fontex331@`) | committed (9 files) | **Redacted** → placeholders/env (Commit 2) |
-| Phone `+972526775754` | committed (9 files) | **Redacted** → placeholder/env (Commit 2) |
+| Personal emails (`r***@gmail.com`, `f***@gmail.com`) | committed (9 files) | **Redacted** → placeholders/env (Commit 2) |
+| Phone (`+972-***-5754`) | committed (9 files) | **Redacted** → placeholder/env (Commit 2) |
 | AWS account id `329597159579` | committed (~20 files) | **Retained** by user decision (identifier, not secret) |
 | Bucket `reem-amdocs-ai-artifacts-3331` | committed | **Retained** by user decision |
 | `AKIA…` access keys | none | n/a |
 | `.env` | gitignored | OK (only `.env.example` tracked) |
 
-Post-Commit-2 verification: `git grep -nE "reem\.mor3@|fontex331@|526775754"` → empty.
+Post-Commit-2 verification: a `git grep` for the personal email local-parts and the phone digits
+returns empty across all tracked files.
 
 ## UI security signals
 Execution mode, guardrail status, notification mode, masked recipients, and confirmation

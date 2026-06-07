@@ -2,11 +2,11 @@
 # Email works in SES sandbox after identity verification (no extra cost for demo volume).
 # SMS requires End User Messaging opt-in in console; set a $1/month cap to stay near-free.
 param(
-    [string]$SenderEmail = "fontex331@gmail.com",
-    [string]$OnCallEmail = "reem.mor3@gmail.com",
-    [string]$OnCallPhone = "+972526775754",
+    [string]$SenderEmail = $env:PITER_SES_SENDER_EMAIL,
+    [string]$OnCallEmail = $env:PITER_DEMO_EMAIL_RECIPIENT,
+    [string]$OnCallPhone = $env:PITER_DEMO_SMS_RECIPIENT,
     [string]$SmsMonthlyLimit = "1",
-    [string]$Profile = "reemmor",
+    [string]$Profile = $env:AWS_PROFILE,
     [string]$Region = "us-east-1"
 )
 

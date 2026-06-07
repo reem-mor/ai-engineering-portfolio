@@ -7,14 +7,14 @@ Escalation notifications default to **mock** mode. Live SNS/SES dispatch require
 From `projects/piter-aiops`:
 
 ```powershell
-python scripts/setup_notifications.py --sender-email reem.mor3@gmail.com --verify-recipients reem.mor3@gmail.com
+python scripts/setup_notifications.py --sender-email sender@example.com --verify-recipients sender@example.com
 ```
 
 For demo to a teacher (SES sandbox — both must verify):
 
 ```powershell
 python scripts/setup_notifications.py `
-  --sender-email reem.mor3@gmail.com `
+  --sender-email sender@example.com `
   --verify-recipients teacher@school.edu
 ```
 
@@ -111,7 +111,7 @@ When it works, you get: `API Activated for your phone number. Your APIKEY is 123
 ```env
 PITER_WHATSAPP_PROVIDER=callmebot
 PITER_WHATSAPP_API_KEY=<your-key-from-callmebot>
-PITER_DEMO_WHATSAPP_RECIPIENT=+972526775754
+PITER_DEMO_WHATSAPP_RECIPIENT=+10000000000
 ```
 
 Phone must be in `PITER_NOTIFICATION_ALLOWLIST`. Restart Flask after updating `.env`.
