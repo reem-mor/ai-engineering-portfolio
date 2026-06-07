@@ -175,6 +175,14 @@ parameters) and emits/executes JSON decisions `{"tool": name, "arguments": {...}
 — the same shape a model would produce. Triage runs all four deterministically;
 follow-ups reuse stored tool outputs from session memory.
 
+A runnable, **read-only MCP server** ([`mcp/server.py`](mcp/)) exposes the same four
+PITER tools over the Model Context Protocol (stdio JSON-RPC). It delegates to
+`app/enrichment_tools.py` (single source of truth — no duplicate datasets), makes
+no AWS/network calls, and never sends notifications (`escalation_preview` only).
+Try it: `python mcp/server.py --selftest`. Production tool calls still run as
+Bedrock Action Groups; MCP is the standardized local/demo contract layer (no
+auto-sync between the two).
+
 ### The 4 enrichment tools (`app/enrichment_tools.py`)
 
 1. **`correlate_deployments`** — recent deploys for the service + dependency hops; returns the suspect deploy + reason.
@@ -283,8 +291,10 @@ flowchart TB
         l1["piter-recent-deployments"]
         l2["piter-service-context"]
         l3["piter-similar-incidents"]
+        l4["piter-escalation (preview/mock/gated-live)"]
     end
 
+    mcp["MCP server (read-only, local) — same 4 tools"]
     data[("agent_data CSV/JSON")]
 
     subgraph INFRA["Deployment"]
@@ -301,9 +311,12 @@ flowchart TB
     bedrock ==>|"tools"| l1
     bedrock --> l2
     bedrock --> l3
+    bedrock --> l4
+    mcp -.->|"read-only, same logic"| l1
     l1 --> data
     l2 --> data
     l3 --> data
+    l4 --> data
     bedrock ==>|"triage card JSON"| flask
     flask --> spa
     spa --> user
@@ -311,9 +324,9 @@ flowchart TB
     docker -.-> ec2
 ```
 
-**Primary backend:** `invoke_agent` via [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (not direct `RetrieveAndGenerate`). **Tools:** three enrichment Lambdas wired as Bedrock action groups ([`docs/MCP_PATH.md`](docs/MCP_PATH.md) — Path B landed; AgentCore Gateway is optional Path A). **Memory:** `sessionId` + `sessionAttributes` on triage and follow-up `/ask`.
+**Primary backend:** `invoke_agent` via [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (falls back to direct `RetrieveAndGenerate`, then local RAG). **Tools:** four PITER tools wired as Bedrock action groups — `piter-recent-deployments`, `piter-service-context`, `piter-similar-incidents`, `piter-escalation` ([`docs/MCP_PATH.md`](docs/MCP_PATH.md) — Path B landed; AgentCore Gateway is optional Path A) — and mirrored read-only by the local [`mcp/`](mcp/) server. **Memory:** `sessionId` + `sessionAttributes` on triage and follow-up `/ask`.
 
-Source diagram: [`PITER AiOps_architecture.mermaid`](PITER AiOps_architecture.mermaid)
+Source diagram: [`piter_architecture.mermaid`](piter_architecture.mermaid)
 
 **Deployment path:** `Runbooks → S3 → KB sync → Agent + tools → Flask/React → Docker → EC2 → Cleanup`
 

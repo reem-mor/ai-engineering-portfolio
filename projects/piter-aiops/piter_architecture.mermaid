@@ -3,11 +3,13 @@ flowchart TB
 
     subgraph UI["Presentation — Docker → EC2"]
         Flask["Flask + React SPA"]
+        Console["/console Jinja fallback"]
     end
 
-    subgraph Agent["Amazon Bedrock Agent"]
-        Inst["System prompt + session memory"]
-        Orch["Orchestration"]
+    subgraph RAGtier["RAG tiers (rag_factory)"]
+        Agent["Bedrock Agent — invoke_agent"]
+        RnG["Bedrock retrieve_and_generate"]
+        Local["Local TF-IDF fallback"]
     end
 
     subgraph KBox["Knowledge Base — RAG"]
@@ -15,30 +17,49 @@ flowchart TB
         S3[("S3 — runbook documents")]
     end
 
-    subgraph Tools["Action groups — MCP Path B"]
-        L1["iiq-correlate"]
-        L2["iiq-context"]
-        L3["iiq-similar"]
+    subgraph Tools["Bedrock Action Groups (Lambda) — production tools"]
+        L1["piter-recent-deployments"]
+        L2["piter-service-context"]
+        L3["piter-similar-incidents"]
+        L4["piter-escalation — preview/mock/gated-live"]
     end
 
-    subgraph GWopt["Optional — AgentCore Gateway Path A"]
-        GW["MCP tools endpoint"]
+    subgraph MCPlayer["MCP server — read-only local contract layer"]
+        MCP["mcp/server.py — same 4 tools"]
     end
 
+    Mem[("Session memory<br/>store · summarize · reuse")]
     Data[("CSV / JSON<br/>deploys · catalog · impact · history")]
+    Notify["SNS / SES / WhatsApp<br/>mock by default · gated live"]
 
     User -->|"submit alert"| Flask
+    Console -.->|"parity demo"| Flask
     Flask -->|"InvokeAgent sessionId"| Agent
-    Inst --> Orch
+    Flask -->|"fallback"| RnG
+    RnG -->|"fallback"| Local
+    Agent --> Mem
+
     Agent -->|"retrieve cited"| KB
+    RnG -->|"retrieve cited"| KB
+    Local -->|"retrieve cited"| Data
     S3 -->|"sync"| KB
+
     Agent -->|"call tools"| L1
     Agent -->|"call tools"| L2
     Agent -->|"call tools"| L3
-    GWopt -.->|"optional"| L1
-    GWopt -.-> L2
-    GWopt -.-> L3
+    Agent -->|"call tools"| L4
+    L4 -.->|"gated, confirmed"| Notify
+
+    MCP -.->|"same logic (read-only)"| L1
+    MCP -.-> L2
+    MCP -.-> L3
+
     L1 --> Data
     L2 --> Data
     L3 --> Data
-    Agent -->|"triage card + citations"| Flask
+    L4 --> Data
+
+    Agent -->|"triage card + citations + tool results"| Flask
+    Local -->|"triage card + citations"| Flask
+
+    %% Legacy AWS function names iiq-correlate / iiq-context / iiq-similar map 1:1 to piter-* tools.
