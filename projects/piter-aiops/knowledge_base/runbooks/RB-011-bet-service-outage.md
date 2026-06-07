@@ -6,7 +6,7 @@ environments: ["GIB-UKGC", "NJ-DGE", "MGM"]
 severity_applicable: ["P1", "P2"]
 tags: ["betting", "error-rate", "regulated-market", "demo-p1"]
 last_updated: "2026-06-07"
-author: "PITER AiOps"
+author: "Re'em Mor"
 version: "1.0"
 ---
 

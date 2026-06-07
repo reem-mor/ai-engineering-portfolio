@@ -6,7 +6,7 @@ environments: ["NJ-DGE", "GIB-UKGC"]
 severity_applicable: ["P1", "P2"]
 tags: ["edge", "5xx", "gateway"]
 last_updated: "2026-06-07"
-author: "PITER AiOps"
+author: "Re'em Mor"
 version: "1.0"
 ---
 
