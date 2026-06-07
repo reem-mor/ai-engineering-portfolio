@@ -82,9 +82,12 @@ Stable across repeated runs. A full code review (`PITER_CODE_REVIEW.md`) exercis
 live and found/fixed one real HTTP 500 bug in the escalation route.
 
 ## 18. verify_live_demo result
-**28/29 in this sandbox** — the single gap is `[A] served by bedrock` (needs real AWS creds). Phase B
-(AWS-down → local fallback) = 14/14, including grounded answer, ≥1 citation, all 4 tools, session
-memory. True **29/29** is reproducible in the graded environment with a valid `.env`.
+- **No credentials (clean):** **14/15** — Phase A live assertions skipped (one expected fail:
+  "app configured for live Bedrock"); Phase B local fallback **14/14**. The script now degrades
+  gracefully instead of throwing a traceback when `.env`/AWS config is absent.
+- **With AWS reachable but dummy creds:** 28/29 (only `[A] served by bedrock` fails).
+- **With a valid `.env` + credentials (graded env):** target **29/29** (live Bedrock + fallback).
+Phase B always proves grounded answer, ≥1 citation, all 4 tools, and session memory.
 
 ## 19. Remaining risks
 - Live AWS path (agent/KB/Lambda/Guardrail/SNS/SES) unverifiable without credentials — verify in
