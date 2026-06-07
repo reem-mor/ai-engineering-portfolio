@@ -1,6 +1,7 @@
 import { CheckCircle2, FileSpreadsheet, FileText, ShieldAlert, X } from "lucide-react";
 import { useState } from "react";
 import { notifyEscalation } from "@/lib/api";
+import type { EscalationContext } from "@/types/rag";
 import type { Citation, EscalationNotifyResult } from "@/types/rag";
 import { classNames } from "@/lib/ui-utils";
 
@@ -376,11 +377,13 @@ export function EscalationTriggeredCard({
       <div className="flex items-start gap-3">
         <ShieldAlert className="size-5 shrink-0 text-orange-300" />
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-white">Escalation preview triggered</div>
+          <div className="font-semibold text-white">
+            {previewOnly ? "Escalation preview triggered" : "Escalation triggered"}
+          </div>
           <p className="mt-1 text-xs text-slate-400">
             {previewOnly
               ? `P1 incident dispatch preview — mode ${notificationMode ?? "mock"}; live SNS/SES requires all gates.`
-              : "Live dispatch enabled — use Escalate on-call to send allowlisted SMS/email."}
+              : "P1 incident dispatched to on-call team."}
           </p>
           <dl className="mt-3 grid gap-1 text-sm">
             <div>
@@ -425,20 +428,30 @@ export function EscalationNotifyModal({
   incidentId,
   service,
   severity,
+  escalationContext,
   notificationMode,
   liveDispatchEnabled,
   demoSmsConfigured,
+  demoWhatsappConfigured,
   demoEmailConfigured,
+  smsDeliveryReady = true,
+  smsConsoleUrl,
+  smsBillingUrl,
 }: {
   open: boolean;
   onClose: () => void;
   incidentId: string;
   service: string;
   severity: string;
+  escalationContext: EscalationContext;
   notificationMode: string;
   liveDispatchEnabled: boolean;
   demoSmsConfigured: boolean;
+  demoWhatsappConfigured: boolean;
   demoEmailConfigured: boolean;
+  smsDeliveryReady?: boolean;
+  smsConsoleUrl?: string | null;
+  smsBillingUrl?: string | null;
 }) {
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
@@ -446,7 +459,7 @@ export function EscalationNotifyModal({
 
   if (!open) return null;
 
-  async function send(channel: "sms" | "email") {
+  async function send(channel: "sms" | "email" | "whatsapp") {
     setLoading(true);
     setResult(null);
     try {
@@ -456,6 +469,8 @@ export function EscalationNotifyModal({
         service,
         severity,
         confirmation_token: token,
+        escalation_context: escalationContext,
+        idempotency_key: `${incidentId}:${channel}:${crypto.randomUUID()}`,
       });
       setResult(response);
     } catch (err) {
@@ -485,7 +500,7 @@ export function EscalationNotifyModal({
               Escalate on-call
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              {incidentId} · {service} · {severity}
+              {escalationContext.incident_title} · {escalationContext.on_call_name}
             </p>
           </div>
           <button
@@ -517,22 +532,60 @@ export function EscalationNotifyModal({
           </label>
         </div>
 
+        {!smsDeliveryReady && demoSmsConfigured ? (
+          <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100">
+            <p className="font-medium">AWS SMS not enabled on this account yet.</p>
+            <p className="mt-1 opacity-90">
+              Use <strong>Send email</strong> now, or enable SMS in the AWS console (accept terms +
+              set spend limit + verify sandbox phone).
+            </p>
+            <p className="mt-2 flex flex-wrap gap-3">
+              {smsConsoleUrl ? (
+                <a href={smsConsoleUrl} target="_blank" rel="noreferrer" className="underline">
+                  End User Messaging SMS
+                </a>
+              ) : null}
+              {smsBillingUrl ? (
+                <a href={smsBillingUrl} target="_blank" rel="noreferrer" className="underline">
+                  Account verification
+                </a>
+              ) : null}
+            </p>
+          </div>
+        ) : null}
+
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={loading || !token || !demoSmsConfigured}
-            onClick={() => send("sms")}
-            className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Send SMS
-          </button>
+          {demoWhatsappConfigured ? (
+            <button
+              type="button"
+              disabled={loading || !token}
+              onClick={() => send("whatsapp")}
+              className="cursor-pointer rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Send WhatsApp
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={loading || !token || !demoEmailConfigured}
             onClick={() => send("email")}
-            className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            className={classNames(
+              "cursor-pointer rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40",
+              smsDeliveryReady
+                ? "border border-slate-600 text-slate-200 hover:bg-slate-800"
+                : "bg-cyan-300 text-slate-950 hover:bg-cyan-200",
+            )}
           >
             Send email
+          </button>
+          <button
+            type="button"
+            disabled={loading || !token || !demoSmsConfigured || !smsDeliveryReady}
+            onClick={() => send("sms")}
+            className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+            title={!smsDeliveryReady ? "Enable AWS End User Messaging SMS first" : undefined}
+          >
+            Send SMS
           </button>
         </div>
 

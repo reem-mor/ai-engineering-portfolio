@@ -10,17 +10,26 @@
       "Resource": "arn:aws:sns:REGION:ACCOUNT_ID:piter-aiops-escalation"
     },
     {
-      "Sid": "SnsDirectSmsPublish",
+      "Sid": "SnsDirectMobilePublish",
       "Effect": "Allow",
       "Action": [
         "sns:Publish"
       ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "sns:Protocol": "sms"
-        }
-      }
+      "Resource": "*"
+    },
+    {
+      "Sid": "SnsSmsAccountRead",
+      "Effect": "Allow",
+      "Action": [
+        "sns:GetSMSAttributes",
+        "sns:SetSMSAttributes",
+        "sns:ListSMSSandboxPhoneNumbers",
+        "sns:CreateSMSSandboxPhoneNumber",
+        "sns:VerifySMSSandboxPhoneNumber",
+        "sns:DeleteSMSSandboxPhoneNumber",
+        "sns:CheckIfPhoneNumberIsOptedOut"
+      ],
+      "Resource": "*"
     },
     {
       "Sid": "SesSendFromVerifiedIdentity",
@@ -31,6 +40,7 @@
       ],
       "Resource": [
         "arn:aws:ses:REGION:ACCOUNT_ID:identity/SENDER_EMAIL",
+        "arn:aws:ses:REGION:ACCOUNT_ID:identity/RECIPIENT_EMAIL",
         "arn:aws:ses:REGION:ACCOUNT_ID:configuration-set/piter-aiops-escalations"
       ]
     },
@@ -41,7 +51,8 @@
         "ses:GetAccount",
         "ses:GetSendQuota",
         "sesv2:GetAccount",
-        "sesv2:GetEmailIdentity"
+        "sesv2:GetEmailIdentity",
+        "sesv2:ListEmailIdentities"
       ],
       "Resource": "*"
     }

@@ -1,0 +1,176 @@
+"""Tests for SNS/SES notification dispatch."""
+from __future__ import annotations
+
+import pytest
+
+from app.services.notification_dispatch import (
+    NotificationDispatchError,
+    check_sms_account_ready,
+    dispatch_sms,
+    dispatch_whatsapp,
+    sms_use_topic,
+    whatsapp_configured,
+)
+
+
+def test_sms_use_topic_defaults_false(monkeypatch):
+    monkeypatch.delenv("PITER_SNS_SMS_USE_TOPIC", raising=False)
+    assert sms_use_topic() is False
+
+
+def test_dispatch_sms_uses_direct_phone_by_default(monkeypatch):
+    monkeypatch.setenv("PITER_SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:123:piter-aiops-escalation")
+    monkeypatch.setenv("PITER_SMS_PREFLIGHT_CHECK", "false")
+    monkeypatch.delenv("PITER_SNS_SMS_USE_TOPIC", raising=False)
+
+    calls: list[dict] = []
+
+    class FakeSns:
+        def publish(self, **kwargs):
+            calls.append(kwargs)
+            return {"MessageId": "sms-123"}
+
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.boto3.client",
+        lambda _name, region_name=None: FakeSns(),
+    )
+
+    result = dispatch_sms("+15551234567", "hello")
+    assert result["sent"] is True
+    assert result["route"] == "direct"
+    assert calls[0]["PhoneNumber"] == "+15551234567"
+    assert "TopicArn" not in calls[0]
+    assert "Subject" not in calls[0]
+
+
+def test_dispatch_sms_can_use_topic_when_enabled(monkeypatch):
+    monkeypatch.setenv("PITER_SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:123:topic")
+    monkeypatch.setenv("PITER_SNS_SMS_USE_TOPIC", "true")
+    monkeypatch.setenv("PITER_SMS_PREFLIGHT_CHECK", "false")
+
+    calls: list[dict] = []
+
+    class FakeSns:
+        def publish(self, **kwargs):
+            calls.append(kwargs)
+            return {"MessageId": "sms-topic-1"}
+
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.boto3.client",
+        lambda _name, region_name=None: FakeSns(),
+    )
+
+    result = dispatch_sms("+15551234567", "hello")
+    assert result["route"] == "topic"
+    assert calls[0]["TopicArn"] == "arn:aws:sns:us-east-1:123:topic"
+    assert "Subject" not in calls[0]
+
+
+def test_dispatch_sms_preflight_blocks_when_account_not_ready(monkeypatch):
+    monkeypatch.setenv("PITER_SMS_PREFLIGHT_CHECK", "true")
+
+    class FakeSns:
+        def get_sms_attributes(self, attributes=None):
+            raise __import__("botocore.exceptions", fromlist=["ClientError"]).ClientError(
+                {"Error": {"Code": "UserError", "Message": "PinpointSmsVoiceV2 subscription required"}},
+                "GetSMSAttributes",
+            )
+
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.boto3.client",
+        lambda _name, region_name=None: FakeSns(),
+    )
+
+    with pytest.raises(NotificationDispatchError) as exc:
+        dispatch_sms("+15551234567", "hello")
+    assert exc.value.code == "sms_service_not_enabled"
+
+
+def test_check_sms_account_ready_ok(monkeypatch):
+    class FakeSns:
+        def get_sms_attributes(self, attributes=None):
+            return {"attributes": {"MonthlySpendLimit": "10", "DefaultSMSType": "Transactional"}}
+
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.boto3.client",
+        lambda _name, region_name=None: FakeSns(),
+    )
+    status = check_sms_account_ready()
+    assert status["ready"] is True
+
+
+def test_whatsapp_configured_requires_api_key(monkeypatch):
+    monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
+    monkeypatch.delenv("PITER_WHATSAPP_API_KEY", raising=False)
+    assert whatsapp_configured() is False
+    monkeypatch.setenv("PITER_WHATSAPP_API_KEY", "abc123")
+    assert whatsapp_configured() is True
+
+
+def test_dispatch_whatsapp_callmebot(monkeypatch):
+    monkeypatch.setenv("PITER_WHATSAPP_API_KEY", "test-key")
+    monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
+    urls: list[str] = []
+
+    class FakeResponse:
+        status = 200
+
+        def read(self):
+            return b"OK"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def fake_urlopen(request, timeout=15):
+        urls.append(getattr(request, "full_url", str(request)))
+        return FakeResponse()
+
+    monkeypatch.setattr("app.services.notification_dispatch.urllib.request.urlopen", fake_urlopen)
+
+    result = dispatch_whatsapp("+15551234567", "P1 bet-service")
+    assert result["sent"] is True
+    assert result["provider"] == "callmebot"
+    assert "callmebot.com" in urls[0]
+    assert "test-key" in urls[0]
+
+
+def test_dispatch_sms_falls_back_to_whatsapp_when_sms_blocked(monkeypatch):
+    monkeypatch.setenv("PITER_SMS_PREFLIGHT_CHECK", "true")
+    monkeypatch.setenv("PITER_WHATSAPP_API_KEY", "wa-key")
+    monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
+
+    class FakeSns:
+        def get_sms_attributes(self, attributes=None):
+            raise __import__("botocore.exceptions", fromlist=["ClientError"]).ClientError(
+                {"Error": {"Code": "UserError", "Message": "PinpointSmsVoiceV2 subscription required"}},
+                "GetSMSAttributes",
+            )
+
+    class FakeResponse:
+        status = 200
+
+        def read(self):
+            return b"OK"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.boto3.client",
+        lambda _name, region_name=None: FakeSns(),
+    )
+    monkeypatch.setattr(
+        "app.services.notification_dispatch.urllib.request.urlopen",
+        lambda url, timeout=15: FakeResponse(),
+    )
+
+    result = dispatch_sms("+15551234567", "hello")
+    assert result["sent"] is True
+    assert result.get("fallback_from") == "sms"
+    assert result["channel"] == "whatsapp"

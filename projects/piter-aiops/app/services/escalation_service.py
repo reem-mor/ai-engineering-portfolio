@@ -34,6 +34,11 @@ def resolve_demo_recipient(channel: str) -> str:
     channel = channel.strip().lower()
     if channel == "sms":
         return os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
+    if channel == "whatsapp":
+        return (
+            os.environ.get("PITER_DEMO_WHATSAPP_RECIPIENT", "").strip()
+            or os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
+        )
     if channel == "email":
         return os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()
     raise ValueError(f"Unknown channel: {channel}")
@@ -73,8 +78,13 @@ def notify_demo_channel(
     severity: str,
     confirmation_token: str,
     message: str | None = None,
+    subject: str | None = None,
+    html_body: str | None = None,
+    escalation_context: dict[str, Any] | None = None,
     idempotency_key: str | None = None,
 ) -> dict[str, Any]:
+    from app.services.escalation_message import enrich_escalation_context, format_escalation_messages
+
     recipient = resolve_demo_recipient(channel)
     if not recipient:
         return {
@@ -83,10 +93,17 @@ def notify_demo_channel(
             "error": f"PITER_DEMO_{channel.upper()}_RECIPIENT is not configured",
             "sent": False,
         }
-    default_message = (
-        f"PITER escalation: {severity} on {service} ({incident_id}). "
-        "Review the incident in the PITER AiOps console."
+    ctx = enrich_escalation_context(
+        escalation_context,
+        incident_id=incident_id,
+        service=service,
+        severity=severity,
     )
+    formatted = format_escalation_messages(
+        ctx,
+        channel="sms" if channel == "whatsapp" else channel,
+    )
+    default_message = formatted["body"]
     params: dict[str, str] = {
         "operation": "live_notify",
         "service": service,
@@ -94,8 +111,13 @@ def notify_demo_channel(
         "incident_id": incident_id,
         "recipient": recipient,
         "message": message or default_message,
+        "subject": subject or formatted.get("subject") or "",
         "confirmation_token": confirmation_token,
+        "delivery_channel": channel,
     }
+    html = html_body or formatted.get("html_body") or ""
+    if html and channel == "email":
+        params["html_body"] = html
     if idempotency_key:
         params["idempotency_key"] = idempotency_key
     else:
