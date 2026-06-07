@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +246,18 @@ def check_sms_account_ready(*, region: str | None = None, phone: str | None = No
             "ready": False,
             "reason": code or "sms_check_failed",
             "message": message,
+            "console_url": SMS_CONSOLE_URL,
+        }
+    except BotoCoreError:
+        # No AWS credentials / no network (local + offline demo): SMS simply isn't ready.
+        # This keeps /bootstrap, /console and local fallback working without AWS access.
+        return {
+            "ready": False,
+            "reason": "sms_check_unavailable",
+            "message": (
+                "SMS readiness could not be checked (no AWS credentials or connectivity). "
+                "Running in local/mock mode; SMS delivery is unavailable."
+            ),
             "console_url": SMS_CONSOLE_URL,
         }
 
