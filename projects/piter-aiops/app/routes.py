@@ -114,7 +114,9 @@ def _execution_mode_hint(mode: str | None = None) -> str:
 def _notification_settings() -> dict:
     import os
 
-    sms_status = check_sms_account_ready()
+    sms_status = check_sms_account_ready(
+        phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
+    )
     return {
         "mode": os.environ.get("PITER_NOTIFICATION_MODE", "mock"),
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
