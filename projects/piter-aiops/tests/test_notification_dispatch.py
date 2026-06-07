@@ -57,7 +57,15 @@ def test_dispatch_sms_can_use_topic_when_enabled(monkeypatch):
         def get_paginator(self, _name):
             class Paginator:
                 def paginate(self, TopicArn=None):
-                    yield {"Subscriptions": []}
+                    yield {
+                        "Subscriptions": [
+                            {
+                                "Protocol": "sms",
+                                "Endpoint": "+15551234567",
+                                "SubscriptionArn": "arn:aws:sns:us-east-1:123:topic:abc",
+                            }
+                        ]
+                    }
 
             return Paginator()
 
@@ -97,8 +105,9 @@ def test_dispatch_sms_preflight_blocks_when_account_not_ready(monkeypatch):
     assert exc.value.code == "sms_service_not_enabled"
 
 
-def test_dispatch_sms_uses_topic_when_subscriber_confirmed(monkeypatch):
+def test_dispatch_sms_stays_direct_when_topic_subscriber_confirmed(monkeypatch):
     monkeypatch.setenv("PITER_SMS_PREFLIGHT_CHECK", "true")
+    monkeypatch.delenv("PITER_SNS_SMS_USE_TOPIC", raising=False)
     monkeypatch.setenv(
         "PITER_SNS_TOPIC_ARN",
         "arn:aws:sns:us-east-1:329597159579:piter-aiops-escalation",
@@ -128,7 +137,7 @@ def test_dispatch_sms_uses_topic_when_subscriber_confirmed(monkeypatch):
 
         def publish(self, **kwargs):
             calls.append(kwargs.get("TopicArn") or kwargs.get("PhoneNumber", ""))
-            return {"MessageId": "sms-topic-2"}
+            return {"MessageId": "sms-direct-2"}
 
     monkeypatch.setattr(
         "app.services.notification_dispatch.boto3.client",
@@ -137,8 +146,8 @@ def test_dispatch_sms_uses_topic_when_subscriber_confirmed(monkeypatch):
 
     result = dispatch_sms("+15551234567", "hello")
     assert result["sent"] is True
-    assert result["route"] == "topic"
-    assert calls[0].endswith("piter-aiops-escalation")
+    assert result["route"] == "direct"
+    assert calls[0] == "+15551234567"
 
 
 def test_topic_subscription_alone_is_not_delivery_ready(monkeypatch):

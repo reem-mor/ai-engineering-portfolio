@@ -115,12 +115,14 @@ def format_escalation_messages(
     text_body = "\n".join(body_parts)
 
     if channel == "sms":
+        # Keep SMS GSM-friendly and short — long/topic-routed bodies often fail sandbox delivery.
+        title_short = " ".join(title.split())[:55]
+        room = war_room.lstrip("#")
         sms = (
-            f"PITER {severity} {service}{env_suffix}: {title[:80]}. "
-            f"@{on_call} join {war_room}. Impact: {business[:100]}. "
-            f"Top: {top_error[:60]}. {incident_id}"
+            f"PITER {severity} {service}{env_suffix}: {title_short}. "
+            f"On-call {on_call}. Join {room}. Ack {incident_id}"
         )
-        return {"subject": subject, "body": sms[:640], "html_body": ""}
+        return {"subject": subject, "body": sms[:160], "html_body": ""}
 
     html_body = _render_html(
         severity=severity,
