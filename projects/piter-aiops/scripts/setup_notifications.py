@@ -74,6 +74,7 @@ def _configure_sns_sms(sns, *, monthly_limit: str, dry_run: bool) -> None:
     if dry_run:
         print(f"  SNS SMS monthly spend limit: ${monthly_limit}")
         return
+    console = "https://us-east-1.console.aws.amazon.com/sms-voice/home?region=us-east-1#/overview"
     try:
         sns.set_sms_attributes(
             attributes={
@@ -85,10 +86,17 @@ def _configure_sns_sms(sns, *, monthly_limit: str, dry_run: bool) -> None:
         print(f"  SNS SMS: MonthlySpendLimit=${monthly_limit}, DefaultSMSType=Transactional")
     except ClientError as exc:
         code = exc.response.get("Error", {}).get("Code", "")
-        print(
-            f"  WARN: SNS SMS preferences skipped ({code}). "
-            "Enable SMS in SNS console (Text messaging) if you need live SMS."
-        )
+        message = exc.response.get("Error", {}).get("Message", "")
+        print(f"  WARN: SNS SMS preferences skipped ({code}).")
+        if "PinpointSmsVoiceV2" in message:
+            print("  AWS End User Messaging SMS is not enabled yet.")
+            print(f"  1. Open {console}")
+            print("  2. Accept SMS terms and set a monthly spend limit.")
+            print("  3. Re-run this script, then: python scripts/diagnose_sms.py")
+        else:
+            print(
+                "  Enable SMS in the End User Messaging console if you need live SMS."
+            )
 
 
 def _ensure_ses_configuration_set(sesv2, *, dry_run: bool) -> None:
@@ -152,19 +160,67 @@ def _ensure_email_identity(sesv2, email: str, *, dry_run: bool) -> str:
     return label
 
 
-def _render_policy(*, region: str, account: str, sender: str) -> str:
+def _render_policy(*, region: str, account: str, sender: str, recipients: list[str]) -> str:
     template = (ROOT / "infra" / "notifications_policy.json").read_text(encoding="utf-8")
+    recipient = recipients[0] if recipients else sender
     return (
         template.replace("REGION", region)
         .replace("ACCOUNT_ID", account)
         .replace("SENDER_EMAIL", sender)
+        .replace("RECIPIENT_EMAIL", recipient)
     )
 
 
-def _ensure_iam_policy(iam, policy_doc: str, *, dry_run: bool) -> str:
+def _attach_managed_policy(
+    iam,
+    policy_arn: str,
+    *,
+    iam_user: str | None,
+    role_names: list[str],
+    dry_run: bool,
+) -> None:
+    if iam_user:
+        if dry_run:
+            print(f"  Attach {policy_arn} -> user/{iam_user}")
+        else:
+            try:
+                iam.attach_user_policy(UserName=iam_user, PolicyArn=policy_arn)
+                print(f"  Attached to IAM user: {iam_user}")
+            except ClientError as exc:
+                if exc.response["Error"]["Code"] == "EntityAlreadyExists":
+                    print(f"  IAM user already has policy: {iam_user}")
+                elif exc.response["Error"]["Code"] == "LimitExceeded":
+                    print(f"  IAM user {iam_user} at managed policy limit — detach unused policies or use a group")
+                else:
+                    raise
+    for role_name in role_names:
+        role_name = role_name.strip()
+        if not role_name:
+            continue
+        if dry_run:
+            print(f"  Attach {policy_arn} -> role/{role_name}")
+            continue
+        try:
+            iam.get_role(RoleName=role_name)
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "NoSuchEntity":
+                print(f"  SKIP role (not found): {role_name}")
+                continue
+            raise
+        try:
+            iam.attach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
+            print(f"  Attached to IAM role: {role_name}")
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "EntityAlreadyExists":
+                print(f"  Role already has policy: {role_name}")
+            else:
+                raise
+
+
+def _ensure_iam_policy(iam, policy_doc: str, *, account: str, dry_run: bool) -> str:
     if dry_run:
         print(f"  IAM policy (dry-run): {POLICY_NAME}")
-        return f"arn:aws:iam::000000000000:policy/{POLICY_NAME}"
+        return f"arn:aws:iam::{account}:policy/{POLICY_NAME}"
     try:
         resp = iam.create_policy(
             PolicyName=POLICY_NAME,
@@ -178,10 +234,7 @@ def _ensure_iam_policy(iam, policy_doc: str, *, dry_run: bool) -> str:
     except ClientError as exc:
         if exc.response["Error"]["Code"] != "EntityAlreadyExists":
             raise
-        account = iam.meta.client.meta.region_name  # noqa: unused fallback
-        sts = boto3.client("sts")
-        acct = sts.get_caller_identity()["Account"]
-        arn = f"arn:aws:iam::{acct}:policy/{POLICY_NAME}"
+        arn = f"arn:aws:iam::{account}:policy/{POLICY_NAME}"
         iam.create_policy_version(
             PolicyArn=arn,
             PolicyDocument=policy_doc,
@@ -226,6 +279,18 @@ def main() -> int:
     parser.add_argument("--profile", default="", help="AWS profile (default: AWS_PROFILE from .env)")
     parser.add_argument("--sms-monthly-limit", default="1", help="SNS SMS monthly spend cap (USD)")
     parser.add_argument("--skip-iam", action="store_true", help="Skip IAM managed policy creation")
+    parser.add_argument(
+        "--iam-user",
+        default=os.environ.get("PITER_IAM_USER", "admin-reem"),
+        help="Attach managed policy to this IAM user (default: admin-reem)",
+    )
+    parser.add_argument(
+        "--attach-roles",
+        nargs="*",
+        default=["IncidentRagBedrockEC2Role", "incidentiq-lambda-role"],
+        help="IAM roles to attach managed policy (EC2/Lambda runtime)",
+    )
+    parser.add_argument("--skip-attach", action="store_true", help="Create/update policy only; do not attach")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -263,15 +328,37 @@ def main() -> int:
     if not args.dry_run:
         _print_account_status(sesv2)
 
+    recipient_emails = [
+        email.strip().lower()
+        for email in args.verify_recipients
+        if email.strip() and "@" in email
+    ]
+    if not recipient_emails:
+        recipient_emails = [sender]
+
     print("\n=== IAM ===")
-    policy_doc = _render_policy(region=region, account=account, sender=sender)
+    policy_doc = _render_policy(
+        region=region,
+        account=account,
+        sender=sender,
+        recipients=recipient_emails,
+    )
     resolved_path = ROOT / "infra" / "notifications_policy_resolved.json"
     if not args.dry_run:
         resolved_path.write_text(json.dumps(json.loads(policy_doc), indent=2) + "\n", encoding="utf-8")
         print(f"  Wrote {resolved_path.relative_to(ROOT)}")
     if not args.skip_iam:
-        policy_arn = _ensure_iam_policy(iam, policy_doc, dry_run=args.dry_run)
-        print(f"  Attach to EC2/Lambda role: aws iam attach-role-policy --role-name ROLE --policy-arn {policy_arn}")
+        policy_arn = _ensure_iam_policy(iam, policy_doc, account=account, dry_run=args.dry_run)
+        if not args.skip_attach:
+            _attach_managed_policy(
+                iam,
+                policy_arn,
+                iam_user=(args.iam_user.strip() or None),
+                role_names=args.attach_roles,
+                dry_run=args.dry_run,
+            )
+        else:
+            print(f"  Manual attach: aws iam attach-user-policy --user-name {args.iam_user} --policy-arn {policy_arn}")
 
     _print_env_snippet(topic_arn=topic_arn, sender=sender)
 
@@ -280,6 +367,7 @@ def main() -> int:
     print("  2. Update .env with the snippet above (no angle brackets on email addresses).")
     print("  3. Restart Flask and check Settings for notification readiness.")
     print("  4. For production email to anyone: SES console - Request production access.")
+    print("  5. For SMS: enable End User Messaging, verify sandbox phone, run scripts/diagnose_sms.py")
     return 0
 
 

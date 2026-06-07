@@ -35,13 +35,19 @@ def send(channel: str) -> dict:
 
 def main() -> int:
     results = {}
-    for channel in ("email", "sms"):
+    for channel in ("email", "sms", "whatsapp"):
+        if channel == "whatsapp":
+            import os
+            from app.services.notification_dispatch import whatsapp_configured
+            if not whatsapp_configured():
+                results[channel] = {"sent": False, "skipped": True, "reason": "whatsapp_not_configured"}
+                continue
         try:
             results[channel] = send(channel)
         except Exception as exc:  # noqa: BLE001
             results[channel] = {"sent": False, "error": str(exc)}
     print(json.dumps(results, indent=2))
-    ok = all(r.get("sent") for r in results.values())
+    ok = all(r.get("sent") or r.get("skipped") for r in results.values())
     return 0 if ok else 1
 
 

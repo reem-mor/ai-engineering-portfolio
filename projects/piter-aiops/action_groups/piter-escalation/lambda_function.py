@@ -151,26 +151,28 @@ def lambda_handler(event, context):
     _ensure_app_import_path()
     from app.services.notification_dispatch import NotificationDispatchError, dispatch_live_safe
 
-    subject = f"[PITER {severity}] {incident_id} — {service}"
+    subject = params.get("subject", "").strip() or f"[PITER {severity}] {incident_id} — {service}"
+    html_body = params.get("html_body", "").strip() or None
     try:
         dispatch_result = dispatch_live_safe(
             recipient,
             message,
+            channel=params.get("delivery_channel", "").strip() or None,
             subject=subject,
+            html_body=html_body,
             incident_id=incident_id,
         )
     except NotificationDispatchError as exc:
-        return _respond(
-            event,
-            403,
-            {
-                "mode": "live",
-                "sent": False,
-                "blocked": True,
-                "reasons": [exc.message],
-                "recipient": _mask_recipient(recipient),
-            },
-        )
+        payload = {
+            "mode": "live",
+            "sent": False,
+            "blocked": True,
+            "reasons": [exc.message],
+            "recipient": _mask_recipient(recipient),
+        }
+        if exc.details.get("console_url"):
+            payload["console_url"] = exc.details["console_url"]
+        return _respond(event, 403, payload)
 
     SENT_IDEMPOTENCY_KEYS.add(key)
     return _respond(

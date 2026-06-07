@@ -78,9 +78,15 @@ export interface BootstrapPayload {
     max_sends_per_incident: number;
     live_dispatch_enabled?: boolean;
     sms_configured?: boolean;
+    sms_delivery_ready?: boolean;
+    sms_delivery_message?: string | null;
+    sms_console_url?: string | null;
+    sms_billing_url?: string | null;
     email_configured?: boolean;
     allowlist_count?: number;
     demo_sms_configured?: boolean;
+    demo_whatsapp_configured?: boolean;
+    whatsapp_configured?: boolean;
     demo_email_configured?: boolean;
   };
   alert_stream?: AlertStreamSummary;
@@ -225,6 +231,25 @@ export interface WorkflowTriagePayload {
   session_id?: string | null;
   message?: string;
   reason?: string;
+}
+
+export interface EscalationContext {
+  incident_id: string;
+  severity: string;
+  service: string;
+  environment?: string;
+  incident_title: string;
+  on_call_name?: string;
+  owner_team?: string;
+  slack_channel?: string;
+  war_room_channel?: string;
+  business_impact?: string;
+  support_complaints?: string;
+  top_error?: string;
+  recent_deployment?: string;
+  runbook_count?: number;
+  runbook_name?: string;
+  recommended_actions?: string[];
 }
 
 export interface EscalationNotifyResult {

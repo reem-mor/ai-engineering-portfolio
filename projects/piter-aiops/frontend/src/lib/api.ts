@@ -1,6 +1,7 @@
 import type {
   AlertStreamSummary,
   BootstrapPayload,
+  EscalationContext,
   EscalationNotifyResult,
   FollowUpResult,
   KbDocumentMeta,
@@ -130,13 +131,14 @@ export async function followUp(sessionId: string, question: string): Promise<Fol
 }
 
 export async function notifyEscalation(payload: {
-  channel: "sms" | "email";
+  channel: "sms" | "email" | "whatsapp";
   incident_id: string;
   service: string;
   severity: string;
   confirmation_token: string;
   message?: string;
   idempotency_key?: string;
+  escalation_context?: EscalationContext;
 }): Promise<EscalationNotifyResult> {
   const response = await fetch("/api/escalation/notify", {
     method: "POST",
@@ -144,7 +146,11 @@ export async function notifyEscalation(payload: {
     credentials: "same-origin",
     body: JSON.stringify(payload),
   });
-  return parseJson<EscalationNotifyResult>(response);
+  const data = (await response.json()) as EscalationNotifyResult;
+  if (!response.ok && !data.message && data.reasons?.length) {
+    data.message = data.reasons.join("; ");
+  }
+  return data;
 }
 
 export function executionModeLabel(

@@ -27,9 +27,11 @@ from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.escalation_service import notify_demo_channel
 from app.services.notification_dispatch import (
     allowlist_count,
+    check_sms_account_ready,
     email_configured,
     live_dispatch_enabled,
     sms_configured,
+    whatsapp_configured,
 )
 from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
 
@@ -112,6 +114,7 @@ def _execution_mode_hint(mode: str | None = None) -> str:
 def _notification_settings() -> dict:
     import os
 
+    sms_status = check_sms_account_ready()
     return {
         "mode": os.environ.get("PITER_NOTIFICATION_MODE", "mock"),
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
@@ -119,9 +122,15 @@ def _notification_settings() -> dict:
         "max_sends_per_incident": int(os.environ.get("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "1") or 1),
         "live_dispatch_enabled": live_dispatch_enabled(),
         "sms_configured": sms_configured(),
+        "sms_delivery_ready": bool(sms_status.get("ready")),
+        "sms_delivery_message": sms_status.get("message"),
+        "sms_console_url": sms_status.get("console_url"),
+        "sms_billing_url": sms_status.get("billing_url"),
         "email_configured": email_configured(),
         "allowlist_count": allowlist_count(),
         "demo_sms_configured": bool(os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()),
+        "demo_whatsapp_configured": whatsapp_configured(),
+        "whatsapp_configured": whatsapp_configured(),
         "demo_email_configured": bool(os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()),
     }
 
@@ -433,11 +442,11 @@ def api_escalation_notify():
     """Trigger live escalation notify for allowlisted demo recipients only."""
     body = request.get_json(silent=True) or {}
     channel = str(body.get("channel") or "").strip().lower()
-    if channel not in {"sms", "email"}:
+    if channel not in {"sms", "email", "whatsapp"}:
         return jsonify(
             ok=False,
             reason="invalid_channel",
-            message="channel must be sms or email",
+            message="channel must be sms, email, or whatsapp",
         ), 400
 
     incident_id = str(body.get("incident_id") or "INC-DEMO-STORM").strip()
@@ -453,6 +462,9 @@ def api_escalation_notify():
 
     message = str(body.get("message") or "").strip() or None
     idempotency_key = str(body.get("idempotency_key") or "").strip() or None
+    escalation_context = body.get("escalation_context")
+    if escalation_context is not None and not isinstance(escalation_context, dict):
+        escalation_context = None
 
     try:
         result = notify_demo_channel(
@@ -462,6 +474,7 @@ def api_escalation_notify():
             severity=severity,
             confirmation_token=confirmation_token,
             message=message,
+            escalation_context=escalation_context,
             idempotency_key=idempotency_key,
         )
     except ValueError as exc:
@@ -470,8 +483,13 @@ def api_escalation_notify():
     http_status = int(result.pop("http_status", 502))
     sent = bool(result.get("sent"))
     ok = sent and http_status == 200
+    reasons = result.get("reasons")
+    if isinstance(reasons, list) and reasons and not result.get("message"):
+        result["message"] = "; ".join(str(item) for item in reasons)
     if "error" in result and not sent:
         return jsonify(ok=False, **result), http_status if http_status >= 400 else 400
+    if not sent and http_status >= 400:
+        return jsonify(ok=False, **result), http_status
     return jsonify(ok=ok, **result), http_status
 
 

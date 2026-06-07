@@ -40,6 +40,7 @@ import {
   triageToRagAnswer,
   uploadDocument,
 } from "@/lib/api";
+import { buildEscalationContext } from "@/lib/escalation";
 import {
   AgentDecisionsLog,
   AgentEnrichmentPipeline,
@@ -424,7 +425,15 @@ function AppShell() {
   const notificationMode = data?.notification?.mode ?? "mock";
   const liveDispatchEnabled = data?.notification?.live_dispatch_enabled ?? false;
   const demoSmsConfigured = data?.notification?.demo_sms_configured ?? false;
+  const demoWhatsappConfigured = data?.notification?.demo_whatsapp_configured ?? false;
   const demoEmailConfigured = data?.notification?.demo_email_configured ?? false;
+  const smsDeliveryReady = data?.notification?.sms_delivery_ready ?? false;
+  const smsConsoleUrl = data?.notification?.sms_console_url;
+  const smsBillingUrl = data?.notification?.sms_billing_url;
+  const escalationContext = useMemo(
+    () => buildEscalationContext(triageCard, selected, streamSummary),
+    [triageCard, selected, streamSummary],
+  );
 
   useEffect(() => {
     fetchAlertStream(true)
@@ -748,13 +757,18 @@ function AppShell() {
       <EscalationNotifyModal
         open={escalationModalOpen}
         onClose={() => setEscalationModalOpen(false)}
-        incidentId={String(triageCard?.alert?.alert_id ?? selected.id)}
-        service={String(triageCard?.alert?.service ?? selected.service)}
-        severity={triageCard?.priority ?? selected.severity}
+        incidentId={escalationContext.incident_id}
+        service={escalationContext.service}
+        severity={escalationContext.severity}
+        escalationContext={escalationContext}
         notificationMode={notificationMode}
         liveDispatchEnabled={liveDispatchEnabled}
         demoSmsConfigured={demoSmsConfigured}
+        demoWhatsappConfigured={demoWhatsappConfigured}
         demoEmailConfigured={demoEmailConfigured}
+        smsDeliveryReady={smsDeliveryReady}
+        smsConsoleUrl={smsConsoleUrl}
+        smsBillingUrl={smsBillingUrl}
       />
     </main>
   );
@@ -1332,7 +1346,12 @@ function AlertStorm({
         ? streamSummary.total
         : Math.min(stormVisibleCount * 8, streamSummary.noise_suppressed);
   const ownerTeam =
-    (triageCard?.owner?.team as string | undefined) ?? "Betting Core Platform";
+    (triageCard?.owner?.owner_team as string | undefined) ?? "Betting Core Platform";
+  const stormEscalation = buildEscalationContext(
+    triageCard,
+    selected,
+    streamSummary,
+  );
 
   return (
     <div className="grid gap-5">
@@ -1474,19 +1493,21 @@ function AlertStorm({
           </Panel>
           <EscalationTriggeredCard
             visible
-            incidentTitle="P1 — bet-service 100% error rate on GIB-UKGC"
-            ownerTeam={ownerTeam}
-            onCallRole="Platform SRE (masked in preview)"
+            incidentTitle={`${stormEscalation.severity} — ${stormEscalation.incident_title}`}
+            ownerTeam={stormEscalation.owner_team ?? ownerTeam}
+            onCallRole={stormEscalation.on_call_name ?? "Primary on-call"}
             notificationMode={notificationMode}
             liveDispatchEnabled={liveDispatchEnabled}
             onEscalateLive={onOpenEscalation}
             payloadLines={[
-              "Affected service: bet-service",
-              "Business impact: regulated betting outage",
-              "Recent deploy correlation: via piter-recent-deployments",
-              "Top logs: error rate 100% on GIB-UKGC",
-              `Runbook sources: ${triageCard?.matched_runbook ?? "bet-service runbook"}`,
-              `Recommended first actions: ${(triageCard?.recommended_steps ?? []).length || 6} steps`,
+              `Affected service: ${stormEscalation.service}`,
+              `Business impact: ${stormEscalation.business_impact ?? "Under assessment"}`,
+              `Recent deployment: ${stormEscalation.recent_deployment ?? "via piter-recent-deployments"}`,
+              `Top logs: ${stormEscalation.top_error ?? "see console"}`,
+              `Customer support: ${stormEscalation.support_complaints ?? "monitoring"}`,
+              `Runbook sources (${stormEscalation.runbook_count ?? 5})`,
+              `Recommended first actions (${stormEscalation.recommended_actions?.length ?? 6})`,
+              `War room: ${stormEscalation.war_room_channel ?? "#war-room"}`,
             ]}
           />
         </>
@@ -1576,7 +1597,7 @@ function InvestigationDetail({
   const impactText =
     (triageCard?.impact?.business_impact as string | undefined) ?? selected.impact;
   const ownerTeam =
-    (triageCard?.owner?.team as string | undefined) ?? "Betting Core";
+    (triageCard?.owner?.owner_team as string | undefined) ?? "Betting Core";
   const similar =
     triageCard?.similar_incidents?.slice(0, 2).map((s) => {
       const label = s.incident_id ?? s.root_cause ?? "similar incident";
@@ -2159,11 +2180,29 @@ function Settings({
             <InfoRow
               label="SMS ready"
               value={
-                data?.notification?.demo_sms_configured
-                  ? "demo recipient configured"
-                  : "set PITER_DEMO_SMS_RECIPIENT"
+                !data?.notification?.demo_sms_configured
+                  ? "set PITER_DEMO_SMS_RECIPIENT"
+                  : data?.notification?.sms_delivery_ready
+                    ? "AWS SMS enabled — demo recipient configured"
+                    : data?.notification?.sms_delivery_message ??
+                      "Enable AWS End User Messaging SMS (see console link below)"
               }
             />
+            {data?.notification?.demo_sms_configured &&
+              data?.notification?.sms_delivery_ready === false &&
+              data?.notification?.sms_console_url ? (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                SMS console:{" "}
+                <a
+                  href={data.notification.sms_console_url}
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Enable End User Messaging
+                </a>
+              </p>
+            ) : null}
             <InfoRow
               label="Email ready"
               value={
