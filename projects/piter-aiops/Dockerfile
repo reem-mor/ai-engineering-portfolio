@@ -25,6 +25,7 @@ COPY --chown=app:app requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app app ./app
+COPY --chown=app:app action_groups ./action_groups
 COPY --chown=app:app wsgi.py ./wsgi.py
 # Local-mode assets: knowledge base for offline RAG + operational datasets.
 COPY --chown=app:app knowledge_base ./knowledge_base

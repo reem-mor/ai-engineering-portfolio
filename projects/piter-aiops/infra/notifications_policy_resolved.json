@@ -18,6 +18,17 @@
       "Resource": "*"
     },
     {
+      "Sid": "SmsVoiceV2Send",
+      "Effect": "Allow",
+      "Action": [
+        "sms-voice:SendTextMessage",
+        "sms-voice:DescribeAccountAttributes",
+        "sms-voice:DescribeOptedOutNumbers",
+        "sms-voice:DescribePhoneNumbers"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "SnsSmsAccountRead",
       "Effect": "Allow",
       "Action": [
