@@ -1,11 +1,7 @@
 """Unit tests for enrichment tools and Lambda handlers (demo scenario)."""
 from __future__ import annotations
 
-import json
-import sys
 from pathlib import Path
-
-import pytest
 
 from app.enrichment_tools import (
     correlate_deployments,
@@ -121,31 +117,3 @@ def test_bet_service_storm_enrichment():
     )
     assert similar["count"] >= 1
 
-
-@pytest.mark.parametrize(
-    "folder,event_file",
-    [
-        ("iiq-correlate", "demo_correlate.json"),
-        ("iiq-context", "demo_owner.json"),
-        ("iiq-similar", "demo_similar.json"),
-    ],
-)
-def test_lambda_handlers_demo_events(folder: str, event_file: str):
-    import importlib.util
-
-    ag_dir = ROOT / "action_groups" / folder
-    ag_str = str(ag_dir)
-    if ag_str not in sys.path:
-        sys.path.insert(0, ag_str)
-    spec = importlib.util.spec_from_file_location(
-        f"lambda_{folder.replace('-', '_')}",
-        ag_dir / "lambda_function.py",
-    )
-    assert spec and spec.loader
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    event = json.loads((ag_dir / "events" / event_file).read_text(encoding="utf-8"))
-    resp = mod.lambda_handler(event, None)
-    assert resp["response"]["httpStatusCode"] == 200
-    body = json.loads(resp["response"]["responseBody"]["application/json"]["body"])
-    assert "error" not in body

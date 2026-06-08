@@ -21,7 +21,7 @@ def test_format_escalation_email_includes_on_call_and_war_room():
         "recent_deployment": "v2.4.1 (27m ago)",
         "recommended_actions": ["Rollback auth-api canary", "Validate JWT signing keys"],
         "runbook_count": 5,
-        "runbook_name": "runbook_auth_login.md",
+        "runbook_name": "auth_service_login_failure.md",
     }
     formatted = format_escalation_messages(ctx, channel="email")
     body = formatted["body"]

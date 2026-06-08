@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 KB = ROOT / "knowledge_base"
 
-REQUIRED_DIRS = {"runbooks", "environments", "policies", "incidents", "glossary"}
+REQUIRED_DIRS = {"runbooks", "incidents", "services", "escalation", "business_impact", "piter"}
 REQUIRED_FRONT_MATTER_KEYS = {
     "title",
     "doc_type",
@@ -18,7 +18,7 @@ REQUIRED_FRONT_MATTER_KEYS = {
     "author",
     "version",
 }
-VALID_DOC_TYPES = {"runbook", "environment", "policy", "incident", "glossary"}
+VALID_DOC_TYPES = {"runbook", "policy", "incident", "service"}
 
 
 def _front_matter(path: Path) -> dict[str, str]:

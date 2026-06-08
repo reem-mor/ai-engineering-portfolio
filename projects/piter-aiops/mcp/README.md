@@ -1,72 +1,43 @@
-# PITER AiOps — MCP tool layer (read-only)
+# PITER AiOps MCP Tool Layer
 
-This folder is the **MCP (Model Context Protocol) tool-contract layer** for PITER AiOps. It exposes
-the same four PITER tools as the production **Bedrock Action Groups**, but as a local, runnable MCP
-server so the tool contracts can be inspected and demonstrated without AWS.
+This folder contains the local, read-only MCP-style tool contract for PITER AiOps. It mirrors the production Bedrock Action Group tools without requiring AWS.
 
-## Accurate terminology
-- **Production tool path:** Bedrock **Action Groups** backed by AWS **Lambda** (`action_groups/piter-*`).
-  This is *not* MCP.
-- **This layer:** a standardized **MCP** server mapping 1:1 to the same four tools, for local
-  demo / contract review / future portability.
+## Tools
 
-> We do **not** claim Bedrock Action Groups are MCP, and there is **no** auto-sync between the two.
-> Both simply delegate to the same business logic in `app/enrichment_tools.py` (single source of truth).
+| Tool | Purpose |
+|---|---|
+| `get_recent_deployments` | Recent deployment lookup |
+| `get_service_context` | Service owner, dependencies, and escalation context |
+| `find_similar_incidents` | Historical incident lookup |
+| `get_escalation_recommendation` | Safe escalation preview |
 
-## The four tools (read-only)
-| MCP tool | Maps to Lambda | Backing function |
-| -------- | -------------- | ---------------- |
-| `recent_deployments` | `piter-recent-deployments` | `correlate_deployments` |
-| `service_context` | `piter-service-context` | `lookup_owner_and_escalation` + `score_business_impact` |
-| `similar_incidents` | `piter-similar-incidents` | `find_similar_incidents` |
-| `escalation_preview` | `piter-escalation` (preview only) | `lookup_owner_and_escalation` (masked, **never sends**) |
+The stdio MCP server also exposes compatibility names:
+
+- `recent_deployments`
+- `service_context`
+- `similar_incidents`
+- `escalation_preview`
 
 ## Safety
-- **Read-only:** no AWS calls, no network, no notifications.
-- `escalation_preview` returns a **masked** recipient and `sends_notifications: false`. Live dispatch
-  is only reachable through the gated Flask/Lambda path, never from MCP.
-- No duplicate datasets — tools reuse `app.enrichment_tools`, which reads the canonical
-  `data/` sources.
+
+- Read-only.
+- No AWS calls.
+- No network calls.
+- No live escalation sends.
+- Escalation output is preview-only.
 
 ## Run
-```bash
-cd projects/piter-aiops
-python -m mcp.server            # stdio MCP server (newline-delimited JSON-RPC)
-python mcp/server.py --selftest # offline self-test, no MCP client needed
+
+```powershell
+python -m mcp.server
+python mcp/server.py --selftest
 ```
 
-Quick manual stdio check:
-```bash
-printf '%s\n' \
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-  | python mcp/server.py
-```
+## Files
 
-## Use from an MCP client (example config)
-```json
-{
-  "mcpServers": {
-    "piter-aiops": {
-      "command": "python",
-      "args": ["mcp/server.py"],
-      "cwd": "projects/piter-aiops"
-    }
-  }
-}
-```
-
-## Layout
-```
-mcp/
-├── README.md       # this file
-├── server.py       # stdlib-only MCP stdio server (initialize, tools/list, tools/call)
-├── tools/          # tool implementations delegating to app.enrichment_tools
-├── schemas/        # JSON Schema per tool (generated from the server definitions)
-└── examples/       # sample tool-call requests + response key summaries
-```
-
-## Protocol
-Implements the JSON-RPC 2.0 subset of MCP (`protocolVersion 2024-11-05`): `initialize`,
-`notifications/initialized`, `tools/list`, `tools/call`. Stdlib only — independent of the official
-`mcp` PyPI SDK (so it runs with no extra dependencies).
+- `tool_registry.py`: simple callable registry for tests and demos.
+- `recent_deployments.py`: deployment lookup adapter.
+- `service_context.py`: ownership/dependency adapter.
+- `similar_incidents.py`: historical incident adapter.
+- `escalation.py`: safe escalation recommendation adapter.
+- `server.py`: dependency-free JSON-RPC stdio server.

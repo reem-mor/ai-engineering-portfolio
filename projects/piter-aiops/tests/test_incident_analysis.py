@@ -52,11 +52,11 @@ def test_bet_service_gib_ukgc_p1_full_flow(storm_alert: dict):
 
     kb = analysis["knowledge_base"]
     assert kb.get("found") is True
-    assert kb.get("runbook_file") == "RB-011-bet-service-outage.md"
+    assert kb.get("runbook_file") == "deployment_rollback.md"
 
     sections = compose_piter_sections(analysis)
     piter = sections.get("piter_sections") or {}
     assert piter.get("triage_plan")
 
     sources = analysis.get("sources", [])
-    assert any("RB-011" in str(s) for s in sources) or kb.get("runbook_file")
+    assert any("deployment_rollback.md" in str(s) for s in sources)

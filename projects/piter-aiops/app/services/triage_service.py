@@ -81,6 +81,25 @@ def _tool_outputs_from_analysis(analysis: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _deterministic_next_action(analysis: dict[str, Any]) -> str:
+    """Return an alert-aligned next action from structured data."""
+    alert = analysis.get("alert", {}) if isinstance(analysis, dict) else {}
+    service = str(alert.get("service", "")).strip()
+    symptom = str(alert.get("symptom") or alert.get("description") or "").lower()
+    deploys = analysis.get("deployments", {}) if isinstance(analysis, dict) else {}
+    likely_deploy = isinstance(deploys, dict) and bool(deploys.get("likely_deploy_correlation"))
+    if service == "auth-service":
+        if likely_deploy or "deploy" in symptom:
+            return (
+                "Confirm auth-service scope, check the latest deployment, then validate "
+                "Redis token store and customer-db health before rollback."
+            )
+        return "Confirm auth-service error rate, Redis token health, and customer-db connectivity."
+    if likely_deploy:
+        return "Validate the suspect deployment and prepare rollback if metrics degraded after release."
+    return "Confirm scope, dependency health, owner, and business impact before mitigation."
+
+
 def _active_owner(card: dict[str, Any], tools: dict[str, Any]) -> dict[str, Any]:
     owner = card.get("owner")
     if isinstance(owner, dict) and owner:
@@ -190,6 +209,7 @@ def run_triage(
         "escalation_policy": analysis.get("escalation", {}) if analysis_ok else {},
         "sources": analysis.get("sources", []) if analysis_ok else [],
         "requires_escalation": requires_escalation,
+        "next_action": _deterministic_next_action(analysis) if analysis_ok else "",
         "piter_stages": {
             "priority": "complete",
             "investigation": "complete",

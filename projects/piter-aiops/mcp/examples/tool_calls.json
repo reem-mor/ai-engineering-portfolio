@@ -1,95 +1,31 @@
 [
   {
-    "request": {
-      "jsonrpc": "2.0",
-      "id": 1,
-      "method": "tools/call",
-      "params": {
-        "name": "recent_deployments",
-        "arguments": {
-          "service": "postgres",
-          "environment": "NJ-DGE",
-          "alert_time": "2026-06-10T09:00:00Z"
-        }
-      }
-    },
-    "response_summary_keys": [
-      "alert_time",
-      "dependency_hop",
-      "dependency_hop_explanation",
-      "deployments",
-      "environment",
-      "likely_deploy_correlation",
-      "lookback_hours",
-      "reason",
-      "service",
-      "suspect_deployment",
-      "window_minutes"
-    ]
+    "tool": "get_recent_deployments",
+    "arguments": {
+      "service": "auth-service",
+      "environment": "production"
+    }
   },
   {
-    "request": {
-      "jsonrpc": "2.0",
-      "id": 1,
-      "method": "tools/call",
-      "params": {
-        "name": "service_context",
-        "arguments": {
-          "service": "postgres",
-          "severity": "P2",
-          "environment": "NJ-DGE"
-        }
-      }
-    },
-    "response_summary_keys": [
-      "impact",
-      "owner"
-    ]
+    "tool": "get_service_context",
+    "arguments": {
+      "service": "auth-service"
+    }
   },
   {
-    "request": {
-      "jsonrpc": "2.0",
-      "id": 1,
-      "method": "tools/call",
-      "params": {
-        "name": "similar_incidents",
-        "arguments": {
-          "service": "postgres",
-          "symptom": "PostgreSQL CPU above 90%"
-        }
-      }
-    },
-    "response_summary_keys": [
-      "count",
-      "environment",
-      "service",
-      "similar_incidents",
-      "symptom"
-    ]
+    "tool": "find_similar_incidents",
+    "arguments": {
+      "service": "auth-service",
+      "symptom": "users cannot log in",
+      "severity": "P2"
+    }
   },
   {
-    "request": {
-      "jsonrpc": "2.0",
-      "id": 1,
-      "method": "tools/call",
-      "params": {
-        "name": "escalation_preview",
-        "arguments": {
-          "service": "postgres",
-          "severity": "P1"
-        }
-      }
-    },
-    "response_summary_keys": [
-      "channels",
-      "escalation_chain",
-      "mode",
-      "note",
-      "policy",
-      "recipient_masked",
-      "sends_notifications",
-      "service",
-      "severity"
-    ]
+    "tool": "get_escalation_recommendation",
+    "arguments": {
+      "service": "auth-service",
+      "priority": "P2",
+      "business_impact": "login failure after deployment"
+    }
   }
 ]

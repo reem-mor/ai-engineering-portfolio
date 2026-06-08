@@ -82,7 +82,7 @@ def test_source_services_subset_of_service_owners():
 
 
 def test_all_runbook_references_exist_in_kb():
-    runbooks = {path.name for path in KB_RUNBOOKS.glob("RB-*.md")}
+    runbooks = {path.name for path in KB_RUNBOOKS.glob("*.md")}
     refs: set[str] = set()
     for row in _csv_rows("service_owners.csv"):
         if row.get("runbook"):

@@ -15,7 +15,7 @@ if not os.environ.get("AWS_PROFILE", "").strip():
 
 _FALSE_VALUES = {"false", "0", "no", "off"}
 _TRUE_VALUES = {"true", "1", "yes", "on"}
-_DEFAULT_S3_PREFIX = "projects/piter-aiops/data/sample_documents"
+_DEFAULT_S3_PREFIX = "projects/piter-aiops/knowledge_base"
 
 
 class ConfigError(RuntimeError):

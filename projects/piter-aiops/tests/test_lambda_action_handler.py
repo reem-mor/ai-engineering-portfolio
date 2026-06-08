@@ -1,33 +1,35 @@
-"""Unit tests for the PITER AiOps ops Lambda action group handler."""
+"""Tests for PITER AiOps Lambda-style action group handlers."""
 from __future__ import annotations
 
+import importlib.util
 import json
-import sys
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
-LAMBDA_DIR = ROOT / "action_groups" / "incidentiq-ops"
-sys.path.insert(0, str(LAMBDA_DIR))
-
-import lambda_function as ops  # noqa: E402
 
 
-def _base_event(*, method: str, path: str, parameters: list | None = None, request_body: dict | None = None) -> dict:
-    event = {
+def _load_handler(folder: str):
+    path = ROOT / "action_groups" / folder / "lambda_function.py"
+    spec = importlib.util.spec_from_file_location(f"{folder}_lambda", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.lambda_handler
+
+
+def _event(action_group: str, path: str, parameters: dict[str, str]) -> dict:
+    return {
         "messageVersion": "1.0",
-        "agent": {"name": "PITER AiOps-noc-agent", "id": "TESTAGENT", "alias": "live", "version": "DRAFT"},
-        "actionGroup": "piter-aiops-ops",
+        "actionGroup": action_group,
         "apiPath": path,
-        "httpMethod": method,
-        "parameters": parameters or [],
+        "httpMethod": "GET",
+        "parameters": [
+            {"name": key, "type": "string", "value": value}
+            for key, value in parameters.items()
+        ],
         "sessionAttributes": {},
         "promptSessionAttributes": {},
     }
-    if request_body is not None:
-        event["requestBody"] = request_body
-    return event
 
 
 def _body(resp: dict) -> dict:
@@ -35,117 +37,69 @@ def _body(resp: dict) -> dict:
     return json.loads(raw)
 
 
-def test_environment_status_gib_degraded():
-    event = _base_event(
-        method="GET",
-        path="/environments/{environment}/status",
-        parameters=[{"name": "environment", "type": "string", "value": "GIB"}],
+def test_recent_deployments_lambda_returns_auth_deployments():
+    handler = _load_handler("piter-recent-deployments")
+    resp = handler(
+        _event(
+            "piter-recent-deployments",
+            "/recent-deployments",
+            {
+                "service": "auth-service",
+                "environment": "NJ-DGE",
+                "alert_time": "2026-06-10T09:00:00Z",
+            },
+        ),
+        None,
     )
-    resp = ops.lambda_handler(event, None)
-    assert resp["messageVersion"] == "1.0"
-    assert resp["response"]["actionGroup"] == "piter-aiops-ops"
     assert resp["response"]["httpStatusCode"] == 200
-    data = _body(resp)
-    assert data["environment"] == "GIB-UKGC"
-    assert data["status"] == "DEGRADED"
-    assert data["active_alerts"] == 2
+    assert "deployments" in _body(resp)
 
 
-def test_environment_status_canonical_gib_ukgc():
-    event = _base_event(
-        method="GET",
-        path="/environments/{environment}/status",
-        parameters=[{"name": "environment", "type": "string", "value": "GIB-UKGC"}],
+def test_service_context_lambda_returns_owner():
+    handler = _load_handler("piter-service-context")
+    resp = handler(
+        _event(
+            "piter-service-context",
+            "/service-context",
+            {"service": "auth-service", "environment": "NJ-DGE"},
+        ),
+        None,
     )
-    resp = ops.lambda_handler(event, None)
-    data = _body(resp)
     assert resp["response"]["httpStatusCode"] == 200
-    assert data["environment"] == "GIB-UKGC"
+    assert _body(resp)["owner_team"] == "Identity & Access"
 
 
-def test_environment_status_nj_alias_maps_to_nj_dge():
-    event = _base_event(
-        method="GET",
-        path="/environments/{environment}/status",
-        parameters=[{"name": "environment", "type": "string", "value": "NJ"}],
+def test_similar_incidents_lambda_returns_matches():
+    handler = _load_handler("piter-similar-incidents")
+    resp = handler(
+        _event(
+            "piter-similar-incidents",
+            "/similar-incidents",
+            {"service": "auth-service", "symptom": "users cannot log in"},
+        ),
+        None,
     )
-    resp = ops.lambda_handler(event, None)
-    data = _body(resp)
     assert resp["response"]["httpStatusCode"] == 200
-    assert data["environment"] == "NJ-DGE"
-    assert data["status"] == "HEALTHY"
+    assert "similar_incidents" in _body(resp)
 
 
-def test_environment_status_unknown_env():
-    event = _base_event(
-        method="GET",
-        path="/environments/{environment}/status",
-        parameters=[{"name": "environment", "type": "string", "value": "INVALID"}],
+def test_escalation_lambda_preview_never_sends():
+    handler = _load_handler("piter-escalation")
+    resp = handler(
+        _event(
+            "piter-escalation",
+            "/escalation",
+            {
+                "operation": "preview",
+                "service": "auth-service",
+                "severity": "P2",
+                "incident_id": "INC-DEMO",
+                "recipient": "identity-oncall",
+            },
+        ),
+        None,
     )
-    resp = ops.lambda_handler(event, None)
-    assert resp["response"]["httpStatusCode"] == 400
-    assert "error" in _body(resp)
-
-
-def test_recent_alerts_gib():
-    event = _base_event(
-        method="GET",
-        path="/environments/{environment}/alerts",
-        parameters=[
-            {"name": "environment", "type": "string", "value": "GIB"},
-            {"name": "hours", "type": "integer", "value": "168"},
-        ],
-    )
-    resp = ops.lambda_handler(event, None)
+    body = _body(resp)
     assert resp["response"]["httpStatusCode"] == 200
-    data = _body(resp)
-    assert data["environment"] == "GIB-UKGC"
-    assert data["count"] == 2
-    assert len(data["alerts"]) == 2
-
-
-def test_create_incident_success():
-    event = _base_event(
-        method="POST",
-        path="/incidents",
-        request_body={
-            "content": {
-                "application/json": {
-                    "properties": [
-                        {"name": "title", "value": "Replication lag"},
-                        {"name": "severity", "value": "P2"},
-                        {"name": "environment", "value": "GIB"},
-                    ]
-                }
-            }
-        },
-    )
-    resp = ops.lambda_handler(event, None)
-    assert resp["response"]["httpStatusCode"] == 200
-    data = _body(resp)
-    assert data["ticket_id"].startswith("INC-")
-    assert data["status"] == "OPEN"
-    assert data["severity"] == "P2"
-
-
-def test_create_incident_missing_fields():
-    event = _base_event(
-        method="POST",
-        path="/incidents",
-        request_body={
-            "content": {
-                "application/json": {
-                    "properties": [{"name": "title", "value": "Only title"}]
-                }
-            }
-        },
-    )
-    resp = ops.lambda_handler(event, None)
-    assert resp["response"]["httpStatusCode"] == 400
-    assert "Missing required fields" in _body(resp)["error"]
-
-
-def test_unknown_route_returns_404():
-    event = _base_event(method="DELETE", path="/unknown")
-    resp = ops.lambda_handler(event, None)
-    assert resp["response"]["httpStatusCode"] == 404
+    assert body["mode"] == "preview"
+    assert "recipient" in body["escalation"]

@@ -9,8 +9,8 @@ import pytest
 from app.data_loader import grouped_example_questions, load_example_questions, load_workflow_alerts
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "data" / "sample_documents"
-EVAL_PATH = ROOT / "evaluation" / "test_questions.json"
+CORPUS = ROOT / "knowledge_base"
+EVAL_PATH = ROOT / "evaluation" / "demo_questions.json"
 
 
 def test_example_questions_unique_labels_and_text():
@@ -24,23 +24,22 @@ def test_example_questions_unique_labels_and_text():
 
 
 DEMO_CORPUS_FILES = (
-    "runbook_db_cpu.md",
-    "runbook_checkout_5xx.md",
-    "runbook_queue_lag.md",
-    "runbook_auth_login.md",
-    "runbook_kafka_consumer_lag.md",
-    "runbook_redis_token_store.md",
-    "runbook_promotions_engine_latency.md",
-    "runbook_deployment_rollback.md",
-    "alerts_last_3mo.json",
-    "postmortem_2024_07.md",
-    "tier1_escalation_guide.md",
+    "auth_service_login_failure.md",
+    "deployment_rollback.md",
+    "redis_token_store_degradation.md",
+    "database_connectivity.md",
+    "api_gateway_5xx.md",
+    "escalation_policy.md",
+    "business_impact_matrix.md",
+    "piter_workflow.md",
 )
 
 
 def test_demo_corpus_files_exist():
     for name in DEMO_CORPUS_FILES:
-        assert (CORPUS / name).is_file(), f"missing demo corpus file: {name}"
+        assert any(path.name == name for path in CORPUS.rglob("*.md")), (
+            f"missing demo corpus file: {name}"
+        )
 
 
 def test_grouped_examples_cover_all_questions():
@@ -64,8 +63,8 @@ def test_evaluation_questions_schema():
     assert isinstance(cases, list)
     ids = [c["id"] for c in cases]
     assert len(ids) == len(set(ids))
-    corpus_names = {p.stem for p in CORPUS.iterdir() if p.is_file()}
-    corpus_names |= {p.name for p in CORPUS.iterdir() if p.is_file()}
+    corpus_names = {p.stem for p in CORPUS.rglob("*.md") if p.is_file()}
+    corpus_names |= {p.name for p in CORPUS.rglob("*.md") if p.is_file()}
     for case in cases:
         if case.get("expect_validation_error"):
             assert case.get("expected_reason")

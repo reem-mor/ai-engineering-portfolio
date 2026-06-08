@@ -111,7 +111,7 @@ def test_ask_parses_attribution_citations(agent_config):
                                 {
                                     "content": {"text": "Verify max_connections on RDS."},
                                     "location": {
-                                        "s3Location": {"uri": "s3://kb/runbook_db_cpu.md"},
+                                        "s3Location": {"uri": "s3://kb/database_connectivity.md"},
                                     },
                                 }
                             ]
@@ -127,7 +127,7 @@ def test_ask_parses_attribution_citations(agent_config):
     result = BedrockAgentClient(agent_config, client=mock_client).ask("DB CPU high?")
 
     assert result.grounded is True
-    assert result.citations[0].source_label == "runbook_db_cpu.md"
+    assert result.citations[0].source_label == "database_connectivity.md"
 
 
 def test_ask_handles_no_citations(agent_config):
@@ -152,7 +152,7 @@ def test_ask_backfills_from_kb_when_agent_ungrounded(agent_config):
     _mock_grounded_rag(
         mock_client,
         text="Priority:\nP2\n\nTriage plan:\n1. Check deploy logs and roll back.",
-        uri="s3://kb/runbook_checkout_5xx.md",
+        uri="s3://kb/api_gateway_5xx.md",
     )
 
     result = BedrockAgentClient(agent_config, client=mock_client).ask(
@@ -160,7 +160,7 @@ def test_ask_backfills_from_kb_when_agent_ungrounded(agent_config):
     )
 
     assert result.grounded is True
-    assert result.citations[0].source_label == "runbook_checkout_5xx.md"
+    assert result.citations[0].source_label == "api_gateway_5xx.md"
     assert "Triage plan" in result.answer
     assert result.session_id == "sess-agent-1"
 

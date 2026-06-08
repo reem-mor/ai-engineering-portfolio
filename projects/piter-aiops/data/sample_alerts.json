@@ -1,0 +1,16 @@
+[
+  {
+    "alert_title": "High error rate on auth-service",
+    "service": "auth-service",
+    "environment": "production",
+    "severity": "high",
+    "description": "Many users cannot log in after the latest production deployment."
+  },
+  {
+    "alert_title": "API Gateway 5xx spike",
+    "service": "api-gateway",
+    "environment": "production",
+    "severity": "medium",
+    "description": "Gateway 5xx increased for authenticated routes."
+  }
+]
