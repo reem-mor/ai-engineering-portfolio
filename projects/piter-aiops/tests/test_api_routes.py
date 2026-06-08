@@ -103,3 +103,56 @@ def test_api_incidents_analyze_alias(client, fake_bedrock):
     assert data["ok"] is True
     assert data["session_id"]
     assert data["piter"]
+    assert set(data["piter"]) >= {"priority", "investigation", "triage", "escalation", "resolution"}
+    assert "business_impact" in data
+    assert "next_action" in data
+    assert "confidence" in data
+    assert isinstance(data["sources"], list)
+    assert isinstance(data["tool_results"], list)
+
+
+def test_api_tools_status(client):
+    response = client.get("/api/tools/status")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert len(data["tools"]) == 4
+    names = {t["name"] for t in data["tools"]}
+    assert "Recent deployment lookup" in names
+    assert "Service context lookup" in names
+    assert "Similar incidents lookup" in names
+    assert "Escalation recommendation" in names
+
+
+def test_api_history_get_and_delete(client, fake_bedrock):
+    from app.services import chat_history
+
+    chat_history.reset()
+    fake_bedrock.next_response = _fake_answer()
+    client.post("/api/chat", json={"message": "What is the runbook for high CPU?"})
+    response = client.get("/api/history")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["count"] >= 2
+    assert data["messages"][0]["role"] == "user"
+
+    cleared = client.delete("/api/history")
+    assert cleared.status_code == 200
+    assert cleared.get_json()["cleared"] >= 2
+    empty = client.get("/api/history")
+    assert empty.get_json()["count"] == 0
+
+
+def test_api_chat_response_shape(client, fake_bedrock):
+    fake_bedrock.next_response = _fake_answer()
+    response = client.post("/api/chat", json={"message": "What is the runbook for high CPU?"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["piter"]
+    assert set(data["piter"]) >= {"priority", "investigation", "triage", "escalation", "resolution"}
+    assert "business_impact" in data
+    assert "next_action" in data
+    assert "confidence" in data
+    assert isinstance(data["sources"], list)
+    assert isinstance(data["tool_results"], list)
