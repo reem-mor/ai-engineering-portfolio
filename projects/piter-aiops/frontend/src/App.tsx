@@ -847,7 +847,7 @@ function AppShell() {
   return (
     <main className="min-h-screen bg-[#08111f] text-slate-100">
       <div className="grid min-h-screen grid-cols-[250px_minmax(0,1fr)] max-[980px]:grid-cols-1">
-        <Sidebar active={active} setActive={setActive} />
+        <Sidebar active={active} setActive={setActive} useBedrock={data?.use_bedrock ?? false} />
         <section className="min-w-0">
           <TopBar
             active={active}
@@ -905,6 +905,7 @@ function AppShell() {
                 liveDispatchEnabled={liveDispatchEnabled}
                 onOpenEscalation={() => setEscalationModalOpen(true)}
                 onOpenChat={() => setActive("chat")}
+                sessionHistory={sessionHistory}
               />
             )}
             {active === "chat" && (
@@ -1009,7 +1010,15 @@ export default function App() {
   return <AppShell />;
 }
 
-function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKey) => void }) {
+function Sidebar({
+  active,
+  setActive,
+  useBedrock,
+}: {
+  active: NavKey;
+  setActive: (key: NavKey) => void;
+  useBedrock: boolean;
+}) {
   return (
     <aside className="border-r border-slate-800 bg-[#0c0f14] px-4 py-4 max-[980px]:border-b max-[980px]:border-r-0">
       <div className="flex items-center gap-3 rounded-lg border border-slate-700/80 bg-slate-900/60 px-3 py-3">
@@ -1050,7 +1059,9 @@ function Sidebar({ active, setActive }: { active: NavKey; setActive: (key: NavKe
           Grounded answers only. Destructive actions and policy bypass requests are blocked.
         </p>
       </div>
-      <div className="mt-4 text-[10px] text-slate-600">v0.9.0 · Demo Build · AWS Mock</div>
+      <div className="mt-4 text-[10px] text-slate-600">
+        v0.9.0 · Demo Build · {useBedrock ? "AWS Connected" : "Local / Mock"}
+      </div>
     </aside>
   );
 }
@@ -1557,6 +1568,7 @@ function AlertStorm({
   liveDispatchEnabled,
   onOpenEscalation,
   onOpenChat,
+  sessionHistory,
 }: {
   stormState: StormState;
   startStorm: () => void;
@@ -1579,7 +1591,9 @@ function AlertStorm({
   liveDispatchEnabled: boolean;
   onOpenEscalation: () => void;
   onOpenChat: () => void;
+  sessionHistory: SessionHistoryPayload | null;
 }) {
+  const savedFollowups = sessionHistory?.followups ?? [];
   const progress =
     stormState === "idle"
       ? 0
