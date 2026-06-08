@@ -1,6 +1,8 @@
 # 🧹 Cleanup Checklist — Required for Submission
 
 > Execute **every** item below the same day you finish the demo. OpenSearch Serverless and EC2 will continue to bill you until removed. Screenshot the empty consoles for your submission (`10_cleanup_console.png`).
+>
+> **Naming:** Product is **PITER AiOps** (`projects/piter-aiops/`). Checklist items may still list legacy EC2/SG names (`incident-rag-demo`, `incident-rag-sg`) from the first deploy — match what you see in the console.
 
 ## ✅ Resources to delete (in order)
 

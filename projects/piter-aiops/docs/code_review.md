@@ -1,16 +1,18 @@
-# Code review — incident-rag-bedrock (2026-05-31)
+# Code review — PITER AiOps (`projects/piter-aiops`)
 
 Final self-review for course submission: datasets, corpus, KB sync, Flask API, React SPA, and AWS integration.
 
+> Historical note: earlier milestones used the repo path `projects/incident-rag-bedrock` and the working title IncidentIQ. Product branding is **PITER AiOps**; S3/KB corpus prefix is `projects/piter-aiops/`.
+
 ## Verdict
 
-**Ready for top-grade submission** when live checks pass: 102 offline tests, 10 corpus files on disk, KB smoke 6/6, SPA E2E 20/20 with Docker.
+**Ready for top-grade submission** when live checks pass: offline pytest green, corpus on disk, KB smoke 6/6, `verify_live_demo.py` 29/29, SPA E2E with Docker.
 
 ## Strengths
 
 - **Separation of concerns:** `upload_validators.py`, `upload_service.py`, `bedrock_client.py`, `routes.py` (HTTP only), `data_loader.py` (examples + corpus metadata).
 - **Consistent error model:** `BedrockError` with stable `code` values; boto3 mapped in `errors.py`.
-- **Testability:** 102 pytest tests with Stubber/fakes; upload routes use injectable fakes; SPA covered in `tests/test_spa_mode.py`; corpus alignment in `tests/test_data_corpus.py`.
+- **Testability:** 270+ pytest tests with Stubber/fakes; upload routes use injectable fakes; SPA covered in `tests/test_spa_mode.py`; corpus alignment in `tests/test_data_corpus.py`.
 - **Security:** `secure_filename`, suffix whitelist, size cap, scoped IAM; CSRF enabled with `main_bp` exempt for JSON SPA (token still from `/api/bootstrap`).
 - **KB sync UX:** S3 success + ingestion failure returns **HTTP 202** (`partial`, `sync_warning`) instead of losing the upload outcome.
 - **Follow-ups:** `session_id` passed through `/ask` to Bedrock for multi-turn Q&A in the SPA.
@@ -40,11 +42,11 @@ Regenerate corpus artifacts if needed: `python scripts/build_corpus.py` (see `da
 
 | Check | Result |
 |-------|--------|
-| `pytest -q` | **102 passed** |
+| `pytest -q` | **271 passed** (2026-06-08) |
 | `npm run build` | SPA → `app/static/spa/` |
 | `scripts/kb_smoke_test.py` | **6/6** PASS |
 | `scripts/verify_e2e.py` (SPA, `APP_URL=http://127.0.0.1:8080`) | **20/20** PASS |
-| KB data source prefix | `projects/incident-rag-bedrock/data/sample_documents/` |
+| KB data source prefix | `projects/piter-aiops/data/sample_documents/` |
 
 Windows: run from project root — `.\scripts\verify.ps1` (not from `frontend/`; venv is at repo root).
 

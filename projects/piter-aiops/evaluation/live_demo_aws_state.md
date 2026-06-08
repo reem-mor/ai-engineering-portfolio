@@ -5,6 +5,8 @@ Captured: 2026-06-07 (us-east-1, account `329597159579`, caller `admin-reem`)
 This is a read-only snapshot of the EXISTING AWS resources used by the optional
 "live on Bedrock" path. No resources were created or deleted to produce it.
 
+**Branding:** User-facing product name is **PITER AiOps**. Several AWS console labels still use early working titles (`incidentiq-*`, `iiq-*`) from before the rename. The active S3 corpus prefix is `projects/piter-aiops/` — not the legacy `incident-rag-bedrock` path.
+
 ## Bedrock Knowledge Base
 
 | Field | Value |

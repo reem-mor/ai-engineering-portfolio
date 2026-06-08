@@ -1,5 +1,5 @@
 /**
- * Capture submission screenshots for incident-rag-bedrock.
+ * Capture submission screenshots for PITER AiOps (projects/piter-aiops).
  *
  * Prereqs:
  *   docker compose up --build -d   → http://localhost:8080
@@ -68,7 +68,7 @@ function extractCorpusMarkdown() {
     throw new Error("Could not slice corpus tables from data/sample_documents/README.md");
   }
   const s3 =
-    "s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/";
+    "s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/";
   return `# Knowledge Base Corpus — Incident Operations
 
 - **S3 prefix:** \`${s3}\`
@@ -309,7 +309,7 @@ body{font-family:Consolas,Monaco,monospace;background:#0c0c0c;color:#cccccc;padd
 pre{white-space:pre-wrap;font-size:14px;line-height:1.45}
 h1{font-family:Segoe UI,sans-serif;color:#4ec9b0;font-size:18px}
 </style></head><body>
-<h1>pytest — incident-rag-bedrock</h1>
+<h1>pytest — piter-aiops</h1>
 <pre>${output.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>
 </body></html>`;
   const htmlPath = path.join(SCREENSHOTS, "_pytest_preview.html");

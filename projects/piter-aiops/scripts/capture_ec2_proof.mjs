@@ -67,7 +67,7 @@ async function main() {
 
   const ec2Html = consoleHtml(
     "Amazon EC2 · Instances",
-    "Public demo instance for incident-rag-bedrock",
+    "Public demo instance for PITER AiOps (piter-aiops)",
     `<table><tr><th>Name</th><th>Instance ID</th><th>State</th><th>Public DNS</th></tr>
      <tr><td>${inst.Tags?.find((t) => t.Key === "Name")?.Value ?? "incident-rag-demo"}</td>
          <td>${inst.InstanceId}</td><td class="ok">${inst.State?.Name}</td>

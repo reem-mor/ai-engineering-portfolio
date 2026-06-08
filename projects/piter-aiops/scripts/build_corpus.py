@@ -4,7 +4,7 @@ Generate the 10-document Incident Operations knowledge-base corpus.
 Run once:
     python scripts/build_corpus.py
 
-Output: projects/incident-rag-bedrock/data/sample_documents/
+Output: projects/piter-aiops/data/sample_documents/
   Formats covered: MD, TXT, CSV, DOCX, PDF (per assignment spec).
 
 These files are checked into the repo so the Bedrock KB can be rebuilt

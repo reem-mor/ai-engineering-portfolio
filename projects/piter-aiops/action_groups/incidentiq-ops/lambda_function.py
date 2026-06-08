@@ -14,8 +14,16 @@ Operations:
 import json
 import logging
 import os
+import sys
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from app.environment_codes import validate_environment  # noqa: E402
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -25,17 +33,15 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 # Mock backend (replace with real calls when you wire to prod systems)
 # ---------------------------------------------------------------------------
 
-VALID_ENVIRONMENTS = {"NJ", "DGE", "GIB", "GBGA", "UKGC", "MGM", "MIRAGE"}
-
 MOCK_STATUSES = {
-    "NJ": {"status": "HEALTHY", "active_alerts": 0, "last_check": "2026-06-03T10:14:00Z"},
-    "GIB": {"status": "DEGRADED", "active_alerts": 2, "last_check": "2026-06-03T10:13:50Z"},
+    "NJ-DGE": {"status": "HEALTHY", "active_alerts": 0, "last_check": "2026-06-03T10:14:00Z"},
+    "GIB-UKGC": {"status": "DEGRADED", "active_alerts": 2, "last_check": "2026-06-03T10:13:50Z"},
     "MGM": {"status": "HEALTHY", "active_alerts": 0, "last_check": "2026-06-03T10:14:01Z"},
     "MIRAGE": {"status": "HEALTHY", "active_alerts": 0, "last_check": "2026-06-03T10:14:00Z"},
 }
 
 MOCK_ALERTS = {
-    "GIB": [
+    "GIB-UKGC": [
         {
             "alert_id": "ALT-1023",
             "severity": "P2",
@@ -59,19 +65,20 @@ MOCK_ALERTS = {
 # ---------------------------------------------------------------------------
 
 def get_environment_status(env: str) -> dict:
-    env = env.upper()
-    if env not in VALID_ENVIRONMENTS:
-        return {
-            "error": f"Unknown environment '{env}'.",
-            "valid_environments": sorted(VALID_ENVIRONMENTS),
-        }
-    return MOCK_STATUSES.get(env, {"status": "UNKNOWN", "active_alerts": 0})
+    canonical, err = validate_environment(env)
+    if err:
+        return {"error": err}
+    assert canonical is not None
+    status = MOCK_STATUSES.get(canonical, {"status": "UNKNOWN", "active_alerts": 0})
+    return {"environment": canonical, **status}
 
 
 def get_recent_alerts(env: str, hours: int) -> dict:
-    env = env.upper()
-    if env not in VALID_ENVIRONMENTS:
-        return {"error": f"Unknown environment '{env}'."}
+    canonical, err = validate_environment(env)
+    if err:
+        return {"error": err}
+    assert canonical is not None
+    env = canonical
     if not 1 <= hours <= 168:
         return {"error": "hours must be between 1 and 168."}
 
@@ -91,9 +98,10 @@ def create_incident(payload: dict) -> dict:
     if missing:
         return {"error": f"Missing required fields: {sorted(missing)}"}
 
-    env = str(payload["environment"]).upper()
-    if env not in VALID_ENVIRONMENTS:
-        return {"error": f"Unknown environment '{env}'."}
+    env, err = validate_environment(str(payload["environment"]))
+    if err:
+        return {"error": err}
+    assert env is not None
     if payload["severity"] not in {"P1", "P2", "P3", "P4"}:
         return {"error": "severity must be one of P1, P2, P3, P4."}
 

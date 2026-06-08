@@ -17,7 +17,7 @@ Automated checks after S3/KB alignment and EC2 relaunch.
 |------|--------|
 | Knowledge base ID | `RBTJM6NIG9` |
 | Data source ID | `YICXAB6WOG` |
-| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/` |
+| S3 prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/` |
 | Last ingestion | `PESWBFWL1V` — 10 indexed, 0 failed |
 
 ## Public EC2 (teardown complete)

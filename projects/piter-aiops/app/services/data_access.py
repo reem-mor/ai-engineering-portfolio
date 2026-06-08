@@ -17,6 +17,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.environment_codes import normalize_environment
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _AGENT_DATA = _PROJECT_ROOT / "data" / "agent_data"
 _SOURCE_DATA = _PROJECT_ROOT / "data" / "source"
@@ -118,6 +120,16 @@ class DataAccessError(RuntimeError):
 _PANDAS_MODULE: Any = None
 _PANDAS_TRIED = False
 
+# In-process cache for static demo datasets (keyed by path + mtime).
+_CSV_CACHE: dict[str, tuple[float, list[dict[str, str]]]] = {}
+_JSON_CACHE: dict[str, tuple[float, Any]] = {}
+
+
+def reset_data_cache() -> None:
+    """Clear cached CSV/JSON loads (tests and demo reload)."""
+    _CSV_CACHE.clear()
+    _JSON_CACHE.clear()
+
 
 def _get_pandas():
     """Return the pandas module if importable here, else ``None`` (memoized)."""
@@ -146,22 +158,30 @@ def _read_csv_rows(path: Path, required: set[str]) -> list[dict[str, str]]:
     """
     if not path.is_file():
         raise DataAccessError(f"Missing data file: {path.name}")
+    resolved = path.resolve()
+    cache_key = str(resolved)
+    mtime = resolved.stat().st_mtime
+    cached = _CSV_CACHE.get(cache_key)
+    if cached and cached[0] == mtime:
+        return cached[1]
     pd = _get_pandas()
     if pd is None:
-        return _read_csv_stdlib(path, required)
-
-    try:
-        frame = pd.read_csv(path, dtype=str, keep_default_na=False)
-    except pd.errors.EmptyDataError as exc:
-        raise DataAccessError(f"Data file is empty: {path.name}") from exc
-    except pd.errors.ParserError as exc:
-        raise DataAccessError(f"Malformed CSV: {path.name} ({exc})") from exc
-    missing = required - set(frame.columns)
-    if missing:
-        raise DataAccessError(
-            f"{path.name} is missing required columns: {sorted(missing)}"
-        )
-    return frame.to_dict("records")
+        rows = _read_csv_stdlib(path, required)
+    else:
+        try:
+            frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+        except pd.errors.EmptyDataError as exc:
+            raise DataAccessError(f"Data file is empty: {path.name}") from exc
+        except pd.errors.ParserError as exc:
+            raise DataAccessError(f"Malformed CSV: {path.name} ({exc})") from exc
+        missing = required - set(frame.columns)
+        if missing:
+            raise DataAccessError(
+                f"{path.name} is missing required columns: {sorted(missing)}"
+            )
+        rows = frame.to_dict("records")
+    _CSV_CACHE[cache_key] = (mtime, rows)
+    return rows
 
 
 def _read_csv_stdlib(path: Path, required: set[str]) -> list[dict[str, str]]:
@@ -180,10 +200,18 @@ def _read_csv_stdlib(path: Path, required: set[str]) -> list[dict[str, str]]:
 def _read_json(path: Path) -> Any:
     if not path.is_file():
         raise DataAccessError(f"Missing data file: {path.name}")
+    resolved = path.resolve()
+    cache_key = str(resolved)
+    mtime = resolved.stat().st_mtime
+    cached = _JSON_CACHE.get(cache_key)
+    if cached and cached[0] == mtime:
+        return cached[1]
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise DataAccessError(f"Malformed JSON: {path.name} ({exc})") from exc
+    _JSON_CACHE[cache_key] = (mtime, payload)
+    return payload
 
 
 def load_deploys(data_dir: str | Path | None = None) -> list[dict[str, str]]:
@@ -339,7 +367,7 @@ def resolve_alert(
     base = Path(source_dir) if source_dir else _SOURCE_DATA
     aid = (alert_id or "").strip()
     svc = (service or "").strip().lower()
-    env = (environment or "").strip().upper()
+    env = normalize_environment(environment)
 
     if aid:
         for row in load_source_alert_stream(base):
@@ -353,14 +381,14 @@ def resolve_alert(
         for row in load_source_alert_stream(base):
             if (
                 row.get("service", "").lower() == svc
-                and row.get("environment", "").upper() == env
+                and normalize_environment(row.get("environment", "")) == env
                 and row.get("is_trigger", "").lower() == "true"
             ):
                 return dict(row)
         for row in load_source_alerts(base):
             if (
                 row.get("service", "").lower() == svc
-                and row.get("environment", "").upper() == env
+                and normalize_environment(row.get("environment", "")) == env
             ):
                 return dict(row)
 

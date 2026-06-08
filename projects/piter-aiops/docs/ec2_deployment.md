@@ -1,6 +1,8 @@
 # EC2 Deployment — Public Demo
 
-Deploy the Dockerized Flask app to a public-facing EC2 instance. Designed for a quick MVP demo, then immediate teardown.
+Deploy the Dockerized **PITER AiOps** Flask app to a public-facing EC2 instance. Designed for a quick MVP demo, then immediate teardown.
+
+> Legacy names: some EC2/ECR/IAM resources still use `incident-rag-bedrock` or `IncidentRagBedrock*` from the first milestone. New docs and images should prefer `piter-aiops`. Renaming AWS resources is optional and not required for the demo.
 
 > 🔐 **Best practice:** we use an **IAM instance profile** so the container can call Bedrock without any long-lived AWS keys. No `AWS_ACCESS_KEY_ID` ever touches the EC2 instance.
 
@@ -12,9 +14,9 @@ The simplest free option for an MVP is **GitHub Container Registry (GHCR)**:
 
 ```bash
 # From the project root, after building locally:
-docker build -t ghcr.io/<your-gh-user>/incident-rag-bedrock:demo .
+docker build -t ghcr.io/<your-gh-user>/piter-aiops:demo .
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u <your-gh-user> --password-stdin
-docker push ghcr.io/<your-gh-user>/incident-rag-bedrock:demo
+docker push ghcr.io/<your-gh-user>/piter-aiops:demo
 ```
 
 Make the package **public** in GHCR settings so EC2 can pull without authentication.
@@ -34,14 +36,14 @@ Make the package **public** in GHCR settings so EC2 can pull without authenticat
 ## 3. Launch the EC2 instance
 
 1. **EC2 → Launch instance**
-   - Name: `incident-rag-demo`
+   - Name: `piter-aiops-demo` (or legacy `incident-rag-demo`)
    - AMI: **Amazon Linux 2023** (free-tier eligible)
    - Instance type: **t3.micro** (or t2.micro)
    - Key pair: create or reuse one — you'll need it for `scp` of the `.env`
 2. **Network settings**
    - VPC / Subnet: default
    - Auto-assign public IP: **Enable**
-   - Create a **new security group** (e.g. `incident-rag-sg`):
+     - Create a **new security group** (e.g. `piter-aiops-sg`):
      - Custom TCP **8080** — Source: `0.0.0.0/0` (app port; matches Docker publish)
      - SSH (22/tcp) — Source: **My IP** (optional)
 3. **Advanced details → IAM instance profile**: select `IncidentRagBedrockEC2Profile` (role `IncidentRagBedrockEC2Role`).
@@ -56,7 +58,7 @@ The user-data script expects `/home/ec2-user/.env`. Send it via `scp` once the i
 
 ```bash
 scp -i <your-key.pem> .env ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/.env
-ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo systemctl restart docker && sudo docker restart incident-rag"
+ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo systemctl restart docker && sudo docker restart piter-aiops"
 ```
 
 > ⚠️ The `.env` must **not** contain `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` — the instance profile handles auth.
@@ -66,7 +68,7 @@ ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo systemctl restart docker &
 ```bash
 ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo docker ps"
 ```
-You should see `incident-rag` with status `Up (healthy)`.
+You should see `piter-aiops` (or legacy container name `incident-rag`) with status `Up (healthy)`.
 
 📸 *Screenshot*: `06_docker_ps_on_ec2.png`
 
