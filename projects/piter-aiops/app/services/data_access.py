@@ -293,7 +293,7 @@ def list_runbook_files() -> set[str]:
         return set()
     return {
         path.name
-        for path in _KB_RUNBOOKS.iterdir()
+        for path in _KB_RUNBOOKS.rglob("*.md")
         if path.is_file() and path.suffix == ".md" and path.name != "README.md"
     }
 

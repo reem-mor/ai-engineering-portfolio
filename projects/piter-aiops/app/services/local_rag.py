@@ -1,10 +1,10 @@
-"""Pure-Python TF-IDF + keyword retriever for offline RAG.
+﻿"""Pure-Python TF-IDF + keyword retriever for offline RAG.
 
-This module powers the local demo mode so the application never depends on a
-network call to Amazon Bedrock. It loads markdown and text runbooks from
-``data/sample_documents/`` — the same canonical corpus synced to Bedrock KB,
-splits them into heading-delimited chunks, and ranks chunks against a query
-with a small TF-IDF cosine similarity implemented without third-party
+This module powers local demo mode so the application does not depend on a
+network call to Amazon Bedrock. It loads markdown and text documents from
+``knowledge_base/``, the same canonical corpus synced to Bedrock Knowledge
+Base, splits them into heading-delimited chunks, and ranks chunks against a
+query with a small TF-IDF cosine similarity implemented without third-party
 dependencies. Every hit carries the source document name and an excerpt so the
 agent can cite it.
 """
@@ -19,13 +19,20 @@ from pathlib import Path
 from app.validators import tokenize
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_CORPUS_DIR = _PROJECT_ROOT / "data" / "sample_documents"
+_CORPUS_DIR = _PROJECT_ROOT / "knowledge_base"
 
 # Minimum cosine score for a chunk to count as a grounded retrieval. Below this
 # the retriever reports no match so the agent can refuse instead of guessing.
 # Tuned so on-topic incident queries (~0.45+) ground cleanly while off-topic
 # noise (incidental shared tokens, ~0.20) stays below the bar and triggers refusal.
 MIN_SCORE = 0.22
+RUNBOOK_PRIORITY_DOCS = {
+    "auth_service_login_failure.md",
+    "deployment_rollback.md",
+    "redis_token_store_degradation.md",
+    "database_connectivity.md",
+    "api_gateway_5xx.md",
+}
 
 
 @dataclass(frozen=True)
@@ -82,7 +89,8 @@ class LocalRetriever:
         if not self._dir.is_dir():
             return
         raw_chunks: list[tuple[str, int, str]] = []
-        for path in sorted(self._dir.glob("*.md")) + sorted(self._dir.glob("*.txt")):
+        paths = sorted(self._dir.rglob("*.md")) + sorted(self._dir.rglob("*.txt"))
+        for path in paths:
             if path.name.upper() == "README.MD":
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
@@ -136,6 +144,8 @@ class LocalRetriever:
         scored: list[RetrievedChunk] = []
         for chunk, vector in zip(self._documents, self._chunk_vectors):
             score = self._cosine(query_vector, vector)
+            if chunk.document in RUNBOOK_PRIORITY_DOCS:
+                score *= 1.4
             if score >= MIN_SCORE:
                 scored.append(
                     RetrievedChunk(
@@ -166,3 +176,5 @@ def _first_excerpt_steps(excerpt: str) -> list[str]:
             if text:
                 steps.append(text)
     return steps
+
+

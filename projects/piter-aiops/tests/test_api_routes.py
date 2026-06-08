@@ -5,19 +5,19 @@ from app.bedrock_client import Citation, RagAnswer
 
 def _fake_answer():
     return RagAnswer(
-        answer="Check runbook_db_cpu.md for CPU alerts.",
+        answer="Check database_connectivity.md for CPU alerts.",
         citations=[
             Citation(
                 snippet="Step 1: pg_stat_activity",
                 source_uri="s3://bucket/runbook.md",
-                source_label="runbook_db_cpu.md",
+                source_label="database_connectivity.md",
                 index=1,
             )
         ],
         session_id="sess-1",
         grounded=True,
         latency_ms=120,
-        matched_runbook="runbook_db_cpu.md",
+        matched_runbook="database_connectivity.md",
     )
 
 

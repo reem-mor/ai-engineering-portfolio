@@ -283,7 +283,7 @@ const TOOLS = [
 
 const KB_DOCS = [
   {
-    name: "RB-001 API Gateway 5xx Spike",
+    name: "api_gateway_5xx.md",
     type: "runbook",
     service: "api-gateway",
     env: "GIB-UKGC",
@@ -2781,17 +2781,17 @@ function CitationPreview({
   const visible = usingFallback
     ? [
         {
-          source_label: "runbook_bet_service_critical.md",
+          source_label: "deployment_rollback.md",
           snippet:
             "Check recent deployment, dependency health, and rollback availability before restarting services.",
-          source_uri: "local://knowledge_base/runbooks/runbook_bet_service_critical.md",
+          source_uri: "local://knowledge_base/runbooks/deployment_rollback.md",
           index: 1,
         },
         {
-          source_label: "severity-and-escalation-policy.md",
+          source_label: "escalation_policy.md",
           snippet:
             "P1 incidents in regulated markets require immediate escalation preview and business impact assessment.",
-          source_uri: "local://knowledge_base/policies/severity-and-escalation-policy.md",
+          source_uri: "local://knowledge_base/escalation/escalation_policy.md",
           index: 2,
         },
       ]

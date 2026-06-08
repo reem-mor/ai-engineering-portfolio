@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 from mcp import server
+from mcp.tool_registry import call_registered_tool, list_registered_tools
 from mcp.tools import call_tool, list_tools
 
 EXPECTED_TOOLS = {
@@ -70,3 +71,14 @@ def test_unknown_tool_returns_method_not_found_error():
         {"jsonrpc": "2.0", "id": 10, "method": "tools/call", "params": {"name": "nope", "arguments": {}}}
     )
     assert resp["error"]["code"] == -32601
+
+
+def test_explicit_piter_tool_registry_exposes_required_names():
+    assert list_registered_tools() == [
+        "find_similar_incidents",
+        "get_escalation_recommendation",
+        "get_recent_deployments",
+        "get_service_context",
+    ]
+    out = call_registered_tool("get_service_context", service="auth-service")
+    assert out["owner_team"] == "Identity & Access"

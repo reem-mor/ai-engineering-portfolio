@@ -95,12 +95,17 @@ def _confidence_from_sections(piter_sections: dict[str, Any] | None) -> str:
 
 def _next_action(piter: dict[str, str], recommended_steps: list[str] | None) -> str:
     if recommended_steps:
-        return recommended_steps[0]
+        for step in recommended_steps:
+            candidate = str(step).strip()
+            if candidate and not candidate.lower().endswith("runbook"):
+                return candidate
     triage = piter.get("triage") or ""
     if triage:
-        first = triage.splitlines()[0].strip()
-        if first:
-            return first.lstrip("0123456789.) ").strip()
+        for line in triage.splitlines():
+            first = line.strip()
+            candidate = first.lstrip("0123456789.) ").strip()
+            if candidate and not candidate.lower().endswith("runbook"):
+                return candidate
     return piter.get("escalation") or "Review cited runbooks and validate service health."
 
 

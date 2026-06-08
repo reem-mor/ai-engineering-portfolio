@@ -12,13 +12,19 @@ from app.text_utils import format_answer_sections
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _KB_RUNBOOKS = _PROJECT_ROOT / "knowledge_base" / "runbooks"
-_SAMPLE_DOCS = _PROJECT_ROOT / "data" / "sample_documents"
 
 _SEVERITY_COST_KEY = {
     "P1": "p1_cost_per_minute_usd",
     "P2": "p2_cost_per_minute_usd",
     "P3": "p3_cost_per_minute_usd",
     "P4": "p4_cost_per_minute_usd",
+}
+_SEVERITY_ALIASES = {
+    "CRITICAL": "P1",
+    "HIGH": "P2",
+    "MEDIUM": "P3",
+    "MODERATE": "P3",
+    "LOW": "P4",
 }
 
 _ENV_REGULATOR = {
@@ -30,6 +36,11 @@ _ENV_REGULATOR = {
 
 def _parse_iso(ts: str) -> datetime:
     return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+
+def _normalize_priority_label(value: str) -> str:
+    raw = (value or "").strip().upper()
+    return _SEVERITY_ALIASES.get(raw, raw if raw in {"P1", "P2", "P3", "P4"} else "P3")
 
 
 def _normalize_alert(alert: dict[str, Any], source_dir: Path | None) -> dict[str, Any]:
@@ -163,7 +174,7 @@ def _score_business_impact(
 ) -> dict[str, Any]:
     impact_data = data_access.load_business_impact(source_dir)
     svc_block = impact_data.get("services", {}).get(service, {})
-    sev = severity.upper() if severity else "P3"
+    sev = _normalize_priority_label(severity)
     cost_key = _SEVERITY_COST_KEY.get(sev, "p3_cost_per_minute_usd")
     cost_per_minute = int(svc_block.get(cost_key, svc_block.get("p1_cost_per_minute_usd", 0)))
     active_users = int(alert.get("affected_users") or svc_block.get("active_users_typical", 0))
@@ -203,7 +214,7 @@ def _classify_priority(
 ) -> dict[str, Any]:
     matrix = data_access.load_priority_matrix(source_dir)
     thresholds = matrix.get("thresholds", {})
-    raw_sev = str(alert.get("severity", "")).upper()
+    raw_sev = _normalize_priority_label(str(alert.get("severity", "")))
     error_rate = float(alert.get("error_rate_pct") or 0)
     cost_per_min = int(impact.get("cost_per_minute", 0))
     regulatory = impact.get("regulatory_exposure", [])
@@ -346,11 +357,7 @@ def _find_similar_incidents(
 def _extract_runbook_sections(runbook_file: str) -> dict[str, Any]:
     path = _KB_RUNBOOKS / runbook_file
     if not path.is_file():
-        mirror = _SAMPLE_DOCS / runbook_file.replace("RB-011-bet-service-outage.md", "runbook_bet_service_outage.md")
-        if mirror.is_file():
-            path = mirror
-        else:
-            return {"runbook_file": runbook_file, "found": False}
+        return {"runbook_file": runbook_file, "found": False}
 
     text = path.read_text(encoding="utf-8")
     sections: dict[str, list[str]] = {}
@@ -523,7 +530,7 @@ def compose_piter_answer(analysis: dict[str, Any], rag_answer: str = "") -> str:
     lines.extend([
         "",
         "Resolution plan:",
-        kb.get("rollback") or "Follow RB-010 rollback if deploy-correlated; otherwise runbook remediation.",
+        kb.get("rollback") or "Follow the deployment rollback runbook if deploy-correlated; otherwise use the service runbook remediation.",
         "",
         "Business impact:",
         impact.get("business_explanation", ""),

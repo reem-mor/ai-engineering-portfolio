@@ -43,7 +43,7 @@
         <div data-arch-panel="documents" hidden>
           <h3 style="margin:0;font-size:1rem">Upload to S3</h3>
           <p style="color:var(--muted-foreground);font-size:0.875rem">Runbooks and incident exports land in the KB data source bucket.</p>
-          <pre class="code-block">aws s3 cp ./data/sample_documents/ s3://YOUR-BUCKET/ --recursive</pre>
+          <pre class="code-block">aws s3 sync ./knowledge_base/ s3://YOUR-BUCKET/projects/piter-aiops/knowledge_base/ --delete</pre>
         </div>
         <div data-arch-panel="kb">
           <h3 style="margin:0;font-size:1rem">boto3 · RetrieveAndGenerate</h3>

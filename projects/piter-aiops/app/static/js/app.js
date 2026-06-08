@@ -1,9 +1,9 @@
 (() => {
   const MIN_LEN = 3;
   const MAX_LEN = 500;
-  const RESOLVED_KEY = "iiq_resolved_alerts";
-  const SAVED_MIN_KEY = "iiq_saved_min";
-  const SAVED_IMPACT_KEY = "iiq_saved_impact";
+  const RESOLVED_KEY = "piter_resolved_alerts";
+  const SAVED_MIN_KEY = "piter_saved_min";
+  const SAVED_IMPACT_KEY = "piter_saved_impact";
 
   const STOP = new Set([
     "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "for", "with",
