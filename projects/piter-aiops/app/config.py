@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Empty AWS_PROFILE breaks botocore (ProfileNotFound); unset so bearer/default chain works.
+if not os.environ.get("AWS_PROFILE", "").strip():
+    os.environ.pop("AWS_PROFILE", None)
+
 _FALSE_VALUES = {"false", "0", "no", "off"}
 _TRUE_VALUES = {"true", "1", "yes", "on"}
 _DEFAULT_S3_PREFIX = "projects/piter-aiops/data/sample_documents"

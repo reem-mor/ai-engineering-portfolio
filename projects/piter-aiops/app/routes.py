@@ -35,6 +35,9 @@ from app.services.notification_dispatch import (
 )
 from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
 from app.services import session_memory
+from app.services.chat_history import append_turn, clear_history, get_messages
+from app.services.response_format import normalize_api_response
+from app.services.tools_status import build_tools_status
 
 log = logging.getLogger(__name__)
 bp = Blueprint("main", __name__)
@@ -431,8 +434,6 @@ def _api_triage_response(body: dict):
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
-    card.setdefault("piter", card.get("piter_sections"))
-    card.setdefault("business_impact", card.get("impact"))
     card.setdefault(
         "tool_results",
         [
@@ -449,7 +450,11 @@ def _api_triage_response(body: dict):
             {"name": "get_escalation_recommendation", "result": card.get("escalation_policy", {})},
         ],
     )
-    return jsonify(ok=True, **card), 200
+    impact = card.get("impact")
+    if isinstance(impact, dict) and impact.get("business_explanation"):
+        card.setdefault("business_impact", impact["business_explanation"])
+    normalized = normalize_api_response(card)
+    return jsonify(ok=True, **normalized), 200
 
 
 @bp.get("/api/demo-alert")
@@ -472,6 +477,28 @@ def api_incidents_analyze():
     return _api_triage_response(body)
 
 
+@bp.get("/api/tools/status")
+def api_tools_status():
+    """Report readiness of the four required enrichment tools."""
+    status = build_tools_status()
+    return jsonify(ok=True, **status), 200
+
+
+@bp.get("/api/history")
+def api_history_get():
+    """Return saved chat messages for the default or requested demo session."""
+    session_id = str(request.args.get("session_id") or "").strip() or None
+    return jsonify(ok=True, **get_messages(session_id)), 200
+
+
+@bp.delete("/api/history")
+def api_history_delete():
+    """Clear chat history for the default or requested demo session."""
+    body = request.get_json(silent=True) or {}
+    session_id = str(body.get("session_id") or request.args.get("session_id") or "").strip() or None
+    return jsonify(ok=True, **clear_history(session_id)), 200
+
+
 @bp.post("/api/chat")
 def api_chat():
     """Canonical chat endpoint with optional incident-session follow-up memory."""
@@ -485,19 +512,31 @@ def api_chat():
         if session_id:
             follow_up = run_follow_up(session_id, question, ask_fn=_ask_fn())
             if follow_up is not None:
-                return jsonify(
-                    ok=True,
-                    **follow_up,
-                    memory={"last_question": question, "session_id": session_id},
-                ), 200
+                follow_up["memory"] = {"last_question": question, "session_id": session_id}
+                normalized = normalize_api_response(follow_up)
+                append_turn(
+                    session_id=None,
+                    question=question,
+                    answer=normalized.get("answer", ""),
+                    mode=normalized.get("mode"),
+                )
+                return jsonify(ok=True, **normalized), 200
         result = _handle_ask(question, session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
 
     payload = result.to_dict()
-    payload["memory"] = {"last_question": question, "session_id": payload.get("session_id") or session_id}
-    return jsonify(ok=True, **payload), 200
+    chat_session = session_id or payload.get("session_id")
+    payload["memory"] = {"last_question": question, "session_id": chat_session}
+    normalized = normalize_api_response(payload)
+    append_turn(
+        session_id=None,
+        question=question,
+        answer=normalized.get("answer", ""),
+        mode=normalized.get("mode"),
+    )
+    return jsonify(ok=True, **normalized), 200
 
 
 @bp.post("/api/escalation/notify")
