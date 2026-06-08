@@ -184,7 +184,7 @@ class BedrockRagClient:
         try:
             response = self._client.retrieve_and_generate(**request)
         except Exception as exc:  # noqa: BLE001 — funneled through translate()
-            log.exception("Bedrock retrieve_and_generate failed")
+            log.warning("Bedrock retrieve_and_generate failed: %s", exc)
             raise translate(exc) from exc
 
         latency_ms = int((time.perf_counter() - started) * 1000)

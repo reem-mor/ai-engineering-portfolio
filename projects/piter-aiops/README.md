@@ -9,7 +9,7 @@ An AI-assisted incident operations platform for NOC and SRE teams. PITER connect
 | **Enterprise console** | [http://localhost:8080/](http://localhost:8080/) (React SPA) |
 | **Legacy demo console** | [http://localhost:8080/console](http://localhost:8080/console) |
 | **Health** | [http://localhost:8080/health](http://localhost:8080/health) |
-| **Tests** | `pytest -q` — **271 tests**, offline by default |
+| **Tests** | `pytest -q` — **275 tests**, offline by default |
 | **Live validation** | `python scripts/verify_live_demo.py` — **29/29** |
 | **Presentation assets** | [`screenshots/final/`](screenshots/final/) |
 
@@ -29,12 +29,14 @@ An AI-assisted incident operations platform for NOC and SRE teams. PITER connect
 7. [Guardrails configuration](#guardrails-configuration)
 8. [MCP integration](#mcp-integration)
 9. [AI-assisted development (skills and tooling)](#ai-assisted-development-skills-and-tooling)
-10. [Testing and verification](#testing-and-verification)
-11. [Quick start](#quick-start)
-12. [HTTP API](#http-api)
-13. [Challenges and design trade-offs](#challenges-and-design-trade-offs)
-14. [Next steps](#next-steps)
-15. [Security and further reading](#security-and-further-reading)
+10. [Project structure](#project-structure)
+11. [Demo questions and flow](#demo-questions-and-flow)
+12. [Testing and verification](#testing-and-verification)
+13. [Quick start](#quick-start)
+14. [HTTP API](#http-api)
+15. [Challenges and design trade-offs](#challenges-and-design-trade-offs)
+16. [Next steps](#next-steps)
+17. [Security and further reading](#security-and-further-reading)
 
 ---
 
@@ -61,7 +63,7 @@ PITER AiOps reduces mean time to understand during incidents. Instead of searchi
 
 ![Dashboard](screenshots/final/01_dashboard.png)
 
-*Full capture set: [`screenshots/final/`](screenshots/final/) · legacy console: [`screenshots/console_demo/`](screenshots/console_demo/)*
+*Use the final submission capture set in [`screenshots/final/`](screenshots/final/). Older root-level and `console_demo/` captures are retained only as historical proof, not as the primary README set.*
 
 ### Naming (PITER vs legacy AWS)
 
@@ -474,7 +476,7 @@ These skill areas guided implementation and review (representative—not an exha
 | AWS Lambda + action groups | OpenAPI schemas, enrichment handlers |
 | Flask / FastAPI patterns | API design, structured errors, health checks |
 | React / Next.js performance | SPA dashboard, loading states, enterprise UX |
-| Testing & QA | 271 pytest cases + live verify scripts |
+| Testing & QA | 275 pytest cases + live verify scripts |
 | Security review | Guardrails, upload validation, notification gates |
 | RAG evaluation | Grounding checks, refusal path, citation coverage |
 | DevOps / Docker | `piter-aiops:dev` image, compose, EC2 user-data |
@@ -489,6 +491,42 @@ These skill areas guided implementation and review (representative—not an exha
 
 ---
 
+## Project structure
+
+```text
+piter-aiops/
+  app/                  Flask app, API routes, local RAG, memory, services, legacy templates
+  frontend/             React/Vite source dashboard; builds into app/static/spa/
+  action_groups/        Bedrock Agent Lambda action-group handlers and OpenAPI schemas
+  mcp/                  Local read-only MCP-style server exposing the same four tools
+  data/source/          Canonical CSV/JSON demo datasets for owners, deploys, incidents, impact
+  data/sample_documents/ Knowledge Base source documents and upload examples
+  knowledge_base/       Markdown runbooks, policies, glossary, incident records
+  scripts/              AWS setup, verification, capture, and demo utility scripts
+  tests/                Backend, tool, data, route, Lambda, memory, and fallback tests
+  screenshots/final/    Final submission screenshots referenced by this README
+```
+
+`app/` is the backend package, not a duplicate React frontend. The React source of truth is `frontend/`; the committed production build is `app/static/spa/` so Flask and Docker can serve the dashboard directly.
+
+---
+
+## Demo questions and flow
+
+Use these in the live demo after the dashboard loads:
+
+1. `What should I check when users cannot log in after the latest deployment?`
+2. `Analyze this alert: high error rate on auth-service in production after deployment.`
+3. `Who should I escalate this incident to?`
+4. `Are there similar incidents from the past?`
+5. `What is the business impact of this issue?`
+6. `What was my previous question?`
+7. `Based on the previous incident, what should I do next?`
+
+Recommended 5-7 minute path: open Dashboard, run Alert Storm, run PITER analysis, show RAG citations, show Lambda/MCP-style tool results, ask an escalation follow-up, open Context Memory, then finish on Architecture/Settings to show Bedrock mode and fallback status.
+
+---
+
 ## Testing and verification
 
 ### Automated test suite
@@ -496,7 +534,7 @@ These skill areas guided implementation and review (representative—not an exha
 ```powershell
 cd projects/piter-aiops
 py -3.12 -m pip install -r requirements-dev.txt
-py -3.12 -m pytest -q                    # 271 passed (offline)
+py -3.12 -m pytest -q                    # 275 passed (offline)
 ```
 
 | Area | Test modules |
@@ -578,6 +616,7 @@ cd frontend && npm run build              # production → app/static/spa/
 | `GET` | `/api/kb/manifest` | KB document list |
 | `POST` | `/api/triage` | Full triage card (RAG + tools + session) |
 | `POST` | `/api/follow-up` | Session-aware follow-up |
+| `GET` | `/api/sessions/<session_id>/history` | Saved session memory and chat history |
 | `POST` | `/ask` | Grounded Q&A + citations |
 | `POST` | `/documents/upload` | Validated upload + optional S3/KB sync |
 | `POST` | `/api/escalation/notify` | Gated SNS/SES (mock default) |

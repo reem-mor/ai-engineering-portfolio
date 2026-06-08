@@ -34,6 +34,7 @@ from app.services.notification_dispatch import (
     whatsapp_configured,
 )
 from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
+from app.services import session_memory
 
 log = logging.getLogger(__name__)
 bp = Blueprint("main", __name__)
@@ -518,6 +519,19 @@ def api_follow_up():
         return jsonify(ok=False, reason="unknown_session",
                        message="That incident session was not found. Run triage first."), 404
     return jsonify(ok=True, **result), 200
+
+
+@bp.get("/api/sessions/<session_id>/history")
+def api_session_history(session_id: str):
+    """Return saved chat history and triage context for one incident session."""
+    history = session_memory.get_history(session_id)
+    if history is None:
+        return jsonify(
+            ok=False,
+            reason="unknown_session",
+            message="That incident session was not found. Run triage first.",
+        ), 404
+    return jsonify(ok=True, **history), 200
 
 
 @bp.get("/health")

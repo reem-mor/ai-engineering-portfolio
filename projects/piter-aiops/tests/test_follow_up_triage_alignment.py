@@ -42,6 +42,14 @@ def test_follow_up_escalation_matches_triage_card(local_client):
     primary = triage["owner"].get("primary_on_call") or triage["owner"].get("primary_on_call_role", "")
     assert primary in follow["answer"]
 
+    history = local_client.get(f"/api/sessions/{sid}/history").get_json()
+    assert history["ok"] is True
+    assert history["session_id"] == sid
+    assert history["triage_summary"]["priority"] == triage["priority"]
+    assert len(history["followups"]) == 1
+    assert history["followups"][0]["question"] == "Who should I escalate this to?"
+    assert history["followups"][0]["answer"]["memory_used"] is True
+
 
 def test_follow_up_deployment_matches_triage_card(local_client):
     triage = _storm_triage(local_client)
@@ -73,3 +81,11 @@ def test_follow_up_business_impact_matches_triage_card(local_client):
     assert card_impact
     assert follow["answer"] == card_impact
     assert str(triage["impact"]["revenue_impact_usd_per_hour"]) in follow["answer"] or "588" in follow["answer"]
+
+
+def test_session_history_unknown_session_returns_404(local_client):
+    response = local_client.get("/api/sessions/not-a-session/history")
+    assert response.status_code == 404
+    data = response.get_json()
+    assert data["ok"] is False
+    assert data["reason"] == "unknown_session"

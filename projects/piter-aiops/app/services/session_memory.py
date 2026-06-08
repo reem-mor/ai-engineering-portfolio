@@ -67,6 +67,25 @@ def get_session(session_id: str | None) -> dict[str, Any] | None:
         return dict(session) if session is not None else None
 
 
+def get_history(session_id: str | None) -> dict[str, Any] | None:
+    """Return the public chat-history view for a session."""
+    session = get_session(session_id)
+    if session is None:
+        return None
+    return {
+        "session_id": session["session_id"],
+        "created_at": session["created_at"],
+        "alert": session.get("alert", {}),
+        "citations": session.get("citations", []),
+        "followups": list(session.get("followups", [])),
+        "triage_summary": {
+            "priority": (session.get("triage_card") or {}).get("priority"),
+            "matched_runbook": (session.get("triage_card") or {}).get("matched_runbook"),
+            "mode": (session.get("triage_card") or {}).get("mode"),
+        },
+    }
+
+
 def append_followup(session_id: str, question: str, answer: dict[str, Any]) -> bool:
     """Record a follow-up Q/A turn. Returns False if the session is unknown."""
     with _LOCK:
