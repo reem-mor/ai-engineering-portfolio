@@ -16,7 +16,7 @@ from app.services.local_rag import _first_excerpt_steps
 from app.services.tool_router import decide_tools, run_plan
 from app.text_utils import parse_action_bullets
 
-AskFn = Callable[[str], RagAnswer]
+AskFn = Callable[..., RagAnswer]
 
 DEMO_ALERT: dict[str, Any] = {
     "alert_id": "ALERT-DEMO-PG-CPU",
@@ -136,7 +136,10 @@ def run_triage(
     """Run full triage: structured analysis, RAG, compose one triage card."""
     sid = session_memory.create_session(alert, session_id=session_id)
     question = build_triage_question(alert)
-    rag = ask_fn(question)
+    try:
+        rag = ask_fn(question, session_id=sid)
+    except TypeError:
+        rag = ask_fn(question)
 
     analysis = analyze_incident(alert)
     analysis_ok = not analysis.get("error")
@@ -301,7 +304,10 @@ def run_follow_up(
         payload = {"answer": answer, "summary_of": card.get("matched_runbook")}
     else:
         memory_used = False
-        rag = ask_fn(question)
+        try:
+            rag = ask_fn(question, session_id=session_id)
+        except TypeError:
+            rag = ask_fn(question)
         mode = rag.mode
         payload = {
             "answer": rag.answer,

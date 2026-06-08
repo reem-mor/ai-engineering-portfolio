@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
 from flask_wtf.csrf import generate_csrf
@@ -404,9 +405,58 @@ def api_kb_manifest():
     return jsonify(ok=True, documents=load_kb_manifest(), sections=kb_sections()), 200
 
 
+def _alert_from_session(session_id: str) -> dict[str, Any] | None:
+    """Load alert context stored during triage for Bedrock Agent session attributes."""
+    session = session_memory.get_session(session_id)
+    if not session:
+        return None
+    alert = session.get("alert")
+    if isinstance(alert, dict) and alert:
+        return alert
+    card = session.get("triage_card") or {}
+    if isinstance(card, dict):
+        nested = card.get("alert")
+        if isinstance(nested, dict) and nested:
+            return nested
+    return None
+
+
+def _ask_fn_for_alert(
+    alert: dict[str, Any],
+    *,
+    triage_complete: str = "false",
+):
+    """Ask Bedrock Agent with alert-scoped session attributes (KB + action groups)."""
+    session_attrs, prompt_attrs = build_session_attributes(
+        alert_id=str(alert.get("alert_id") or ""),
+        service=str(alert.get("service") or ""),
+        environment=str(alert.get("environment") or ""),
+        severity=str(alert.get("severity") or ""),
+        symptom=str(alert.get("symptom") or alert.get("description") or ""),
+        alert_time=str(alert.get("alert_time") or ""),
+        triage_complete=triage_complete,
+    )
+
+    def ask(question: str, *, session_id: str | None = None) -> RagAnswer:
+        return _handle_ask(
+            question,
+            session_id=session_id,
+            session_attributes=session_attrs,
+            prompt_session_attributes=prompt_attrs,
+        )
+
+    return ask
+
+
+def _ask_fn_for_session(session_id: str):
+    """Follow-up/chat path: reuse stored alert and mark triage complete for the agent."""
+    alert = _alert_from_session(session_id) or {}
+    return _ask_fn_for_alert(alert, triage_complete="true")
+
+
 def _ask_fn():
     """Closure that asks the active RAG backend with local auto-fallback."""
-    return lambda question: _handle_ask(question)
+    return lambda question, *, session_id=None: _handle_ask(question, session_id=session_id)
 
 
 def _api_triage_response(body: dict):
@@ -430,7 +480,7 @@ def _api_triage_response(body: dict):
             message="An alert needs at least a service and a symptom/description.",
         ), 400
     try:
-        card = run_triage(alert, ask_fn=_ask_fn(), session_id=session_id)
+        card = run_triage(alert, ask_fn=_ask_fn_for_alert(alert), session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
@@ -510,7 +560,9 @@ def api_chat():
 
     try:
         if session_id:
-            follow_up = run_follow_up(session_id, question, ask_fn=_ask_fn())
+            follow_up = run_follow_up(
+                session_id, question, ask_fn=_ask_fn_for_session(session_id)
+            )
             if follow_up is not None:
                 follow_up["memory"] = {"last_question": question, "session_id": session_id}
                 normalized = normalize_api_response(follow_up)
@@ -610,7 +662,7 @@ def api_follow_up():
     if not question:
         return jsonify(ok=False, reason="empty_question", message="Please enter a follow-up question."), 400
     try:
-        result = run_follow_up(session_id, question, ask_fn=_ask_fn())
+        result = run_follow_up(session_id, question, ask_fn=_ask_fn_for_session(session_id))
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status

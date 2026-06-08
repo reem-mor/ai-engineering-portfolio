@@ -31,9 +31,8 @@ Set-Location $RepoRoot
 $env:AWS_PROFILE = $AwsProfile
 $env:AWS_REGION = $AwsRegion
 
-# Bedrock KB IAM role currently grants s3:GetObject on sample_documents/, not knowledge_base/.
-$KbPrefix = "projects/piter-aiops/data/sample_documents/"
-$KbMirrorPrefix = "projects/piter-aiops/knowledge_base/"
+# Canonical KB prefix — must match PITER_S3_PREFIX / app.config.S3_PREFIX and KB data source inclusion.
+$KbPrefix = "projects/piter-aiops/knowledge_base/"
 $LambdaRole = "arn:aws:iam::${AccountId}:role/incidentiq-lambda-role"
 $AgentSourceArn = "arn:aws:bedrock:${AwsRegion}:${AccountId}:agent/${AgentId}"
 
@@ -70,7 +69,8 @@ function New-ActionGroupZip([string]$Name) {
 
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path (Join-Path $build "*") -DestinationPath $zip -Force
-    return $zip
+    if (-not (Test-Path $zip)) { throw "Failed to build Lambda zip for $Name" }
+    return (Resolve-Path -LiteralPath $zip).Path
 }
 
 function Invoke-Aws([string[]]$AwsArgs) {
@@ -82,9 +82,37 @@ function Invoke-Aws([string[]]$AwsArgs) {
     return $exit
 }
 
+function Get-ZipFileUri([string]$ZipPath) {
+    # AWS CLI on Windows requires forward slashes in fileb:// URIs.
+    $resolved = (Resolve-Path -LiteralPath $ZipPath).Path.Replace("\", "/")
+    return "fileb://$resolved"
+}
+
 function Test-LambdaExists([string]$Name) {
-    $exit = Invoke-Aws @("lambda", "get-function", "--function-name", $Name)
-    return $exit -eq 0
+    $output = & aws lambda get-function --function-name $Name 2>$null
+    return $LASTEXITCODE -eq 0
+}
+
+function Wait-LambdaReady([string]$Name) {
+    do {
+        $state = aws lambda get-function-configuration --function-name $Name `
+            --query "{Status:LastUpdateStatus,Reason:LastUpdateStatusReason}" `
+            --output json 2>$null | ConvertFrom-Json
+        if ($state.Status -eq "Successful") { return }
+        if ($state.Status -eq "Failed") {
+            throw "Lambda $Name update failed: $($state.Reason)"
+        }
+        Start-Sleep -Seconds 2
+    } while ($true)
+}
+
+function Update-LambdaCode([string]$Name, [string]$ZipPath) {
+    $zipUri = Get-ZipFileUri $ZipPath
+    & aws lambda update-function-code --function-name $Name --zip-file $zipUri | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "update-function-code failed for $Name (exit $LASTEXITCODE, zip $zipUri)"
+    }
+    Wait-LambdaReady $Name
 }
 
 function Ensure-Lambda([string]$Name, [string]$Description) {
@@ -92,11 +120,10 @@ function Ensure-Lambda([string]$Name, [string]$Description) {
     $exists = Test-LambdaExists $Name
 
     if ($exists) {
-        if ((Invoke-Aws @("lambda", "update-function-code", "--function-name", $Name, "--zip-file", "fileb://$zip")) -ne 0) {
-            throw "update-function-code failed for $Name"
-        }
+        Update-LambdaCode -Name $Name -ZipPath $zip
         Write-Host "Updated Lambda $Name"
     } else {
+        $zipUri = Get-ZipFileUri $zip
         $createExit = Invoke-Aws @(
             "lambda", "create-function",
             "--function-name", $Name,
@@ -107,13 +134,15 @@ function Ensure-Lambda([string]$Name, [string]$Description) {
             "--timeout", "15",
             "--memory-size", "256",
             "--description", $Description,
-            "--zip-file", "fileb://$zip"
+            "--zip-file", $zipUri
         )
         if ($createExit -ne 0) {
-            if ((Invoke-Aws @("lambda", "update-function-code", "--function-name", $Name, "--zip-file", "fileb://$zip")) -ne 0) {
+            if (Test-LambdaExists $Name) {
+                Update-LambdaCode -Name $Name -ZipPath $zip
+                Write-Host "Updated Lambda $Name (create reported conflict)"
+            } else {
                 throw "create-function failed for $Name"
             }
-            Write-Host "Updated Lambda $Name (create reported conflict)"
         } else {
             Write-Host "Created Lambda $Name"
         }
@@ -135,11 +164,44 @@ function Ensure-Lambda([string]$Name, [string]$Description) {
     return $arn
 }
 
-Write-Step "Sync knowledge_base markdown to S3 (IAM-allowed prefix)"
-aws s3 sync ".\knowledge_base\" "s3://$Bucket/$KbPrefix" --exclude "*" --include "*.md" --delete
-aws s3 sync ".\knowledge_base\" "s3://$Bucket/$KbMirrorPrefix" --exclude "*" --include "*.md"
+function Remove-OldIamPolicyVersions([string]$PolicyArn) {
+    $versions = aws iam list-policy-versions --policy-arn $PolicyArn --output json | ConvertFrom-Json
+    foreach ($entry in $versions.Versions) {
+        if ($entry.IsDefaultVersion) { continue }
+        if ((Invoke-Aws @("iam", "delete-policy-version", "--policy-arn", $PolicyArn, "--version-id", $entry.VersionId)) -eq 0) {
+            Write-Host "Deleted IAM policy version $($entry.VersionId)"
+        }
+    }
+}
 
-Write-Step "Point KB data source at IAM-allowed S3 prefix"
+Write-Step "Ensure Bedrock KB role can read knowledge_base S3 prefix"
+$kbS3PolicyArn = "arn:aws:iam::${AccountId}:policy/service-role/AmazonBedrockS3PolicyForKnowledgeBase_2q8xn"
+$kbS3PolicyPath = Join-Path $RepoRoot "infra/kb_s3_policy_patch.json"
+$policyDocUri = (Resolve-Path -LiteralPath $kbS3PolicyPath).Path.Replace("\", "/")
+$policyExit = Invoke-Aws @(
+    "iam", "create-policy-version",
+    "--policy-arn", $kbS3PolicyArn,
+    "--policy-document", "file://$policyDocUri",
+    "--set-as-default"
+)
+if ($policyExit -ne 0) {
+    Write-Host "KB S3 policy update failed; pruning non-default versions and retrying"
+    Remove-OldIamPolicyVersions $kbS3PolicyArn
+    $policyExit = Invoke-Aws @(
+        "iam", "create-policy-version",
+        "--policy-arn", $kbS3PolicyArn,
+        "--policy-document", "file://$policyDocUri",
+        "--set-as-default"
+    )
+}
+if ($policyExit -ne 0) {
+    Write-Host "KB S3 policy update skipped (verify default version includes $KbPrefix)"
+}
+
+Write-Step "Sync knowledge_base markdown to S3 (canonical prefix)"
+aws s3 sync (Join-Path $RepoRoot "knowledge_base") "s3://$Bucket/$KbPrefix" --exclude "*" --include "*.md" --delete
+
+Write-Step "Point KB data source at knowledge_base S3 prefix"
 $dataSourcePath = Join-Path $RepoRoot "dist/update-data-source.json"
 $dataSourceJson = @"
 {
@@ -187,13 +249,21 @@ do {
     Write-Host "Ingestion status: $status"
 } while ($status -in @("STARTING", "IN_PROGRESS"))
 
-$stats = aws bedrock-agent get-ingestion-job `
+$ingestion = aws bedrock-agent get-ingestion-job `
     --knowledge-base-id $KbId `
     --data-source-id $DataSourceId `
     --ingestion-job-id $IngestionJobId `
-    --query ingestionJob.statistics `
-    --output json
-Write-Host $stats
+    --output json | ConvertFrom-Json
+$stats = $ingestion.ingestionJob.statistics
+Write-Host ($stats | ConvertTo-Json -Compress)
+$failed = [int]($stats.numberOfDocumentsFailed)
+if ($failed -gt 0) {
+    Write-Host "Ingestion failures:" -ForegroundColor Yellow
+    foreach ($reason in $ingestion.ingestionJob.failureReasons) {
+        Write-Host $reason
+    }
+    throw "KB ingestion failed for $failed document(s). Check Bedrock KB IAM s3 GetObject on $KbPrefix"
+}
 
 Write-Step "Deploy PITER action-group Lambdas"
 $lambdaDefs = @(
@@ -208,31 +278,44 @@ foreach ($def in $lambdaDefs) {
 }
 
 Write-Step "Repoint legacy action groups to new Lambdas"
-$groupUpdates = @{
-    "iiq-correlate" = "piter-recent-deployments"
-    "iiq-context"   = "piter-service-context"
-    "iiq-similar"   = "piter-similar-incidents"
-}
+$groupUpdates = @(
+    @{ ActionGroup = "iiq-correlate"; Lambda = "piter-recent-deployments"; S3Key = "agent/iiq-correlate/openapi_schema.yaml" },
+    @{ ActionGroup = "iiq-context"; Lambda = "piter-service-context"; S3Key = "agent/iiq-context/openapi_schema.yaml" },
+    @{ ActionGroup = "iiq-similar"; Lambda = "piter-similar-incidents"; S3Key = "agent/iiq-similar/openapi_schema.yaml" },
+    @{ ActionGroup = "piter-escalation"; Lambda = "piter-escalation"; S3Key = "agent/piter-escalation/openapi_schema.yaml" }
+)
+$agJsonDir = Join-Path $RepoRoot "dist/action-groups"
+New-Item -ItemType Directory -Force -Path $agJsonDir | Out-Null
 $groups = aws bedrock-agent list-agent-action-groups --agent-id $AgentId --agent-version DRAFT | ConvertFrom-Json
-foreach ($entry in $groupUpdates.GetEnumerator()) {
-    $match = $groups.actionGroupSummaries | Where-Object { $_.actionGroupName -eq $entry.Key } | Select-Object -First 1
+foreach ($entry in $groupUpdates) {
+    $match = $groups.actionGroupSummaries | Where-Object { $_.actionGroupName -eq $entry.ActionGroup } | Select-Object -First 1
     if (-not $match) {
-        Write-Host "Skipping missing action group $($entry.Key)"
+        Write-Host "Skipping missing action group $($entry.ActionGroup)"
         continue
     }
-    $lambdaArn = $lambdaArns[$entry.Value]
-    $s3Key = "agent/$($entry.Key)/openapi_schema.yaml"
-    aws s3 cp "action_groups/$($entry.Value)/openapi_schema.yaml" "s3://$Bucket/$s3Key"
-    if ($LASTEXITCODE -ne 0) { throw "s3 cp openapi schema failed for $($entry.Key)" }
-    aws bedrock-agent update-agent-action-group `
-        --agent-id $AgentId `
-        --agent-version DRAFT `
-        --action-group-id $match.actionGroupId `
-        --action-group-name $match.actionGroupName `
-        --action-group-executor "lambda=$lambdaArn" `
-        --api-schema "s3=s3BucketName=$Bucket,s3ObjectKey=$s3Key" `
-        --action-group-state ENABLED | Out-Null
-    Write-Host "Updated $($entry.Key) -> $($entry.Value)"
+    $lambdaArn = $lambdaArns[$entry.Lambda]
+    aws s3 cp "action_groups/$($entry.Lambda)/openapi_schema.yaml" "s3://$Bucket/$($entry.S3Key)"
+    if ($LASTEXITCODE -ne 0) { throw "s3 cp openapi schema failed for $($entry.ActionGroup)" }
+    $agPayload = @{
+        agentId = $AgentId
+        agentVersion = "DRAFT"
+        actionGroupId = $match.actionGroupId
+        actionGroupName = $match.actionGroupName
+        actionGroupExecutor = @{ lambda = $lambdaArn }
+        apiSchema = @{
+            s3 = @{
+                s3BucketName = $Bucket
+                s3ObjectKey = $entry.S3Key
+            }
+        }
+        actionGroupState = "ENABLED"
+    } | ConvertTo-Json -Depth 6 -Compress
+    $agPath = Join-Path $agJsonDir "$($entry.ActionGroup).json"
+    [System.IO.File]::WriteAllText($agPath, $agPayload)
+    $agUri = (Resolve-Path -LiteralPath $agPath).Path.Replace("\", "/")
+    & aws bedrock-agent update-agent-action-group --cli-input-json "file://$agUri" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "update-agent-action-group failed for $($entry.ActionGroup)" }
+    Write-Host "Updated $($entry.ActionGroup) -> $($entry.Lambda)"
 }
 
 Write-Step "Update agent instructions (keep existing agent name)"

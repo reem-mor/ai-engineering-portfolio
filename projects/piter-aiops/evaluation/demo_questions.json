@@ -29,9 +29,9 @@
   },
   {
     "id": 5,
-    "question": "What is the business impact of this issue?",
+    "question": "What is the business impact of auth-service login failures in GIB-UKGC production?",
     "expect_grounded": true,
-    "expected_source_contains": ["business_impact_matrix"],
+    "expected_source_contains": ["business_impact_matrix", "auth_service"],
     "answer_keywords": ["tier-0", "login", "revenue"]
   },
   {

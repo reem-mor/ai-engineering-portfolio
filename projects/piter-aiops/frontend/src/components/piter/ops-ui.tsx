@@ -151,7 +151,7 @@ export function AgentDecisionsLog({
 }) {
   const entries: { time: string; text: string }[] = [];
   if (stormState !== "idle") {
-    entries.push({ time: "T+0s", text: "Ingesting simulated alert batch (399 deterministic alerts)" });
+    entries.push({ time: "T+0s", text: "Ingesting simulated alert batch (400 deterministic alerts)" });
     entries.push({ time: "T+12s", text: `Suppressed ${noiseSuppressed} duplicate P3/P4 alerts as noise` });
     entries.push({ time: "T+45s", text: "Noise pattern detected: repeated wallet-service memory warnings" });
     entries.push({ time: "T+90s", text: "Warning signal: bet-service latency p95 elevated" });
@@ -213,7 +213,7 @@ export function AlertStreamTable({
           {visibleTotal} visible · {total} total
         </span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-700/80">
+      <div className="max-h-[420px] overflow-auto rounded-lg border border-slate-700/80">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-slate-700 bg-slate-950/60 text-[11px] uppercase tracking-wider text-slate-500">
             <tr>
@@ -308,31 +308,136 @@ export function P1CandidateCard({
           disabled={analyzing || triageComplete}
           className="cursor-pointer rounded-md bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {analyzing ? "Analyzing…" : triageComplete ? "Analysis complete" : "Run PITER analysis"}
+          {analyzing ? "Analyzing…" : triageComplete ? "Analysis complete" : "Analyze Incident"}
         </button>
         <button
           type="button"
           onClick={onEscalate}
           className="cursor-pointer rounded-md border border-orange-400/40 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-100 hover:bg-orange-500/20"
         >
-          Escalate on-call
+          Escalate On-Call
         </button>
         <button
           type="button"
           onClick={onChat}
           className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
         >
-          Open agent chat
+          Open Chat
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="cursor-pointer rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
         >
-          Continue live stream
+          Continue Live
         </button>
       </div>
     </section>
+  );
+}
+
+export function IncidentQueuePanel({
+  stormState,
+  showP1,
+}: {
+  stormState: string;
+  showP1: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-slate-900/50 p-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-amber-200/80">
+        Incident Queue
+      </div>
+      {showP1 ? (
+        <p className="mt-2 text-sm text-amber-100/90">
+          1 P1 candidate awaiting triage — alert storm paused for human review.
+        </p>
+      ) : stormState === "idle" ? (
+        <p className="mt-2 text-sm text-slate-500">No incidents yet — agent is monitoring.</p>
+      ) : (
+        <p className="mt-2 text-sm text-slate-400">Monitoring stream — no open incidents yet.</p>
+      )}
+    </div>
+  );
+}
+
+export function McpToolCallsPanel({
+  stormState,
+  triageComplete,
+}: {
+  stormState: string;
+  triageComplete: boolean;
+}) {
+  const tools =
+    triageComplete
+      ? [
+          "get_recent_deployments",
+          "query_service_logs",
+          "get_service_owner_and_escalation",
+          "search_past_incidents",
+        ]
+      : [];
+  return (
+    <div className="rounded-xl border border-violet-500/20 bg-slate-900/50 p-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-violet-200/80">
+        MCP / Lambda Tool Calls
+      </div>
+      {tools.length ? (
+        <ul className="mt-2 space-y-1 font-mono text-xs text-slate-300">
+          {tools.map((tool) => (
+            <li key={tool} className="rounded border border-slate-700/80 bg-slate-950/50 px-2 py-1">
+              {tool}
+            </li>
+          ))}
+        </ul>
+      ) : stormState === "idle" ? (
+        <p className="mt-2 text-sm text-slate-500">
+          No tools called yet — start the demo and trigger Analyze.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-slate-500">Waiting for PITER analysis to invoke tools…</p>
+      )}
+    </div>
+  );
+}
+
+export function BusinessImpactPanel({
+  stormState,
+  noiseSuppressed,
+  mttrMinutes,
+}: {
+  stormState: string;
+  noiseSuppressed: number;
+  mttrMinutes: number | null;
+}) {
+  const active = stormState !== "idle";
+  const suppressionPct = active ? Math.round((noiseSuppressed / 400) * 100) : 0;
+  return (
+    <div className="rounded-xl border border-emerald-500/20 bg-slate-900/50 p-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-emerald-200/80">
+        Business Impact
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center max-[560px]:grid-cols-1">
+        <div>
+          <div className="text-lg font-semibold text-emerald-200">{mttrMinutes ?? 0}m</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">MTTR reduced</div>
+        </div>
+        <div>
+          <div className="text-lg font-semibold text-emerald-200">
+            {active ? "$42k" : "$0"}
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Cost avoided</div>
+        </div>
+        <div>
+          <div className="text-lg font-semibold text-emerald-200">{suppressionPct}%</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Noise suppression</div>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-slate-400">
+        Groups duplicate noise, enriches with RAG and Lambda tools, and protects revenue, customer
+        trust, and SLA commitments during alert storms.
+      </p>
+    </div>
   );
 }
 
