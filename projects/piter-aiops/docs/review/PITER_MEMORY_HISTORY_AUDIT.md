@@ -1,38 +1,39 @@
-# PITER AiOps — Memory & History Audit
-
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+# PITER Memory & History Audit
 
 ## Implementation
-`app/services/session_memory.py` — thread-safe, process-local store (max 200 sessions, LRU evict).
-Session record: `session_id`, `created_at`, `alert`, `citations`, `tool_outputs`, `triage_card`,
-`followups[]`. Multi-turn via `create_session` → `save_triage` → `append_followup`;
-follow-ups handled by `services/triage_service.run_follow_up()`.
 
-## Checklist
-| Item | Evidence | Status |
-| ---- | -------- | ------ |
-| Remembers last question | follow-up reuses session context | PASS |
-| Follow-up uses prior incident context | `run_follow_up` classifies (owner/deploy/impact/summary) from stored card | PASS |
-| Previous conversations saved | `followups[]` per session | PASS |
-| History viewable | exposed via session payload / triage card | PARTIAL (API yes; dedicated UI history list is light) |
-| Recent incidents reopen/summarize | summary follow-up kind | PARTIAL |
-| No cross-incident mixing | keyed by `session_id` | PASS |
-| Stable session IDs | UUID issued, reused | PASS |
-| New incident → new session | `create_session(alert)` | PASS |
-| Citations + tool calls saved | stored in session | PASS |
-| Execution mode saved | mode on card | PASS |
-| Status saved | triage card status | PASS |
-| Reset option | `session_memory.reset()` (tests) | PARTIAL (no user-facing reset button) |
+| Component | File | Behavior |
+|-----------|------|----------|
+| Session store | `app/services/session_memory.py` | In-process dict, max sessions capped |
+| Triage save | `triage_service.run_triage` → `save_triage` | Stores alert, citations, tool_outputs, triage_card |
+| Follow-up | `run_follow_up` | Keyword router on owner/deploy/impact/similar; optional RAG |
+| Agent memory | `bedrock_agent_client` session_id | Bedrock Agent session when `RAG_BACKEND=agent` |
 
-## Correct wording
-"The system **stores, summarizes, retrieves, and reuses** relevant investigation context."
-It does **not** permanently train/learn the model.
+## Teacher requirements
 
-## Gaps / recommendations (non-blocking)
-- Memory is in-process and ephemeral (lost on restart / not shared across workers). Documented as a
-  demo constraint with a Redis/Dynamo upgrade path.
-- Optional: surface a "Context Memory" history list + reset control in the SPA (UI commit).
+| Requirement | Status | Evidence |
+|-------------|--------|----------|
+| Remembers last question | **PASS** | `append_followup`, follow-up tests |
+| Previous conversations visible | **PARTIAL** | SPA/console show session thread; not persisted to disk |
+| New incident → new session | **PASS** | `create_session` UUID |
+| Memory does not mix incidents | **PASS** | Per session_id |
+| Citations/tools saved | **PARTIAL** | Saved but follow-up prefers `tool_outputs` over `triage_card` |
 
-## Verified
-`scripts/verify_live_demo.py`: "follow-up used session memory" passes in both phases.
+## Wording (correct)
+
+Use: *"The system stores, summarizes, retrieves, and reuses relevant investigation context within a session."*
+
+Do not claim the model permanently learns.
+
+## Gaps
+
+1. Fix follow-up to read `triage_card` / `structured_analysis` first
+2. Optional: SQLite/Redis session store for multi-worker production
+3. UI: expose session history list (if not already in SPA sidebar)
+
+## Tests
+
+- `tests/test_agent.py` — follow-up memory postgres demo
+- `verify_live_demo.py` — `memory_used=True` on follow-up (both phases)
+
+Missing: P1 storm follow-up regression test.

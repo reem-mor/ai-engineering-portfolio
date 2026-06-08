@@ -1,48 +1,51 @@
-# PITER AiOps — Frontend / Backend Map
+# PITER Frontend / Backend Route Map
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+## HTTP routes (`app/routes.py` + `app/spa.py`)
 
-## Route map (`app/routes.py`, `app/spa.py`)
+| Route | Method | Handler | Serves | Used by |
+|-------|--------|---------|--------|---------|
+| `/` | GET | `home()` | React SPA if `app/static/spa/index.html` exists; else Jinja `index.html` | Browser default |
+| `/console` | GET | `console()` | Jinja `console.html` standalone demo | `verify_live_demo`, grading, Docker default URL in compose comment |
+| `/ask` | GET | 405 | — | Legacy |
+| `/ask` | POST | `ask()` | HTMX partial or JSON RAG | Legacy `index.html` HTMX |
+| `/workflow/triage` | POST | HTMX workflow | `_workflow_result.html` | Legacy MVP workflow |
+| `/api/workflow/triage` | POST | JSON workflow | RAG-only payload (`build_workflow_payload`) | SPA workflow demo path |
+| `/api/bootstrap` | GET | JSON | CSRF token, examples, notification settings, execution hints | SPA `fetchBootstrap` |
+| `/api/alert-stream` | GET | JSON | Storm summary + rows | SPA storm panel |
+| `/api/demo-alert` | GET | JSON | `p1_demo_alert()` | Console + SPA storm |
+| `/api/triage` | POST | JSON | Full PITER card (`run_triage`) | **Primary** console + SPA |
+| `/api/follow-up` | POST | JSON | `run_follow_up` | Chat follow-up |
+| `/api/escalation/notify` | POST | JSON | SNS/SES dispatch (gated) | SPA escalation button |
+| `/api/kb/manifest` | GET | JSON | KB sections for UI | SPA knowledge panel |
+| `/health` | GET | JSON | Liveness | Docker/K8s/verify scripts |
+| `/documents/upload` | POST | JSON | S3 + optional KB ingestion | SPA upload |
+| `/assets/<path>` | GET | static | Vite bundle assets | SPA |
+| `/<path>` | GET | SPA fallback | `index.html` for client routes | React router |
 
-| Route | Method | Serves | Notes |
-| ----- | ------ | ------ | ----- |
-| `/` | GET | SPA `index.html` (or Jinja if `FORCE_LEGACY_UI`) | `_bootstrap_context()` |
-| `/api/bootstrap` | GET | JSON | examples, alerts, config, CSRF token, execution-mode hint, notification settings |
-| `/ask` | POST | JSON/HTML | core Q&A → `_handle_ask()` (3-tier RAG + fallback) |
-| `/workflow/triage` | POST | HTML | Jinja workflow card |
-| `/api/workflow/triage` | POST | JSON | workflow triage + optional `session_id` |
-| `/console` | GET | Jinja `console.html` | self-contained local-first demo console |
-| `/api/alert-stream` | GET | JSON | deterministic alert-storm metadata + rows |
-| `/api/kb/manifest` | GET | JSON | KB document list for SPA |
-| `/api/demo-alert` | GET | JSON | canned Postgres CPU P2 alert |
-| `/api/triage` | POST | JSON | free-form alert → triage card → `run_triage()` |
-| `/api/escalation/notify` | POST | JSON | live escalation gate (token + allowlist + severity) |
-| `/api/follow-up` | POST | JSON | session-memory follow-up → `run_follow_up()` |
-| `/health` | GET | JSON | `?deep=1` checks S3 + Bedrock config |
-| `/documents/upload` | POST | HTML/JSON | S3 upload + optional KB ingestion |
-| `/assets/<path>` | GET | static | SPA bundle assets |
-| `/<path:path>` | GET | SPA fallback | unmatched → `index.html` |
+## Frontend implementations
 
-## UI layers
-| Layer | Location | Status |
-| ----- | -------- | ------ |
-| React/Vite SPA (authoritative UI) | `frontend/src/**` → built to `app/static/spa/` | Active; served at `/` and SPA fallback |
-| Jinja console (fallback / parity) | `app/templates/console.html` + partials | Active at `/console`; part of the 29 verify checks |
-| Jinja base/index | `app/templates/base.html`, `index.html` | Legacy fallback when `FORCE_LEGACY_UI=true` |
+| Implementation | Path | Status |
+|----------------|------|--------|
+| **React SPA (primary)** | `frontend/src/App.tsx` → build → `app/static/spa/` | Active when build present |
+| **Jinja console** | `app/templates/console.html` | Required for 29/29 verify |
+| **HTMX landing** | `app/templates/index.html`, `_live_kb.html` | Fallback when `FORCE_LEGACY_UI` or no SPA build |
 
-## SPA build pipeline
-- Source: `frontend/src` (React 19, TanStack Router, Radix/shadcn, Tailwind 4).
-- `npm run build` (Vite) → outputs to `../app/static/spa` (hashed assets + `index.html`).
-- Flask `app/spa.py` serves the built bundle; `spa_enabled()` gates SPA vs Jinja.
-- **Do not hand-edit** `app/static/spa/*`; edit `frontend/src` and rebuild.
+## API client
 
-## Strategy (per plan)
-- React/Vite SPA is the main authoritative UI.
-- **Keep `/console`** until the SPA independently passes all 29 verify checks (it is itself a check).
-- Keep Jinja fallback templates (offline/no-JS resilience).
-- No duplicate UI removed in this pass (additive/polish only).
+- SPA: `frontend/src/lib/api.ts` — `runTriageCard`, `followUp`, `fetchBootstrap`, `uploadDocument`
+- Console: inline `fetch` in `console.html`
 
-## Build verification (this session)
-`npm ci && npm run build` → clean; assets deterministic (only CRLF→LF on `index.html`, reverted to
-keep the bundle byte-identical to the committed copy until the dedicated UI commit).
+## Duplicate / dead UI risks
+
+| Item | Assessment |
+|------|------------|
+| SPA `triageAlert` → `/api/workflow/triage` | Second triage stack (RAG-only); not full PITER card |
+| Buttons labeled mock/preview | Check `App.tsx` bootstrap flags — most gated by `notification_mode` |
+| `/console` vs `/` | Intentional dual surface until SPA fully certified |
+
+## verify_live_demo.py dependencies
+
+- `GET /console` (200)
+- `POST /api/triage` with postgres + bet-service scenarios
+- `POST /api/follow-up` with session_id
+- Does **not** require SPA route `/` (uses test client against Flask app directly)

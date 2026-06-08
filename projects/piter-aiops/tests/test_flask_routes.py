@@ -7,6 +7,7 @@ from app import create_app
 from app.bedrock_client import Citation, RagAnswer
 from app.errors import BedrockError
 from app.services import session_memory
+from app.services.alert_stream import p1_demo_alert
 
 
 @pytest.fixture(autouse=True)
@@ -45,6 +46,21 @@ def test_triage_returns_card(local_client):
     assert body["citations"][0]["document"] == "runbook_db_cpu.md"
     for key in ("recommended_steps", "owner", "impact", "similar_incidents", "session_id"):
         assert key in body
+
+
+def test_triage_bet_service_storm_returns_piter_sections(local_client):
+    alert = p1_demo_alert()
+    resp = local_client.post("/api/triage", json=alert)
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["owner"]["owner_team"] == "Betting Core"
+    assert body["impact"]["revenue_impact_usd_per_hour"] == 588000
+    assert body.get("piter_sections")
+    assert body["piter_sections"].get("triage_plan")
+    assert body.get("priority_rationale")
+    assert body.get("escalation_policy")
+    assert body["similar_incidents"]
 
 
 def test_triage_rejects_incomplete_alert(local_client):

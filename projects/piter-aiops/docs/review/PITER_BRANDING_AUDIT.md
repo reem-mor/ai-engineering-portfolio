@@ -1,38 +1,40 @@
-# PITER AiOps — Branding Audit
+# PITER Branding Audit
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
-- **Final user-facing brand:** **PITER AiOps**
+**Target brand:** **PITER AiOps** — Priority, Investigation, Triage, Escalation, Resolution  
+**Inspiration only:** Dropzone / incident-iq-compass (do not copy branding)
 
-## Method
-Case-insensitive `git grep` across all tracked files for legacy/external brand terms.
+## Search results summary
 
-| Term | Tracked files | Classification |
-| ---- | ------------- | -------------- |
-| `IncidentIQ` / `incidentiq` | 12 | Historical review docs + infra/IAM identifiers (`incidentiq-lambda-role`, `incidentIQ-midproject` S3 prefix) + `action_groups/incidentiq-ops/` folder. **Not user-facing.** |
-| `incident-iq` | 1 | `README.md` reference to `incident-iq-compass` design inspiration (clearly labeled). Keep. |
-| `incident-assistant` | 2 | Archived S3 policy paths (`infra/bedrock_kb_s3_policy*.json`). Not user-facing. |
-| `incident-rag` | 20 | Predecessor project name in docs/scripts/infra (KB setup history). Archived/historical. |
-| `iiq` | 46 | Legacy AWS Lambda/action-group names (`iiq-context`, `iiq-correlate`, `iiq-similar`) + demo events + docs. **Map to live AWS resources** — kept by user decision. |
-| `Dropzone` | 1 | CSS comment in `frontend/src/styles.css` ("DropZone-style SOC"). Inspiration only — wording neutralized in branding commit. |
-| `lovable` | 6 | Frontend dev tooling only (`bun.lock`, `bunfig.toml`, two `frontend/src` import paths). Not branding. |
+| Pattern | Count (approx) | Severity |
+|---------|----------------|----------|
+| `IncidentIQ` / `incidentiq` | 50+ hits | Medium — mostly AWS names, action groups, docs |
+| `incident-rag-bedrock` | 40+ hits | Medium — legacy S3/ECR/docs paths |
+| `incident-assistant-rag` | Few | Low — IAM policy legacy ARNs |
+| `iiq-*` | Widespread in Lambdas/action groups | Low — documented as AWS legacy names |
+| `Dropzone` | Few in docs (inspiration notes) | OK if labeled inspiration |
 
-## User-facing surfaces — verified
-- `frontend/src/**`, `app/templates/**`, `app/static/spa/index.html`: brand is **PITER AiOps**.
-  No capitalized product name "IncidentIQ" rendered to users.
-- SPA `<title>` / meta description: "PITER AiOps …" (correct).
+## User-facing surfaces
 
-## Actions taken (Commit 3 — branding)
-1. `frontend/src/styles.css`: rename comment "DropZone-style SOC" → neutral "enterprise SOC palette"
-   (avoid copying an external brand name even in comments). No visual change.
-2. Verified no user-facing string requires change (brand already PITER AiOps).
+| Surface | Current | Action |
+|---------|---------|--------|
+| React SPA title/branding | PITER AiOps | **OK** |
+| `app/templates/console.html` | PITER branding in recent versions | Verify on record |
+| README | PITER AiOps primary; maps `iiq-*` as AWS names | **OK** with footnote |
+| AWS Bedrock Agent | Name: `incidentiq-triage-agent` | **FAIL** user-facing AWS console |
+| Agent alias description | "IncidentIQ Flask demo app" | **FAIL** |
+| docker-compose | `piter-aiops:dev` | **OK** |
 
-## Intentionally NOT changed
-- Legacy `iiq-*` / `incidentiq-ops` action-group folders and IAM/S3 identifiers — they correspond to
-  **deployed AWS resources**; renaming is an AWS-coordinated change (out of scope, gated).
-- Historical references inside `docs/review/*` and predecessor-project docs — labeled historical.
-- `incident-iq-compass` / Dropzone mentions as *design inspiration* (not copied branding).
+## Safe local updates (no AWS)
 
-## Result
-No user-facing legacy branding remains. Remaining matches are historical docs or live-AWS
-identifiers, all documented above.
+- Fix S3 path strings in `evaluation/qa_showcase.md`, `scripts/kb_smoke_test.py` → `projects/piter-aiops/data/sample_documents`
+- Update `docs/teacher_submission_email.md`, `docs/code_review.md` headers from incident-rag-bedrock → piter-aiops
+- Add historical note on archived `screenshots/README.md` paths
+
+## Requires AWS approval
+
+- Rename Bedrock agent and alias description
+- Rename Lambda functions `iiq-*` → `piter-*` (or leave and document)
+
+## Dropzone
+
+No Dropzone logos or copy detected in `frontend/src`. Design inspiration references in docs only — acceptable.

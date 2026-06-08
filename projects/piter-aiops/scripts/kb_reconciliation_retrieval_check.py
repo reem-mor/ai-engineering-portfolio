@@ -17,6 +17,10 @@ CHECKS = [
     ("RB-009 kafka", "Kafka consumer lag settlement group offset reset do not skip", ["runbook_kafka", "RB-009"]),
     ("RB-010 rollback", "deployment rollback forward-only migration kubectl rollout undo", ["runbook_deployment_rollback", "RB-010"]),
     ("RB-001 gateway", "API Gateway 5xx WAF throttle integration timeout RB-001", ["api_gateway_5xx", "RB-001"]),
+    ("RB-011 bet", "bet-service outage GIB UKGC critical errors RB-011", ["runbook_bet_service", "RB-011"]),
+    ("RB-012 wallet", "wallet transaction failures settlement RB-012", ["runbook_wallet", "RB-012"]),
+    ("RB-013 payment", "payment provider degradation PSP timeout RB-013", ["runbook_payment", "RB-013"]),
+    ("RB-014 game", "game provider latency slots provider RB-014", ["runbook_game", "RB-014"]),
 ]
 
 

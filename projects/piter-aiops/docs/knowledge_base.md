@@ -4,7 +4,7 @@
 
 ```
 knowledge_base/
-├── runbooks/       RB-001 … RB-011 (YAML front matter required)
+├── runbooks/       RB-001 … RB-014 (YAML front matter required)
 ├── environments/   ENV-*
 ├── policies/       POL-*
 ├── incidents/      INC-*
@@ -33,5 +33,8 @@ One-way sync only — do not copy volatile on-call or deployment data into markd
 ## Demo-critical docs
 
 - `RB-011-bet-service-outage.md` — P1 storm scenario for GIB-UKGC
+- `RB-012-wallet-transaction-failures.md` — wallet tier-0 transaction failures
+- `RB-013-payment-provider-degradation.md` — payment provider routing degradation
+- `RB-014-game-provider-latency.md` — game launch and provider handoff latency
 - `RB-007-postgres-cpu-high.md` — verify_live_demo postgres scenario
 - `POL-001-severity-and-escalation.md` — severity and notification safety

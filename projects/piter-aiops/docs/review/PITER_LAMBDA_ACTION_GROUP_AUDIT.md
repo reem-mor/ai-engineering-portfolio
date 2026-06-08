@@ -1,41 +1,45 @@
-# PITER AiOps — Lambda & Action Group Audit
+# PITER Lambda & Action Group Audit
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+## Target four tools (course requirement)
 
-## The four PITER tools (`action_groups/piter-*`)
+| PITER name | Folder | OpenAPI | Lambda handler | AWS deployed |
+|------------|--------|---------|----------------|--------------|
+| piter-recent-deployments | `action_groups/piter-recent-deployments/` | Yes | `lambda_function.py` | As **`iiq-correlate`** |
+| piter-service-context | `action_groups/piter-service-context/` | Yes | Yes | As **`iiq-context`** |
+| piter-similar-incidents | `action_groups/piter-similar-incidents/` | Yes | Yes | As **`iiq-similar`** |
+| piter-escalation | `action_groups/piter-escalation/` | Yes | Yes | **Not listed in AWS** |
 
-| Lambda | Purpose | Handler | Schema | Backing logic |
-| ------ | ------- | ------- | ------ | ------------- |
-| `piter-recent-deployments` | recent deploys, correlation, rollback availability | `lambda_function.py` | `openapi_schema.yaml` | `enrichment_tools.correlate_deployments()` |
-| `piter-service-context` | owner, on-call role, business impact, priority/regulatory | `lambda_function.py` | `openapi_schema.yaml` | `lookup_owner_and_escalation()` + `score_business_impact()` |
-| `piter-similar-incidents` | historical match, root cause, prior resolution + MTTR | `lambda_function.py` | `openapi_schema.yaml` | `find_similar_incidents()` |
-| `piter-escalation` | escalation preview, recipient resolution, SNS/SES mock/preview/live gate, idempotency, confirmation | `lambda_function.py` | `openapi_schema.yaml` | `services/notification_dispatch.py` |
+## Legacy parallel tree
 
-## Per-Lambda checklist
-| Check | recent-deploys | service-context | similar | escalation |
-| ----- | -------------- | --------------- | ------- | ---------- |
-| Single responsibility | ✓ | ✓ | ✓ | ✓ |
-| Input validation (400 on missing) | ✓ | ✓ | ✓ | ✓ |
-| Stable JSON output | ✓ | ✓ | ✓ | ✓ |
-| Structured error responses | ✓ | ✓ | ✓ | ✓ |
-| Safe logging (no secrets) | ✓ | ✓ | ✓ | ✓ |
-| No hardcoded contacts | ✓ | ✓ | ✓ | ✓ (after Commit 2 redaction) |
-| Mock mode by default | n/a (read-only) | n/a | n/a | ✓ `PITER_NOTIFICATION_MODE=mock` |
-| Preview mode | n/a | n/a | n/a | ✓ masked recipients |
-| Live blocked unless confirmed | n/a | n/a | n/a | ✓ token + allowlist + severity |
-| Idempotency | n/a | n/a | n/a | ✓ `idempotency_key` set |
-| Tests (valid + failure) | `test_enrichment_tools.py`, `test_piter_lambdas.py` | same | same | `test_notification_dispatch.py`, `test_escalation_*` |
-| OpenAPI schema present | ✓ | ✓ | ✓ | ✓ |
+| Folder | Role |
+|--------|------|
+| `action_groups/iiq-correlate/` | Deployed Lambda source + duplicate data |
+| `action_groups/iiq-context/` | Deployed |
+| `action_groups/iiq-similar/` | Deployed |
+| `action_groups/incidentiq-ops/` | Fifth action group on agent — mock env status |
 
-## Legacy duplicates (kept by decision)
-`action_groups/iiq-context`, `iiq-correlate`, `iiq-similar`, `incidentiq-ops` mirror the same logic
-and correspond to **live AWS function names**. Retained and documented; listed in
-`PITER_PROPOSED_DELETIONS.md` (no deletion). Per `docs/mcp.md`: "AWS deployments may still use legacy
-`iiq-*` function names; local tests/docs use `piter-*`."
+## Tests
 
-## Single source of truth
-Business logic lives in `app/enrichment_tools.py`; each Lambda is a thin adapter so AWS and
-local/MCP paths share identical behavior.
+| Test file | Coverage |
+|-----------|----------|
+| `tests/test_piter_lambdas.py` | piter-* handlers, escalation safety |
+| `tests/test_lambda_action_handler.py` | incidentiq-ops |
+| `tests/test_enrichment_tools.py` | App-level tool parity |
 
-## Status: 4 relevant, validated, tested Lambdas. Live deployment NOT VERIFIED (no creds).
+## Escalation Lambda safety (`piter-escalation`)
+
+- Mock/preview by default via env
+- Allowlist + confirmation token enforced in app route
+- In-process idempotency set — not durable across cold starts
+
+## OpenAPI / schemas
+
+- Each `piter-*` has `openapi_schema.yaml`
+- S3 agent schemas referenced in `docs/MCP_PATH.md` under `agent/iiq-*/`
+
+## Gaps
+
+1. Deploy `piter-escalation` and register action group (AWS approval)
+2. Deduplicate `iiq-*/enrichment_tools.py` vs `app/enrichment_tools.py`
+3. Fix `incidentiq-ops` environment code validation
+4. Remove or disable `incidentiq-ops-test` on agent

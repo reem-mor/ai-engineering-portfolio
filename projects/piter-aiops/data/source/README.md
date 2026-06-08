@@ -1,18 +1,15 @@
-# PITER AiOps Source Data
+# PITER AiOps Enterprise Demo Data
 
-This folder is the canonical location for structured demo and enrichment data.
+Canonical structured data for PITER AiOps.
 
-The files here are copied from the reviewed incoming dataset set and can be
-regenerated with:
+- `alert_stream.csv`: 400 deterministic alerts for the alert-storm demo.
+- `alerts.csv`: summarized investigation candidates.
+- `deploys.csv`: deployment correlation data.
+- `service_owners.csv`: sanitized service ownership metadata.
+- `on_call_schedule.csv`: role-based on-call schedule without private contacts.
+- `past_incidents.csv`: sanitized historical incidents.
+- `business_impact.json`: sanitized business-impact model.
+- `priority_matrix.json`: priority factors and thresholds.
+- `escalation_policies.json`: escalation and notification safety policies.
 
-```bash
-python scripts/generate_demo_data.py --output data/source
-python scripts/generate_alert_stream.py --output data/source
-```
-
-Runtime code still reads the currently verified `data/agent_data` and
-`data/sample_documents` folders until the later migration phases prove the
-replacement paths preserve the live demo behavior.
-
-Do not store real phone numbers, personal email addresses, credentials, private
-keys, or AWS secrets in this folder.
+Safety: no credentials, private phone numbers, raw emails, real customer data, or internal secrets. Real SNS/SES recipients must be configured outside Git.

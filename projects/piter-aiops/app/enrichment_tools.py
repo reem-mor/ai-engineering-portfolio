@@ -7,8 +7,25 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_DATA = Path(__file__).resolve().parents[1] / "data" / "agent_data"
+from app.services import data_access
+from app.services.incident_analysis import (
+    _correlate_deployments as source_correlate_deployments,
+    _find_service_owner,
+    _find_similar_incidents as source_find_similar,
+    _score_business_impact as source_score_impact,
+)
+
+_DEFAULT_SOURCE = data_access.source_data_dir()
+_AGENT_DATA = Path(__file__).resolve().parents[1] / "data" / "agent_data"
 _HISTORY = Path(__file__).resolve().parents[1] / "data" / "sample_documents" / "incident_history.csv"
+
+
+def _resolve_data_dir(data_dir: Path | None) -> Path:
+    return data_dir or _DEFAULT_SOURCE
+
+
+def _uses_source_catalog(data_dir: Path) -> bool:
+    return (data_dir / "service_owners.csv").is_file()
 
 
 def _parse_iso(ts: str) -> datetime:
@@ -20,13 +37,13 @@ def _load_catalog(data_dir: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _load_deploys(data_dir: Path) -> list[dict[str, str]]:
+def _load_deploys_legacy(data_dir: Path) -> list[dict[str, str]]:
     path = data_dir / "deploys.csv"
     with path.open(encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
 
 
-def _load_impact(data_dir: Path) -> list[dict[str, str]]:
+def _load_impact_legacy(data_dir: Path) -> list[dict[str, str]]:
     path = data_dir / "impact_matrix.csv"
     with path.open(encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
@@ -38,7 +55,7 @@ def _load_history(history_path: Path | None = None) -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
-def _find_service(catalog: dict[str, Any], name: str) -> dict[str, Any] | None:
+def _find_service_legacy(catalog: dict[str, Any], name: str) -> dict[str, Any] | None:
     name = name.strip().lower()
     for svc in catalog.get("services", []):
         if svc.get("name", "").lower() == name:
@@ -55,31 +72,30 @@ def correlate_deployments(
     window_minutes: int | None = None,
     data_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Find recent deploys for a service and its dependency hops near an alert.
+    """Find recent deploys for a service and its dependency hops near an alert."""
+    base = _resolve_data_dir(data_dir)
+    if _uses_source_catalog(base):
+        owner = _find_service_owner(service, base)
+        if owner:
+            if window_minutes is not None:
+                lookback_hours = max(1, window_minutes // 60)
+            return source_correlate_deployments(
+                service=service,
+                environment=environment,
+                alert_time=alert_time,
+                dependencies=owner.get("dependencies", []),
+                lookback_hours=lookback_hours,
+                source_dir=base,
+            )
 
-    Args:
-        service: Affected service name (matched against the service catalog).
-        environment: Environment code, e.g. ``NJ-DGE`` (case-insensitive).
-        alert_time: ISO-8601 alert timestamp.
-        lookback_hours: Default lookback window (used when ``window_minutes`` is None).
-        window_minutes: Optional explicit lookback window in minutes (spec input);
-            overrides ``lookback_hours`` when provided.
-        data_dir: Override the data directory (tests).
-
-    Returns:
-        A structured dict with matching ``deployments``, the most likely
-        ``suspect_deployment``, a human ``reason``, and a
-        ``dependency_hop_explanation``. On a bad input it returns an ``error``
-        key instead of raising, so callers never crash.
-    """
-    data_dir = data_dir or _DEFAULT_DATA
+    legacy_dir = _AGENT_DATA if base == _DEFAULT_SOURCE else base
     if not service or not service.strip():
         return {"error": "Missing service", "deployments": [], "likely_deploy_correlation": False}
     if not environment or not environment.strip():
         return {"error": "Missing environment", "deployments": [], "likely_deploy_correlation": False}
-    catalog = _load_catalog(data_dir)
-    deploys = _load_deploys(data_dir)
-    svc = _find_service(catalog, service)
+    catalog = _load_catalog(legacy_dir)
+    deploys = _load_deploys_legacy(legacy_dir)
+    svc = _find_service_legacy(catalog, service)
     if not svc:
         return {
             "error": f"Unknown service '{service}'",
@@ -123,7 +139,6 @@ def correlate_deployments(
         matched.append({**row, "hop": hop})
 
     matched.sort(key=lambda r: r["deployed_at"], reverse=True)
-
     suspect = matched[0] if matched else None
     if suspect:
         reason = (
@@ -133,10 +148,6 @@ def correlate_deployments(
         )
     else:
         reason = "No deployments to the service or its dependencies inside the window."
-    hop_explanation = (
-        f"{service} depends on {sorted(depends_on) or 'nothing'} and is depended on by "
-        f"{sorted(depended_by) or 'nothing'}; deploys to any hop can cause this alert."
-    )
 
     return {
         "service": service,
@@ -148,7 +159,10 @@ def correlate_deployments(
             "depends_on": svc.get("depends_on", []),
             "depended_by": svc.get("depended_by", []),
         },
-        "dependency_hop_explanation": hop_explanation,
+        "dependency_hop_explanation": (
+            f"{service} depends on {sorted(depends_on) or 'nothing'} and is depended on by "
+            f"{sorted(depended_by) or 'nothing'}; deploys to any hop can cause this alert."
+        ),
         "deployments": matched,
         "suspect_deployment": suspect,
         "reason": reason,
@@ -162,9 +176,23 @@ def lookup_owner(
     environment: str,
     data_dir: Path | None = None,
 ) -> dict[str, Any]:
-    data_dir = data_dir or _DEFAULT_DATA
-    catalog = _load_catalog(data_dir)
-    svc = _find_service(catalog, service)
+    base = _resolve_data_dir(data_dir)
+    if _uses_source_catalog(base):
+        owner = _find_service_owner(service, base)
+        if owner:
+            env = environment.upper()
+            return {
+                "service": owner["service"],
+                "environment": env,
+                "owner_team": owner["owner_team"],
+                "escalation_path": owner["escalation_path"],
+                "pagerduty_service": owner["pagerduty_service"],
+                "display_name": owner["display_name"],
+            }
+
+    legacy_dir = _AGENT_DATA if base == _DEFAULT_SOURCE else base
+    catalog = _load_catalog(legacy_dir)
+    svc = _find_service_legacy(catalog, service)
     if not svc:
         return {"error": f"Unknown service '{service}'"}
     env = environment.upper()
@@ -187,25 +215,41 @@ def lookup_owner_and_escalation(
     *,
     service: str,
     severity: str = "",
+    environment: str = "",
     data_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Return owner team, on-call, escalation chain, Slack channel and deps.
-
-    Args:
-        service: Service name to look up in the catalog.
-        severity: Optional incident severity (used to surface urgency hints).
-        data_dir: Override the data directory (tests).
-
-    Returns:
-        A structured dict with ``owner_team``, ``primary_on_call``,
-        ``secondary_escalation``, ``slack_channel``, ``escalation_chain``, and
-        ``dependencies``. On an unknown service it returns an ``error`` key.
-    """
-    data_dir = data_dir or _DEFAULT_DATA
+    """Return owner team, on-call, escalation chain, Slack channel and deps."""
+    base = _resolve_data_dir(data_dir)
     if not service or not service.strip():
         return {"error": "Missing service"}
-    catalog = _load_catalog(data_dir)
-    svc = _find_service(catalog, service)
+
+    if _uses_source_catalog(base):
+        owner = _find_service_owner(service, base)
+        if owner:
+            return {
+                "service": owner["service"],
+                "display_name": owner["display_name"],
+                "severity": (severity or "").upper(),
+                "owner_team": owner["owner_team"],
+                "primary_on_call": owner["primary_on_call"],
+                "secondary_escalation": owner["secondary_on_call"],
+                "slack_channel": owner["slack_channel"],
+                "pagerduty_service": owner["pagerduty_service"],
+                "escalation_path": owner["escalation_path"],
+                "escalation_chain": owner["escalation_chain"],
+                "dependencies": {
+                    "depends_on": owner["dependencies"],
+                    "depended_by": [],
+                },
+                "runbook": owner.get("runbook", ""),
+                "dashboard": owner.get("dashboard", ""),
+                "business_function": owner.get("business_function", ""),
+                "service_tier": owner.get("service_tier", ""),
+            }
+
+    legacy_dir = _AGENT_DATA if base == _DEFAULT_SOURCE else base
+    catalog = _load_catalog(legacy_dir)
+    svc = _find_service_legacy(catalog, service)
     if not svc:
         return {"error": f"Unknown service '{service}'", "service": service}
 
@@ -228,7 +272,6 @@ def lookup_owner_and_escalation(
     }
 
 
-# Severity-based SLA risk ranking for the business-impact fallback.
 _SEVERITY_RANK = {"P1": "critical", "P2": "high", "P3": "moderate", "P4": "low"}
 _FALLBACK_REVENUE = {"P1": 200000, "P2": 80000, "P3": 12000, "P4": 2000}
 
@@ -239,33 +282,47 @@ def score_business_impact(
     environment: str,
     severity: str,
     duration_minutes: int = 60,
+    alert: dict[str, Any] | None = None,
     data_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Estimate incident cost and risk from the impact matrix.
-
-    Args:
-        service: Affected service.
-        environment: Environment code (case-insensitive).
-        severity: Incident severity, e.g. ``P2``.
-        duration_minutes: Incident duration so far (drives total-cost estimate).
-        data_dir: Override the data directory (tests).
-
-    Returns:
-        A structured dict with ``revenue_impact_usd_per_hour``,
-        ``cost_per_15min``, ``estimated_total_cost``, ``sla_risk``,
-        ``regulatory_risk``, and a ``business_explanation``. When no matrix row
-        matches, returns a conservative ``fallback`` estimate instead of failing.
-    """
-    data_dir = data_dir or _DEFAULT_DATA
+    """Estimate incident cost and risk from business_impact.json or legacy matrix."""
+    base = _resolve_data_dir(data_dir)
     try:
         duration = max(0, int(duration_minutes))
     except (TypeError, ValueError):
         duration = 60
-    env = environment.upper() if environment else ""
     sev = severity.upper() if severity else ""
-    svc = service.lower() if service else ""
 
-    rows = _load_impact(data_dir)
+    if _uses_source_catalog(base):
+        owner = _find_service_owner(service, base)
+        if owner:
+            impact = source_score_impact(
+                service=service,
+                severity=sev,
+                alert=alert or {},
+                source_dir=base,
+            )
+            revenue_per_hour = impact["revenue_impact_usd_per_hour"]
+            cost_per_15min = round(revenue_per_hour / 4)
+            estimated_total_cost = round(revenue_per_hour * (duration / 60))
+            tier_str = owner.get("service_tier", "tier-2")
+            tier = int(tier_str.replace("tier-", "")) if "tier-" in tier_str else 2
+            return {
+                **impact,
+                "environment": environment.upper(),
+                "duration_minutes": duration,
+                "tier": tier,
+                "cost_per_15min": cost_per_15min,
+                "estimated_total_cost": estimated_total_cost,
+                "regulatory_flag": impact.get("regulatory_risk") == "high",
+                "escalation_minutes": 5 if sev == "P1" else 15 if sev == "P2" else 30,
+                "fallback": False,
+            }
+
+    legacy_dir = _AGENT_DATA if base == _DEFAULT_SOURCE else base
+    env = environment.upper() if environment else ""
+    svc = service.lower() if service else ""
+    rows = _load_impact_legacy(legacy_dir)
     matched_row: dict[str, str] | None = None
     for row in rows:
         if (
@@ -330,25 +387,28 @@ def find_similar_incidents(
     limit: int = 5,
     top_k: int | None = None,
     history_path: Path | None = None,
+    data_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Find past incidents similar to the current symptom for a service.
-
-    Args:
-        service: Affected service (matched case-insensitively, prefix-aware so
-            ``postgres`` also matches ``postgres-primary``/``postgres-replica``).
-        symptom: Free-text symptom / description to match against root causes.
-        environment: Optional environment filter (e.g. ``NJ-DGE``).
-        limit: Max results (kept for backward compatibility).
-        top_k: Spec alias for ``limit``; overrides ``limit`` when provided.
-        history_path: Override the history CSV path (tests).
-
-    Returns:
-        A structured dict with ``similar_incidents`` (each carrying
-        ``root_cause``, ``resolution``, ``mttr_minutes`` and a
-        ``similarity_reason``) and a ``count``.
-    """
+    """Find past incidents similar to the current symptom for a service."""
     max_results = top_k if top_k is not None else limit
     max_results = max(1, int(max_results or 1))
+    base = _resolve_data_dir(data_dir)
+
+    if _uses_source_catalog(base) and _find_service_owner(service, base):
+        result = source_find_similar(
+            service=service,
+            environment=environment,
+            symptom=symptom,
+            limit=max_results,
+            source_dir=base,
+        )
+        return {
+            "service": service,
+            "symptom": symptom,
+            "environment": environment.upper(),
+            **result,
+        }
+
     history = _load_history(history_path)
     svc = (service or "").lower()
     env = (environment or "").upper()
@@ -385,13 +445,13 @@ def find_similar_incidents(
         "similar_incidents": [
             {
                 "incident_id": r["incident_id"],
-                "date": r["date"],
+                "date": r.get("date", r.get("start_time", "")),
                 "severity": r["severity"],
                 "environment": r.get("environment", ""),
                 "root_cause": r["root_cause"],
                 "resolution": r.get("resolution", ""),
                 "mttr_minutes": int(r["mttr_minutes"]),
-                "customer_impact": r["customer_impact"],
+                "customer_impact": r.get("customer_impact", r.get("symptoms", "")),
                 "similarity_reason": "; ".join(reasons) or "same service",
             }
             for _score, reasons, r in top
@@ -410,20 +470,24 @@ def enrich_triage_demo(
     data_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Full enrichment bundle for the grading demo scenario."""
-    data_dir = data_dir or _DEFAULT_DATA
+    base = data_dir or (_AGENT_DATA if service == "postgres" else _DEFAULT_SOURCE)
+    alert = {"affected_users": 0, "error_rate_pct": 0}
     return {
         "correlate_deployments": correlate_deployments(
             service=service,
             environment=environment,
             alert_time=alert_time,
-            data_dir=data_dir,
+            data_dir=base,
         ),
-        "lookup_owner": lookup_owner(service=service, environment=environment, data_dir=data_dir),
+        "lookup_owner": lookup_owner(service=service, environment=environment, data_dir=base),
         "score_business_impact": score_business_impact(
             service=service,
             environment=environment,
             severity=severity,
-            data_dir=data_dir,
+            alert=alert,
+            data_dir=base,
         ),
-        "find_similar_incidents": find_similar_incidents(service=service, symptom=symptom),
+        "find_similar_incidents": find_similar_incidents(
+            service=service, symptom=symptom, environment=environment, data_dir=base
+        ),
     }

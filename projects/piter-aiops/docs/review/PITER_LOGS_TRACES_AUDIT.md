@@ -1,35 +1,36 @@
-# PITER AiOps — Logs & Traces Audit
+# PITER Logs & Traces Audit
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+## Local logging
 
-## Logging
-- Standard `logging` across 13 modules (`app/**`).
-- Bedrock failures logged then degraded: `"Bedrock failed (…) — answering from LOCAL knowledge base"`.
-- Notification logs **mask** phone numbers (`{phone[:4]}***{phone[-2:]}`).
-- No secrets, tokens, or raw recipients logged.
+| Area | Pattern |
+|------|---------|
+| Bedrock failures | `log.exception` in `bedrock_client.py` — sanitized via `BedrockError` |
+| Fallback | `WARNING Bedrock failed — answering from LOCAL` in `routes.py` |
+| Lambda | JSON event log once per invoke |
+| Request IDs | Not consistently propagated to JSON responses |
 
-## Tracing
-- `invoke_agent` called with `enableTrace=True` → Bedrock returns reasoning/tool/KB trace events,
-  parsed in `app/bedrock_agent_client.py`. Documented for CloudWatch inspection.
+## Correlation
 
-## Checklist
-| Item | Status | Note |
-| ---- | ------ | ---- |
-| Request/correlation ID | PARTIAL | session_id present; no dedicated request-id middleware |
-| Incident ID in logs | PARTIAL | present in notification/escalation paths |
-| Session ID in logs | PARTIAL | available; not logged on every path |
-| Tool-call logs | PASS | enrichment/escalation paths |
-| Fallback mode logs | PASS | explicit warning on Bedrock→local |
-| Bedrock errors sanitized | PASS | `app/errors.py` translates to safe messages |
-| No secrets in logs | PASS | — |
-| No raw phone/email in logs | PASS | masked |
-| CloudWatch log group docs | PARTIAL | referenced in deploy docs |
-| Local logs safe | PASS | — |
-| Trace parsing documented | PASS | `enableTrace` + parser |
+| ID | Present in triage response | In logs |
+|----|---------------------------|---------|
+| session_id | Yes | Partial |
+| incident/alert id | In alert payload | Partial |
+| ingestion_job_id | Upload response | Yes |
 
-## Recommendations (non-blocking)
-- Add a lightweight `before_request` correlation-id (uuid) and include `incident_id`/`session_id`
-  consistently in structured log lines for end-to-end traceability.
+## CloudWatch
 
-## Status: PARTIAL — safe and useful; correlation-id coverage can be tightened.
+Not queried in depth this session (read-only optional). Lambda log groups expected: `/aws/lambda/iiq-*`.
+
+## Trace parsing
+
+`bedrock_agent_client.py` parses invocation traces for citations — documented in code comments.
+
+## Gaps
+
+1. Add `request_id` middleware (Flask `g.request_id`)
+2. Structured JSON logging option for demo troubleshooting
+3. Document CloudWatch log group names in `docs/aws_setup.md`
+
+## Error sanitization
+
+User-facing errors use `BedrockError.user_message` — avoids raw boto3 traces in API JSON.
