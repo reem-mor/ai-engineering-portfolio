@@ -1,7 +1,7 @@
 # PITER AiOps — Live Demo Checklist & Readiness Report
 
-> Last verified: **2026-06-04** · Account `329597159579` · Region `us-east-1`
-> Surface: local Docker container on `:8080`, **live Bedrock** RAG via `.env`.
+> Last verified: **2026-06-08** · Region `us-east-1`
+> Surface: local Docker container on `:8080`, **live Bedrock Agent** RAG via `.env`.
 
 ---
 
@@ -9,14 +9,14 @@
 
 | Item | Value |
 |------|-------|
-| **Demo URL** | **http://localhost:8080/console** |
-| Health check | `http://localhost:8080/healthz` |
-| Backing intelligence | Bedrock KB `RBTJM6NIG9` via `RetrieveAndGenerate` (model: Claude Haiku 4.5 inference profile) |
-| App-layer tools | 4 deterministic MCP tools (correlate / context / similar / impact) — run locally, always available |
+| **Demo URL** | **http://localhost:8080/** |
+| Health check | `http://localhost:8080/api/health` |
+| Backing intelligence | Bedrock Agent + KB `RBTJM6NIG9` through `boto3 invoke_agent` |
+| App-layer tools | 4 PITER tools: deployments, service context, similar incidents, escalation |
 
-The `/console` surface is the live-demo console. It shows a `mode:` badge
-(`bedrock` when AWS is healthy, `local` on fallback) so the class can see which
-brain answered.
+The React dashboard at `/` is the primary live-demo surface. The legacy `/console`
+route remains available as a backup. Both surfaces expose whether the answer came
+from Bedrock or local fallback.
 
 ---
 
@@ -51,8 +51,7 @@ A single triage card containing:
   SLA risk `high`, regulatory `high`.
 - **Similar incidents** — `INC-2026-NJ-001` (38m MTTR), `INC-2026-NJ-002` (29m MTTR).
 
-Verified screenshots: [`screenshots/console_demo/`](../screenshots/console_demo/)
-(`01_home` → `12_smoke_results`).
+Verified screenshots: [`screenshots/final/`](../screenshots/final/).
 
 ---
 
@@ -78,17 +77,17 @@ Alternative follow-ups that also hit memory: `what deploy caused this?`,
 cd C:\dev\amdocs-ai-course\projects\piter-aiops
 
 # 1. Build + start the container (loads .env → USE_BEDROCK=true, live Bedrock)
-docker compose up --build -d
+docker compose up -d
 
 # 2. Confirm it's healthy and serving the console
-curl.exe -s -o NUL -w "%{http_code}`n" http://localhost:8080/console   # 200
+curl.exe -s -o NUL -w "%{http_code}`n" http://localhost:8080/api/health   # 200
 
 # 3. (Optional) re-run the guarantees
-.\.venv\Scripts\python.exe -m pytest -q                                 # 189 passed
+.\.venv\Scripts\python.exe -m pytest -q                                 # 279 passed
 .\.venv\Scripts\python.exe scripts\verify_live_demo.py                  # 29/29 PASS
 
 # 4. Open the demo
-start http://localhost:8080/console
+start http://localhost:8080/
 ```
 
 Do **not** restart the container between “Run triage” and the follow-up — session
@@ -118,8 +117,8 @@ The demo cannot fail because of AWS:
 
 ## 7. Honest readiness report
 
-### Passed (verified `2026-06-04`)
-- ✅ App opens, demo alert loads, submit works (`/console`).
+### Passed (verified `2026-06-08`)
+- App opens, demo alert loads, submit works (`/` primary; `/console` backup).
 - ✅ Live Bedrock cited RAG answer (`mode: bedrock`, KB `RBTJM6NIG9`, 7/7 KB smoke).
 - ✅ All 4 MCP tools enrich the card (correlate, context/owner, similar, impact).
 - ✅ Owner/escalation, business impact, similar incidents all render.
@@ -127,7 +126,7 @@ The demo cannot fail because of AWS:
 - ✅ Mobile/projector layout (390px) renders the full card.
 - ✅ No browser console errors; no stack traces surfaced (JSON error bodies only).
 - ✅ AWS-down auto-fallback to local mode keeps the full demo (29/29 e2e checks).
-- ✅ `pytest` 189 passed.
+- `pytest` 279 passed.
 
 ### Needs your AWS login (only if you want the *public* AWS angle)
 - ⚠️ **EC2 public host is gone.** The previously documented instance
@@ -141,9 +140,8 @@ The demo cannot fail because of AWS:
 - `.env` is local-only and git-ignored; it points at the existing KB/Agent IDs and
   the enabled Claude Haiku 4.5 inference profile. Real fix applied: removed `topP`
   from the Bedrock inference config (Haiku rejects `temperature`+`topP` together).
-- `RAG_BACKEND=retrieve_and_generate` is intentional: the `invoke_agent` path is
-  teacher-aligned but **flaky** for cited RAG (grounded in only 1/3 demo runs);
-  the direct KB path is deterministic (7/7). MCP/tools/memory are unchanged.
+- `RAG_BACKEND=agent` is the primary final demo mode. Direct `retrieve_and_generate`
+  and local TF-IDF fallback remain available if the Agent alias or KB is unavailable.
 - Firecrawl is optional and env-only; absent key is skipped cleanly.
 
 ### Safe for the live class demo

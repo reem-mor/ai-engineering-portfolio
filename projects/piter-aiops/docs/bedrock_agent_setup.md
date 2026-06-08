@@ -57,7 +57,7 @@ BEDROCK_AGENT_ALIAS_ID=YYYYYYYYYY
 
 5. **Test in console** — ask: *"How do I triage an authentication service incident?"*
 
-📸 Screenshot for submission: `screenshots/20_bedrock_agent_overview.png`
+Screenshot for submission: `screenshots/final/13b_settings_aws_status.png`
 
 ---
 

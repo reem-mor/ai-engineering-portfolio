@@ -4,7 +4,7 @@
 
 ```bash
 python -m pytest
-python scripts/verify_live_demo.py    # 29/29 with live .env — uses /console + /api/triage
+python scripts/verify_live_demo.py    # 29/29 with live .env and Bedrock Agent
 python scripts/verify_spa_demo.py   # API-only parity for React SPA
 ```
 
@@ -12,24 +12,23 @@ python scripts/verify_spa_demo.py   # API-only parity for React SPA
 > live assertions are skipped (the one expected fail is "app configured for live Bedrock"), and
 > Phase B proves the local fallback end-to-end (14/14). It no longer errors without a `.env`.
 
-## Going live (Bedrock) — turnkey
+## Going live (Bedrock) - turnkey
 
-**Default demo path:** `RAG_BACKEND=retrieve_and_generate` (direct KB — most reliable citations).
+**Final demo path:** `RAG_BACKEND=agent` (Bedrock Agent Runtime through `boto3 invoke_agent`).
 
-**Agent path (teacher-aligned):** set `RAG_BACKEND=agent` — live alias `live` routes to agent **version 6** with guardrail v2, `piter-escalation`, and legacy `incidentiq-ops` disabled. Verify with:
+The live alias `live` routes to agent **version 6** with guardrail v2, `piter-escalation`, and legacy `incidentiq-ops` disabled. Verify with:
 
 ```bash
 RAG_BACKEND=agent python scripts/agent_smoke_test.py   # target 7/7
 ```
 
-To exercise the real Bedrock Agent path and reach **29/29** on the console script, set these (env secrets or `.env`):
+To exercise the real Bedrock Agent path and reach **29/29**, store AWS keys in the AWS CLI profile and set these project `.env` values:
 
 ```env
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
+AWS_PROFILE=reemmor
 PITER_AWS_REGION=us-east-1
 PITER_USE_BEDROCK=true
-RAG_BACKEND=retrieve_and_generate   # default; use agent for invoke_agent demo
+RAG_BACKEND=agent
 PITER_BEDROCK_KB_ID=...
 PITER_BEDROCK_MODEL_ARN=arn:aws:bedrock:...:foundation-model/...   # or inference-profile ARN
 PITER_BEDROCK_AGENT_ID=...
@@ -39,7 +38,7 @@ PITER_BEDROCK_AGENT_ALIAS_ID=...
 Then:
 
 ```bash
-aws sts get-caller-identity            # confirm credentials resolve
+aws sts get-caller-identity --profile reemmor
 python scripts/verify_live_demo.py     # target 29/29 (live Bedrock + local fallback)
 ```
 
@@ -63,8 +62,8 @@ The SPA storm demo uses the CSV P1 bet-service trigger — both share the same t
 ## Docker
 
 ```bash
-docker compose up -d --build
-curl http://localhost:8080/health
+docker compose up -d
+curl http://localhost:8080/api/health
 ```
 
 ## Before enabling SPA console redirect

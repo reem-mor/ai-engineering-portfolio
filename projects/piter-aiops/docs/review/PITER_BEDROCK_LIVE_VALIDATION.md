@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-08
 
-## Mode A — `RAG_BACKEND=retrieve_and_generate` (default in Docker)
+## Mode A - `RAG_BACKEND=retrieve_and_generate` (direct-KB fallback mode)
 
 | Check | Result |
 |-------|--------|

@@ -1,17 +1,20 @@
 # AWS credentials and configuration — PITER AiOps
 
-Two layers: **AWS access keys** live in the CLI profile store; **Bedrock resource IDs and app secrets** live in the project `.env`.
+Two layers: **AWS auth** (bearer token or CLI profile) and **Bedrock resource IDs / app secrets** in project `.env`.
 
 | What | Where | Never put here |
 |------|--------|----------------|
-| AWS access key + secret | `~/.aws/credentials` | `.env` |
-| Profile name | `projects/piter-aiops/.env` → `AWS_PROFILE` | source code |
+| Bedrock short-term API key | Windows env `AWS_BEARER_TOKEN_BEDROCK` or `.env` (gitignored) | git / README |
+| AWS access key + secret | `~/.aws/credentials` | `.env` (long-lived keys) |
+| Profile name | `.env` → `AWS_PROFILE` | source code |
 | KB / Agent IDs, model ARN, S3 | `.env` → `PITER_*` | git / README |
 | Flask CSRF signing | `.env` → `PITER_FLASK_SECRET_KEY` | git |
 
 **Not used by this app:** `c:/dev/amdocs-ai-course/.env` (course repo root). Edit only `projects/piter-aiops/.env`.
 
 Loader: [`app/config.py`](../app/config.py) — `PITER_*` preferred; legacy unprefixed names still supported (see [`.env.example`](../.env.example)).
+
+Requires **boto3 >= 1.39.0** ([`requirements.txt`](../requirements.txt)) for bearer-token auth.
 
 ## 1. AWS access keys (`~/.aws/credentials`)
 
@@ -47,6 +50,40 @@ Verify (no secrets printed):
 aws sts get-caller-identity --profile reemmor
 python scripts/verify_credentials.py
 ```
+
+## 1b. Bedrock short-term API key (Path C — bearer token)
+
+For **invoke_agent** and **retrieve** without `~/.aws/credentials`. Generate in Bedrock console → **API keys** → **Short-term API keys** (max 12 hours, region-specific).
+
+Set the token (do not commit):
+
+```powershell
+# Windows user env (persists across sessions)
+setx AWS_BEARER_TOKEN_BEDROCK "bedrock-api-key-..."
+# Open a new terminal after setx
+```
+
+Or in project `.env` (gitignored):
+
+```env
+AWS_BEARER_TOKEN_BEDROCK=bedrock-api-key-...
+# AWS_PROFILE=reemmor   # comment out to avoid profile/bearer conflict
+```
+
+boto3 reads `AWS_BEARER_TOKEN_BEDROCK` automatically — no app code changes. Requires boto3 >= 1.39.0.
+
+Verify (no secrets printed):
+
+```powershell
+if ($env:AWS_BEARER_TOKEN_BEDROCK) { "Bearer token: set" } else { "Bearer token: NOT SET" }
+python scripts/agent_smoke_test.py
+```
+
+**Bearer covers:** `bedrock-agent-runtime` (`invoke_agent`, `retrieve`, RetrieveAndGenerate).
+
+**Still needs IAM profile:** S3 upload, `bedrock-agent` control plane, SNS/SES notifications. For live notifications, keep `AWS_PROFILE` and valid `~/.aws/credentials` in addition to bearer for Bedrock RAG.
+
+Docker Compose passes `AWS_BEARER_TOKEN_BEDROCK` from host env or `.env` — see [`docker-compose.yml`](../docker-compose.yml).
 
 ## 2. Project `.env` (resource IDs + Flask secret)
 
@@ -91,8 +128,9 @@ No AWS keys required.
 
 [`docker-compose.yml`](../docker-compose.yml):
 
-- `env_file: .env` — loads `PITER_*` and `AWS_PROFILE`
-- `~/.aws:/home/app/.aws:ro` — mounts host credentials into the container
+- `env_file: .env` — loads `PITER_*`, `AWS_PROFILE`, and `AWS_BEARER_TOKEN_BEDROCK`
+- `AWS_BEARER_TOKEN_BEDROCK` — interpolated from host env when not in `.env`
+- `~/.aws:/home/app/.aws:ro` — mounts host credentials for IAM profile auth
 
 ```powershell
 docker compose up --build
@@ -112,7 +150,7 @@ See [`infra/ec2_user_data_demo.sh`](../infra/ec2_user_data_demo.sh).
 
 | Context | AWS auth | Config |
 |---------|----------|--------|
-| Flask / Docker (local) | `~/.aws` + `AWS_PROFILE` | `projects/piter-aiops/.env` |
+| Flask / Docker (local) | `AWS_BEARER_TOKEN_BEDROCK` and/or `~/.aws` + `AWS_PROFILE` | `projects/piter-aiops/.env` |
 | Flask on EC2 | IAM instance profile | `/home/ec2-user/.env` |
 | `scripts/setup_*.py` (laptop) | `~/.aws` | `.env` for IDs / bucket |
 | pytest | Mocked | `tests/conftest.py` |
