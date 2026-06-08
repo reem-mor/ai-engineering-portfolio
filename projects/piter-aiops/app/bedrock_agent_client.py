@@ -11,7 +11,7 @@ import boto3
 from botocore.config import Config as BotoConfig
 from botocore.exceptions import EventStreamError
 
-from app.bedrock_client import Citation, RagAnswer, _dedupe_citations
+from app.bedrock_client import BedrockRagClient, Citation, RagAnswer, _dedupe_citations
 from app.config import Config
 from app.errors import translate
 from app.text_utils import extract_reference_metadata, format_citation_label, format_citation_preview
@@ -177,6 +177,15 @@ class BedrockAgentClient:
         if not grounded and not answer_text:
             answer_text = "I could not find anything in the knowledge base for that question."
 
+        if not grounded:
+            return self._backfill_from_kb(
+                question,
+                session_id=out_session_id,
+                agent_answer=answer_text,
+                enrichment=enrichment,
+                latency_ms=latency_ms,
+            )
+
         matched = citations[0].source_label if citations else None
         return RagAnswer(
             answer=answer_text,
@@ -185,6 +194,42 @@ class BedrockAgentClient:
             grounded=grounded,
             latency_ms=latency_ms,
             matched_runbook=matched,
+            enrichment=enrichment or None,
+        )
+
+    def _backfill_from_kb(
+        self,
+        question: str,
+        *,
+        session_id: str | None,
+        agent_answer: str,
+        enrichment: dict[str, Any],
+        latency_ms: int,
+    ) -> RagAnswer:
+        """When invoke_agent skips KB retrieval, use direct RetrieveAndGenerate."""
+        rag = BedrockRagClient(self._config, client=self._client).ask(question)
+        if rag.grounded:
+            log.info(
+                "Agent answer was ungrounded; backfilled citations via retrieve_and_generate (%d sources)",
+                len(rag.citations),
+            )
+            return RagAnswer(
+                answer=rag.answer,
+                citations=rag.citations,
+                session_id=session_id,
+                grounded=True,
+                latency_ms=latency_ms + rag.latency_ms,
+                matched_runbook=rag.matched_runbook,
+                enrichment=enrichment or None,
+            )
+
+        return RagAnswer(
+            answer=agent_answer or rag.answer,
+            citations=[],
+            session_id=session_id,
+            grounded=False,
+            latency_ms=latency_ms + rag.latency_ms,
+            matched_runbook=None,
             enrichment=enrichment or None,
         )
 

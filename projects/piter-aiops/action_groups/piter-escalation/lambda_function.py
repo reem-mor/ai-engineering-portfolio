@@ -30,8 +30,8 @@ def _respond(event: dict, status: int, body: dict) -> dict:
         "messageVersion": "1.0",
         "response": {
             "actionGroup": event.get("actionGroup", "piter-escalation"),
-            "apiPath": event.get("apiPath", "/escalation"),
-            "httpMethod": event.get("httpMethod", "POST"),
+        "apiPath": event.get("apiPath", "/escalation"),
+        "httpMethod": event.get("httpMethod", "GET"),
             "httpStatusCode": status,
             "responseBody": {"application/json": {"body": json.dumps(body)}},
         },

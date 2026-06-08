@@ -14,14 +14,22 @@ python scripts/verify_spa_demo.py   # API-only parity for React SPA
 
 ## Going live (Bedrock) — turnkey
 
-To exercise the real Bedrock Agent path and reach **29/29**, set these (env secrets or `.env`):
+**Default demo path:** `RAG_BACKEND=retrieve_and_generate` (direct KB — most reliable citations).
+
+**Agent path (teacher-aligned):** set `RAG_BACKEND=agent` — live alias `live` routes to agent **version 6** with guardrail v2, `piter-escalation`, and legacy `incidentiq-ops` disabled. Verify with:
+
+```bash
+RAG_BACKEND=agent python scripts/agent_smoke_test.py   # target 7/7
+```
+
+To exercise the real Bedrock Agent path and reach **29/29** on the console script, set these (env secrets or `.env`):
 
 ```env
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 PITER_AWS_REGION=us-east-1
 PITER_USE_BEDROCK=true
-RAG_BACKEND=agent                      # or retrieve_and_generate for direct KB
+RAG_BACKEND=retrieve_and_generate   # default; use agent for invoke_agent demo
 PITER_BEDROCK_KB_ID=...
 PITER_BEDROCK_MODEL_ARN=arn:aws:bedrock:...:foundation-model/...   # or inference-profile ARN
 PITER_BEDROCK_AGENT_ID=...
