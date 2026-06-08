@@ -70,40 +70,80 @@ def _recommended_steps(
     return best[:8]
 
 
+def _tool_outputs_from_analysis(analysis: dict[str, Any]) -> dict[str, Any]:
+    """Map structured analysis fields to the legacy tool output envelope."""
+    return {
+        "structured_analysis": analysis,
+        "correlate_deployments": analysis.get("deployments", {}),
+        "lookup_owner_and_escalation": analysis.get("owner", {}),
+        "score_business_impact": analysis.get("impact", {}),
+        "find_similar_incidents": analysis.get("similar_incidents", {}),
+    }
+
+
+def _active_owner(card: dict[str, Any], tools: dict[str, Any]) -> dict[str, Any]:
+    owner = card.get("owner")
+    if isinstance(owner, dict) and owner:
+        return owner
+    legacy = tools.get("lookup_owner_and_escalation", {})
+    return legacy if isinstance(legacy, dict) else {}
+
+
+def _active_correlate(card: dict[str, Any], tools: dict[str, Any]) -> dict[str, Any]:
+    if card.get("suspect_deploys") is not None or card.get("deployment_reason"):
+        return {
+            "deployments": card.get("suspect_deploys", []),
+            "suspect_deployment": card.get("suspect_deployment"),
+            "reason": card.get("deployment_reason", ""),
+        }
+    legacy = tools.get("correlate_deployments", {})
+    return legacy if isinstance(legacy, dict) else {}
+
+
+def _active_impact(card: dict[str, Any], tools: dict[str, Any]) -> dict[str, Any]:
+    impact = card.get("impact")
+    if isinstance(impact, dict) and impact:
+        return impact
+    legacy = tools.get("score_business_impact", {})
+    return legacy if isinstance(legacy, dict) else {}
+
+
 def run_triage(
     alert: dict[str, Any],
     *,
     ask_fn: AskFn,
     session_id: str | None = None,
 ) -> dict[str, Any]:
-    """Run full triage: structured analysis, RAG, 4 tools, compose one triage card."""
+    """Run full triage: structured analysis, RAG, compose one triage card."""
     sid = session_memory.create_session(alert, session_id=session_id)
     question = build_triage_question(alert)
     rag = ask_fn(question)
 
     analysis = analyze_incident(alert)
-    tool_outputs = run_plan(decide_tools(analysis.get("alert", alert)))
-    correlate = tool_outputs.get("correlate_deployments", {})
-    owner = tool_outputs.get("lookup_owner_and_escalation", {})
-    impact = tool_outputs.get("score_business_impact", {})
-    similar = tool_outputs.get("find_similar_incidents", {})
+    analysis_ok = not analysis.get("error")
 
-    if not analysis.get("error"):
-        correlate = analysis.get("deployments", correlate)
-        owner = analysis.get("owner", owner)
-        impact = analysis.get("impact", impact)
-        similar = analysis.get("similar_incidents", similar)
-        tool_outputs["structured_analysis"] = analysis
+    if analysis_ok:
+        correlate = analysis.get("deployments", {})
+        owner = analysis.get("owner", {})
+        impact = analysis.get("impact", {})
+        similar = analysis.get("similar_incidents", {})
+        tool_outputs = _tool_outputs_from_analysis(analysis)
+    else:
+        tool_outputs = run_plan(decide_tools(alert))
+        correlate = tool_outputs.get("correlate_deployments", {})
+        owner = tool_outputs.get("lookup_owner_and_escalation", {})
+        impact = tool_outputs.get("score_business_impact", {})
+        similar = tool_outputs.get("find_similar_incidents", {})
 
-    answer_sections = compose_piter_sections(analysis if not analysis.get("error") else {}, rag.answer)
+    answer_sections = compose_piter_sections(analysis if analysis_ok else {}, rag.answer)
     piter_sections = answer_sections.get("piter_sections")
     composed_answer = compose_piter_answer(
-        analysis if not analysis.get("error") else {},
+        analysis if analysis_ok else {},
         rag_answer=rag.answer,
     )
 
     citations = _citations_payload(rag)
-    if not analysis.get("error"):
+    if analysis_ok:
         kb = analysis.get("knowledge_base", {})
         if kb.get("found"):
             citations.append({
@@ -113,15 +153,16 @@ def run_triage(
             })
 
     suspect_deploys = correlate.get("deployments", []) if isinstance(correlate, dict) else []
+    deployment_reason = correlate.get("reason", "") if isinstance(correlate, dict) else ""
 
-    priority_info = analysis.get("priority", {}) if not analysis.get("error") else {}
+    priority_info = analysis.get("priority", {}) if analysis_ok else {}
     priority = priority_info.get("priority") or str(alert.get("severity", "P3")).upper()
     requires_escalation = priority_info.get(
         "requires_escalation", priority in {"P1", "P2", "P3"}
     )
 
     matched_runbook = rag.matched_runbook
-    if not analysis.get("error"):
+    if analysis_ok:
         kb = analysis.get("knowledge_base", {})
         if kb.get("runbook_file"):
             matched_runbook = kb["runbook_file"]
@@ -134,19 +175,20 @@ def run_triage(
         "recommended_steps": _recommended_steps(rag, piter_sections=piter_sections),
         "suspect_deploys": suspect_deploys,
         "suspect_deployment": correlate.get("suspect_deployment") if isinstance(correlate, dict) else None,
+        "deployment_reason": deployment_reason,
         "owner": owner,
         "impact": impact,
         "similar_incidents": similar.get("similar_incidents", []) if isinstance(similar, dict) else similar,
-        "grounded": rag.grounded or bool(not analysis.get("error")),
+        "grounded": rag.grounded or bool(analysis_ok),
         "matched_runbook": matched_runbook,
         "session_id": sid,
         "memory_used": False,
         "mode": rag.mode,
-        "alert": analysis.get("alert", alert) if not analysis.get("error") else alert,
+        "alert": analysis.get("alert", alert) if analysis_ok else alert,
         "priority": priority,
         "priority_rationale": priority_info.get("rationale", ""),
-        "escalation_policy": analysis.get("escalation", {}) if not analysis.get("error") else {},
-        "sources": analysis.get("sources", []) if not analysis.get("error") else [],
+        "escalation_policy": analysis.get("escalation", {}) if analysis_ok else {},
+        "sources": analysis.get("sources", []) if analysis_ok else [],
         "requires_escalation": requires_escalation,
         "piter_stages": {
             "priority": "complete",
@@ -187,7 +229,7 @@ def run_follow_up(
     *,
     ask_fn: AskFn,
 ) -> dict[str, Any] | None:
-    """Answer a follow-up using stored session memory; re-run RAG only if needed."""
+    """Answer a follow-up using stored triage card context; re-run RAG only if needed."""
     session = session_memory.get_session(session_id)
     if session is None:
         return None
@@ -199,29 +241,39 @@ def run_follow_up(
     mode = card.get("mode", "local")
 
     if kind == "owner":
-        owner = tools.get("lookup_owner_and_escalation", {})
+        owner = _active_owner(card, tools)
+        escalation = card.get("escalation_policy") or {}
         chain = " -> ".join(owner.get("escalation_chain", [])) or owner.get("escalation_path", "")
+        notify = escalation.get("notify")
+        if isinstance(notify, list) and notify:
+            chain = " -> ".join(notify)
+        primary = owner.get("primary_on_call") or owner.get("primary_on_call_role", "the on-call")
         answer = (
-            f"Escalate to {owner.get('primary_on_call', 'the on-call')} "
+            f"Escalate to {primary} "
             f"(team {owner.get('owner_team', 'n/a')}, Slack {owner.get('slack_channel', 'n/a')}). "
-            f"Escalation chain: {chain}. Secondary: {owner.get('secondary_escalation', 'n/a')}."
+            f"Escalation chain: {chain}. "
+            f"Secondary: {owner.get('secondary_on_call') or owner.get('secondary_on_call_role', 'n/a')}."
         )
         payload = {"answer": answer, "owner": owner}
     elif kind == "deploy":
-        correlate = tools.get("correlate_deployments", {})
+        correlate = _active_correlate(card, tools)
         suspect = correlate.get("suspect_deployment")
-        answer = correlate.get("reason", "No suspect deployment found in the window.")
-        payload = {"answer": answer, "suspect_deployment": suspect, "suspect_deploys": correlate.get("deployments", [])}
+        answer = correlate.get("reason") or card.get("deployment_reason") or "No suspect deployment found in the window."
+        payload = {
+            "answer": answer,
+            "suspect_deployment": suspect,
+            "suspect_deploys": correlate.get("deployments", card.get("suspect_deploys", [])),
+        }
     elif kind == "impact":
-        impact = tools.get("score_business_impact", {})
+        impact = _active_impact(card, tools)
         answer = impact.get("business_explanation", "No business impact estimate available.")
         payload = {"answer": answer, "impact": impact}
     elif kind == "summary":
-        owner = tools.get("lookup_owner_and_escalation", {})
-        impact = tools.get("score_business_impact", {})
+        owner = _active_owner(card, tools)
+        impact = _active_impact(card, tools)
         answer = (
             f"Runbook: {card.get('matched_runbook', 'n/a')}. "
-            f"Owner: {owner.get('owner_team', 'n/a')} ({owner.get('primary_on_call', 'n/a')}). "
+            f"Owner: {owner.get('owner_team', 'n/a')} ({owner.get('primary_on_call') or owner.get('primary_on_call_role', 'n/a')}). "
             f"Impact: {impact.get('sla_risk', 'n/a')} SLA risk, "
             f"~${impact.get('estimated_total_cost', 0):,} so far. "
             f"{len(card.get('recommended_steps', []))} recommended steps."

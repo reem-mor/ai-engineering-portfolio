@@ -41,7 +41,7 @@ generated against the running container in **Bedrock** mode. They map 1:1 to the
 | 08 | `console_demo/08_similar_incidents.png` | Similar incidents + MTTR |
 | 09 | `console_demo/09_followup_memory.png` | Follow-up answer marked **from memory** |
 | 10 | `console_demo/10_mobile.png` | Full triage card @ 390px (projector/mobile) |
-| 11 | `console_demo/11_pytest.png` | `pytest` — 189 passed |
+| 11 | `console_demo/11_pytest.png` | `pytest` — all green (count varies by release; see `evaluation/pytest_output.txt`) |
 | 12 | `console_demo/12_smoke_results.png` | `evaluation/live_smoke_summary.md` rendered |
 
 Regenerate (Docker on `:8080`, `.env` with `USE_BEDROCK=true` for the live set;
@@ -57,6 +57,8 @@ node capture_console_demo.mjs        # → screenshots/console_demo/01..12
 ```
 
 ## What to submit (Tier 1 — legacy RAG naming)
+
+> Historical: Tier 1 filenames predate the **PITER AiOps** rename (`incident-rag-bedrock` repo path). PNG contents remain valid proof; capture scripts now use `projects/piter-aiops/`.
 
 Attach these **11 files** from the repo root `screenshots/` folder for course grading:
 
@@ -143,7 +145,7 @@ If your grader expects hyphenated filenames, rename or copy from the Tier 1 set:
 Prerequisites: Docker running, `.env` with valid `BEDROCK_KB_ID` and inference profile ARN, app on `http://localhost:8080`.
 
 ```powershell
-cd projects/incident-rag-bedrock
+cd projects/piter-aiops
 
 docker compose up --build -d
 Invoke-WebRequest http://localhost:8080/health   # {"status":"ok"}

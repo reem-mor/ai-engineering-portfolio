@@ -11,6 +11,18 @@ Ground runbooks, alert history, and structured ops data in **Amazon Bedrock** (K
 | **Tests** | `pytest -q` — offline, no live AWS required |
 | **Course** | AI-Augmented Software Engineering mid-project |
 
+### Naming (PITER vs legacy)
+
+| Surface | Name |
+|---------|------|
+| Product / UI | **PITER AiOps** |
+| Repo folder | `projects/piter-aiops/` |
+| S3 corpus prefix | `projects/piter-aiops/data/sample_documents/` |
+| Local action group folders | `action_groups/piter-*` (enrichment), `action_groups/incidentiq-ops/` (ops — legacy folder name) |
+| AWS console (unchanged until rename) | Agent `incidentiq-triage-agent`, Lambdas `iiq-*`, ops group `incidentiq-ops` |
+
+Older docs or screenshots may still say `incident-rag-bedrock` (pre-rename repo path) or **IncidentIQ** (early working title). The live KB data source uses the `piter-aiops` S3 prefix — see [`evaluation/live_demo_aws_state.md`](evaluation/live_demo_aws_state.md).
+
 ---
 
 ## Table of contents
@@ -92,7 +104,7 @@ Operators upload runbooks or post-mortems via the UI. Flask validates type/size,
 
 ### 6. Live ops actions (Bedrock action group)
 
-The **`incidentiq-ops`** action group exposes environment status, recent alerts, and incident creation (mock backend in v1). The agent discovers tools via OpenAPI schema stored in S3.
+The **ops action group** exposes environment status, recent alerts, and incident creation (mock backend in v1). Handler code lives in [`action_groups/incidentiq-ops/`](action_groups/incidentiq-ops/) (legacy folder name); in AWS the group is still named `incidentiq-ops` with Lambda `incidentiq-actions`. The agent discovers tools via OpenAPI schema stored in S3.
 
 ---
 
@@ -142,7 +154,7 @@ flowchart TB
     L2["piter-service-context<br/>iiq-context"]
     L3["piter-similar-incidents<br/>iiq-similar"]
     L4["piter-escalation"]
-    OPS["incidentiq-ops"]
+    OPS["piter-aiops-ops<br/>incidentiq-ops (AWS)"]
   end
 
   DATA[("agent_data<br/>CSV / JSON")]
@@ -312,7 +324,7 @@ python scripts/setup_action_group.py --agent-id HH4YGSLZUE
 
 | Action group | Lambda | Tools |
 |--------------|--------|-------|
-| [`incidentiq-ops`](action_groups/incidentiq-ops/) | `incidentiq-actions` | `GET /environments/{env}/status`, `GET /alerts`, `POST /incidents` |
+| [`incidentiq-ops`](action_groups/incidentiq-ops/) (legacy folder) | `incidentiq-actions` (AWS) | `GET /environments/{env}/status`, `GET /alerts`, `POST /incidents` |
 
 See [`docs/bedrock_action_group_setup.md`](docs/bedrock_action_group_setup.md).
 

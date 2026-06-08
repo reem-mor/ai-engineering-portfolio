@@ -1,5 +1,7 @@
 # Cleanup log — 2026-05-31 (S3/KB alignment + EC2 relaunch)
 
+> Product branding is **PITER AiOps** (`projects/piter-aiops/`). Resource names below (`incident-rag-*`, `IncidentRagBedrock*`) are from the first milestone and kept here as an audit trail.
+
 Resources created for assignment proof and removed the same day.
 
 ## Deleted

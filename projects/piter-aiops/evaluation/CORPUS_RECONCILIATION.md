@@ -241,12 +241,13 @@ Update [`app/services/local_rag.py`](app/services/local_rag.py):
 
 ---
 
-## Stale documentation to update
+## Stale documentation — status (2026-06-08)
 
-| File | Fix |
-|------|-----|
-| `docs/bedrock_kb_setup.md` | `piter-aiops` prefix; single canonical corpus |
+| File | Status |
+|------|--------|
+| `docs/bedrock_kb_setup.md` | Uses `piter-aiops` prefix |
 | `data/sample_documents/README.md` | S3 path + RB id convention |
-| `docs/cleanup_log.md`, `code_review.md`, `teacher_submission_email.md` | Remove `incident-rag-bedrock` references |
-| `docs/architecture.md`, `UPGRADE_STATUS.md` | One corpus, one prefix |
-| `scripts/build_corpus.py` header | Correct output path comment |
+| `docs/cleanup_log.md`, `code_review.md`, `teacher_submission_email.md` | Updated — legacy names noted where historical |
+| `docs/architecture.md`, `UPGRADE_STATUS.md` | One corpus, `piter-aiops` prefix |
+| `scripts/build_corpus.py` header | Output path → `projects/piter-aiops/` |
+| `evaluation/qa_showcase.md`, `screenshots/README.md` | Canonical S3 prefix |

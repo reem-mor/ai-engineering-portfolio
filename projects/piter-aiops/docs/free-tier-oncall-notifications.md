@@ -22,7 +22,7 @@ PITER_DEMO_SMS_RECIPIENT=+10000000000
 
 Use IAM user **`admin-reem`** (profile `reemmor`) — **not root**.
 
-Run setup once — it creates the managed policy **and attaches it** to `admin-reem`, `IncidentRagBedrockEC2Role`, and `incidentiq-lambda-role`:
+Run setup once — it creates the managed policy **and attaches it** to `admin-reem`, `IncidentRagBedrockEC2Role` (legacy EC2 role name), and `incidentiq-lambda-role` (legacy Lambda role — app branding is **PITER AiOps**):
 
 ```powershell
 python scripts/setup_notifications.py --sender-email sender@example.com --verify-recipients oncall@example.com --profile reemmor

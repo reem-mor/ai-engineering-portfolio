@@ -5,13 +5,15 @@ from pathlib import Path
 
 from app.errors import BedrockError
 
-ALLOWED_UPLOAD_SUFFIXES = frozenset({".md", ".txt", ".csv", ".docx", ".pdf"})
+ALLOWED_UPLOAD_SUFFIXES = frozenset({".md", ".txt", ".csv", ".docx", ".pdf", ".json"})
 
 
 def validate_upload_filename(filename: str | None) -> str:
     name = (filename or "").strip()
     if not name:
         raise BedrockError("Choose a file to upload.", code="missing_file")
+    if ".." in name or name != Path(name).name:
+        raise BedrockError("Invalid filename.", code="invalid_filename")
     suffix = Path(name).suffix.lower()
     if suffix not in ALLOWED_UPLOAD_SUFFIXES:
         allowed = ", ".join(sorted(ALLOWED_UPLOAD_SUFFIXES))

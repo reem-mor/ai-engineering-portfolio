@@ -2,6 +2,8 @@
 
 Bedrock Agent action group for live NOC operations (environment status, alerts, incident creation).
 
+> **Folder name:** `incidentiq-ops` is a legacy directory name (early **IncidentIQ** working title). Product branding is **PITER AiOps**. In AWS the action group is still `incidentiq-ops` with Lambda `incidentiq-actions` until an optional rename deploy.
+
 ## Files
 
 | File | Purpose |

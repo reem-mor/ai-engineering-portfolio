@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from app.environment_codes import normalize_environment
 from app.services import data_access
 from app.text_utils import format_answer_sections
 
@@ -103,12 +104,12 @@ def _correlate_deployments(
         return {"error": f"Invalid alert_time '{alert_time}'", "deployments": []}
 
     cutoff = alert_dt - timedelta(hours=lookback_hours)
-    env = environment.upper()
+    env = normalize_environment(environment)
     hop_targets = {service.lower()} | {d.lower() for d in dependencies}
 
     matched: list[dict[str, Any]] = []
     for row in data_access.load_source_deploys(source_dir):
-        if row["environment"].upper() != env:
+        if normalize_environment(row["environment"]) != env:
             continue
         if row["service"].lower() not in hop_targets:
             continue
@@ -269,7 +270,7 @@ def _resolve_escalation(
     notify = [role_map.get(r, r) for r in notify_roles if role_map.get(r, r)]
 
     regulatory_override: dict[str, Any] = {}
-    env = environment.upper()
+    env = normalize_environment(environment)
     regulator = _ENV_REGULATOR.get(env)
     if regulator:
         override = policies.get("regulatory_overrides", {}).get(regulator, {}).get(priority)
@@ -303,14 +304,14 @@ def _find_similar_incidents(
     source_dir: Path | None,
 ) -> dict[str, Any]:
     svc = service.lower()
-    env = environment.upper()
+    env = normalize_environment(environment)
     tokens = [t for t in symptom.lower().split() if len(t) > 3]
     scored: list[tuple[int, dict[str, str]]] = []
 
     for row in data_access.load_past_incidents(source_dir):
         if row["service"].lower() != svc:
             continue
-        if env and row.get("environment", "").upper() != env:
+        if env and normalize_environment(row.get("environment", "")) != env:
             continue
         text = f"{row.get('title', '')} {row.get('symptoms', '')} {row['root_cause']}".lower()
         score = sum(1 for t in tokens if t in text)

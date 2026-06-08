@@ -2,7 +2,7 @@
 
 - **Run at:** 2026-06-08 09:32:20 UTC
 - **Model:** `arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0`
-- **Corpus:** s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/
+- **Corpus:** s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/
 - **Cases:** 4 grounded runbook answers + 1 off-topic refusal
 
 ## 1. Postgres CPU is 95% on prod-db-1 — what is the runbook?

@@ -46,8 +46,34 @@ def test_environment_status_gib_degraded():
     assert resp["response"]["actionGroup"] == "piter-aiops-ops"
     assert resp["response"]["httpStatusCode"] == 200
     data = _body(resp)
+    assert data["environment"] == "GIB-UKGC"
     assert data["status"] == "DEGRADED"
     assert data["active_alerts"] == 2
+
+
+def test_environment_status_canonical_gib_ukgc():
+    event = _base_event(
+        method="GET",
+        path="/environments/{environment}/status",
+        parameters=[{"name": "environment", "type": "string", "value": "GIB-UKGC"}],
+    )
+    resp = ops.lambda_handler(event, None)
+    data = _body(resp)
+    assert resp["response"]["httpStatusCode"] == 200
+    assert data["environment"] == "GIB-UKGC"
+
+
+def test_environment_status_nj_alias_maps_to_nj_dge():
+    event = _base_event(
+        method="GET",
+        path="/environments/{environment}/status",
+        parameters=[{"name": "environment", "type": "string", "value": "NJ"}],
+    )
+    resp = ops.lambda_handler(event, None)
+    data = _body(resp)
+    assert resp["response"]["httpStatusCode"] == 200
+    assert data["environment"] == "NJ-DGE"
+    assert data["status"] == "HEALTHY"
 
 
 def test_environment_status_unknown_env():
@@ -73,7 +99,7 @@ def test_recent_alerts_gib():
     resp = ops.lambda_handler(event, None)
     assert resp["response"]["httpStatusCode"] == 200
     data = _body(resp)
-    assert data["environment"] == "GIB"
+    assert data["environment"] == "GIB-UKGC"
     assert data["count"] == 2
     assert len(data["alerts"]) == 2
 

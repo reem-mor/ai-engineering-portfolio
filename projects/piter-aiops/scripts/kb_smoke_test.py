@@ -179,7 +179,7 @@ def write_qa_showcase(rows: list[dict], model_arn: str = "") -> Path:
     """Submission artifact: grounded Q&A + off-corpus refusal (screenshot 19)."""
     out = ROOT / "evaluation" / "qa_showcase.md"
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-    s3_prefix = "s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/"
+    s3_prefix = "s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/"
     lines = [
         "# Sample Questions and Answers — Live Bedrock KB",
         "",
