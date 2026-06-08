@@ -36,6 +36,12 @@ def test_api_bootstrap(client):
     assert "csrf_token" in data
 
 
+def test_api_health_alias(client):
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "ok"
+
+
 def test_api_workflow_triage_json(client, fake_bedrock):
     fake_bedrock.next_response = _fake_answer()
     response = client.post(
@@ -61,3 +67,39 @@ def test_ask_json_body(client, fake_bedrock):
     assert "answer_sections" in data
     assert data["citations"]
     assert "preview" in data["citations"][0]
+
+
+def test_api_chat_alias(client, fake_bedrock):
+    fake_bedrock.next_response = _fake_answer()
+    response = client.post("/api/chat", json={"message": "What is the runbook for high CPU?"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["answer"]
+    assert data["memory"]["last_question"] == "What is the runbook for high CPU?"
+
+
+def test_api_chat_rejects_empty_message(client):
+    response = client.post("/api/chat", json={"message": "   "})
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["ok"] is False
+    assert data["reason"] == "empty_question"
+
+
+def test_api_incidents_analyze_alias(client, fake_bedrock):
+    fake_bedrock.next_response = _fake_answer()
+    response = client.post(
+        "/api/incidents/analyze",
+        json={
+            "service": "postgres",
+            "environment": "production",
+            "severity": "P2",
+            "symptom": "Postgres CPU is 95 percent on the primary database",
+        },
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["session_id"]
+    assert data["piter"]

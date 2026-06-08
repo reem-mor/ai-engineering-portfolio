@@ -28,9 +28,9 @@ screen, Knowledge Base view, tool results, and Docker/test proof.
 
 ## Legacy Captures
 
-Root-level PNGs, `console_demo/`, `extras/`, and `archive/` are historical
-captures from earlier UI or AWS proof flows. Keep them for audit if useful, but
-do not use them as the primary README or live-submission screenshots unless the
+`archive/legacy-root/`, `console_demo/`, and `extras/` are historical captures
+from earlier UI or AWS proof flows. Keep them for audit if useful, but do not
+use them as the primary README or live-submission screenshots unless the
 instructor specifically asks for those older proof filenames.
 
 ## Regenerate

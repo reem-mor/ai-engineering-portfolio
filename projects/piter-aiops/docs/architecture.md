@@ -38,6 +38,7 @@ flowchart LR
 
 `/api/bootstrap` exposes `rag_backend`, `use_bedrock`, and `execution_mode_hint` without secrets.
 The React SPA and legacy `/console` both call `POST /api/triage` and `POST /api/follow-up`.
+The canonical review endpoints are also available: `GET /api/health`, `POST /api/chat`, and `POST /api/incidents/analyze`.
 
 ## Alert storm demo data
 
@@ -49,7 +50,7 @@ tests assert `390 <= total <= 400`.
 
 ```mermaid
 flowchart LR
-  user["Engineer"] -->|"POST /ask"| flask["Flask /ask"]
+  user["Engineer"] -->|"POST /api/chat or /api/incidents/analyze"| flask["Flask API"]
   flask --> factory["get_rag_client"]
   factory --> agent["BedrockAgentClient"]
   agent -->|"invoke_agent"| bedrockAgent["Bedrock Agent"]
@@ -74,7 +75,7 @@ flowchart LR
 ## Why this design impresses
 
 - **Managed Bedrock Agent** adds orchestration and session memory while reusing the same KB corpus.
-- **Lambda action group** (`PITER AiOps-ops`) for live environment status, alerts, and incident creation — see [`bedrock_action_group_setup.md`](bedrock_action_group_setup.md).
+- **Four Lambda action groups** for deployments, service context, similar incidents, and escalation preview - see [`bedrock_action_group_setup.md`](bedrock_action_group_setup.md).
 - **Same `RagAnswer` contract** — UI, workflow triage, and tests unchanged.
 - **Citations rendered as evidence cards** prove the answer is grounded.
 - **Graceful refusal** when no citations are returned — no hallucination.

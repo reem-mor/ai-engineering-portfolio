@@ -406,16 +406,7 @@ def _ask_fn():
     return lambda question: _handle_ask(question)
 
 
-@bp.get("/api/demo-alert")
-def api_demo_alert():
-    """Return the canned demo alert (Postgres CPU 95% on prod-db-1, NJ-DGE, P2)."""
-    return jsonify(ok=True, alert=DEMO_ALERT), 200
-
-
-@bp.post("/api/triage")
-def api_triage():
-    """Run triage for a free-form alert and return one triage card."""
-    body = request.get_json(silent=True) or {}
+def _api_triage_response(body: dict):
     session_id = body.get("session_id")
     if session_id is not None:
         session_id = str(session_id).strip() or None
@@ -430,14 +421,83 @@ def api_triage():
         "duration_minutes": body.get("duration_minutes", 60),
     }
     if not alert["service"] or not alert["symptom"]:
-        return jsonify(ok=False, reason="invalid_alert",
-                       message="An alert needs at least a service and a symptom/description."), 400
+        return jsonify(
+            ok=False,
+            reason="invalid_alert",
+            message="An alert needs at least a service and a symptom/description.",
+        ), 400
     try:
         card = run_triage(alert, ask_fn=_ask_fn(), session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
+    card.setdefault("piter", card.get("piter_sections"))
+    card.setdefault("business_impact", card.get("impact"))
+    card.setdefault(
+        "tool_results",
+        [
+            {
+                "name": "get_recent_deployments",
+                "result": {
+                    "suspect_deployment": card.get("suspect_deployment"),
+                    "deployments": card.get("suspect_deploys", []),
+                    "reason": card.get("deployment_reason", ""),
+                },
+            },
+            {"name": "get_service_context", "result": card.get("owner", {})},
+            {"name": "find_similar_incidents", "result": card.get("similar_incidents", [])},
+            {"name": "get_escalation_recommendation", "result": card.get("escalation_policy", {})},
+        ],
+    )
     return jsonify(ok=True, **card), 200
+
+
+@bp.get("/api/demo-alert")
+def api_demo_alert():
+    """Return the canned demo alert (Postgres CPU 95% on prod-db-1, NJ-DGE, P2)."""
+    return jsonify(ok=True, alert=DEMO_ALERT), 200
+
+
+@bp.post("/api/triage")
+def api_triage():
+    """Run triage for a free-form alert and return one triage card."""
+    body = request.get_json(silent=True) or {}
+    return _api_triage_response(body)
+
+
+@bp.post("/api/incidents/analyze")
+def api_incidents_analyze():
+    """Canonical incident analysis endpoint for the React/API demo contract."""
+    body = request.get_json(silent=True) or {}
+    return _api_triage_response(body)
+
+
+@bp.post("/api/chat")
+def api_chat():
+    """Canonical chat endpoint with optional incident-session follow-up memory."""
+    body = request.get_json(silent=True) or {}
+    question = str(body.get("message") or body.get("question") or "").strip()
+    session_id = str(body.get("session_id") or "").strip() or None
+    if not question:
+        return jsonify(ok=False, reason="empty_question", message="Please enter a message."), 400
+
+    try:
+        if session_id:
+            follow_up = run_follow_up(session_id, question, ask_fn=_ask_fn())
+            if follow_up is not None:
+                return jsonify(
+                    ok=True,
+                    **follow_up,
+                    memory={"last_question": question, "session_id": session_id},
+                ), 200
+        result = _handle_ask(question, session_id=session_id)
+    except BedrockError as exc:
+        status = 400 if exc.code in _VALIDATION_CODES else 502
+        return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
+
+    payload = result.to_dict()
+    payload["memory"] = {"last_question": question, "session_id": payload.get("session_id") or session_id}
+    return jsonify(ok=True, **payload), 200
 
 
 @bp.post("/api/escalation/notify")
@@ -532,6 +592,12 @@ def api_session_history(session_id: str):
             message="That incident session was not found. Run triage first.",
         ), 404
     return jsonify(ok=True, **history), 200
+
+
+@bp.get("/api/health")
+def api_health():
+    """Canonical API health endpoint used by Docker, frontend, and reviewers."""
+    return health()
 
 
 @bp.get("/health")

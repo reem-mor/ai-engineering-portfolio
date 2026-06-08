@@ -8,8 +8,8 @@ An AI-assisted incident operations platform for NOC and SRE teams. PITER connect
 |---|---|
 | **Enterprise console** | [http://localhost:8080/](http://localhost:8080/) (React SPA) |
 | **Legacy demo console** | [http://localhost:8080/console](http://localhost:8080/console) |
-| **Health** | [http://localhost:8080/health](http://localhost:8080/health) |
-| **Tests** | `pytest -q` — **275 tests**, offline by default |
+| **Health** | [http://localhost:8080/api/health](http://localhost:8080/api/health) or `/health` |
+| **Tests** | `pytest -q` — **279 tests**, offline by default |
 | **Live validation** | `python scripts/verify_live_demo.py` — **29/29** |
 | **Presentation assets** | [`screenshots/final/`](screenshots/final/) |
 
@@ -166,7 +166,7 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-  REQ[POST /api/triage or /ask] --> CFG{RAG_BACKEND + USE_BEDROCK}
+  REQ[POST /api/triage, /api/incidents/analyze, /api/chat, or /ask] --> CFG{RAG_BACKEND + USE_BEDROCK}
   CFG -->|agent + bedrock| AG[invoke_agent]
   CFG -->|retrieve_and_generate| RNG[RetrieveAndGenerate]
   CFG -->|bedrock off or error| LOC[Local TF-IDF]
@@ -476,7 +476,7 @@ These skill areas guided implementation and review (representative—not an exha
 | AWS Lambda + action groups | OpenAPI schemas, enrichment handlers |
 | Flask / FastAPI patterns | API design, structured errors, health checks |
 | React / Next.js performance | SPA dashboard, loading states, enterprise UX |
-| Testing & QA | 275 pytest cases + live verify scripts |
+| Testing & QA | 279 pytest cases + live verify scripts |
 | Security review | Guardrails, upload validation, notification gates |
 | RAG evaluation | Grounding checks, refusal path, citation coverage |
 | DevOps / Docker | `piter-aiops:dev` image, compose, EC2 user-data |
@@ -523,7 +523,7 @@ Use these in the live demo after the dashboard loads:
 6. `What was my previous question?`
 7. `Based on the previous incident, what should I do next?`
 
-Recommended 5-7 minute path: open Dashboard, run Alert Storm, run PITER analysis, show RAG citations, show Lambda/MCP-style tool results, ask an escalation follow-up, open Context Memory, then finish on Architecture/Settings to show Bedrock mode and fallback status.
+Recommended 5-7 minute path: open Dashboard, run Alert Storm, run PITER analysis, show RAG citations, show Lambda/MCP-style tool results, ask an escalation follow-up, open Context Memory, then finish on Architecture/Settings to show Bedrock mode and fallback status. Full presenter notes: [`docs/demo_script.md`](docs/demo_script.md).
 
 ---
 
@@ -534,13 +534,13 @@ Recommended 5-7 minute path: open Dashboard, run Alert Storm, run PITER analysis
 ```powershell
 cd projects/piter-aiops
 py -3.12 -m pip install -r requirements-dev.txt
-py -3.12 -m pytest -q                    # 275 passed (offline)
+py -3.12 -m pytest -q                    # 279 passed (offline)
 ```
 
 | Area | Test modules |
 |------|----------------|
 | RAG + Bedrock clients | `test_bedrock_client.py`, `test_bedrock_agent_client.py`, `test_rag_factory.py` |
-| Flask / SPA routes | `test_routes.py`, `test_flask_routes.py`, `test_spa_mode.py` |
+| Flask / SPA routes | `test_routes.py`, `test_flask_routes.py`, `test_spa_mode.py`, `test_api_routes.py` |
 | Enrichment tools | `test_enrichment_tools.py`, `test_tools.py`, `test_piter_lambdas.py` |
 | MCP server | `test_mcp_server.py` |
 | Guardrails + validators | `test_guardrails.py`, `test_validators.py` |
@@ -589,7 +589,7 @@ Set in `.env` (never commit secrets):
 | `PITER_USE_BEDROCK=true` | Enable AWS backends |
 | `PITER_BEDROCK_KB_ID` | `RBTJM6NIG9` |
 | `PITER_BEDROCK_AGENT_ID` / `PITER_BEDROCK_AGENT_ALIAS_ID` | When `RAG_BACKEND=agent` |
-| `RAG_BACKEND` | `retrieve_and_generate` (default) or `agent` |
+| `RAG_BACKEND` | `agent` for the final demo; `retrieve_and_generate` for direct-KB fallback |
 | `AWS_PROFILE` | Profile in `~/.aws/credentials` |
 
 Credential layout: [`docs/aws_credentials.md`](docs/aws_credentials.md)
@@ -610,18 +610,21 @@ cd frontend && npm run build              # production → app/static/spa/
 |:------:|------|-------------|
 | `GET` | `/` | React SPA |
 | `GET` | `/console` | Legacy triage console |
-| `GET` | `/health` | Liveness (`?deep=1` for config) |
+| `GET` | `/api/health` | Canonical API liveness (`?deep=1` for config) |
+| `GET` | `/health` | Legacy/container liveness alias |
 | `GET` | `/api/bootstrap` | Examples, storm summary (400 alerts), upload limits |
 | `GET` | `/api/alert-stream` | Storm metadata + P1 trigger |
 | `GET` | `/api/kb/manifest` | KB document list |
 | `POST` | `/api/triage` | Full triage card (RAG + tools + session) |
+| `POST` | `/api/incidents/analyze` | Canonical incident-analysis alias for `/api/triage` |
+| `POST` | `/api/chat` | Canonical chat endpoint; uses session memory when `session_id` is supplied |
 | `POST` | `/api/follow-up` | Session-aware follow-up |
 | `GET` | `/api/sessions/<session_id>/history` | Saved session memory and chat history |
 | `POST` | `/ask` | Grounded Q&A + citations |
 | `POST` | `/documents/upload` | Validated upload + optional S3/KB sync |
 | `POST` | `/api/escalation/notify` | Gated SNS/SES (mock default) |
 
-**Triage card fields:** `answer`, `citations[]`, `recommended_steps[]`, `suspect_deploys[]`, `owner`, `impact`, `similar_incidents[]`, `session_id`, `memory_used`, `mode` (`local` | `bedrock`).
+**Triage card fields:** `answer`, `piter_sections`/`piter`, `business_impact`, `citations[]`, `recommended_steps[]`, `tool_results[]`, `suspect_deploys[]`, `owner`, `impact`, `similar_incidents[]`, `session_id`, `memory_used`, `mode` (`local` | `bedrock`).
 
 ---
 

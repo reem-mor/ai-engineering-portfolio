@@ -2,7 +2,8 @@
 # On EC2 we run the container directly via `docker run` from user-data.
 #
 # Credential guide: docs/aws_credentials.md
-#   - AWS keys: host ~/.aws/credentials (mounted read-only below)
+#   - Bedrock bearer: AWS_BEARER_TOKEN_BEDROCK (host env or .env)
+#   - IAM profile: host ~/.aws/credentials (mounted read-only below)
 #   - Bedrock IDs + Flask secret: project .env (PITER_* via env_file)
 #
 # Runs OUT OF THE BOX in local (offline) mode — no AWS or .env required:
@@ -20,6 +21,7 @@ services:
       # App prefers PITER_USE_BEDROCK; USE_BEDROCK kept for legacy compose/docs.
       - USE_BEDROCK=${PITER_USE_BEDROCK:-${USE_BEDROCK:-false}}
       - AWS_PROFILE=${AWS_PROFILE:-}
+      - AWS_BEARER_TOKEN_BEDROCK=${AWS_BEARER_TOKEN_BEDROCK:-}
     # .env is OPTIONAL — only needed for Bedrock mode (requires Compose v2.24+).
     env_file:
       - path: .env

@@ -73,7 +73,7 @@ python scripts/agent_smoke_test.py --ops
 - "Show me alerts in GIB from the last 6 hours."
 - "Open a P2 incident in GIB titled replication lag investigation." → agent should **confirm** before write
 
-📸 Screenshot for submission: `screenshots/21_agent_action_group.png`
+Screenshot for submission: `screenshots/final/07_lambda_mcp_tools.png`
 
 ---
 
