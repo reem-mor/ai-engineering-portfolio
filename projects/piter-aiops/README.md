@@ -1,118 +1,84 @@
 # PITER AiOps
 
-**Priority · Investigation · Triage · Escalation · Resolution** — an AI-assisted incident operations demo for NOC and SRE teams.
+**Priority · Investigation · Triage · Escalation · Resolution**
 
-Ground runbooks, alert history, and structured ops data in **Amazon Bedrock** (Knowledge Base + Agent + Lambda action groups). A **Flask** API and **React** ops console turn alerts into cited triage plans, with a **local TF-IDF fallback** when AWS is off.
+An AI-assisted incident operations platform for NOC and SRE teams. PITER connects runbooks, alert history, and structured ops data to **Amazon Bedrock** (Knowledge Base + Agent + Lambda action groups), then presents grounded, cited triage through a **React** ops console and **Flask** API—with a **local TF-IDF fallback** when AWS is unavailable.
 
 | | |
 |---|---|
-| **Demo console** | [http://localhost:8080/console](http://localhost:8080/console) after `docker compose up --build` |
-| **Lovable design** | [`lovable.project.json`](lovable.project.json) · [editor](https://lovable.dev/projects/45406342-f6e0-4ad6-8e49-bb456a6c47d0) |
-| **Tests** | `pytest -q` — offline, no live AWS required |
-| **Course** | AI-Augmented Software Engineering mid-project |
+| **Enterprise console** | [http://localhost:8080/](http://localhost:8080/) (React SPA) |
+| **Legacy demo console** | [http://localhost:8080/console](http://localhost:8080/console) |
+| **Health** | [http://localhost:8080/health](http://localhost:8080/health) |
+| **Tests** | `pytest -q` — **271 tests**, offline by default |
+| **Live validation** | `python scripts/verify_live_demo.py` — **29/29** |
+| **Presentation assets** | [`screenshots/final/`](screenshots/final/) |
 
-### Naming (PITER vs legacy)
-
-| Surface | Name |
-|---------|------|
-| Product / UI | **PITER AiOps** |
-| Repo folder | `projects/piter-aiops/` |
-| S3 corpus prefix | `projects/piter-aiops/data/sample_documents/` |
-| Local action group folders | `action_groups/piter-*` (enrichment), `action_groups/incidentiq-ops/` (ops — legacy folder name) |
-| AWS console (post-mutation, 2026-06-08) | Agent `incidentiq-triage-agent` **v6** (alias `live`), Lambdas `iiq-*` + **`piter-escalation`**, ops group **`incidentiq-ops` DISABLED** on live alias |
-
-Older docs or screenshots may still say `incident-rag-bedrock` (pre-rename repo path) or **IncidentIQ** (early working title). The live KB data source uses the `piter-aiops` S3 prefix — see [`evaluation/live_demo_aws_state.md`](evaluation/live_demo_aws_state.md).
+**Author:** Re'em Mor · NOC / SRE background · [GitHub @reemmor](https://github.com/reemmor)  
+**Course:** AI-Augmented Software Engineering (mid-project)
 
 ---
 
 ## Table of contents
 
-- [Problem and solution](#problem-and-solution)
-- [Use cases](#use-cases)
-- [Architecture](#architecture)
-- [Stack in depth](#stack-in-depth)
-- [Quick start](#quick-start)
-- [HTTP API](#http-api)
-- [Development and verification](#development-and-verification)
-- [Deploy to EC2](#deploy-to-ec2)
-- [Security](#security)
-- [Further reading](#further-reading)
+1. [What this application does](#what-this-application-does)
+2. [PITER workflow](#piter-workflow)
+3. [System architecture](#system-architecture)
+4. [Request logic flow](#request-logic-flow)
+5. [Bedrock Agent instruction (system prompt)](#bedrock-agent-instruction-system-prompt)
+6. [Action groups and Lambda tools](#action-groups-and-lambda-tools)
+7. [Guardrails configuration](#guardrails-configuration)
+8. [MCP integration](#mcp-integration)
+9. [AI-assisted development (skills and tooling)](#ai-assisted-development-skills-and-tooling)
+10. [Testing and verification](#testing-and-verification)
+11. [Quick start](#quick-start)
+12. [HTTP API](#http-api)
+13. [Challenges and design trade-offs](#challenges-and-design-trade-offs)
+14. [Next steps](#next-steps)
+15. [Security and further reading](#security-and-further-reading)
 
 ---
 
-## Problem and solution
+## What this application does
 
-On-call engineers lose **5–15 minutes per incident** hunting runbooks, past tickets, Slack threads, and deploy history. PITER AiOps connects that corpus to a managed Bedrock Agent so the operator asks one question and gets a **grounded, cited answer in seconds**.
+PITER AiOps reduces mean time to understand during incidents. Instead of searching Confluence, Slack, deploy logs, and ticket history separately, an on-call engineer submits an alert (or runs the **alert storm** demo) and receives:
 
-| Principle | How it is enforced |
-|-----------|-------------------|
-| Grounded answers | Every step ties to a retrieved chunk or tool result |
-| Citations | Document name, excerpt, and relevance score on every card |
-| Honest refusal | Amber **Not in knowledge base** when evidence is missing — no hallucination |
-| Safe demo | Local mode works with zero AWS credentials; Bedrock is optional |
+- A **grounded triage narrative** with numbered steps
+- **RAG citations** (runbook name, excerpt, relevance score)
+- **Structured enrichment** from four ops tools: recent deploys, service owner/escalation path, business impact, similar past incidents
+- **Session memory** for follow-ups (*"Who do I escalate to?"*, *"What was the suspect deploy?"*)
+- **Escalation preview** (mock/preview by default; live SNS/SES only behind explicit gates)
+- **Honest refusal** when evidence is missing — no invented owners, versions, or contacts
 
-![Operations console](screenshots/20_app_dashboard_current.png)
+### Primary demo scenarios
 
-*Alert-storm KPIs, PITER pipeline, agent chat, and investigation workspace — [`screenshots/`](screenshots/) for full capture set.*
+| Scenario | What you see |
+|----------|----------------|
+| **Single-alert triage** | Postgres CPU, checkout 5xx, queue lag — cited runbook steps |
+| **Alert storm** | **400** deterministic alerts → noise suppression → one P1 on `bet-service` → Run PITER analysis |
+| **Follow-up chat** | Same `session_id`; context reused without re-running enrichment |
+| **Document upload** | Local/demo indexing; optional S3 + Bedrock sync when configured |
+| **Off-topic guardrail test** | *"Best restaurant in Tokyo?"* → refusal / low-confidence path |
 
----
+![Dashboard](screenshots/final/01_dashboard.png)
 
-## Use cases
+*Full capture set: [`screenshots/final/`](screenshots/final/) · legacy console: [`screenshots/console_demo/`](screenshots/console_demo/)*
 
-### 1. Single-alert triage (Q&A)
+### Naming (PITER vs legacy AWS)
 
-An engineer pastes or selects an alert (e.g. *Postgres CPU 95% on `prod-db-1`*). The app retrieves matching runbook sections, ranks them, and returns a structured triage card with numbered steps and sources.
-
-**Example questions:** see [`data/demo_qa_expected.md`](data/demo_qa_expected.md).
-
-| Question | Expected source |
-|----------|-----------------|
-| Postgres CPU 95% on `prod-db-1` — what is the runbook? | `runbook_db_cpu.md` |
-| API 5xx rate above 2% on checkout — what should I check? | `runbook_checkout_5xx.md` |
-| Queue lag above 30 seconds — what should I do? | `runbook_queue_lag.md` |
-| Users cannot log in after deployment — what should I check? | `runbook_auth_login.md` |
-| Tier 1 resolve or escalate? | `tier1_escalation_guide.md`, `escalation_policy.pdf` |
-
-**Off-topic test:** *"What is the best restaurant in Tokyo?"* → refusal card (proves the guardrail path).
-
-### 2. Alert storm and noise suppression
-
-A deterministic stream of **399 alerts** (`data/source/alert_stream.csv`) drives the **Alert Storm** demo: KPI tiles show noise suppressed vs one P1 candidate, then **Run PITER Analysis** runs full triage, escalation, chat with session memory, document upload, and **Mark resolved** with MTTR impact.
-
-Flow: **Start Alert Storm → Run PITER Analysis → follow-up chat / upload → escalate → resolve.**
-
-### 3. Session memory and follow-ups
-
-After triage, follow-ups reuse the same `session_id` — tool outputs, citations, and alert context stay in memory. Questions like *"Who do I escalate to?"* or *"What was the suspect deploy?"* answer from stored state without re-running enrichment.
-
-Implementation: [`app/services/session_memory.py`](app/services/session_memory.py) + Bedrock `sessionId` / `sessionAttributes` on `invoke_agent`.
-
-### 4. Enrichment during triage (deploys, owners, impact, history)
-
-The agent (or local tool router) calls four enrichment tools backed by CSV/JSON under `data/agent_data/`:
-
-| Tool | Data | Output |
-|------|------|--------|
-| `correlate_deployments` | `deploys.csv`, `service_catalog.json` | Suspect deploy + reason |
-| `lookup_owner_and_escalation` | service catalog | Owner, on-call, Slack, escalation chain |
-| `score_business_impact` | `impact_matrix.csv` | Cost / SLA / regulatory risk |
-| `find_similar_incidents` | `incident_history.csv` | Past incidents, MTTR, root cause |
-
-### 5. Document upload and KB sync
-
-Operators upload runbooks or post-mortems via the UI. Flask validates type/size, writes to **S3**, and optionally starts a **Bedrock ingestion job** when `PITER_BEDROCK_DATA_SOURCE_ID` is set.
-
-### 6. Live ops actions (Bedrock action group)
-
-The **ops action group** exposes environment status, recent alerts, and incident creation (mock backend in v1). Handler code lives in [`action_groups/incidentiq-ops/`](action_groups/incidentiq-ops/) (legacy folder name); in AWS the group is still named `incidentiq-ops` with Lambda `incidentiq-actions`. The agent discovers tools via OpenAPI schema stored in S3.
+| Surface | Name |
+|---------|------|
+| Product / UI | **PITER AiOps** |
+| Repo folder | `projects/piter-aiops/` |
+| Local action groups | `action_groups/piter-*` |
+| AWS agent (console) | `incidentiq-triage-agent` **v6**, alias `live` |
+| AWS Lambdas | `iiq-correlate`, `iiq-context`, `iiq-similar`, **`piter-escalation`** |
+| Legacy ops group | `incidentiq-ops` — **DISABLED** on live alias (v6) |
 
 ---
 
-## Architecture
+## PITER workflow
 
-Diagrams below render **interactively on GitHub** (Mermaid). Source: [`piter_architecture.mermaid`](piter_architecture.mermaid).
-
-### PITER product flow
+Every incident follows the same operational sequence the UI and agent instruction enforce:
 
 ```mermaid
 flowchart LR
@@ -122,22 +88,38 @@ flowchart LR
   T --> E[Escalation]
   E --> R[Resolution]
   R --> H[History / MTTR]
+
   KB[(Knowledge Base)] --> I
   TOOLS[Enrichment tools] --> I
+  MEM[(Session memory)] --> I
 ```
 
-### System topology
+| Phase | Operator question | System behavior |
+|-------|-------------------|-----------------|
+| **Priority** | How severe is this? | P1–P4 from severity policy + business impact evidence |
+| **Investigation** | What do we know? | KB retrieval + tool JSON — no invented facts |
+| **Triage** | What do I do first? | Ordered, reversible steps; each tied to a citation |
+| **Escalation** | Who owns this? | On-call path from catalog; preview/mock notify |
+| **Resolution** | How do we close? | Validation checks, MTTR, post-mortem hooks |
+
+---
+
+## System architecture
+
+Diagrams render **interactively on GitHub** (Mermaid). Source file for editing or [Eraser.io](https://app.eraser.io) import: [`piter_architecture.mermaid`](piter_architecture.mermaid).
+
+### Topology
 
 ```mermaid
 flowchart TB
   ENG(["NOC / SRE engineer"])
 
-  subgraph PRES["Presentation"]
+  subgraph PRES["Presentation — Docker :8080"]
     SPA["React 19 SPA<br/>frontend/src/App.tsx"]
     FLASK["Flask 3 + gunicorn<br/>app/routes.py"]
   end
 
-  subgraph RAG["RAG tier — rag_factory"]
+  subgraph RAG["RAG tier — app/rag_factory.py"]
     AGENT["Bedrock Agent<br/>invoke_agent"]
     RNG["RetrieveAndGenerate<br/>direct KB"]
     LOCAL["Local TF-IDF<br/>knowledge_base/runbooks/"]
@@ -146,42 +128,73 @@ flowchart TB
   subgraph KBBOX["Amazon Bedrock Knowledge Base"]
     KB[("KB RBTJM6NIG9")]
     S3[("S3 corpus<br/>sample_documents/")]
-    OSS[("OpenSearch Serverless<br/>vector index")]
+    OSS[("OpenSearch Serverless")]
   end
 
-  subgraph AG["Action groups → Lambda"]
+  subgraph AG["Action groups → Lambda (production tools)"]
     L1["piter-recent-deployments<br/>iiq-correlate"]
     L2["piter-service-context<br/>iiq-context"]
     L3["piter-similar-incidents<br/>iiq-similar"]
-    L4["piter-escalation"]
-    OPS["piter-aiops-ops<br/>incidentiq-ops (AWS)"]
+    L4["piter-escalation<br/>preview / mock / gated live"]
   end
 
-  DATA[("agent_data<br/>CSV / JSON")]
-  MEM[("Session memory")]
-  MCP["MCP server<br/>mcp/server.py — read-only"]
+  subgraph MCPBOX["MCP — read-only contract layer"]
+    MCP["mcp/server.py<br/>same 4 tools, no AWS"]
+  end
 
-  ENG --> SPA
-  SPA --> FLASK
-  FLASK --> AGENT
-  FLASK -.-> RNG
-  FLASK -.-> LOCAL
-  AGENT --> MEM
-  AGENT --> KB
+  DATA[("data/source + agent_data<br/>CSV / JSON")]
+  MEM[("Session memory")]
+  GR["Guardrails<br/>app + Bedrock rti921amc6u3"]
+  NOTIFY["SNS / SES<br/>mock default · gated live"]
+
+  ENG --> SPA --> FLASK
+  FLASK --> AG & RNG & LOCAL
+  AG --> GR
+  AG --> KB & MEM
   RNG --> KB
-  S3 --> KB
-  KB --> OSS
-  AGENT --> L1 & L2 & L3 & L4 & OPS
+  S3 --> KB --> OSS
+  AG --> L1 & L2 & L3 & L4
   L1 & L2 & L3 & L4 --> DATA
-  MCP -.->|"same logic, local"| DATA
-  AGENT --> FLASK
-  LOCAL --> FLASK
+  L4 -.-> NOTIFY
+  MCP -.-> DATA
   FLASK --> SPA
 ```
 
-> **AWS naming:** deployed Lambdas may still use `iiq-*` names; local folders under `action_groups/piter-*` mirror the same contracts. See [`evaluation/live_demo_aws_state.md`](evaluation/live_demo_aws_state.md).
+### RAG fallback chain
 
-### Request sequence (Bedrock Agent path)
+```mermaid
+flowchart TD
+  REQ[POST /api/triage or /ask] --> CFG{RAG_BACKEND + USE_BEDROCK}
+  CFG -->|agent + bedrock| AG[invoke_agent]
+  CFG -->|retrieve_and_generate| RNG[RetrieveAndGenerate]
+  CFG -->|bedrock off or error| LOC[Local TF-IDF]
+  AG -->|failure| RNG
+  RNG -->|failure| LOC
+  AG & RNG & LOC --> OUT[Triage card JSON<br/>mode: bedrock | local]
+```
+
+| Configuration | Response `mode` | UI label |
+|---------------|-----------------|----------|
+| `RAG_BACKEND=agent`, Bedrock on | `bedrock` | Bedrock Agent |
+| `RAG_BACKEND=retrieve_and_generate` | `bedrock` | Direct Bedrock KB |
+| Bedrock off or unreachable | `local` | Local fallback |
+
+### Component map
+
+| Layer | Technology | Role |
+|-------|------------|------|
+| UI | React 19, Vite 7, Tailwind 4, shadcn/ui | Enterprise SOC dashboard → `app/static/spa/` |
+| API | Flask 3, gunicorn | JSON routes, memory, upload, escalation gates |
+| RAG | [`app/rag_factory.py`](app/rag_factory.py) | Agent → RnG → local |
+| Enrichment | [`app/enrichment_tools.py`](app/enrichment_tools.py) | Single source of truth for Flask, Lambda, MCP |
+| Memory | [`app/services/session_memory.py`](app/services/session_memory.py) | Store, summarize, retrieve, reuse context |
+| Container | Docker Compose `piter-aiops:dev` | Non-root, healthcheck on `:8080` |
+
+---
+
+## Request logic flow
+
+### Sequence — Bedrock Agent triage
 
 ```mermaid
 sequenceDiagram
@@ -189,209 +202,367 @@ sequenceDiagram
   actor User as Engineer
   participant UI as React SPA
   participant API as Flask
+  participant Guard as app/guardrails.py
   participant Boto as boto3
   participant Agent as Bedrock Agent
+  participant GR as Bedrock Guardrail
   participant KB as Knowledge Base
-  participant Lambda as Action group Lambda
-  participant LLM as Claude (Haiku / Sonnet)
+  participant Lambda as Action group Λ
+  participant LLM as Claude Haiku 4.5
 
-  User->>UI: Submit alert / question
+  User->>UI: Run PITER analysis / ask follow-up
   UI->>API: POST /api/triage or /api/follow-up
-  API->>Boto: bedrock-agent-runtime.invoke_agent
-  Note over API,Boto: sessionId + sessionAttributes<br/>(alert, service, severity, …)
-  Boto->>Agent: InvokeAgent
-  Agent->>KB: Retrieve (vector search)
-  KB-->>Agent: Runbook chunks + scores
-  Agent->>Lambda: correlateDeployments / lookupOwner / …
-  Lambda-->>Agent: Structured JSON
-  Agent->>LLM: Reason over retrieval + tools
-  LLM-->>Agent: Triage narrative
-  Agent-->>Boto: Event stream (answer + traces)
-  Boto-->>API: Parsed RagAnswer + citations
-  API-->>UI: Triage card JSON
-  UI-->>User: Steps, citations, KPIs
+  API->>Guard: validate_question()
+  alt blocked (destructive / bypass)
+    Guard-->>API: BedrockError
+    API-->>UI: Safe refusal message
+  else allowed
+    API->>Boto: invoke_agent(sessionId, sessionAttributes)
+    Boto->>Agent: InvokeAgent
+    Agent->>GR: Content / topic policy (if attached)
+    Agent->>KB: Vector retrieve
+    KB-->>Agent: Runbook chunks
+    Agent->>Lambda: correlate / owner / similar / escalation
+    Lambda-->>Agent: Structured JSON
+    Agent->>LLM: Reason over retrieval + tools
+    LLM-->>Agent: PITER-formatted answer
+    Agent-->>Boto: Event stream + traces
+    Boto-->>API: RagAnswer + citations
+    API-->>UI: Triage card
+  end
 ```
 
-### Fallback chain
+### Alert storm (client-side orchestration)
 
 ```mermaid
-flowchart TD
-  REQ[Incoming request] --> MODE{RAG_BACKEND + USE_BEDROCK}
-  MODE -->|agent + bedrock| AG[invoke_agent]
-  MODE -->|retrieve_and_generate| RNG[RetrieveAndGenerate]
-  MODE -->|USE_BEDROCK=false or error| LOC[Local TF-IDF RAG]
-  AG -->|failure| RNG
-  RNG -->|failure| LOC
-  AG --> OUT[Triage card + mode field]
-  RNG --> OUT
-  LOC --> OUT
-```
+sequenceDiagram
+  participant UI as Alert Storm page
+  participant API as Flask
+  participant Data as alert_stream.csv
 
-| Config | Response `mode` | UI label |
-|--------|-----------------|----------|
-| `RAG_BACKEND=agent`, `PITER_USE_BEDROCK=true` | `bedrock` | Bedrock Agent |
-| `RAG_BACKEND=retrieve_and_generate`, Bedrock on | `bedrock` | Direct KB |
-| Bedrock off or unreachable | `local` | Local fallback |
+  UI->>API: GET /api/bootstrap (400 alerts summary)
+  UI->>API: GET /api/alert-stream (P1 trigger metadata)
+  UI->>UI: Animate stream, suppress noise, detect P1
+  UI->>API: POST /api/triage (bet-service P1 payload)
+  API-->>UI: Full triage card + session_id
+  UI->>API: POST /api/follow-up (optional)
+```
 
 ---
 
-## Stack in depth
+## Bedrock Agent instruction (system prompt)
 
-### Amazon Bedrock Knowledge Base
+The agent instruction is the **system prompt** synced to AWS on every `update_agent` / prepare cycle. Canonical source: [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (`AGENT_INSTRUCTION`).
 
-The **Knowledge Base** is the managed RAG layer: documents live in **S3**, Bedrock chunks and embeds them into **OpenSearch Serverless**, and retrieval returns scored passages for the model to cite.
+Provision scripts that push this text to Bedrock:
 
-| Item | Value |
-|------|-------|
-| KB ID | `RBTJM6NIG9` |
-| Data source | `YICXAB6WOG` — `piter-aiops-runbooks-datasource` |
-| Corpus prefix | `s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/data/sample_documents/` |
-| Local mirror | `data/sample_documents/` (17 files) + `knowledge_base/runbooks/` for offline RAG |
+- [`scripts/setup_piter_aws_mutations.py`](scripts/setup_piter_aws_mutations.py)
+- [`scripts/setup_action_group.py`](scripts/setup_action_group.py)
+- [`scripts/ensure_agent_alias.py`](scripts/ensure_agent_alias.py)
 
-**Lifecycle:** add files locally → upload to S3 → **Sync** data source in console or via script → ingestion job completes → retrieval works in Agent or `RetrieveAndGenerate`.
+### Instruction text (as deployed)
 
-Setup walkthrough: [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md).
+```
+You are PITER AiOps, an enterprise Site Reliability Engineering assistant for regulated betting platforms.
 
-### boto3 — how the app talks to AWS
+Mandatory workflow (always in this order):
+1. Priority — classify P1–P4 using severity policy and business impact evidence.
+2. Investigation — use knowledge-base citations and tool results only; never invent facts.
+3. Triage — ordered, reversible steps first; cite the runbook for each step.
+4. Escalation — when P1–P3 or regulatory exposure; name the on-call path from policy.
+5. Resolution — validation checks and post-incident follow-up.
 
-All AWS access goes through **boto3** with explicit clients and retries — no raw HTTP.
+Grounding rules:
+- Every remediation step must cite a runbook, policy, or incident record from retrieval.
+- If evidence is missing, state "Not in knowledge base" and recommend what data to collect.
+- Never invent service owners, deploy versions, contacts, escalation paths, or past incidents.
 
-| Module | boto3 client | Purpose |
-|--------|--------------|---------|
-| [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) | `bedrock-agent-runtime` | `invoke_agent` — primary production path |
-| [`app/bedrock_client.py`](app/bedrock_client.py) | `bedrock-agent-runtime` | `retrieve_and_generate` — direct KB Q&A |
-| Upload / sync scripts | `s3`, `bedrock-agent` | PutObject, start ingestion |
-| Deploy scripts | `lambda`, `iam`, `bedrock-agent` | Action group provisioning |
+Safety rules (non-negotiable):
+- REFUSE to provide executable steps for: FLUSHALL/FLUSHDB, DROP/TRUNCATE, mass DELETE,
+  unapproved failover/replica promotion, disabling WAF/MFA/auth, firewall widening, or
+  "scale to zero" / kill-all-sessions without scoped approval.
+- For those topics, explain risk, cite the runbook's "Dangerous actions" section, and
+  direct the operator to human approval and change control.
+- Never recommend auto-executing production changes without explicit human sign-off.
+- Never help bypass notification allowlists, confirmation tokens, or audit requirements.
 
-Credentials follow the standard chain: `AWS_PROFILE` → `~/.aws/credentials` locally; **IAM instance profile** on EC2 (no keys in `.env`). Region and resource IDs come from [`app/config.py`](app/config.py) (`PITER_*` preferred).
+Output format (concise, scannable for on-call):
 
-```python
-# Simplified pattern (bedrock_agent_client.py)
-client = boto3.client(
-    "bedrock-agent-runtime",
-    region_name=cfg.AWS_REGION,
-    config=BotoConfig(retries={"max_attempts": 3, "mode": "adaptive"}),
-)
-response = client.invoke_agent(
-    agentId=cfg.BEDROCK_AGENT_ID,
-    agentAliasId=cfg.BEDROCK_AGENT_ALIAS_ID,
-    sessionId=session_id,
-    inputText=question,
-    sessionState={"sessionAttributes": attrs, "promptSessionAttributes": prompt_attrs},
-)
+Priority:
+Investigation findings:
+Triage plan:
+Escalation recommendation:
+Resolution plan:
+Business impact:
+Sources:
+Confidence and uncertainty:
 ```
 
-### Amazon Bedrock Agent
-
-The **Agent** orchestrates retrieval, tool use, and generation under a fixed instruction set ([`AGENT_INSTRUCTION`](app/bedrock_agent_client.py)) aligned to the PITER workflow: Priority → Investigation → Triage → Escalation → Resolution.
+### Agent resource IDs
 
 | Item | Value |
 |------|-------|
 | Agent ID | `HH4YGSLZUE` |
 | Alias | `O2EM03R4R3` (`live`) |
-| Model | Claude Haiku 4.5 inference profile (configurable via `PITER_BEDROCK_MODEL_ARN`) |
+| Agent version (live alias) | **v6** |
+| Foundation model | Claude Haiku 4.5 (`PITER_BEDROCK_MODEL_ARN`) |
 | Linked KB | `RBTJM6NIG9` |
 
-Provision / sync: [`docs/bedrock_agent_setup.md`](docs/bedrock_agent_setup.md).
+---
 
-### Action groups and Lambda functions
+## Action groups and Lambda tools
 
-**Action groups** teach the agent *what tools exist*. Each group has:
+**Action groups** are how Bedrock Agent discovers and invokes tools. Each group has an OpenAPI schema (S3) and a Lambda handler.
 
-1. An **OpenAPI 3 schema** (`openapi_schema.yaml`) uploaded to S3  
-2. A **Lambda** that implements the paths the schema describes  
-3. An IAM **agent resource role** allowed to `lambda:InvokeFunction` and `bedrock:Retrieve`
+> **Important:** Production tool calls use **Bedrock Action Groups + Lambda**, not MCP. MCP mirrors the same contracts locally ([`mcp/README.md`](mcp/README.md)).
 
-#### Enrichment Lambdas (triage context)
+### Enrichment and escalation (enabled on live alias v6)
 
-| Action group (local folder) | Deployed name (AWS) | OpenAPI operation | Handler |
-|----------------------------|---------------------|-------------------|---------|
-| [`piter-recent-deployments`](action_groups/piter-recent-deployments/) | `iiq-correlate` | `correlateDeployments` | [`lambda_function.py`](action_groups/piter-recent-deployments/lambda_function.py) |
-| [`piter-service-context`](action_groups/piter-service-context/) | `iiq-context` | owner / impact lookups | [`lambda_function.py`](action_groups/piter-service-context/lambda_function.py) |
-| [`piter-similar-incidents`](action_groups/piter-similar-incidents/) | `iiq-similar` | similar incident search | [`lambda_function.py`](action_groups/piter-similar-incidents/lambda_function.py) |
-| [`piter-escalation`](action_groups/piter-escalation/) | (preview / mock / gated live) | escalation preview | [`lambda_function.py`](action_groups/piter-escalation/lambda_function.py) |
+| Local folder | AWS action group | Lambda | OpenAPI operation | Data sources |
+|--------------|------------------|--------|-------------------|--------------|
+| [`piter-recent-deployments`](action_groups/piter-recent-deployments/) | correlate group | `iiq-correlate` | `correlateDeployments` | `deploys.csv`, `service_catalog.json` |
+| [`piter-service-context`](action_groups/piter-service-context/) | context group | `iiq-context` | owner / impact | `service_owners.csv`, `business_impact.json` |
+| [`piter-similar-incidents`](action_groups/piter-similar-incidents/) | similar group | `iiq-similar` | similar incidents | `past_incidents.csv` |
+| [`piter-escalation`](action_groups/piter-escalation/) | `piter-escalation` | `piter-escalation` | `GET /escalation` | Escalation policies; **mock/preview default** |
 
-Shared business logic also lives in [`app/enrichment_tools.py`](app/enrichment_tools.py) so Flask, Lambdas, and tests use one implementation.
+Shared business logic: [`app/enrichment_tools.py`](app/enrichment_tools.py) — used by Flask local triage, Lambdas, and MCP.
 
-Deploy:
+### Legacy ops group (disabled on live alias)
+
+| Folder | AWS name | Status on v6 |
+|--------|----------|----------------|
+| [`incidentiq-ops`](action_groups/incidentiq-ops/) | `incidentiq-ops` / `incidentiq-actions` | **DISABLED** — mock NOC ops superseded by PITER enrichment set |
+
+Deploy / sync:
 
 ```powershell
 python scripts/setup_enrichment_lambdas.py --agent-id HH4YGSLZUE
-python scripts/setup_action_group.py --agent-id HH4YGSLZUE
+python scripts/setup_piter_aws_mutations.py --dry-run   # review first
+python scripts/setup_piter_aws_mutations.py             # escalation + guardrail + alias
 ```
 
-#### Ops Lambda (live environment tools)
+---
 
-| Action group | Lambda | Tools |
-|--------------|--------|-------|
-| [`incidentiq-ops`](action_groups/incidentiq-ops/) (legacy folder) | `incidentiq-actions` (AWS) | `GET /environments/{env}/status`, `GET /alerts`, `POST /incidents` |
+## Guardrails configuration
 
-See [`docs/bedrock_action_group_setup.md`](docs/bedrock_action_group_setup.md).
+PITER uses **defense in depth**: application guardrails always run; Bedrock Guardrail adds account-level policy when attached to the agent.
 
-### MCP layer (local contract)
+### Layer 1 — Application guardrails (always on)
 
-[`mcp/server.py`](mcp/server.py) exposes the same four enrichment tools over **Model Context Protocol** (stdio JSON-RPC) for IDE agents and demos — read-only, no AWS. Production tool calls still go through Bedrock action groups; MCP is the standardized local mirror. Details: [`docs/MCP_PATH.md`](docs/MCP_PATH.md).
+Module: [`app/guardrails.py`](app/guardrails.py) · wired through [`app/validators.py`](app/validators.py) before any RAG call.
 
-### Application layers
+| Category | Blocked patterns (examples) | User-facing behavior |
+|----------|----------------------------|----------------------|
+| Destructive data | `FLUSHALL`, `DROP TABLE`, mass `DELETE` | Refusal + escalate to DBA / change control |
+| Unsafe failover | `promote replica`, `force failover` | Explain criteria; require human sign-off |
+| Security bypass | `disable WAF`, `open 0.0.0.0/0`, `disable MFA` | Refuse; open security-reviewed CR |
+| Mass disruption | `kill all sessions`, `scale to zero` | Targeted remediation only |
+| Policy bypass | `skip confirmation`, `disable guardrail` | Direct to gated Escalate on-call flow |
 
-| Layer | Technology | Role |
-|-------|------------|------|
-| UI | React 19, Vite 7, shadcn/ui, Tailwind 4 | Ops console — built to `app/static/spa/` |
-| API | Flask 3, gunicorn | JSON routes, session memory, upload |
-| RAG factory | [`app/rag_factory.py`](app/rag_factory.py) | Agent → RnG → local fallback |
-| Local RAG | [`app/services/local_rag.py`](app/services/local_rag.py) | TF-IDF over markdown runbooks |
-| Tool router | [`app/services/tool_router.py`](app/services/tool_router.py) | JSON tool-calling shape for local triage |
-| Container | Docker Compose | Non-root user, healthcheck on `:8080` |
-| Host | EC2 t3.micro + IAM profile | Public demo without long-lived keys |
+Tests: [`tests/test_guardrails.py`](tests/test_guardrails.py)
+
+### Layer 2 — Amazon Bedrock Guardrail
+
+| Field | Value |
+|-------|-------|
+| Guardrail ID | `rti921amc6u3` |
+| Name | `incidentiq-demo-guardrail` |
+| Version on agent (v6) | **v2** (published via mutation script) |
+| Attached to agent | **Yes** — `guardrailConfiguration` on alias v6 |
+
+**Topic policies (DENY):** credential exfiltration; unauthorized production changes.
+
+**Content filters:** e.g. `PROMPT_ATTACK` (HIGH input block), violence filters.
+
+IAM requirement: agent role needs `bedrock:ApplyGuardrail` on the guardrail ARN (added during AWS alignment).
+
+### Layer 3 — Agent instruction safety rules
+
+Embedded in `AGENT_INSTRUCTION` (see above) — complements guardrails with PITER-specific refusal language for destructive ops and notification bypass.
+
+### Notification safety (escalation)
+
+| Gate | Default |
+|------|---------|
+| `PITER_NOTIFICATION_MODE` | `mock` or `preview` |
+| Live dispatch | Requires mode=live + confirmation token + allowlist + P1/P2 + idempotency |
+| UI | Masked recipients; Escalation preview modal |
+
+---
+
+## MCP integration
+
+Three distinct MCP-related paths — do not conflate them:
+
+```mermaid
+flowchart LR
+  subgraph Prod["Production runtime"]
+    BA[Bedrock Agent] --> AG[Action Groups + Lambda]
+  end
+  subgraph Local["Local contract layer"]
+    MCP[mcp/server.py] --> ENR[app/enrichment_tools.py]
+  end
+  subgraph Dev["Developer IDE"]
+    CUR[Cursor MCP servers] --> AWS[AWS API / KB / docs]
+  end
+  AG --> ENR
+  MCP -.->|"same logic, read-only"| ENR
+  CUR -.->|"inspect & deploy"| BA
+```
+
+### A — PITER MCP server (project)
+
+Read-only stdio server exposing the **same four tools** as action groups for contract review and demos.
+
+```bash
+python mcp/server.py --selftest
+python -m mcp.server
+```
+
+| MCP tool | Maps to |
+|----------|---------|
+| `recent_deployments` | `correlate_deployments` |
+| `service_context` | owner + business impact |
+| `similar_incidents` | `find_similar_incidents` |
+| `escalation_preview` | masked preview only — **never sends** |
+
+Details: [`mcp/README.md`](mcp/README.md) · tests: [`tests/test_mcp_server.py`](tests/test_mcp_server.py)
+
+### B — Bedrock action groups (production)
+
+The agent at runtime uses **Lambda action groups**, not MCP. See [Action groups](#action-groups-and-lambda-tools).
+
+### C — Cursor IDE MCP (development)
+
+Used while **building** PITER — not invoked by `invoke_agent` at runtime.
+
+Copy [`config/mcp.json.example`](config/mcp.json.example) → `.cursor/mcp.json` at repo root.
+
+| Server | Purpose |
+|--------|---------|
+| `aws-api` | Inspect agent, Lambdas, S3, EC2 |
+| `bedrock-kb` | Direct KB `RBTJM6NIG9` retrieval |
+| `aws-knowledge` | Live AWS/Bedrock documentation |
+| `playwright` | Screenshot capture scripts |
+| `course-tools` | Lecture 08 demo MCP (`get_weather`, `get_joke`) |
+
+Full setup: [`docs/MCP_PATH.md`](docs/MCP_PATH.md)
+
+---
+
+## AI-assisted development (skills and tooling)
+
+This project was built with **AI-augmented engineering**: Cursor Agent, Claude, and structured verification loops—not vibe-coded demos.
+
+### Development practices
+
+| Practice | How it shows up in PITER |
+|----------|--------------------------|
+| **Grounded RAG** | Every triage step must cite KB or tool output |
+| **Single source of truth** | `enrichment_tools.py` shared by Flask, Lambda, MCP |
+| **Fail-open fallback** | Bedrock failure → local TF-IDF; demo never hard-fails |
+| **Safety by default** | Mock notifications, guardrails, masked contacts |
+| **Evidence-based AWS changes** | Mutation script with dry-run + rollback docs in `docs/review/` |
+
+### Cursor / agent skills used during development
+
+These skill areas guided implementation and review (representative—not an exhaustive plugin list):
+
+| Domain | Applied to |
+|--------|------------|
+| AWS Bedrock Agent + KB | Agent instruction, alias routing, citation parsing |
+| AWS Lambda + action groups | OpenAPI schemas, enrichment handlers |
+| Flask / FastAPI patterns | API design, structured errors, health checks |
+| React / Next.js performance | SPA dashboard, loading states, enterprise UX |
+| Testing & QA | 271 pytest cases + live verify scripts |
+| Security review | Guardrails, upload validation, notification gates |
+| RAG evaluation | Grounding checks, refusal path, citation coverage |
+| DevOps / Docker | `piter-aiops:dev` image, compose, EC2 user-data |
+
+### AI model roles
+
+| Role | Model / service |
+|------|-----------------|
+| **Runtime triage (production demo)** | Amazon Bedrock — Claude Haiku 4.5 via Agent or RetrieveAndGenerate |
+| **Development assistant** | Cursor Agent (Composer) for code, docs, AWS alignment, screenshot automation |
+| **Evaluation** | `agent_smoke_test.py`, `verify_live_demo.py` as automated judges |
+
+---
+
+## Testing and verification
+
+### Automated test suite
+
+```powershell
+cd projects/piter-aiops
+py -3.12 -m pip install -r requirements-dev.txt
+py -3.12 -m pytest -q                    # 271 passed (offline)
+```
+
+| Area | Test modules |
+|------|----------------|
+| RAG + Bedrock clients | `test_bedrock_client.py`, `test_bedrock_agent_client.py`, `test_rag_factory.py` |
+| Flask / SPA routes | `test_routes.py`, `test_flask_routes.py`, `test_spa_mode.py` |
+| Enrichment tools | `test_enrichment_tools.py`, `test_tools.py`, `test_piter_lambdas.py` |
+| MCP server | `test_mcp_server.py` |
+| Guardrails + validators | `test_guardrails.py`, `test_validators.py` |
+| Escalation + notifications | `test_escalation_api.py`, `test_notification_dispatch.py` |
+| Upload safety | `test_upload_validators.py`, `test_upload_routes.py` |
+| Alert storm data | `test_alert_stream_api.py`, `test_source_data.py` |
+| Session / follow-up | `test_follow_up_triage_alignment.py` |
+
+### Live and E2E scripts
+
+| Script | Checks | When to run |
+|--------|--------|-------------|
+| [`verify_live_demo.py`](scripts/verify_live_demo.py) | **29/29** — Bedrock live + local fallback | Before every demo |
+| [`verify_spa_demo.py`](scripts/verify_spa_demo.py) | **36/36** — SPA API parity + storm | After frontend changes |
+| [`agent_smoke_test.py`](scripts/agent_smoke_test.py) | **7/7** — `RAG_BACKEND=agent` | After agent/alias changes |
+| [`verify_e2e.py`](scripts/verify_e2e.py) | HTTP E2E against running container | After Docker build |
+| [`capture_final_demo.mjs`](scripts/capture_final_demo.mjs) | Presentation screenshots | Recording prep |
+
+Windows helper: [`scripts/verify.ps1`](scripts/verify.ps1)
+
+Evidence screenshots: [`screenshots/final/14_tests_passing.png`](screenshots/final/14_tests_passing.png), [`screenshots/final/14b_live_demo_checks.png`](screenshots/final/14b_live_demo_checks.png)
 
 ---
 
 ## Quick start
 
-### Docker (recommended)
-
-Works **offline by default** — no AWS account required.
+### Docker (recommended — works offline)
 
 ```bash
-cp .env.example .env          # optional; PITER_USE_BEDROCK=false
-docker compose up --build     # → http://localhost:8080/console
+cp .env.example .env          # optional; PITER_USE_BEDROCK=false by default
+docker compose up --build     # → http://localhost:8080/
 ```
 
-### Python directly
-
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
-gunicorn -b 0.0.0.0:8080 wsgi:app
-```
+| Docker setting | Value |
+|----------------|-------|
+| Image | `piter-aiops:dev` |
+| Container | `piter-aiops` |
+| Port | `8080:8080` |
 
 ### Enable live Bedrock
 
-Set in `.env` (see [`.env.example`](.env.example)):
+Set in `.env` (never commit secrets):
 
 | Variable | Purpose |
 |----------|---------|
-| `PITER_USE_BEDROCK=true` | Turn on AWS backends |
-| `PITER_AWS_REGION` | e.g. `us-east-1` |
-| `PITER_BEDROCK_KB_ID` | Knowledge Base ID |
+| `PITER_USE_BEDROCK=true` | Enable AWS backends |
+| `PITER_BEDROCK_KB_ID` | `RBTJM6NIG9` |
 | `PITER_BEDROCK_AGENT_ID` / `PITER_BEDROCK_AGENT_ALIAS_ID` | When `RAG_BACKEND=agent` |
-| `PITER_BEDROCK_MODEL_ARN` | Foundation model or inference profile |
-| `AWS_PROFILE` | Profile in `~/.aws/credentials` — **never put access keys in `.env`** |
+| `RAG_BACKEND` | `retrieve_and_generate` (default) or `agent` |
+| `AWS_PROFILE` | Profile in `~/.aws/credentials` |
 
-Credential layout: [`docs/aws_credentials.md`](docs/aws_credentials.md).
+Credential layout: [`docs/aws_credentials.md`](docs/aws_credentials.md)
 
-### Frontend dev (Vite proxy)
+### Frontend development
 
 ```bash
-# Terminal 1
-gunicorn -b 127.0.0.1:8080 wsgi:app
-
-# Terminal 2
-cd frontend && npm install && npm run dev   # → http://localhost:5173
+gunicorn -b 127.0.0.1:8080 wsgi:app    # terminal 1
+cd frontend && npm install && npm run dev   # terminal 2 → :5173
+cd frontend && npm run build              # production → app/static/spa/
 ```
-
-Production build: `cd frontend && npm run build` → served from Flask at `/` and `/console`.
 
 ---
 
@@ -399,84 +570,86 @@ Production build: `cd frontend && npm run build` → served from Flask at `/` an
 
 | Method | Path | Description |
 |:------:|------|-------------|
-| `GET` | `/` | React SPA (or legacy UI if `FORCE_LEGACY_UI=1`) |
-| `GET` | `/console` | Ops demo console |
-| `GET` | `/health` | Liveness; `?deep=1` for config checks |
-| `GET` | `/api/bootstrap` | Examples, storm summary, execution mode, upload limits |
-| `GET` | `/api/alert-stream` | Alert storm metadata (399 alerts) |
-| `GET` | `/api/kb/manifest` | Local KB document list |
+| `GET` | `/` | React SPA |
+| `GET` | `/console` | Legacy triage console |
+| `GET` | `/health` | Liveness (`?deep=1` for config) |
+| `GET` | `/api/bootstrap` | Examples, storm summary (400 alerts), upload limits |
+| `GET` | `/api/alert-stream` | Storm metadata + P1 trigger |
+| `GET` | `/api/kb/manifest` | KB document list |
 | `POST` | `/api/triage` | Full triage card (RAG + tools + session) |
 | `POST` | `/api/follow-up` | Session-aware follow-up |
-| `POST` | `/ask` | Grounded Q&A + citations (`session_id` optional) |
-| `POST` | `/documents/upload` | S3 upload + optional KB sync |
+| `POST` | `/ask` | Grounded Q&A + citations |
+| `POST` | `/documents/upload` | Validated upload + optional S3/KB sync |
+| `POST` | `/api/escalation/notify` | Gated SNS/SES (mock default) |
 
-**Triage card fields:** `answer`, `citations[]`, `recommended_steps[]`, `suspect_deploys[]`, `owner`, `impact`, `similar_incidents[]`, `session_id`, `memory_used`, `mode` (`local` \| `bedrock`).
-
----
-
-## Development and verification
-
-```bash
-pytest -q                                    # offline unit tests
-cd frontend && npm run build
-docker compose up -d --build
-python scripts/verify_e2e.py                 # SPA-aware E2E (APP_URL=http://127.0.0.1:8080)
-python scripts/verify_spa_demo.py          # Alert storm workflow
-python scripts/agent_smoke_test.py         # live Bedrock Agent (needs AWS)
-```
-
-Windows: `.\scripts\verify.ps1`
-
-Full checklist: [`docs/GRADING_CHECKLIST.md`](docs/GRADING_CHECKLIST.md) · [`TESTING.md`](TESTING.md)
+**Triage card fields:** `answer`, `citations[]`, `recommended_steps[]`, `suspect_deploys[]`, `owner`, `impact`, `similar_incidents[]`, `session_id`, `memory_used`, `mode` (`local` | `bedrock`).
 
 ---
 
-## Deploy to EC2
+## Challenges and design trade-offs
 
-1. Build and push image (or use ECR `:demo` tag).
-2. Launch **t3.micro** with IAM profile **`IncidentRagBedrockEC2Profile`**.
-3. Security group: **8080/tcp** for demo HTTP.
-4. User data: [`infra/ec2_user_data_demo.sh`](infra/ec2_user_data_demo.sh).
-5. Copy `.env` to the host — **no AWS keys**; Bedrock via instance profile.
-
-Walkthrough: [`docs/ec2_deployment.md`](docs/ec2_deployment.md)
+| Challenge | What we did | Residual risk |
+|-----------|-------------|---------------|
+| **Bedrock latency (10–20s)** | Loading states, legacy console loader, async SPA | Audience wait during live demo — pre-run triage once |
+| **Agent vs direct KB** | `rag_factory` supports both; default RnG for reliable citations in class | Agent path needs alias prepare after every DRAFT change |
+| **Legacy IncidentIQ naming in AWS** | Document mapping; disable legacy ops group on v6 | Console still shows old Lambda names (`iiq-*`) |
+| **Grounding vs helpfulness** | Strict instruction + refusal UI | Occasional under-answer when KB chunk missing |
+| **Notification safety** | Mock default, confirmation token, allowlist, idempotency | Lambda live path needs full app bundle for dispatch module |
+| **MCP vs action groups confusion** | Clear docs: production = Lambda; MCP = local contract | Students may assume MCP runs in production |
+| **400-alert storm UX** | Client animation over real CSV; deterministic P1 | Not a live streaming bus — labeled as simulated |
+| **CSRF on JSON API** | Bootstrap token for SPA; demo-only exemption | Not production-hardened auth model |
 
 ---
 
-## Security
+## Next steps
+
+### Demo and course delivery
+
+- [ ] Run [`docs/review/PITER_FINAL_DEMO_READINESS_REPORT.md`](docs/review/PITER_FINAL_DEMO_READINESS_REPORT.md) demo script (10 min)
+- [ ] Set `PITER_CONSOLE_REDIRECT_SPA=true` when legacy `/console` retirement is approved
+- [ ] Optional: AgentCore Gateway (MCP over Cognito) — [`scripts/setup_agentcore_gateway.py`](scripts/setup_agentcore_gateway.py)
+
+### Production hardening (if beyond course scope)
+
+- [ ] Bundle `notification_dispatch` into `piter-escalation` Lambda for live path parity
+- [ ] Persistent idempotency store (DynamoDB) instead of in-memory Lambda set
+- [ ] Rename AWS resources `iiq-*` → `piter-*` with zero-downtime alias cutover
+- [ ] OAuth / SSO for SPA; remove CSRF exemptions on JSON routes
+- [ ] Automatic Bedrock KB sync after UI upload (today: manual sync step)
+- [ ] CloudWatch dashboards: triage latency, citation rate, guardrail blocks, tool error rate
+- [ ] Load test alert storm API path separately from client animation
+
+### Observability
+
+- [ ] Enable and archive agent traces for demo post-mortems
+- [ ] Structured correlation IDs across Flask → boto3 → Lambda logs
+
+---
+
+## Security and further reading
 
 | Control | Implementation |
 |---------|----------------|
 | No keys on EC2 | IAM instance profile only |
-| Scoped IAM | Bedrock retrieve/generate, S3 prefix, Lambda invoke |
+| Scoped IAM | Bedrock retrieve/generate, S3 prefix, Lambda invoke, ApplyGuardrail |
 | Non-root container | `USER app` in Dockerfile |
-| Input validation | Question length, upload type/size before S3 |
-| CSRF | Flask-WTF on legacy forms; JSON routes exempt with bootstrap token |
-| Operator guardrails | [`app/guardrails.py`](app/guardrails.py) blocks destructive SQL/Redis patterns before Bedrock |
-| Refusal path | No citations → visible amber card, not invented steps |
-| Secrets | `.env` gitignored; only `.env.example` committed |
-
-Teardown: [`docs/TEARDOWN.md`](docs/TEARDOWN.md) · [`docs/cleanup_checklist.md`](docs/cleanup_checklist.md)
-
----
-
-## Further reading
+| Input validation | Question length, upload type/size, path traversal blocks |
+| Operator guardrails | [`app/guardrails.py`](app/guardrails.py) |
+| Secrets | `.env` gitignored; `.env.example` only in repo |
 
 | Document | Topic |
 |----------|-------|
 | [`docs/architecture.md`](docs/architecture.md) | Component breakdown |
-| [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md) | Create and sync Knowledge Base |
+| [`docs/bedrock_kb_setup.md`](docs/bedrock_kb_setup.md) | Knowledge Base create + sync |
 | [`docs/bedrock_agent_setup.md`](docs/bedrock_agent_setup.md) | Agent + alias |
-| [`docs/bedrock_action_group_setup.md`](docs/bedrock_action_group_setup.md) | Ops Lambda action group |
-| [`docs/MCP_PATH.md`](docs/MCP_PATH.md) | MCP vs Bedrock action groups |
-| [`docs/knowledge_base.md`](docs/knowledge_base.md) | Corpus layout |
-| [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | Screenshots and grading evidence |
-| [`docs/review/PITER_AWS_MUTATION_FINAL_REPORT.md`](docs/review/PITER_AWS_MUTATION_FINAL_REPORT.md) | AWS agent/guardrail/tool alignment (2026-06-08) |
-| [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md) | Live Q&A samples |
+| [`docs/MCP_PATH.md`](docs/MCP_PATH.md) | MCP vs action groups vs Cursor |
+| [`docs/live_demo.md`](docs/live_demo.md) | Instructor demo flow |
+| [`docs/review/PITER_FINAL_DEMO_READINESS_REPORT.md`](docs/review/PITER_FINAL_DEMO_READINESS_REPORT.md) | Live validation summary |
+| [`TESTING.md`](TESTING.md) | Test commands |
 | [`screenshots/README.md`](screenshots/README.md) | Capture instructions |
+
+Teardown: [`docs/TEARDOWN.md`](docs/TEARDOWN.md)
 
 ---
 
-**Author:** Re'em Mor · NOC / SRE · [GitHub @reemmor](https://github.com/reemmor)
-
-Built for the **AI-Augmented Software Engineering** course — Amazon Bedrock Agent, Knowledge Base, Flask, React, Docker, and EC2.
+Built for **AI-Augmented Software Engineering** — demonstrating grounded RAG, Bedrock Agents, Lambda action groups, MCP tool contracts, guardrails, and production-minded ops UX on AWS.
