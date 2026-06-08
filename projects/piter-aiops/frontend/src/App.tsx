@@ -1141,12 +1141,16 @@ function FilterBar({ children }: { children: React.ReactNode }) {
 
 function FilterSelect({ label, defaultValue }: { label: string; defaultValue: string }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-700 bg-slate-950/60 px-2.5 py-1.5 text-xs text-slate-300">
+    <label
+      className="flex cursor-not-allowed items-center gap-2 rounded-md border border-slate-700/60 bg-slate-950/40 px-2.5 py-1.5 text-xs text-slate-400"
+      title="Demo filter — display only (no backend query)"
+    >
       <span className="text-slate-500">{label}</span>
       <select
         defaultValue={defaultValue}
-        className="cursor-pointer bg-transparent text-slate-200 outline-none"
-        aria-label={label}
+        disabled
+        className="cursor-not-allowed bg-transparent text-slate-500 outline-none"
+        aria-label={`${label} (demo display only)`}
       >
         <option>{defaultValue}</option>
       </select>
@@ -1367,14 +1371,17 @@ function Investigations({
                         <ActionBtn label="Ask Agent" onClick={onAskAgent} />
                         <ActionBtn
                           label="In Process"
+                          title="Demo UI — local status only"
                           onClick={() => updateInvStatus(inv.id, "In Process")}
                         />
                         <ActionBtn
                           label="Resolve"
+                          title="Demo UI — local status only"
                           onClick={() => updateInvStatus(inv.id, "Resolved")}
                         />
                         <ActionBtn
                           label="Escalate"
+                          title="Demo UI — local status only (use Escalation Preview for notify API)"
                           onClick={() => updateInvStatus(inv.id, "Escalated")}
                         />
                       </div>
@@ -1396,11 +1403,20 @@ function Investigations({
   );
 }
 
-function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
+function ActionBtn({
+  label,
+  onClick,
+  title,
+}: {
+  label: string;
+  onClick: () => void;
+  title?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className="cursor-pointer rounded-md border border-violet-400/25 px-2 py-1 text-[11px] text-violet-100 transition-colors hover:bg-violet-500/10"
     >
       {label}
@@ -2056,7 +2072,7 @@ function ContextMemory({
       </Panel>
       <Panel title="Agent decision timeline" icon={Clock3}>
         <div className="space-y-2 text-sm text-slate-400">
-          <div>T+0 — Alert storm ingested (399 deterministic alerts)</div>
+          <div>T+0 — Alert storm ingested (400 deterministic alerts)</div>
           <div>T+1 — Noise suppression applied to P3/P4 repeats</div>
           <div>T+2 — P1 bet-service detected; stream paused for triage</div>
           <div>T+3 — RAG + Lambda/MCP-style tools enriched incident</div>
@@ -2719,9 +2735,9 @@ function CitationPreview({
   citations: Citation[];
   compact?: boolean;
 }) {
-  const visible = citations.length
-    ? citations.slice(0, compact ? 2 : 4)
-    : [
+  const usingFallback = citations.length === 0;
+  const visible = usingFallback
+    ? [
         {
           source_label: "runbook_bet_service_critical.md",
           snippet:
@@ -2736,12 +2752,18 @@ function CitationPreview({
           source_uri: "local://knowledge_base/policies/severity-and-escalation-policy.md",
           index: 2,
         },
-      ];
+      ]
+    : citations.slice(0, compact ? 2 : 4);
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-950/45 p-3">
-      <div className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
+      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-cyan-100">
         <FileText className="size-4" />
         RAG citations
+        {usingFallback ? (
+          <span className="rounded border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-100">
+            Example — run Analyze Incident for live citations
+          </span>
+        ) : null}
       </div>
       <div className="mt-2 grid gap-2">
         {visible.map((citation) => (

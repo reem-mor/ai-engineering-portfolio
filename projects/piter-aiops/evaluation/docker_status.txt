@@ -1,0 +1,2 @@
+﻿NAMES         IMAGE             STATUS                   PORTS
+piter-aiops   piter-aiops:dev   Up 8 minutes (healthy)   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp

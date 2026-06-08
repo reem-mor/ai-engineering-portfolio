@@ -485,7 +485,7 @@ export function EscalationNotifyModal({
         severity,
         confirmation_token: token,
         escalation_context: escalationContext,
-        idempotency_key: `${incidentId}:${channel}:${crypto.randomUUID()}`,
+        idempotency_key: `${incidentId}:${channel}`,
       });
       setResult(response);
     } catch (err) {
