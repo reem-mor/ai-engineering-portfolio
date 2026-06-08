@@ -36,6 +36,7 @@ import {
   executionModeLabel,
   fetchAlertStream,
   fetchKbManifest,
+  fetchSessionHistory,
   followUp,
   runTriageCard,
   triageToRagAnswer,
@@ -59,7 +60,7 @@ import {
   type StreamRow,
 } from "@/components/piter/ops-ui";
 import { useBootstrap } from "@/context/bootstrap";
-import type { AlertStreamSummary, BootstrapPayload, Citation, KbDocumentMeta, RagAnswer, TriageCard } from "@/types/rag";
+import type { AlertStreamSummary, BootstrapPayload, Citation, KbDocumentMeta, RagAnswer, SessionHistoryPayload, TriageCard } from "@/types/rag";
 
 type NavKey =
   | "dashboard"
@@ -406,6 +407,7 @@ function AppShell() {
   const [chatError, setChatError] = useState<string | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [chatTurns, setChatTurns] = useState<ChatTurn[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<SessionHistoryPayload | null>(null);
   const [kbDocs, setKbDocs] = useState<KbDocumentMeta[]>([]);
   const [invStatuses, setInvStatuses] = useState<Record<string, string>>({});
   const [escalationModalOpen, setEscalationModalOpen] = useState(false);
@@ -449,6 +451,16 @@ function AppShell() {
     () => buildEscalationContext(triageCard, selected, streamSummary),
     [triageCard, selected, streamSummary],
   );
+
+  function refreshSessionHistory(sid: string | null | undefined) {
+    if (!sid) {
+      setSessionHistory(null);
+      return;
+    }
+    fetchSessionHistory(sid)
+      .then((history) => setSessionHistory(history))
+      .catch(() => setSessionHistory(null));
+  }
 
   useEffect(() => {
     fetchAlertStream(true)
@@ -547,6 +559,7 @@ function AppShell() {
           matched_runbook: triageCard.matched_runbook,
         });
         setChatTurns((prev) => [...prev, { role: "assistant", text: result.answer, citations }]);
+        refreshSessionHistory(result.session_id);
       } else {
         const result = await askQuestion(
           `For incident ${selected.id} (${selected.alert}), ${q}`,
@@ -570,6 +583,7 @@ function AppShell() {
     setLastQuestion(null);
     setMemoryUsed(false);
     setAnswer(null);
+    setSessionHistory(null);
     setChatError(null);
   }
 
@@ -668,6 +682,7 @@ function AppShell() {
           ...prev,
           { role: "assistant", text: followUpResult.answer, citations },
         ]);
+        refreshSessionHistory(followUpResult.session_id);
       } else {
         setChatTurns((prev) => [
           ...prev,
@@ -721,6 +736,7 @@ function AppShell() {
       const rag = triageToRagAnswer(card);
       setTriageCard(card);
       setAnswer(rag);
+      refreshSessionHistory(card.session_id);
       setMemoryUsed(false);
       setLastQuestion("What should I check first?");
       setChatTurns([
@@ -835,6 +851,7 @@ function AppShell() {
                 triageCard={triageCard}
                 selected={selected}
                 chatTurns={chatTurns}
+                sessionHistory={sessionHistory}
                 onReset={resetMemoryPreview}
               />
             )}
@@ -1639,6 +1656,28 @@ function AlertStorm({
             </div>
           ))}
         </div>
+        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Saved backend chat history
+          </div>
+          <div className="mt-2 grid gap-2">
+            {savedFollowups.length ? (
+              savedFollowups.slice(-4).map((turn) => (
+                <div
+                  key={`${turn.ts}-${turn.question}`}
+                  className="rounded border border-slate-800 bg-slate-900/70 p-2 text-xs"
+                >
+                  <div className="font-semibold text-cyan-100">{turn.question}</div>
+                  <p className="mt-1 line-clamp-2 text-slate-400">{turn.answer.answer}</p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded border border-slate-800 bg-slate-900/70 p-2 text-xs text-slate-500">
+                Run a follow-up after PITER analysis to persist chat history for this session.
+              </div>
+            )}
+          </div>
+        </div>
       </Panel>
 
       {stormState === "resolved" && (
@@ -1993,6 +2032,7 @@ function ContextMemory({
   triageCard,
   selected,
   chatTurns,
+  sessionHistory,
   onReset,
 }: {
   sessionId: string;
@@ -2002,8 +2042,10 @@ function ContextMemory({
   triageCard: TriageCard | null;
   selected: Investigation;
   chatTurns: ChatTurn[];
+  sessionHistory: SessionHistoryPayload | null;
   onReset: () => void;
 }) {
+  const savedFollowups = sessionHistory?.followups ?? [];
   return (
     <div className="grid gap-5">
       <SectionHeader
@@ -2055,10 +2097,10 @@ function ContextMemory({
       <Panel title="Reusable investigation history" icon={History}>
         <div className="grid gap-2">
           {[
-            "Same pattern detected today: warning shots before P1 outage.",
-            "Similar incident from history: connection pool exhaustion caused bet-service errors.",
-            "Past resolution reused: rollback plus dependency health validation reduced MTTR.",
-            `Previous agent decision: grouped ${triageCard ? "366" : "—"} noise alerts before surfacing P1.`,
+            `Backend session: ${sessionHistory?.session_id ?? sessionId}`,
+            `Priority memory: ${sessionHistory?.triage_summary.priority ?? triageCard?.priority ?? "pending"}`,
+            `Matched runbook: ${sessionHistory?.triage_summary.matched_runbook ?? triageCard?.matched_runbook ?? "pending"}`,
+            `Saved follow-ups: ${savedFollowups.length}`,
             "Memory rule: use incident context for follow-ups, do not store real personal contacts.",
           ].map((item) => (
             <div

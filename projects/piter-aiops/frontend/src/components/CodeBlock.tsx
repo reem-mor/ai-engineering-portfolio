@@ -40,7 +40,7 @@ const SQL_RE =
   /(--[^\n]*|\/\*[\s\S]*?\*\/)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|([a-zA-Z_][\w]*(?=\s*\())|\b(SELECT|FROM|WHERE|AND|OR|NOT|NULL|ORDER\s+BY|GROUP\s+BY|HAVING|LIMIT|OFFSET|JOIN|LEFT|RIGHT|INNER|OUTER|FULL|ON|AS|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|VIEW|ALTER|DROP|TRUNCATE|WITH|DISTINCT|CASE|WHEN|THEN|ELSE|END|IS|IN|LIKE|ILIKE|BETWEEN|DESC|ASC|VACUUM|ANALYZE|EXPLAIN|BEGIN|COMMIT|ROLLBACK|GRANT|REVOKE|UNION|ALL|EXISTS|INTERVAL|NOW|COALESCE)\b/gi;
 
 const BASH_RE =
-  /(#[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|((?:^|\n)\s*[a-zA-Z][\w.\-]*|(?<=\|\s)[a-zA-Z][\w.\-]*)|(\s-{1,2}[A-Za-z][\w-]*)/g;
+  /(#[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|((?:^|\n)\s*[a-zA-Z][\w.-]*|(?<=\|\s)[a-zA-Z][\w.-]*)|(\s-{1,2}[A-Za-z][\w-]*)/g;
 
 function highlight(code: string, lang: CodeLang): ReactNode {
   let toks: Tok[];

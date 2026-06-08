@@ -134,7 +134,7 @@ class BedrockAgentClient:
         try:
             response = self._client.invoke_agent(**request)
         except Exception as exc:  # noqa: BLE001
-            log.exception("Bedrock invoke_agent failed")
+            log.warning("Bedrock invoke_agent failed: %s", exc)
             raise translate(exc) from exc
 
         answer_parts: list[str] = []
@@ -167,7 +167,7 @@ class BedrockAgentClient:
                 if action_out:
                     _merge_action_output(enrichment, action_out)
         except EventStreamError as exc:
-            log.exception("Bedrock invoke_agent stream failed")
+            log.warning("Bedrock invoke_agent stream failed: %s", exc)
             raise translate(exc) from exc
 
         latency_ms = int((time.perf_counter() - started) * 1000)
