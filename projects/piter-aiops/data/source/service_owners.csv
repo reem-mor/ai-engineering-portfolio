@@ -1,7 +1,9 @@
-service,owning_team,team_lead,slack_channel,pagerduty_service_id,primary_on_call,secondary_on_call
-wallet-service,Wallet Platform,Sara Levy,#wallet-platform,PD-WAL-001,Daniel Cohen,Maya Ben-David
-bet-service,Betting Core,Yossi Avraham,#betting-core,PD-BET-001,Tom Friedman,Liat Goldberg
-auth-service,Identity & Access,Noa Shapira,#identity,PD-AUTH-001,Roy Katz,Shira Mizrahi
-payments-service,Payments,Eitan Rosen,#payments,PD-PAY-001,Yael Stein,Amit Levi
-game-service,Game Platform,Itai Bar-On,#game-platform,PD-GAME-001,Omer Peretz,Hila Aviv
-replication,Data Platform,Gilad Weiss,#data-platform,PD-DATA-001,Dana Klein,Adi Yosef
+service,owning_team,team_lead,service_tier,business_function,slack_channel,pagerduty_service_id,primary_on_call_role,secondary_on_call_role,runbook,dashboard,dependencies,regulatory_exposure
+bet-service,Betting Core,Yossi Avraham,tier-0,Bet placement and settlement intake,#betting-core,PD-BET--001,Primary Betting Core On-Call,Secondary Betting Core On-Call,RB-011-bet-service-outage.md,grafana://piter/bet-service,wallet-service|auth-service|game-service|replication,UKGC|DGE|MGM
+wallet-service,Wallet Platform,Sara Levy,tier-0,"Balance, deposits, withdrawals, wallet transactions",#wallet-platform,PD-WALL-001,Primary Wallet Platform On-Call,Secondary Wallet Platform On-Call,RB-012-wallet-transaction-failures.md,grafana://piter/wallet-service,payments-service|replication|auth-service,UKGC|DGE
+auth-service,Identity & Access,Noa Shapira,tier-0,"Login, session validation, token verification",#identity-access,PD-AUTH-001,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,RB-002-auth-login-failures.md,grafana://piter/auth-service,redis-token-store|customer-db,UKGC|DGE
+payments-service,Payments,Eitan Rosen,tier-0,Payment authorization and provider routing,#payments,PD-PAYM-001,Primary Payments On-Call,Secondary Payments On-Call,RB-013-payment-provider-degradation.md,grafana://piter/payments-service,wallet-service|external-payment-gateway,UKGC|DGE|PCI-DSS
+game-service,Game Platform,Itai Bar-On,tier-1,"Game launch, game session routing, provider handoff",#game-platform,PD-GAME-001,Primary Game Platform On-Call,Secondary Game Platform On-Call,RB-014-game-provider-latency.md,grafana://piter/game-service,auth-service|wallet-service,UKGC|DGE|MGM
+replication,Data Platform,Gilad Weiss,tier-0,Cross-region data replication and reporting consistency,#data-platform,PD-REPL-001,Primary Data Platform On-Call,Secondary Data Platform On-Call,RB-004-postgres-replica-lag.md,grafana://piter/replication,customer-db|transaction-db,UKGC|DGE
+redis-token-store,Identity & Access,Noa Shapira,tier-0,Session and token cache,#identity-access,PD-REDI-001,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,RB-008-redis-token-store-degradation.md,grafana://piter/redis-token-store,auth-service,UKGC|DGE
+promotion-engine,Growth Platform,Lior Bar,tier-2,Bonus and promotion eligibility evaluation,#growth-platform,PD-PROM-001,Primary Growth Platform On-Call,Secondary Growth Platform On-Call,RB-006-promotions-engine-latency.md,grafana://piter/promotion-engine,wallet-service|customer-db,UKGC

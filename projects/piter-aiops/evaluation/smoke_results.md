@@ -1,6 +1,6 @@
 # Bedrock KB Smoke Test Results
 
-- **Run at:** 2026-06-07 15:18:01 UTC
+- **Run at:** 2026-06-08 09:32:20 UTC
 - **Model:** `arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0`
 - **Score:** 7/7 PASS
 

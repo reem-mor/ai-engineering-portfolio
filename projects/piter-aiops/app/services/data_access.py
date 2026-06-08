@@ -19,7 +19,9 @@ from typing import Any
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _AGENT_DATA = _PROJECT_ROOT / "data" / "agent_data"
+_SOURCE_DATA = _PROJECT_ROOT / "data" / "source"
 _DATA_ROOT = _PROJECT_ROOT / "data"
+_KB_RUNBOOKS = _PROJECT_ROOT / "knowledge_base" / "runbooks"
 _HISTORY = _PROJECT_ROOT / "data" / "sample_documents" / "incident_history.csv"
 
 DEPLOYS_COLUMNS = {
@@ -51,6 +53,58 @@ HISTORY_COLUMNS = {
     "customer_impact",
     "environment",
     "resolution",
+}
+
+SOURCE_DEPLOYS_COLUMNS = {
+    "deploy_id",
+    "timestamp",
+    "environment",
+    "service",
+    "version",
+    "status",
+    "change_summary",
+    "risk_level",
+    "rollback_available",
+}
+SERVICE_OWNERS_COLUMNS = {
+    "service",
+    "owning_team",
+    "service_tier",
+    "business_function",
+    "slack_channel",
+    "primary_on_call_role",
+    "secondary_on_call_role",
+    "runbook",
+    "dashboard",
+    "dependencies",
+    "regulatory_exposure",
+}
+PAST_INCIDENTS_COLUMNS = {
+    "incident_id",
+    "service",
+    "environment",
+    "severity",
+    "root_cause",
+    "resolution",
+    "mttr_minutes",
+    "lessons_learned",
+    "related_runbook",
+}
+ALERT_STREAM_COLUMNS = {
+    "alert_id",
+    "timestamp",
+    "environment",
+    "service",
+    "severity",
+    "title",
+}
+SOURCE_ALERTS_COLUMNS = {
+    "alert_id",
+    "timestamp",
+    "environment",
+    "service",
+    "severity",
+    "title",
 }
 
 
@@ -198,6 +252,119 @@ def incident_history_summary(history_path: str | Path | None = None) -> dict[str
             for service, stats in grouped.iterrows()
         },
     }
+
+
+def source_data_dir() -> Path:
+    """Return the canonical structured dataset directory."""
+    return _SOURCE_DATA
+
+
+def list_runbook_files() -> set[str]:
+    """Return runbook filenames present under knowledge_base/runbooks/."""
+    if not _KB_RUNBOOKS.is_dir():
+        return set()
+    return {
+        path.name
+        for path in _KB_RUNBOOKS.iterdir()
+        if path.is_file() and path.suffix == ".md" and path.name != "README.md"
+    }
+
+
+def load_source_alert_stream(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "alert_stream.csv", ALERT_STREAM_COLUMNS)
+
+
+def load_source_alerts(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "alerts.csv", SOURCE_ALERTS_COLUMNS)
+
+
+def load_service_owners(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "service_owners.csv", SERVICE_OWNERS_COLUMNS)
+
+
+def load_source_deploys(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "deploys.csv", SOURCE_DEPLOYS_COLUMNS)
+
+
+def load_business_impact(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "business_impact.json")
+    if not isinstance(data, dict) or "services" not in data:
+        raise DataAccessError("business_impact.json must contain a 'services' object")
+    return data
+
+
+def load_priority_matrix(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "priority_matrix.json")
+    if not isinstance(data, dict) or "thresholds" not in data:
+        raise DataAccessError("priority_matrix.json must contain 'thresholds'")
+    return data
+
+
+def load_escalation_policies(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "escalation_policies.json")
+    if not isinstance(data, dict) or "default_policy" not in data:
+        raise DataAccessError("escalation_policies.json must contain 'default_policy'")
+    return data
+
+
+def load_past_incidents(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "past_incidents.csv", PAST_INCIDENTS_COLUMNS)
+
+
+def load_on_call_schedule(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    path = base / "on_call_schedule.csv"
+    if not path.is_file():
+        raise DataAccessError("Missing data file: on_call_schedule.csv")
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def resolve_alert(
+    *,
+    alert_id: str = "",
+    service: str = "",
+    environment: str = "",
+    source_dir: str | Path | None = None,
+) -> dict[str, str] | None:
+    """Resolve an alert from alert_stream, summary alerts, or service+env match."""
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    aid = (alert_id or "").strip()
+    svc = (service or "").strip().lower()
+    env = (environment or "").strip().upper()
+
+    if aid:
+        for row in load_source_alert_stream(base):
+            if row.get("alert_id") == aid:
+                return dict(row)
+        for row in load_source_alerts(base):
+            if row.get("alert_id") == aid:
+                return dict(row)
+
+    if svc and env:
+        for row in load_source_alert_stream(base):
+            if (
+                row.get("service", "").lower() == svc
+                and row.get("environment", "").upper() == env
+                and row.get("is_trigger", "").lower() == "true"
+            ):
+                return dict(row)
+        for row in load_source_alerts(base):
+            if (
+                row.get("service", "").lower() == svc
+                and row.get("environment", "").upper() == env
+            ):
+                return dict(row)
+
+    return None
 
 
 def _summary_stdlib(rows: list[dict[str, str]]) -> dict[str, Any]:

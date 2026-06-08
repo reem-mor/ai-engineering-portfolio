@@ -1,26 +1,15 @@
 # Bedrock Agent Smoke Test Results
 
-- **Run at:** 2026-06-07 15:18:34 UTC
-- **Backend / ref:** `HH4YGSLZUE/O2EM03R4R3`
-- **Score:** 4/7 PASS
+- **Run at:** 2026-06-08 09:30:50 UTC
+- **Backend / ref:** `arn:aws:bedrock:us-east-1:329597159579:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0`
+- **Score:** 7/7 PASS
 
 | ID | Status | Grounded | Citations | Latency ms |
 |----|--------|----------|-----------|------------|
-| 1 | PASS | True | 5 | 13994 |
-| 2 | FAIL | False | 0 | 3477 |
-| 3 | FAIL | False | 0 | 3328 |
-| 4 | FAIL | False | 0 | 3551 |
-| 5 | PASS | True | 4 | 4902 |
-| 6 | PASS | False | 0 | 2326 |
+| 1 | PASS | True | 2 | 9885 |
+| 2 | PASS | True | 4 | 9982 |
+| 3 | PASS | True | 2 | 9088 |
+| 4 | PASS | True | 4 | 10731 |
+| 5 | PASS | True | 3 | 5413 |
+| 6 | PASS | False | 0 | 2459 |
 | 7 | PASS | — | — | — |
-
-### FAIL #2: API 5xx rate is above 2% on checkout — what should I check?
-- expected grounded answer but got no citations
-
-### FAIL #3: Queue lag is above 30 seconds — what should I do?
-- expected grounded answer but got no citations
-- answer missing keywords: ['worker', 'scale', 'dead-letter', 'DLQ']
-
-### FAIL #4: Users cannot log in after deployment — what should I check?
-- expected grounded answer but got no citations
-- answer missing keywords: ['health', 'JWT', 'TOKEN_ISSUER', 'rollback']

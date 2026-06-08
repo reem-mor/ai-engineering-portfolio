@@ -1,44 +1,62 @@
-# PITER AiOps — Dataset Audit
+# PITER Dataset Audit (`data/source/`)
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
-- **Canonical folder:** `data/source/`
+**Canonical folder:** `data/source/`  
+**Audit date:** 2026-06-08
 
-## Required datasets — all present
-| File | Rows / size | Notes |
-| ---- | ----------- | ----- |
-| `alert_stream.csv` | **399 data rows** | streaming storm; `is_trigger` + `seconds_offset` |
-| `alerts.csv` | 26 | historical snapshot |
-| `deploys.csv` | 44 | deploy correlation, `rollback_available` |
-| `service_owners.csv` | 7 | ownership + escalation routing |
-| `on_call_schedule.csv` | 19 | names/roles (no raw private contacts) |
-| `past_incidents.csv` | 35 | root cause, resolution, `mttr_min` |
-| `business_impact.json` | — | SLA/customer impact profiles |
-| `priority_matrix.json` | — | severity/impact scoring factors |
-| `escalation_policies.json` | — | notify-immediately by severity (no real phone/email) |
+## File inventory
 
-## Validation results
+| File | Rows/entries | Status |
+|------|----------------|--------|
+| `alert_stream.csv` | 400 | PASS |
+| `alerts.csv` | 8 | PASS (curated subset) |
+| `deploys.csv` | 61 | PASS |
+| `service_owners.csv` | 8 services | PASS |
+| `on_call_schedule.csv` | 24 | PASS |
+| `past_incidents.csv` | 35 | PASS |
+| `business_impact.json` | 3 environments | PARTIAL — not per-service |
+| `priority_matrix.json` | P1–P4 thresholds | PASS |
+| `escalation_policies.json` | 3 policies | PASS |
+
+## P1 / storm trigger
+
 | Check | Result |
-| ----- | ------ |
-| Unique IDs | PASS |
-| ISO timestamps | PASS |
-| Valid service names | PASS (synthetic catalog) |
-| Valid environments | PASS (NJ-DGE, GIB-UKGC, MGM, MIRAGE …) |
-| Priorities P1–P4 | PASS |
-| Non-negative financials | PASS |
-| No duplicate rows | PASS |
-| **One deterministic P1 trigger** | **PASS** — exactly 1 `is_trigger`=true and 1 `P1` row: `ALT-DEMO-P1-001` |
-| Realistic business-impact values | PASS |
-| Similar incidents connect to demo | PASS (Postgres CPU scenario matches `past_incidents`) |
-| On-call uses names/roles | PASS |
-| No credentials / phone / email in `data/source` | PASS (PII lives only in docs/scripts — fixed in Commit 2) |
-| Valid UTF-8 | PASS |
-| Deterministic generators | PASS (`scripts/generate_demo_data.py`, `generate_alert_stream.py`) |
-| No hardcoded `/home/...` paths in generators | PASS |
-| `--output` support | PASS (generators accept output paths) |
+|-------|--------|
+| Deterministic row count | 400 |
+| Exactly one `is_trigger=true` | **YES** — `ALT-2026-06-10-0251`, `bet-service` |
+| Exactly one `severity=P1` | **YES** (same row) |
+| Note | Column is `severity`, not `priority` |
 
-## Alert storm count (Phase 6 decision)
-`alert_stream.csv` = **399 deterministic alerts**. Decision: **Option A** — keep 399 and label the
-UI/docs "Simulated alert storm — 399 deterministic alerts". No fake numbers.
+## Validation (automated)
 
-## Status: PASS — datasets professional, validated, deterministic, PII-free.
+`tests/test_source_data.py` verifies:
+
+- Required files exist
+- No raw email/phone patterns in source CSVs
+- Runbook references resolve to `knowledge_base/runbooks/` or `sample_documents/`
+- Generated alerts include `ALT-DEMO-P1-001`
+- Deploy correlation for bet-service (`DEP-2026-06-0610-001` in `deploys.csv`)
+
+## Cross-file consistency
+
+| Check | Status |
+|-------|--------|
+| Services in alerts ⊆ owners | PASS for source services; **postgres demo** only in legacy `agent_data` |
+| Business impact keys | Maps `GIB-UKGC`, `NJ-DGE`, `MGM` — not every service row |
+| Environment codes | `GIB-UKGC`, `NJ-DGE`, `MGM`, `MIRAGE` — **mismatch** with `incidentiq-ops` Lambda (`GIB`, `NJ`) |
+| Money values non-negative | PASS in sampled files |
+| ISO timestamps | PASS in tests |
+
+## Generators
+
+| Script | Notes |
+|--------|-------|
+| `scripts/enrich_incident_csvs.py` | Project-relative paths |
+| `data/source/README.md` | Documents schema |
+
+No `/home/claude` hardcoded paths found in dataset generators (spot-check).
+
+## Gaps
+
+1. Expand `business_impact.json` to cover all 8 services or document 3-env model.
+2. Add `postgres` to `service_owners.csv` for default demo parity with analysis pipeline.
+3. Align `incidentiq-ops` env codes with compound environment names.

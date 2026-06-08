@@ -32,5 +32,9 @@ enrichment, memory, and fallback all pass against the replacement.
 - `RB-008-redis-token-store-degradation.md`
 - `RB-009-kafka-consumer-lag.md`
 - `RB-010-deployment-rollback.md`
+- `RB-011-bet-service-outage.md`
+- `RB-012-wallet-transaction-failures.md`
+- `RB-013-payment-provider-degradation.md`
+- `RB-014-game-provider-latency.md`
 
 Each runbook includes YAML front matter for future Bedrock metadata filtering.

@@ -1,132 +1,201 @@
-# PITER AiOps — Final Readiness Report
+# PITER Final Readiness Report
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
-- **Scope:** safe local changes only (no AWS mutation, no notifications sent, no high-risk deletions)
+**Date:** 2026-06-08 | **Project:** PITER AiOps | **Scope:** `projects/piter-aiops/`
 
 ## 1. Overall readiness score
-**92 / 100** — enterprise-ready for the graded demo. The only items below full marks are gated on
-live AWS credentials (unavailable in this sandbox) and optional UI nav expansion.
 
-## 2. Course requirement compliance
-All teacher requirements satisfied or clearly documented (see `PITER_REQUIREMENTS_MATRIX.md`):
-Flask app ✅ · RAG ✅ · MCP/tools ✅ (now runnable) · Docker ✅ (config) · Pandas/CSV/JSON ✅ ·
-KB↔Agent ✅ (code; live NOT VERIFIED) · boto3 invoke_agent ✅ (code) · memory ✅ · history ✅ ·
-4 Lambdas ✅ · system prompt ✅ · tests ✅ · security ✅ (PII redacted).
+**82 / 100 — Demo-ready with documented gaps**
 
-## 3. Bedrock Agent status
-`invoke_agent` via `bedrock-agent-runtime` implemented with env-driven IDs, trace, citations, and
-action-group parsing. Live invocation NOT VERIFIED here (no creds); AWS reachable (dummy creds →
-`UnrecognizedClientException`). Fallback to `retrieve_and_generate` then local RAG proven.
-
-## 4. Knowledge Base status
-16 curated docs (5 folders) with complete YAML front matter (author = Re'em Mor); no PII; RAG-effective.
-Live KB↔Agent association NOT VERIFIED (read-only). Source-of-truth KB kept in repo.
-
-## 5. boto3 status
-All clients use `boto3` with env-driven region/IDs, standard retries, timeouts, no hardcoded secrets.
-
-## 6. Lambda / action-group status
-Four `piter-*` Lambdas: single responsibility, input validation, stable JSON, mock/preview/live gate +
-idempotency (escalation). Legacy `iiq-*` kept and documented (live AWS names). Live deploy NOT VERIFIED.
-
-## 7. MCP status
-New read-only `mcp/` server (stdlib, stdio) exposes the same 4 tools; `--selftest` + 7 tests pass.
-Honest terminology: production = Bedrock Action Groups; MCP = local contract layer (no auto-sync).
-
-## 8. Memory / history status
-Session memory stores/retrieves/reuses investigation context; follow-up uses prior context
-(verifier passes). In-process/ephemeral (documented; Redis upgrade path). Not model "learning".
-
-## 9. Dataset quality
-All 9 required datasets present and validated (unique IDs, ISO timestamps, P1–P4, non-negative
-financials, UTF-8, exactly one deterministic P1 trigger `ALT-DEMO-P1-001`). Deterministic generators
-with `--output`. Test-backed (`test_source_data.py`, `test_data_corpus.py`).
-
-## 10. Knowledge Base quality
-Professional, scannable, complete; existing runbook sections cover the canonical substance. See
-`PITER_KB_AUDIT.md`.
-
-## 11. AWS infrastructure status
-Read-only; NOT VERIFIED (no creds). Code + `infra/*` consistent. Read-only verification commands in
-`PITER_AWS_AUDIT.md`. No AWS resource created/modified/deleted.
-
-## 12. Guardrails / security status
-App guardrails (destructive/bypass regex) + strong agent safety prompt. **Personal PII redacted**
-from all tracked files (emails/phone → placeholders/env). AWS account id + bucket retained by
-decision. No `AKIA` keys; `.env` gitignored. Managed Bedrock Guardrail NOT VERIFIED.
-
-## 13. Logs / traces status
-Structured logging; phone masking; sanitized Bedrock errors; `enableTrace=True`. Correlation-id
-coverage is a documented minor enhancement.
-
-## 14. SNS / SES safety status
-Mock by default; live blocked unless mode=live + token + allowlist + severity + idempotency + verified
-sender. No real sends. UI surfaces mode/masked recipient/confirmation/delivery. **Offline-safe** after
-the `check_sms_account_ready` graceful-degradation fix.
-
-## 15. Docker status
-`docker compose config` valid: `image: piter-aiops:dev`, `container_name: piter-aiops`, `8080:8080`.
-Build/run NOT VERIFIED in this sandbox (no docker daemon); image mirrors the verified `npm run build`
-+ gunicorn, and the app serves identically via local Flask (all endpoints 200).
-
-## 16. UI/UX status
-React/Vite SPA, dark SOC/NOC palette (cyan/teal, amber=P2, red=P1, emerald=resolved), pill badges,
-visible execution mode / citations / tool results / memory / notification mode. Alert storm labeled
-"399 deterministic alerts" (accurate, computed dynamically — no fake numbers). `/console` Jinja
-fallback retained. Optional future work: explicit 9-section nav + browser screenshots.
-
-## 17. Tests passed
-**246 passed** (`python -m pytest`) — was 238; +7 MCP tests, +1 escalation regression test.
-Stable across repeated runs. A full code review (`PITER_CODE_REVIEW.md`) exercised every endpoint
-live and found/fixed one real HTTP 500 bug in the escalation route.
-
-## 18. verify_live_demo result
-- **No credentials (clean):** **14/15** — Phase A live assertions skipped (one expected fail:
-  "app configured for live Bedrock"); Phase B local fallback **14/14**. The script now degrades
-  gracefully instead of throwing a traceback when `.env`/AWS config is absent.
-- **With AWS reachable but dummy creds:** 28/29 (only `[A] served by bedrock` fails).
-- **With a valid `.env` + credentials (graded env):** target **29/29** (live Bedrock + fallback).
-Phase B always proves grounded answer, ≥1 citation, all 4 tools, and session memory.
-
-## 19. Remaining risks
-- Live AWS path (agent/KB/Lambda/Guardrail/SNS/SES) unverifiable without credentials — verify in
-  graded env using the read-only commands in `PITER_AWS_AUDIT.md`.
-- Docker build/run unverifiable here (no daemon).
-- Legacy `iiq-*` folders retained (deployed AWS names) — rename is a gated AWS-coordinated step.
-- Session memory is single-process/ephemeral.
-
-## 20. Exact commands for video / demo
-```bash
-cd projects/piter-aiops
-python -m pytest -q                       # 245 passed
-python mcp/server.py --selftest           # MCP tools (read-only)
-# Live demo (needs .env with AWS creds):
-python scripts/verify_live_demo.py        # target 29/29
-# Local/offline demo (no creds):
-PITER_MOCK_MODE=true PITER_FLASK_SECRET_KEY=demo python -m flask --app app run --port 8080
-#   open http://localhost:8080/  and  http://localhost:8080/console
-# Docker (where a daemon is available):
-docker compose build && docker compose up -d && curl localhost:8080/health
-```
-
-## 21. Implemented vs Mocked vs Planned
-- **Implemented:** Flask app, 3-tier RAG + fallback, 4 tools, session memory, upload, guardrails,
-  datasets, KB, MCP server, tests, Docker config, SPA + console.
-- **Mocked (safe by default):** SNS/SES/WhatsApp notifications (mock; live gated), escalation preview.
-- **Planned / NOT VERIFIED here:** live Bedrock Agent/KB/Lambda/Guardrail calls, Docker container run,
-  optional 9-section UI nav, correlation-id logging, persistent memory store.
+| Dimension | Score | Notes |
+|-----------|-------|-------|
+| Core demo (local + Bedrock) | 95 | 29/29 verify, 251 pytest |
+| Course requirements | 85 | All major items covered |
+| Teacher extras (agent, memory, 4 Lambdas) | 75 | 3 Lambdas + ops group; escalation not on agent |
+| Enterprise polish (branding, single UI, AWS naming) | 70 | IncidentIQ names in AWS; dual UI |
+| Security / ops hardening | 80 | Good gates; CSRF + live notify in dev |
 
 ---
-### Commits in this pass
-1. `fix(notifications)` — offline-safe SMS readiness check
-2. `docs(review)` — PITER audit/compliance report set
-3. `security(pii)` — redact personal email/phone
-4. `chore(branding)` — neutralize external brand comment
-5. `docs(kb)` — KB author front matter
-6. `feat(mcp)` — read-only MCP server + tests
-7. `docs(review)` — final readiness report
-8. `fix(escalation)` — prevent HTTP 500 on `ok` key collision (+ regression test)
-9. `docs(arch,readme)` — complete architecture flow, fix broken README link, document MCP
-10. `docs(screenshots)` — fresh current-UI captures featured in README
-11. `docs(review)` — code review report
+
+## 2. Course requirement compliance
+
+See [`PITER_REQUIREMENTS_MATRIX.md`](PITER_REQUIREMENTS_MATRIX.md). **20+ items PASS or PARTIAL.** No hard FAIL on core Flask/RAG/Docker/tests/demo.
+
+---
+
+## 3. Teacher additional requirements
+
+| Requirement | Status |
+|-------------|--------|
+| KB connected to Agent | **PASS** (RBTJM6NIG9 ENABLED) |
+| boto3 `invoke_agent` | **PASS** (code); demo uses `retrieve_and_generate` |
+| Chat memory / follow-up | **PASS** (with follow-up drift bug — medium) |
+| Conversation history | **PARTIAL** (in-memory session) |
+| MCP/tools concept | **PASS** (accurate docs + local MCP) |
+| 4 Lambda functions | **PARTIAL** (3 deployed + Flask escalation; 5th ops group) |
+| System prompt | **PASS** |
+
+---
+
+## 4–15. Component status (summary)
+
+| # | Area | Status |
+|---|------|--------|
+| 4 | Bedrock Agent | PREPARED; alias `live` O2EM03R4R3; rename branding pending |
+| 5 | Knowledge Base | Synced; 28 docs; smoke 7/7 |
+| 6 | boto3 | `bedrock-agent-runtime` + `bedrock-agent` clients |
+| 7 | Lambda / action groups | 3× iiq deployed; piter-escalation local only |
+| 8 | MCP | Local server; not production path |
+| 9 | Memory / history | In-process; works for demo |
+| 10 | Dataset quality | 400 storm, 1 P1 trigger — validated |
+| 11 | KB quality | RB-001–014; mirrors in sample_documents |
+| 12 | AWS infra | S3 + Bedrock + SNS/SES configured; EC2 terminated |
+| 13 | Guardrails / security | App-level; no Bedrock Guardrails ID |
+| 14 | Logs / traces | Adequate for demo; no request_id standard |
+| 15 | SNS/SES safety | Gates implemented; live mode in local .env only |
+
+---
+
+## 16. Docker status
+
+Compose file correct (`piter-aiops:dev`, :8080). **Not verified running** this session — start Docker Desktop before demo.
+
+---
+
+## 17. UI/UX status
+
+| Item | Status |
+|------|--------|
+| React SPA (dark SOC dashboard) | Built artifact in `app/static/spa/` |
+| Storm demo / P1 alert | `p1_demo_alert()` + SPA panel |
+| Citations, tools, impact cards | Rendered from `/api/triage` |
+| `/console` Jinja | Still required for verify script |
+| Dead buttons | Audit SPA for "Coming Soon" labels — manual pass recommended |
+| Metrics (MTTR reduced, cost avoided) | Some derived/demo values — label as simulated |
+
+---
+
+## 18. Tests passed
+
+- **pytest:** 251/251
+- **verify_live_demo.py:** 29/29
+
+---
+
+## 19. Remaining risks (top 10)
+
+1. Follow-up uses stale `tool_outputs` vs triage card analysis
+2. Duplicate triage work (analysis + 4 tools) — latency + drift
+3. `incidentiq-ops` env codes vs `GIB-UKGC` datasets
+4. `piter-escalation` not deployed as Bedrock action group
+5. AWS agent still named `incidentiq-triage-agent`
+6. CSRF-exempt JSON API
+7. Local `.env` may use live notification mode — never commit
+8. Docker not verified this session
+9. Legacy `incident-rag-bedrock` paths in docs/evaluation
+10. Triple UI surfaces (HTMX, console, SPA)
+
+---
+
+## 20. Demo commands (video)
+
+```powershell
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
+$env:AWS_PROFILE='reemmor'
+
+# Terminal 1 — app
+docker compose up --build
+# or: py -3.12 -m flask --app app run -p 8080
+
+# Terminal 2 — verification
+py -3.12 scripts/verify_live_demo.py
+py -3.12 scripts/kb_smoke_test.py
+
+# Browser
+# http://localhost:8080/        (SPA)
+# http://localhost:8080/console   (grading checklist)
+# Load P1 storm → triage → follow-up "who do I escalate to?"
+```
+
+---
+
+## 21. Implemented vs mocked vs planned
+
+| Feature | State |
+|---------|-------|
+| Bedrock RAG + citations | **Implemented** |
+| Local TF-IDF fallback | **Implemented** |
+| Structured triage (PITER sections) | **Implemented** (uncommitted WIP on branch) |
+| 4 enrichment tools (app) | **Implemented** |
+| 3 AWS Lambdas | **Implemented** |
+| 4th escalation via Bedrock | **Planned** (Flask path works) |
+| MCP server | **Implemented** (local demo) |
+| SNS/SES live send | **Implemented** (gated; mock recommended for class) |
+| Bedrock Guardrails | **Planned** |
+| Durable session store | **Planned** |
+| Single SPA-only UI | **Planned** (after /console parity sign-off) |
+
+---
+
+## 22. Requires AWS approval (do not run without explicit OK)
+
+- Rename Bedrock agent / alias description
+- Deploy `piter-escalation` Lambda + action group
+- Remove `incidentiq-ops-test` action group
+- S3 sync / KB ingestion (already done in prior session)
+- `ensure_agent_alias.py` after prompt changes
+- EC2 start / IAM policy changes
+- Enable Bedrock Guardrails
+
+---
+
+## Acceptance checklist (this audit)
+
+| Criterion | Met? |
+|-----------|------|
+| pytest passes | Yes |
+| verify_live_demo 29/29 | Yes |
+| No AWS mutations in audit | Yes |
+| No real SMS/email in audit | Yes |
+| No deletions executed | Yes |
+| Reports under docs/review/ | Yes |
+| Working tree only piter-aiops changes | Yes |
+| Secrets not committed | Yes (.env gitignored) |
+
+---
+
+## Review artifact index
+
+| Document |
+|----------|
+| [PITER_SESSION_START_STATUS.md](PITER_SESSION_START_STATUS.md) |
+| [PITER_FULL_CODE_REVIEW.md](PITER_FULL_CODE_REVIEW.md) |
+| [PITER_REQUIREMENTS_MATRIX.md](PITER_REQUIREMENTS_MATRIX.md) |
+| [PITER_BRANDING_AUDIT.md](PITER_BRANDING_AUDIT.md) |
+| [PITER_PROPOSED_DELETIONS.md](PITER_PROPOSED_DELETIONS.md) |
+| [PITER_FRONTEND_BACKEND_MAP.md](PITER_FRONTEND_BACKEND_MAP.md) |
+| [PITER_DATASET_AUDIT.md](PITER_DATASET_AUDIT.md) |
+| [PITER_KNOWLEDGE_BASE_AUDIT.md](PITER_KNOWLEDGE_BASE_AUDIT.md) |
+| [PITER_UPLOAD_FLOW_AUDIT.md](PITER_UPLOAD_FLOW_AUDIT.md) |
+| [PITER_BEDROCK_AGENT_AUDIT.md](PITER_BEDROCK_AGENT_AUDIT.md) |
+| [PITER_SYSTEM_PROMPT_REVIEW.md](PITER_SYSTEM_PROMPT_REVIEW.md) |
+| [PITER_LAMBDA_ACTION_GROUP_AUDIT.md](PITER_LAMBDA_ACTION_GROUP_AUDIT.md) |
+| [PITER_MCP_AUDIT.md](PITER_MCP_AUDIT.md) |
+| [PITER_MEMORY_HISTORY_AUDIT.md](PITER_MEMORY_HISTORY_AUDIT.md) |
+| [PITER_NOTIFICATIONS_AUDIT.md](PITER_NOTIFICATIONS_AUDIT.md) |
+| [PITER_GUARDRAILS_SECURITY_AUDIT.md](PITER_GUARDRAILS_SECURITY_AUDIT.md) |
+| [PITER_AWS_INFRA_AUDIT.md](PITER_AWS_INFRA_AUDIT.md) |
+| [PITER_LOGS_TRACES_AUDIT.md](PITER_LOGS_TRACES_AUDIT.md) |
+| [PITER_DOCKER_AUDIT.md](PITER_DOCKER_AUDIT.md) |
+| [PITER_TEST_QA_REPORT.md](PITER_TEST_QA_REPORT.md) |
+
+---
+
+## Recommended next steps (local, safe)
+
+1. Fix session follow-up to use `triage_card` / analysis fields
+2. Skip `run_plan` when `analyze_incident` succeeds (performance)
+3. Scrub `incident-rag-bedrock` paths in evaluation/docs
+4. Add follow-up test for P1 storm session
+5. Commit WIP under `projects/piter-aiops/` only (when you approve)
+
+**No commits or AWS changes were made in this audit pass.**

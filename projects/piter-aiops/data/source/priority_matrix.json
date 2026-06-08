@@ -2,71 +2,75 @@
   "factors": {
     "customer_impact_pct": {
       "weight": 0.3,
-      "description": "% of active users impacted"
+      "description": "Percentage of active users impacted"
     },
     "revenue_per_minute_usd": {
       "weight": 0.25,
-      "description": "estimated $ loss per minute of degradation"
+      "description": "Estimated revenue loss or risk per minute"
     },
     "regulatory_exposure": {
       "weight": 0.2,
-      "description": "presence of regulated markets (UKGC/DGE/MGM)"
+      "description": "Regulated markets or compliance reporting exposure"
     },
     "sla_risk": {
       "weight": 0.15,
-      "description": "proximity to SLA breach"
+      "description": "Risk of breaching operational SLA/SLO targets"
     },
     "alert_frequency": {
       "weight": 0.1,
-      "description": "noise vs signal \u2014 repeated alerts raise priority"
+      "description": "Repeated alerts in a short window increase confidence"
     }
   },
   "thresholds": {
     "P1": {
+      "description": "Customer-facing outage, severe revenue risk, or regulated-market exposure",
       "customer_impact_pct": ">=20",
       "revenue_per_minute_usd": ">=5000",
-      "any_regulatory": true,
-      "description": "Customer-facing outage with revenue and regulatory exposure"
+      "response_minutes": 5,
+      "requires_escalation": true
     },
     "P2": {
+      "description": "Major degradation or limited customer-facing impact",
       "customer_impact_pct": ">=5",
       "revenue_per_minute_usd": ">=1500",
-      "any_regulatory": false,
-      "description": "Major degradation, single market impacted"
+      "response_minutes": 15,
+      "requires_escalation": true
     },
     "P3": {
+      "description": "Partial degradation with workaround or no major customer impact",
       "customer_impact_pct": ">=1",
       "revenue_per_minute_usd": ">=300",
-      "any_regulatory": false,
-      "description": "Partial degradation, recoverable without escalation"
+      "response_minutes": 30,
+      "requires_escalation": false
     },
     "P4": {
+      "description": "Operational noise, capacity warning, or no customer impact",
       "customer_impact_pct": "<1",
       "revenue_per_minute_usd": "<300",
-      "any_regulatory": false,
-      "description": "Minor issue, no customer impact"
+      "response_minutes": 240,
+      "requires_escalation": false
     }
   },
   "examples": [
     {
-      "alert": "wallet-service down on GIB-UKGC",
+      "alert": "bet-service nodes unresponsive in GIB-UKGC",
       "priority": "P1",
-      "rationale": "100% wallet impact, UKGC regulatory exposure"
+      "rationale": "100% error rate, high revenue risk, regulated market"
     },
     {
-      "alert": "replication lag 30s on GIB-UKGC wallet",
+      "alert": "payments-service latency over 3 seconds",
       "priority": "P2",
-      "rationale": "degraded but online, single market"
+      "rationale": "payment degradation, customer-facing, limited scope"
     },
     {
-      "alert": "slow query on transactions_log",
+      "alert": "Kafka consumer lag elevated",
       "priority": "P3",
-      "rationale": "elevated latency but no failures"
+      "rationale": "delayed processing with no current outage"
     },
     {
-      "alert": "memory 82% on MGM auth-service",
+      "alert": "memory utilization 82%",
       "priority": "P4",
-      "rationale": "no user impact, capacity warning"
+      "rationale": "capacity warning, no confirmed impact"
     }
   ]
 }

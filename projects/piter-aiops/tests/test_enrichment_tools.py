@@ -17,6 +17,7 @@ from app.enrichment_tools import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "agent_data"
+SOURCE_DIR = ROOT / "data" / "source"
 
 DEMO = {
     "service": "postgres",
@@ -88,7 +89,7 @@ def test_bet_service_storm_enrichment():
     owner = lookup_owner(
         service=STORM["service"],
         environment=STORM["environment"],
-        data_dir=DATA_DIR,
+        data_dir=SOURCE_DIR,
     )
     assert "error" not in owner
     assert owner["owner_team"] == "Betting Core"
@@ -97,7 +98,7 @@ def test_bet_service_storm_enrichment():
         service=STORM["service"],
         environment=STORM["environment"],
         alert_time=STORM["alert_time"],
-        data_dir=DATA_DIR,
+        data_dir=SOURCE_DIR,
     )
     assert "error" not in deploys
     assert deploys["likely_deploy_correlation"] is True
@@ -106,15 +107,17 @@ def test_bet_service_storm_enrichment():
         service=STORM["service"],
         environment=STORM["environment"],
         severity=STORM["severity"],
-        data_dir=DATA_DIR,
+        alert=STORM,
+        data_dir=SOURCE_DIR,
     )
     assert impact["sla_risk"] == "critical"
-    assert impact["revenue_impact_usd_per_hour"] == 520000
+    assert impact["revenue_impact_usd_per_hour"] == 588000
 
     similar = find_similar_incidents(
         service=STORM["service"],
         symptom=STORM["symptom"],
         environment=STORM["environment"],
+        data_dir=SOURCE_DIR,
     )
     assert similar["count"] >= 1
 

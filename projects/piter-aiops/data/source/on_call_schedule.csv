@@ -1,19 +1,25 @@
-team,date_start,date_end,primary,secondary,manager_escalation
-Wallet Platform,2026-06-02,2026-06-08,Daniel Cohen,Maya Ben-David,Sara Levy
-Wallet Platform,2026-06-09,2026-06-15,Maya Ben-David,Daniel Cohen,Sara Levy
-Wallet Platform,2026-06-16,2026-06-22,Daniel Cohen,Maya Ben-David,Sara Levy
-Betting Core,2026-06-02,2026-06-08,Tom Friedman,Liat Goldberg,Yossi Avraham
-Betting Core,2026-06-09,2026-06-15,Liat Goldberg,Tom Friedman,Yossi Avraham
-Betting Core,2026-06-16,2026-06-22,Tom Friedman,Liat Goldberg,Yossi Avraham
-Identity & Access,2026-06-02,2026-06-08,Roy Katz,Shira Mizrahi,Noa Shapira
-Identity & Access,2026-06-09,2026-06-15,Shira Mizrahi,Roy Katz,Noa Shapira
-Identity & Access,2026-06-16,2026-06-22,Roy Katz,Shira Mizrahi,Noa Shapira
-Payments,2026-06-02,2026-06-08,Yael Stein,Amit Levi,Eitan Rosen
-Payments,2026-06-09,2026-06-15,Amit Levi,Yael Stein,Eitan Rosen
-Payments,2026-06-16,2026-06-22,Yael Stein,Amit Levi,Eitan Rosen
-Game Platform,2026-06-02,2026-06-08,Omer Peretz,Hila Aviv,Itai Bar-On
-Game Platform,2026-06-09,2026-06-15,Hila Aviv,Omer Peretz,Itai Bar-On
-Game Platform,2026-06-16,2026-06-22,Omer Peretz,Hila Aviv,Itai Bar-On
-Data Platform,2026-06-02,2026-06-08,Dana Klein,Adi Yosef,Gilad Weiss
-Data Platform,2026-06-09,2026-06-15,Adi Yosef,Dana Klein,Gilad Weiss
-Data Platform,2026-06-16,2026-06-22,Dana Klein,Adi Yosef,Gilad Weiss
+team,service,date_start,date_end,primary_on_call_role,secondary_on_call_role,manager_escalation,pagerduty_service_id,notification_policy
+Betting Core,bet-service,2026-06-08,2026-06-14,Primary Betting Core On-Call,Secondary Betting Core On-Call,Yossi Avraham,PD-BET--001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Betting Core,bet-service,2026-06-15,2026-06-21,Secondary Betting Core On-Call,Primary Betting Core On-Call,Yossi Avraham,PD-BET--001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Betting Core,bet-service,2026-06-22,2026-06-28,Primary Betting Core On-Call,Secondary Betting Core On-Call,Yossi Avraham,PD-BET--001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Wallet Platform,wallet-service,2026-06-08,2026-06-14,Primary Wallet Platform On-Call,Secondary Wallet Platform On-Call,Sara Levy,PD-WALL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Wallet Platform,wallet-service,2026-06-15,2026-06-21,Secondary Wallet Platform On-Call,Primary Wallet Platform On-Call,Sara Levy,PD-WALL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Wallet Platform,wallet-service,2026-06-22,2026-06-28,Primary Wallet Platform On-Call,Secondary Wallet Platform On-Call,Sara Levy,PD-WALL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,auth-service,2026-06-08,2026-06-14,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,Noa Shapira,PD-AUTH-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,auth-service,2026-06-15,2026-06-21,Secondary Identity & Access On-Call,Primary Identity & Access On-Call,Noa Shapira,PD-AUTH-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,auth-service,2026-06-22,2026-06-28,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,Noa Shapira,PD-AUTH-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Payments,payments-service,2026-06-08,2026-06-14,Primary Payments On-Call,Secondary Payments On-Call,Eitan Rosen,PD-PAYM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Payments,payments-service,2026-06-15,2026-06-21,Secondary Payments On-Call,Primary Payments On-Call,Eitan Rosen,PD-PAYM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Payments,payments-service,2026-06-22,2026-06-28,Primary Payments On-Call,Secondary Payments On-Call,Eitan Rosen,PD-PAYM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Game Platform,game-service,2026-06-08,2026-06-14,Primary Game Platform On-Call,Secondary Game Platform On-Call,Itai Bar-On,PD-GAME-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Game Platform,game-service,2026-06-15,2026-06-21,Secondary Game Platform On-Call,Primary Game Platform On-Call,Itai Bar-On,PD-GAME-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Game Platform,game-service,2026-06-22,2026-06-28,Primary Game Platform On-Call,Secondary Game Platform On-Call,Itai Bar-On,PD-GAME-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Data Platform,replication,2026-06-08,2026-06-14,Primary Data Platform On-Call,Secondary Data Platform On-Call,Gilad Weiss,PD-REPL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Data Platform,replication,2026-06-15,2026-06-21,Secondary Data Platform On-Call,Primary Data Platform On-Call,Gilad Weiss,PD-REPL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Data Platform,replication,2026-06-22,2026-06-28,Primary Data Platform On-Call,Secondary Data Platform On-Call,Gilad Weiss,PD-REPL-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,redis-token-store,2026-06-08,2026-06-14,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,Noa Shapira,PD-REDI-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,redis-token-store,2026-06-15,2026-06-21,Secondary Identity & Access On-Call,Primary Identity & Access On-Call,Noa Shapira,PD-REDI-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Identity & Access,redis-token-store,2026-06-22,2026-06-28,Primary Identity & Access On-Call,Secondary Identity & Access On-Call,Noa Shapira,PD-REDI-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Growth Platform,promotion-engine,2026-06-08,2026-06-14,Primary Growth Platform On-Call,Secondary Growth Platform On-Call,Lior Bar,PD-PROM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Growth Platform,promotion-engine,2026-06-15,2026-06-21,Secondary Growth Platform On-Call,Primary Growth Platform On-Call,Lior Bar,PD-PROM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"
+Growth Platform,promotion-engine,2026-06-22,2026-06-28,Primary Growth Platform On-Call,Secondary Growth Platform On-Call,Lior Bar,PD-PROM-001,"P1 immediate, P2 within 15 minutes, P3 within 30 minutes"

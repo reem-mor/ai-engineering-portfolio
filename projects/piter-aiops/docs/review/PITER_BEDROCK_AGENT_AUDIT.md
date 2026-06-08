@@ -1,45 +1,69 @@
-# PITER AiOps — Bedrock Agent & boto3 Audit
+# PITER Bedrock Agent & KB Audit (Read-Only)
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+**Region:** us-east-1 | **Profile:** reemmor | **No mutations performed**
 
-## Paths
-1. **Primary:** Flask → boto3 `bedrock-agent-runtime.invoke_agent` → Agent → KB + Action Groups
-   → answer with citations + tool results. (`app/bedrock_agent_client.py`)
-2. **Fallback 1:** `bedrock-agent-runtime.retrieve_and_generate` (direct KB). (`app/bedrock_client.py`)
-3. **Fallback 2:** local TF-IDF RAG. (`app/local_agent.py`, `app/services/local_rag.py`)
+## Local code paths
 
-Selection: `app/rag_factory.py:get_rag_client()` — `local` if `USE_BEDROCK` false; else
-`retrieve_and_generate` or `agent` per `RAG_BACKEND`.
+| Path | Module | Purpose |
+|------|--------|---------|
+| Direct KB RAG | `app/bedrock_client.py` | `retrieve_and_generate` |
+| Agent | `app/bedrock_agent_client.py` | `invoke_agent` + trace parse |
+| Factory | `app/rag_factory.py` | Select backend from `RAG_BACKEND` |
+| Fallback | `app/local_agent.py` | TF-IDF on BedrockError |
+| Current `.env` | `RAG_BACKEND=retrieve_and_generate` | Demo-stable 7/7 smoke |
 
-## Audit checklist
-| Item | Evidence | Status |
-| ---- | -------- | ------ |
-| boto3 client = `bedrock-agent-runtime` | `bedrock_agent_client.py`, `bedrock_client.py` | PASS |
-| `invoke_agent` implemented | `bedrock_agent_client.py:120` (`agentId`, `agentAliasId`, `inputText`, `sessionId`, `enableTrace=True`, `sessionState`) | PASS (code) |
-| Agent ID from env | `config.BEDROCK_AGENT_ID` ← `PITER_BEDROCK_AGENT_ID`/legacy | PASS |
-| Alias ID from env | `config.BEDROCK_AGENT_ALIAS_ID` | PASS |
-| KB ID from env | `config.BEDROCK_KB_ID` | PASS |
-| Region from env | `config.AWS_REGION` ← `PITER_AWS_REGION`/`AWS_REGION` | PASS |
-| No hardcoded secrets | boto3 credential chain only | PASS |
-| sessionId behavior | UUID issued if absent; reused for follow-up | PASS |
-| Session/prompt attributes | `build_session_attributes()` (`bedrock_agent_client.py:58`) | PASS |
-| Trace parsing | iterates event stream; `enableTrace=True` | PASS |
-| Citation parsing + dedupe | `bedrock_agent_client.py:146-179` | PASS |
-| Tool/action-group result parsing | `bedrock_agent_client.py:192-212` merges enrichment JSON | PASS |
-| Error handling | `app/errors.py` translates boto exceptions | PASS |
-| Retries/timeouts | BotoConfig: 3 attempts standard; 120s read / 10s connect | PASS |
-| Fallback behavior | `routes._handle_ask` catches `BedrockError` → local | PASS |
-| UI shows actual execution mode | `_execution_mode_hint()`; never claims "Bedrock Agent" when KB path used | PASS |
+## AWS resources (read-only evidence)
 
-## Live verification (sandbox)
-- Code paths confirmed by `scripts/verify_live_demo.py` Phase B (forced AWS-down → local fallback):
-  **14/14**, including grounded answer, ≥1 citation, all 4 tools, session memory.
-- The live agent (`invoke_agent` against real AWS) is **NOT VERIFIED here** — no credentials.
-  Reachability to AWS is confirmed (dummy creds → `UnrecognizedClientException`), so the live path
-  is runnable in the graded environment with a valid `.env`.
+| Resource | ID / name | Status | Config env var |
+|----------|-----------|--------|----------------|
+| Knowledge Base | `RBTJM6NIG9` | Active | `PITER_BEDROCK_KB_ID` |
+| Data source | `YICXAB6WOG` (`piter-aiops-runbooks-datasource`) | AVAILABLE | `PITER_BEDROCK_DATA_SOURCE_ID` |
+| Agent | `HH4YGSLZUE` | Name: **`incidentiq-triage-agent`** | `PITER_BEDROCK_AGENT_ID` |
+| Alias `live` | `O2EM03R4R3` | PREPARED, version **3** | `PITER_BEDROCK_AGENT_ALIAS_ID` |
+| Model (local .env) | Haiku 4.5 inference profile | Smoke 7/7 | `PITER_BEDROCK_MODEL_ARN` |
 
-## Recommendations
-- Keep `RAG_BACKEND=agent` for the graded live demo to exercise action-group tool results inline.
-- For read-only confirmation that KB↔Agent are associated, run a `bedrock-agent get-agent` /
-  `list-agent-knowledge-bases` check (documented in `PITER_AWS_AUDIT.md`).
+## Agent ↔ KB association
+
+KB `RBTJM6NIG9` is **ENABLED** on agent DRAFT (and prepared versions via alias).
+
+## Action groups on agent
+
+| Name | State | Maps to PITER tool |
+|------|-------|-------------------|
+| `iiq-correlate` | ENABLED | recent deployments |
+| `iiq-context` | ENABLED | service context |
+| `iiq-similar` | ENABLED | similar incidents |
+| `incidentiq-ops` | ENABLED | Extra ops API (not in core 4) |
+| `incidentiq-ops-test` | DISABLED | Remove candidate |
+
+**Missing on agent:** `piter-escalation` / fourth core tool as action group (escalation handled via Flask `notification_dispatch`).
+
+## Lambda functions in account
+
+| Function | Runtime |
+|----------|---------|
+| `iiq-correlate` | python3.12 |
+| `iiq-context` | python3.12 |
+| `iiq-similar` | python3.12 |
+
+No `piter-escalation` Lambda deployed in list output.
+
+## Issues (report only — fix requires approval)
+
+1. **Branding:** Agent name and alias description still say IncidentIQ.
+2. **Fourth tool:** Escalation not wired as Bedrock action group in AWS.
+3. **Fifth group:** `incidentiq-ops` may confuse teacher requirement "exactly four tools".
+4. **`.env.example` default:** `RAG_BACKEND=agent` vs production demo using `retrieve_and_generate`.
+
+## Suggested fix commands (DO NOT RUN without approval)
+
+```bash
+# Sync agent instruction + ensure alias (already run in prior session)
+py -3.12 scripts/ensure_agent_alias.py --agent-id HH4YGSLZUE
+
+# Deploy piter-escalation + register action group
+py -3.12 scripts/setup_enrichment_lambdas.py  # review script first
+
+# KB ingestion after S3 sync
+py -3.12 scripts/sync_kb_and_wait.py
+```

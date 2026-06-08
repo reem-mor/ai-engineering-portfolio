@@ -1,36 +1,48 @@
-# PITER AiOps — System Prompt Review
+# PITER System Prompt Review
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+## Sources
 
-## Prompt sources (two, by path — both consistent)
-1. **Agent instruction** — `AGENT_INSTRUCTION` in `app/bedrock_agent_client.py:22`
-   (also used by `scripts/setup_bedrock_agent.py` to provision the Bedrock Agent).
-2. **KB-path generation prompt** — `RAG_GENERATION_PROMPT` in `app/bedrock_client.py:28`
-   (used by `retrieve_and_generate`).
+| Location | Used when |
+|----------|-----------|
+| `app/bedrock_agent_client.py` — `AGENT_INSTRUCTION` | `invoke_agent`, `ensure_agent_alias.py` sync |
+| `app/bedrock_client.py` — `RAG_GENERATION_PROMPT` | `retrieve_and_generate` |
+| `app/guardrails.py` | Pre-flight on user questions |
+| `app/local_agent.py` — `compose_answer` | Local fallback formatting |
 
-These are the single authoritative sources; the local fallback composes a structurally similar answer.
+## Required output sections (PITER)
 
-## Review against requirements
-| Criterion | Agent instruction | KB prompt | Verdict |
-| --------- | ----------------- | --------- | ------- |
-| Role clarity | "enterprise SRE assistant…" | "enterprise incident-response assistant" | PASS |
-| Five PITER stages enforced | Mandatory ordered workflow 1–5 | Same structure | PASS |
-| Tool-use instructions | "use tool results only" | n/a (KB path) | PASS |
-| KB-use instructions | "use KB citations only" | "Answer ONLY using the search results" | PASS |
-| Memory-use | session attributes feed follow-ups | n/a | PASS |
-| Anti-hallucination | "never invent owners/versions/contacts/incidents" | "cite from search results" | PASS |
-| Missing-evidence behavior | 'state "Not in knowledge base"' | "state missing data" | PASS |
-| Source/citation rules | every step cites runbook/policy/incident | "Sources:" section required | PASS |
-| Escalation safety | name on-call from policy only | escalate only if evidence supports | PASS |
-| Destructive-action confirmation | explicit REFUSE list (FLUSHALL, DROP, failover, WAF/MFA, scale-to-zero…) + human sign-off | n/a | PASS |
-| Concise operational format | fixed 8-section output | same 8 sections | PASS |
-| Prompt-injection resistance | "never bypass allowlists/tokens/audit"; "do NOT emit tool calls/JSON" | "Do NOT emit tool calls, JSON, or 'Action:' lines" | PASS |
+| Section | Agent instruction | RAG prompt |
+|---------|-------------------|------------|
+| Priority | Yes | Yes |
+| Investigation findings | Yes | Yes |
+| Triage plan | Yes | Yes |
+| Escalation recommendation | Yes | Yes |
+| Resolution plan | Yes | Yes |
+| Business impact | Yes | Yes |
+| Sources | Yes | Yes |
+| Confidence and uncertainty | Partial | Partial ("Confidence" in RAG template) |
 
-## Findings
-- Both prompts already match the task's desired PITER instruction almost verbatim and add a strong
-  non-negotiable safety section. **No changes required.**
-- Minor note: two prompts exist by necessity (agent vs direct-KB path). They are consistent; keep
-  both in sync. Documented here as the canonical pair.
+## Instruction quality
 
-## Verdict: **PASS** — enterprise-grade, anti-hallucination, injection-resistant.
+**Strengths:**
+- Explicit PITER workflow order
+- Grounding rules ("never invent owners, deploys, contacts")
+- Safety refusals (FLUSHALL, failover, WAF bypass, mass kill)
+- Notification/allowlist bypass refusal
+
+**Gaps:**
+- Two prompts can drift — no single `prompts/` module
+- Local `compose_answer` uses shorter Summary/Steps format (acceptable for fallback)
+- Agent AWS copy may be stale until `ensure_agent_alias.py` run after edits
+
+## Prompt injection
+
+- `guardrails.py` blocks policy bypass phrases
+- No Bedrock Guardrails content filter ID configured
+- Upload docs could contain injection text — relies on KB chunking + model refusal
+
+## Recommendation
+
+1. Extract shared PITER section template to `app/prompts/piter_output.md` imported by both clients.
+2. After local prompt edits, run `ensure_agent_alias.py` (AWS approval).
+3. Add eval rubric in `evaluation/` for section presence (partially covered by smoke tests).

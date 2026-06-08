@@ -1,22 +1,23 @@
-# PITER AiOps — Proposed Deletions (NO deletion performed)
+# PITER Proposed Deletions / Archives
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
-- **Status:** Proposal only. Nothing deleted. High-risk items require explicit approval.
+**Rule:** No deletions executed in this audit. Approval required for high-risk items.
 
 | Path | Reason | Replacement | References checked | Risk | Recovery | Tests required |
-| ---- | ------ | ----------- | ------------------ | ---- | -------- | -------------- |
-| `action_groups/iiq-context/` | Legacy duplicate of `piter-service-context` | `action_groups/piter-service-context/` | Referenced by `scripts/setup_action_group.py`, tests, docs; **maps to live AWS Lambda** | HIGH | git history | pytest + live verify |
-| `action_groups/iiq-correlate/` | Legacy duplicate of `piter-recent-deployments` | `piter-recent-deployments` | Same as above | HIGH | git history | pytest + live verify |
-| `action_groups/iiq-similar/` | Legacy duplicate of `piter-similar-incidents` | `piter-similar-incidents` | Same as above | HIGH | git history | pytest + live verify |
-| `action_groups/incidentiq-ops/` | Legacy mock-ops 4th function | (optional; not in core 4) | `setup_action_group.py`, `test_lambda_action_handler.py` | HIGH | git history | pytest |
-| `evaluation/*.md` (point-in-time captures) | Stale smoke/run reports | superseded by `docs/review/PITER_*` | Some linked from docs | LOW | git history | none |
-| `docs/DEPLOY_STATUS.md`, `docs/UPGRADE_STATUS.md` | Point-in-time status | `PITER_FINAL_READINESS_REPORT.md` | linked in places | LOW | git history | none |
-| `.playwright-mcp/` (root) | Tooling artifact (outside project scope) | — | — | n/a | git history | none — **out of workspace scope; not touched** |
+|------|--------|-------------|-------------------|------|----------|----------------|
+| `action_groups/iiq-*/data/*.csv` (duplicates) | Duplicate of `data/source` | Canonical `data/source/` | Lambdas import local copies | **High** — breaks Lambda deploy package | Git restore | `test_piter_lambdas`, deploy smoke |
+| `data/agent_data/` | Legacy postgres demo catalog | `data/source/` + fallback in `enrichment_tools` | `verify_live_demo`, enrichment tests | **Medium** | Git restore | `test_enrichment_tools` |
+| `app/templates/index.html` HTMX landing | Superseded by SPA when built | React SPA at `/` | `FORCE_LEGACY_UI=true` path | **Medium** | Git restore | SPA + grading checklist |
+| `app/templates/console.html` | Duplicate of SPA triage UX | React SPA + redirect flag `PITER_CONSOLE_REDIRECT_SPA` | `verify_live_demo`, `GRADING_CHECKLIST` | **High** | Git restore | 29/29 verify script |
+| `action_groups/incidentiq-ops-test` (AWS) | Disabled test group on agent | Remove from agent | AWS list shows DISABLED | Low | Recreate in console | Agent smoke |
+| `screenshots/archive/*` | Stale captures | Regenerate with `scripts/capture_*.mjs` | README only | Low | Git history | Visual |
+| `infra/ec2_user_data*.sh` legacy image names | `incident-rag-bedrock` image refs | GHCR `piter-aiops` or doc-only | EC2 terminated per cleanup_log | Low | Edit not delete | — |
+| `evaluation/CORPUS_RECONCILIATION.md` | Historical merge log | `docs/knowledge_base.md` | Reference only | Low | Archive to `docs/review/archive/` | — |
+| Duplicate `enrichment_tools.py` in 3× iiq folders | Copy-paste drift | Shared module / Lambda layer | Lambda handlers | **High** | Git restore | Lambda tests |
 
-## Decision (this pass)
-- **Keep all `iiq-*` / `incidentiq-ops` folders** (user decision) — they correspond to deployed AWS
-  function names. Deleting them and renaming AWS functions is a separate, AWS-coordinated step,
-  gated on explicit approval.
-- Stale `evaluation/*` and `*STATUS*` docs: **retained** for submission history; deletion deferred.
-- No deletions executed. Re-run `pytest` + `verify_live_demo.py` before any future deletion.
+## Do NOT delete
+
+- `data/sample_documents/` — local RAG + S3 sync source
+- `knowledge_base/runbooks/` — canonical KB authoring
+- `action_groups/piter-*` — target Lambda source
+- `app/static/spa/` — production UI bundle
+- Any route used by `verify_live_demo.py`

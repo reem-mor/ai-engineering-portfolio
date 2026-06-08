@@ -1,54 +1,46 @@
-# PITER AiOps — Notifications (SNS/SES/WhatsApp) Audit
+# PITER SNS/SES Escalation Safety Audit
 
-- **Author:** Re'em Mor
-- **Date:** 2026-06-07
+**No notifications sent during this audit.**
 
-## Modes
-| Mode | Behavior |
-| ---- | -------- |
-| `mock` (default) | no sending; returns simulated result |
-| `preview` | masked recipients + message preview, no sending (`operation=preview`) |
-| `live` | sends only when explicitly enabled **and** confirmed |
+## Environment variables (`.env.example`)
 
-## Live-send gate (all required)
-Implemented in `action_groups/piter-escalation/lambda_function.py` +
-`app/services/notification_dispatch.py`:
-- `PITER_NOTIFICATION_MODE=live` **and** `PITER_ENABLE_LIVE_DISPATCH=true`
-- valid confirmation token (`PITER_NOTIFICATION_REQUIRE_CONFIRMATION` default true)
-- recipient on allowlist (`PITER_NOTIFICATION_ALLOWLIST`)
-- severity allowed (`PITER_NOTIFICATION_ALLOWED_SEVERITIES`, e.g. P1/approved P2)
-- not already sent (idempotency: `SENT_IDEMPOTENCY_KEYS`, key `incident:recipient:severity`)
-- `PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT` (default 1)
-- SES sender verified / SNS configured (SMS preflight `check_sms_account_ready`)
+| Variable | Purpose |
+|----------|---------|
+| `PITER_NOTIFICATION_MODE` | mock \| preview \| live |
+| `PITER_NOTIFICATION_REQUIRE_CONFIRMATION` | Token required |
+| `PITER_NOTIFICATION_CONFIRMATION_TOKEN` | Demo token |
+| `PITER_DEMO_SMS_RECIPIENT` | Allowlisted SMS |
+| `PITER_DEMO_EMAIL_RECIPIENT` | Allowlisted email |
+| `PITER_NOTIFICATION_ALLOWLIST` | Combined allowlist |
+| `PITER_SNS_TOPIC_ARN` | SNS topic |
+| `PITER_SES_SENDER_EMAIL` | Verified sender |
+| `PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT` | Rate limit |
 
-## Masking
-- Escalation Lambda `_mask_recipient`: `xx***xx`.
-- Dispatch logs mask phone: `f"{phone[:4]}***{phone[-2:]}"`.
-- Recommendation: align to task examples (`+972-**-***-5754`, `r***@gmail.com`) — minor polish.
+## Code gates
 
-## Env contract (no hardcoded values after Commit 2)
-```
-PITER_NOTIFICATION_MODE=mock
-PITER_NOTIFICATION_REQUIRE_CONFIRMATION=true
-PITER_DEMO_SMS_RECIPIENT=
-PITER_DEMO_EMAIL_RECIPIENT=
-PITER_DEMO_WHATSAPP_RECIPIENT=
-PITER_SNS_TOPIC_ARN=
-PITER_SES_SENDER_EMAIL=
-PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT=1
-PITER_NOTIFICATION_ALLOWLIST=
-PITER_NOTIFICATION_ALLOWED_SEVERITIES=P1,P2
-```
+| Gate | Location |
+|------|----------|
+| Mode check | `notification_dispatch.py`, `escalation_service.py` |
+| Confirmation token | `routes.py` `/api/escalation/notify` |
+| Severity allowlist | `PITER_NOTIFICATION_ALLOWED_SEVERITIES` |
+| Recipient masking in UI | `escalation_service.mask_recipient` |
+| Idempotency | Per-incident keys in dispatch + Lambda set |
 
-## Safety findings
-| Item | Status |
-| ---- | ------ |
-| Mock by default | PASS |
-| No real send in tests | PASS (`test_notification_dispatch.py` asserts gating) |
-| No hardcoded recipients | PASS after Commit 2 (was: phone/email defaults in scripts/docs) |
-| Idempotency | PASS |
-| Confirmation enforced | PASS |
-| Graceful offline (no creds) | PASS (fix to `check_sms_account_ready`) |
-| UI shows mode/masked recipient/confirmation/delivery/idempotency | PASS (bootstrap `_notification_settings`) |
+## Local `.env` risk (audit finding)
 
-## Status: PASS — demo-capable and safe; PII removed in Commit 2.
+Local configuration may use **`PITER_NOTIFICATION_MODE=live`** with allowlisted recipients. This is appropriate for controlled demo but:
+
+- **Never commit `.env`** (gitignored — verified)
+- Tests must not send live messages (`tests` use mocks)
+- Recommend default `.env.example` to `mock` for new clones
+
+## UI
+
+- Bootstrap exposes `notification_mode`, SMS readiness, allowlist count
+- SPA should show preview/masked recipients before send
+
+## Gaps
+
+1. Document SES verification + SNS sandbox in `docs/notifications.md`
+2. Durable idempotency for Lambda cold starts
+3. Parameter Store / Secrets Manager for recipients (production)
