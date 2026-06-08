@@ -342,6 +342,17 @@ def load_escalation_policies(source_dir: str | Path | None = None) -> dict[str, 
     return data
 
 
+def load_escalation_rules(data_dir: str | Path | None = None) -> dict[str, Any]:
+    """Return top-level escalation_rules.json (demo/validation corpus)."""
+    base = Path(data_dir) if data_dir else _DATA_ROOT
+    data = _read_json(base / "escalation_rules.json")
+    if not isinstance(data, dict) or "rules" not in data:
+        raise DataAccessError("escalation_rules.json must contain a 'rules' list")
+    if not isinstance(data["rules"], list):
+        raise DataAccessError("escalation_rules.json 'rules' must be a list")
+    return data
+
+
 def load_past_incidents(source_dir: str | Path | None = None) -> list[dict[str, str]]:
     base = Path(source_dir) if source_dir else _SOURCE_DATA
     return _read_csv_rows(base / "past_incidents.csv", PAST_INCIDENTS_COLUMNS)

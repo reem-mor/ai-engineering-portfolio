@@ -16,8 +16,9 @@ from app.services.incident_analysis import (
 )
 
 _DEFAULT_SOURCE = data_access.source_data_dir()
-_AGENT_DATA = Path(__file__).resolve().parents[1] / "data" / "agent_data"
-_HISTORY = Path(__file__).resolve().parents[1] / "data" / "sample_documents" / "incident_history.csv"
+_DATA_ROOT = Path(__file__).resolve().parents[1] / "data"
+_AGENT_DATA = _DATA_ROOT / "agent_data"
+_HISTORY = _DATA_ROOT / "sample_documents" / "incident_history.csv"
 
 
 def _resolve_data_dir(data_dir: Path | None) -> Path:
@@ -34,13 +35,53 @@ def _parse_iso(ts: str) -> datetime:
 
 def _load_catalog(data_dir: Path) -> dict[str, Any]:
     path = data_dir / "service_catalog.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+    if path.is_file():
+        return json.loads(path.read_text(encoding="utf-8"))
+    services_path = _DATA_ROOT / "services.json"
+    if services_path.is_file():
+        raw = json.loads(services_path.read_text(encoding="utf-8"))
+        services: list[dict[str, Any]] = []
+        for item in raw.get("services", []):
+            if not isinstance(item, dict):
+                continue
+            services.append(
+                {
+                    "name": item.get("service") or item.get("name"),
+                    "owner": item.get("owner"),
+                    "criticality": item.get("criticality"),
+                    "dependencies": item.get("dependencies", []),
+                    "sla": item.get("sla"),
+                    "business_impact": item.get("business_impact"),
+                    "escalation_team": item.get("escalation_team"),
+                }
+            )
+        return {"services": services}
+    raise FileNotFoundError(f"service_catalog.json not found under {data_dir}")
 
 
 def _load_deploys_legacy(data_dir: Path) -> list[dict[str, str]]:
     path = data_dir / "deploys.csv"
-    with path.open(encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(f))
+    if path.is_file():
+        with path.open(encoding="utf-8", newline="") as f:
+            return list(csv.DictReader(f))
+    alt = _DATA_ROOT / "deployments.csv"
+    if alt.is_file():
+        rows: list[dict[str, str]] = []
+        with alt.open(encoding="utf-8", newline="") as f:
+            for row in csv.DictReader(f):
+                rows.append(
+                    {
+                        "deploy_id": row.get("deployment_id") or row.get("deploy_id", ""),
+                        "service": row.get("service", ""),
+                        "environment": row.get("environment", ""),
+                        "version": row.get("version", ""),
+                        "deployed_at": row.get("deployed_at", ""),
+                        "deployed_by": row.get("owner", ""),
+                        "change_summary": row.get("change_summary", ""),
+                    }
+                )
+        return rows
+    raise FileNotFoundError(f"deploys.csv not found under {data_dir}")
 
 
 def _load_impact_legacy(data_dir: Path) -> list[dict[str, str]]:
@@ -50,9 +91,22 @@ def _load_impact_legacy(data_dir: Path) -> list[dict[str, str]]:
 
 
 def _load_history(history_path: Path | None = None) -> list[dict[str, str]]:
-    path = history_path or _HISTORY
-    with path.open(encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(f))
+    if history_path and history_path.is_file():
+        with history_path.open(encoding="utf-8", newline="") as f:
+            return list(csv.DictReader(f))
+    try:
+        return data_access.load_incident_history()
+    except data_access.DataAccessError:
+        pass
+    try:
+        return data_access.load_past_incidents()
+    except data_access.DataAccessError:
+        pass
+    hist = _DATA_ROOT / "historical_incidents.csv"
+    if hist.is_file():
+        with hist.open(encoding="utf-8", newline="") as f:
+            return list(csv.DictReader(f))
+    return []
 
 
 def _find_service_legacy(catalog: dict[str, Any], name: str) -> dict[str, Any] | None:

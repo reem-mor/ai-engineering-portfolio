@@ -7,7 +7,7 @@ from pathlib import Path
 
 def ensure_project_root() -> Path:
     here = Path(__file__).resolve().parent
-    for root in (here.parents[2], here):
+    for root in (here, *here.parents):
         if (root / "app").is_dir():
             root_str = str(root)
             if root_str not in sys.path:

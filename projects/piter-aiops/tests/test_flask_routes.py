@@ -119,6 +119,38 @@ def test_ask_falls_back_to_local(fake_config):
     assert body["citations"][0]["source_label"] == "database_connectivity.md"
 
 
+def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
+    fake_bedrock.next_response = RagAnswer(
+        answer="Priority:\nP2\n\nTriage plan:\n1. Check deploy logs.",
+        citations=[
+            Citation(
+                snippet="Roll back if deploy correlated.",
+                source_uri="s3://bucket/knowledge_base/runbooks/deployment_rollback.md",
+                source_label="deployment_rollback.md",
+            )
+        ],
+        session_id="agent-sess-1",
+        grounded=True,
+        mode="bedrock_agent",
+    )
+    alert = {
+        "alert_id": "ALT-TEST-1",
+        "service": "bet-service",
+        "environment": "GIB-UKGC",
+        "severity": "P1",
+        "symptom": "100% error rate",
+        "alert_time": "2026-06-10T10:02:00Z",
+    }
+    resp = client.post("/api/triage", json=alert)
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert fake_bedrock.last_session_attributes["service"] == "bet-service"
+    assert fake_bedrock.last_session_attributes["environment"] == "GIB-UKGC"
+    assert fake_bedrock.last_session_attributes["triage_complete"] == "false"
+    assert fake_bedrock.last_prompt_session_attributes["current_service"] == "bet-service"
+
+
 def test_validation_error_not_masked_by_fallback(fake_config):
     app = create_app(fake_config)
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True, LOCAL_FALLBACK=True)

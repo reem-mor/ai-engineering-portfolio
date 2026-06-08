@@ -195,6 +195,7 @@ class BedrockAgentClient:
             latency_ms=latency_ms,
             matched_runbook=matched,
             enrichment=enrichment or None,
+            mode="bedrock_agent",
         )
 
     def _backfill_from_kb(
@@ -221,6 +222,7 @@ class BedrockAgentClient:
                 latency_ms=latency_ms + rag.latency_ms,
                 matched_runbook=rag.matched_runbook,
                 enrichment=enrichment or None,
+                mode="bedrock_agent",
             )
 
         return RagAnswer(
@@ -231,6 +233,7 @@ class BedrockAgentClient:
             latency_ms=latency_ms + rag.latency_ms,
             matched_runbook=None,
             enrichment=enrichment or None,
+            mode="bedrock_agent",
         )
 
 

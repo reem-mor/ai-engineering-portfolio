@@ -5,9 +5,12 @@ import os
 import secrets
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
 
-load_dotenv()
+    load_dotenv()
+except ImportError:
+    pass
 
 # Empty AWS_PROFILE breaks botocore (ProfileNotFound); unset so bearer/default chain works.
 if not os.environ.get("AWS_PROFILE", "").strip():
