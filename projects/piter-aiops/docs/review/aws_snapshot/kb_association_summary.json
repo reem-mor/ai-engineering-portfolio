@@ -1,0 +1,10 @@
+﻿{
+    "agentKnowledgeBaseSummaries": [
+        {
+            "knowledgeBaseId": "RBTJM6NIG9",
+            "description": "Use_for_NOC_SRE_runbooks_alert_playbooks_environment_guides_escalation_paths_postmortems_Always_cite_sources",
+            "knowledgeBaseState": "ENABLED",
+            "updatedAt": "2026-06-05T11:07:24.876714+00:00"
+        }
+    ]
+}

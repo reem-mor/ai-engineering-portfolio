@@ -19,7 +19,7 @@ Ground runbooks, alert history, and structured ops data in **Amazon Bedrock** (K
 | Repo folder | `projects/piter-aiops/` |
 | S3 corpus prefix | `projects/piter-aiops/data/sample_documents/` |
 | Local action group folders | `action_groups/piter-*` (enrichment), `action_groups/incidentiq-ops/` (ops — legacy folder name) |
-| AWS console (unchanged until rename) | Agent `incidentiq-triage-agent`, Lambdas `iiq-*`, ops group `incidentiq-ops` |
+| AWS console (post-mutation, 2026-06-08) | Agent `incidentiq-triage-agent` **v6** (alias `live`), Lambdas `iiq-*` + **`piter-escalation`**, ops group **`incidentiq-ops` DISABLED** on live alias |
 
 Older docs or screenshots may still say `incident-rag-bedrock` (pre-rename repo path) or **IncidentIQ** (early working title). The live KB data source uses the `piter-aiops` S3 prefix — see [`evaluation/live_demo_aws_state.md`](evaluation/live_demo_aws_state.md).
 
@@ -471,6 +471,7 @@ Teardown: [`docs/TEARDOWN.md`](docs/TEARDOWN.md) · [`docs/cleanup_checklist.md`
 | [`docs/MCP_PATH.md`](docs/MCP_PATH.md) | MCP vs Bedrock action groups |
 | [`docs/knowledge_base.md`](docs/knowledge_base.md) | Corpus layout |
 | [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | Screenshots and grading evidence |
+| [`docs/review/PITER_AWS_MUTATION_FINAL_REPORT.md`](docs/review/PITER_AWS_MUTATION_FINAL_REPORT.md) | AWS agent/guardrail/tool alignment (2026-06-08) |
 | [`evaluation/qa_showcase.md`](evaluation/qa_showcase.md) | Live Q&A samples |
 | [`screenshots/README.md`](screenshots/README.md) | Capture instructions |
 

@@ -1,0 +1,46 @@
+﻿{
+    "actionGroupSummaries": [
+        {
+            "actionGroupId": "IKQFMWSENY",
+            "actionGroupName": "iiq-context",
+            "actionGroupState": "ENABLED",
+            "description": "Owner lookup escalation path business impact SLA and regulatory risk scoring\n",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        },
+        {
+            "actionGroupId": "S8LLMX7HKF",
+            "actionGroupName": "iiq-correlate",
+            "actionGroupState": "ENABLED",
+            "description": "Correlate recent deployments with affected service and dependency hops\n",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        },
+        {
+            "actionGroupId": "2PR8RSZI9I",
+            "actionGroupName": "iiq-similar",
+            "actionGroupState": "ENABLED",
+            "description": "Find similar historical incidents root causes resolutions and MTTR\n",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        },
+        {
+            "actionGroupId": "PUP1ML8QDL",
+            "actionGroupName": "incidentiq-ops",
+            "actionGroupState": "DISABLED",
+            "description": "Check environment status recent alerts and create incident operations context\n",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        },
+        {
+            "actionGroupId": "KO9EWLZMJP",
+            "actionGroupName": "incidentiq-ops-test",
+            "actionGroupState": "DISABLED",
+            "description": "test",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        },
+        {
+            "actionGroupId": "SSK1JHTMJ4",
+            "actionGroupName": "piter-escalation",
+            "actionGroupState": "ENABLED",
+            "description": "PITER escalation policy preview and gated notification workflow",
+            "updatedAt": "2026-06-08T11:03:45.439077+00:00"
+        }
+    ]
+}
