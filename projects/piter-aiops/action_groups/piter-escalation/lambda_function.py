@@ -11,10 +11,13 @@ SENT_IDEMPOTENCY_KEYS: set[str] = set()
 
 
 def _ensure_app_import_path() -> None:
-    root = Path(__file__).resolve().parents[2]
-    root_str = str(root)
-    if root_str not in sys.path:
-        sys.path.insert(0, root_str)
+    ag_dir = Path(__file__).resolve().parent
+    for path in (ag_dir, ag_dir.parent):
+        if str(path) not in sys.path:
+            sys.path.insert(0, str(path))
+    from lambda_root import ensure_project_root
+
+    ensure_project_root()
 
 
 def _params(event: dict) -> dict[str, str]:

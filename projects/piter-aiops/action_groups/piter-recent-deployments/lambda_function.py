@@ -5,10 +5,13 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ag_dir = Path(__file__).resolve().parent
+for _path in (_ag_dir, _ag_dir.parent):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+from lambda_root import ensure_project_root  # noqa: E402
 
+ensure_project_root()
 from app.enrichment_tools import correlate_deployments  # noqa: E402
 
 
@@ -21,7 +24,7 @@ def _respond(event: dict, status: int, body: dict) -> dict:
         "messageVersion": "1.0",
         "response": {
             "actionGroup": event.get("actionGroup", "piter-recent-deployments"),
-            "apiPath": event.get("apiPath", "/recent-deployments"),
+            "apiPath": event.get("apiPath", "/correlate"),
             "httpMethod": event.get("httpMethod", "GET"),
             "httpStatusCode": status,
             "responseBody": {"application/json": {"body": json.dumps(body)}},
