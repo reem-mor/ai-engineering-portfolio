@@ -1,0 +1,32 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - strong [ref=e3]: 🛰️ PITER AiOps
+    - heading "AI Incident & Alerts Console" [level=1] [ref=e4]
+    - generic [ref=e5]: "mode: —"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - button "Load demo alert" [ref=e9] [cursor=pointer]
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: Service
+            - textbox "postgres" [ref=e14]
+          - generic [ref=e15]:
+            - generic [ref=e16]: Environment
+            - textbox "NJ-DGE" [ref=e17]
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - generic [ref=e20]: Severity
+            - combobox [ref=e21]:
+              - option "—"
+              - option "P1"
+              - option "P2" [selected]
+              - option "P3"
+              - option "P4"
+          - generic [ref=e22]:
+            - generic [ref=e23]: Alert time (ISO-8601)
+            - textbox "2026-06-10T09:00:00Z" [ref=e24]
+        - generic [ref=e25]:
+          - generic [ref=e26]: Symptom / description
+          - textbox "Postgres CPU is 95% on prod-db-1" [ref=e27]
+        - button "Run triage" [ref=e29] [cursor=pointer]
