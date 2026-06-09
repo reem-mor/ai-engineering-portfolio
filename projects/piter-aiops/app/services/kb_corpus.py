@@ -13,6 +13,11 @@ from typing import Any, Iterator
 
 ROOT = Path(__file__).resolve().parents[2]
 KB_ROOT = ROOT / "knowledge_base"
+# The narrative KB corpus that is synced to Bedrock lives ONLY in these
+# subdirectories. Structured indexes (catalog.csv, structured_data_index.json)
+# are kept OUT of the KB prefix (under docs/kb/) so they never pollute retrieval.
+DOC_SUBDIRS = ("runbooks", "incidents", "services", "piter")
+CATALOG_PATH = ROOT / "docs" / "kb" / "catalog.csv"
 
 REQUIRED_DOC_KEYS = {
     "doc_id",
@@ -38,16 +43,21 @@ def kb_root() -> Path:
 
 
 def iter_corpus_json_paths(*, root: Path | None = None) -> Iterator[Path]:
-    """Yield KB document JSON files (excludes index/manifest JSON)."""
+    """Yield narrative KB document JSON files from the doc subdirectories only.
+
+    Excludes anything at the KB root (e.g. structured_data_index.json) and any
+    README.json so only grounding-worthy narrative docs are indexed/synced.
+    """
     base = root or KB_ROOT
     if not base.is_dir():
         return
-    for path in sorted(base.rglob(CORPUS_JSON_GLOB)):
-        if not path.is_file():
+    for sub in DOC_SUBDIRS:
+        sub_dir = base / sub
+        if not sub_dir.is_dir():
             continue
-        if path.name == "README.json":
-            continue
-        yield path
+        for path in sorted(sub_dir.rglob(CORPUS_JSON_GLOB)):
+            if path.is_file() and path.name != "README.json":
+                yield path
 
 
 def load_kb_document(path: Path) -> dict[str, Any]:
@@ -99,10 +109,14 @@ def load_kb_manifest() -> list[dict[str, Any]]:
     return docs
 
 
-def write_catalog_csv(*, root: Path | None = None) -> Path:
-    """Regenerate catalog.csv from corpus JSON metadata."""
-    base = root or KB_ROOT
-    catalog_path = base / CATALOG_NAME
+def write_catalog_csv(*, out_path: Path | None = None) -> Path:
+    """Regenerate the KB catalog from corpus metadata, OUTSIDE the KB prefix.
+
+    Written to docs/kb/catalog.csv by default so the synced/ingested KB prefix
+    holds only narrative documents (no structured CSV index).
+    """
+    catalog_path = out_path or CATALOG_PATH
+    base = KB_ROOT
     rows: list[dict[str, str]] = []
     for path in iter_corpus_json_paths(root=base):
         doc = load_kb_document(path)
@@ -117,7 +131,7 @@ def write_catalog_csv(*, root: Path | None = None) -> Path:
                 "format": "json",
             }
         )
-    base.mkdir(parents=True, exist_ok=True)
+    catalog_path.parent.mkdir(parents=True, exist_ok=True)
     with catalog_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
             handle,

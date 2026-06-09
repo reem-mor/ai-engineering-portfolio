@@ -13,9 +13,12 @@ sys.path.insert(0, str(ROOT))
 import boto3  # noqa: E402
 
 from app.config import Config  # noqa: E402
-from app.services.kb_corpus import KB_ROOT, write_catalog_csv  # noqa: E402
+from app.services.kb_corpus import KB_ROOT  # noqa: E402
 
-KB_SUFFIXES = (".json", ".csv")
+# Only narrative JSON documents belong in the KB prefix. Structured indexes
+# (catalog.csv, structured_data_index.json) now live under docs/kb/ and are
+# explicitly pruned from S3 below. Prefer scripts/kb_live.py (boto3, no CLI).
+KB_SUFFIXES = (".json",)
 
 
 def sync_corpus_to_s3(cfg: Config) -> int:
@@ -28,7 +31,6 @@ def sync_corpus_to_s3(cfg: Config) -> int:
         print(f"Missing knowledge base directory: {KB_ROOT}")
         return 1
 
-    write_catalog_csv()
     import os
     import subprocess
 
@@ -43,8 +45,6 @@ def sync_corpus_to_s3(cfg: Config) -> int:
         "*",
         "--include",
         "*.json",
-        "--include",
-        "*.csv",
         "--delete",
     ]
     profile = os.environ.get("AWS_PROFILE", "").strip()
@@ -56,7 +56,9 @@ def sync_corpus_to_s3(cfg: Config) -> int:
         return result.returncode
     print(f"Synced JSON/CSV corpus to {dest}")
 
-    # Remove legacy markdown objects so Bedrock KB does not retain duplicate chunks.
+    # Prune anything that is not a narrative JSON doc so the KB prefix stays
+    # grounding-clean: legacy markdown, the structured CSV index, and the
+    # structured_data_index.json that were previously synced here.
     rm_cmd = [
         "aws",
         "s3",
@@ -67,6 +69,10 @@ def sync_corpus_to_s3(cfg: Config) -> int:
         "*",
         "--include",
         "*.md",
+        "--include",
+        "*.csv",
+        "--include",
+        "structured_data_index.json",
     ]
     if profile:
         rm_cmd.extend(["--profile", profile])
