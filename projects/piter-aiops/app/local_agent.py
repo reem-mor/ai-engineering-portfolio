@@ -59,7 +59,8 @@ def compose_answer(question: str, chunks: list[RetrievedChunk]) -> str:
     documents = {chunk.document for chunk in chunks}
     question_lower = question.lower()
     if (
-        "auth_service_login_failure.md" in documents
+        "auth_service_login_failure.json" in documents
+        or any("auth_service_login_failure" in doc for doc in documents)
         or ("login" in question_lower and "deployment" in question_lower)
         or ("auth-service" in question_lower and "deployment" in question_lower)
     ):

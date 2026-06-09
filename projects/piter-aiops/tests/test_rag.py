@@ -14,7 +14,7 @@ def test_retriever_indexes_runbooks():
 def test_search_returns_db_cpu_runbook_for_demo_query():
     hits = get_retriever().search("Postgres CPU is 95% on prod-db-1 what is the runbook", top_k=3)
     assert hits
-    assert hits[0].document == "database_connectivity.md"
+    assert hits[0].document == "database_connectivity.json"
     assert hits[0].score > 0
 
 
@@ -29,9 +29,9 @@ def test_local_client_answer_is_grounded_and_cited():
     assert ans.grounded is True
     assert ans.mode == "local"
     assert ans.citations
-    assert ans.matched_runbook == "database_connectivity.md"
+    assert ans.matched_runbook == "database_connectivity.json"
     payload = ans.to_dict()
-    assert payload["citations"][0]["source_label"] == "database_connectivity.md"
+    assert payload["citations"][0]["source_label"] == "database_connectivity.json"
 
 
 def test_local_client_refuses_off_topic():
