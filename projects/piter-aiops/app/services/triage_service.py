@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 from app.bedrock_client import RagAnswer
 from app.services import session_memory
+from app.services.alert_stream import p1_demo_alert
 from app.services.incident_analysis import analyze_incident, compose_piter_answer, compose_piter_sections
 from app.services.local_rag import _first_excerpt_steps
 from app.services.tool_router import decide_tools, run_plan
@@ -18,18 +19,42 @@ from app.text_utils import parse_action_bullets
 
 AskFn = Callable[..., RagAnswer]
 
-# Canonical demo alert: the P1 storm trigger (bet-service, GIB-UKGC) resolved
-# entirely from data/source/. Mirrors app.services.alert_stream.p1_demo_alert.
-DEMO_ALERT: dict[str, Any] = {
-    "alert_id": "ALT-2026-06-10-0042",
-    "service": "bet-service",
-    "environment": "GIB-UKGC",
-    "severity": "P1",
-    "symptom": "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
-    "description": "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
-    "alert_time": "2026-06-10T10:02:55Z",
-    "duration_minutes": 45,
-}
+def get_demo_alert() -> dict[str, Any]:
+    """P1 storm trigger from data/source/alert_stream.csv (single source of truth)."""
+    return p1_demo_alert()
+
+
+# Backward-compatible alias; always resolves from CSV at call time.
+def _demo_alert_dict() -> dict[str, Any]:
+    return get_demo_alert()
+
+
+class _DemoAlertProxy:
+    """Dict-like proxy so legacy ``DEMO_ALERT['service']`` reads stay CSV-backed."""
+
+    def __getitem__(self, key: str) -> Any:
+        return _demo_alert_dict()[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return _demo_alert_dict().get(key, default)
+
+    def __iter__(self):
+        return iter(_demo_alert_dict())
+
+    def keys(self):
+        return _demo_alert_dict().keys()
+
+    def items(self):
+        return _demo_alert_dict().items()
+
+    def values(self):
+        return _demo_alert_dict().values()
+
+    def __repr__(self) -> str:
+        return repr(_demo_alert_dict())
+
+
+DEMO_ALERT: Any = _DemoAlertProxy()
 
 
 def build_triage_question(alert: dict[str, Any]) -> str:

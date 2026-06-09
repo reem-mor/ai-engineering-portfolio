@@ -1,51 +1,52 @@
-# Demo Script
+# Demo script (14 steps)
 
 ## Setup
 
-1. Open the public demo URL (see `screenshots/deployment_validation.md`) or start Docker locally.
-2. Confirm `/health`, `/api/health`, `/api/tools/status`, and `/api/history`.
-3. Optional deep check: `GET /api/health?deep=1` when Bedrock is configured.
+1. Open http://localhost:8080/ or EC2 URL from [`deployment.md`](deployment.md).
+2. `GET /api/health` and `/api/bootstrap` return `ok`.
+3. Optional: `GET /api/health?deep=1` for `bedrock_agent_configured`, `memory_writable`, `tools_ok`.
 
-**Public demo (EC2):** http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/ — use `#live-kb` for Knowledge Base Q&A or the main triage flow.
+## Presenter flow (~5 minutes)
 
-**Local Docker:**
+1. **Intro** — PITER = Priority, Investigation, Triage, Escalation, Resolution; grounded in KB + tools.
+2. Click **Start Alert Stream** — storm timer and alert count appear in the top bar.
+3. Watch alerts populate; noise suppression KPI updates.
+4. At **~20s** — P1 modal fires (`ALT-2026-06-10-0251`, bet-service).
+5. Click **Analyze Incident** — triage runs; Home shows **P1 analysis** with structured PITER panels.
+6. Point to **Priority** and **Business impact** sections.
+7. Point to **Investigation** — deployment suspect and similar incidents table (not "N items").
+8. Expand **Triage** timeline and **Escalation** policy snippet.
+9. Open **Agent Chat** — session matches triage; ask: `What should I check next?`
+10. Show follow-up uses `/api/follow-up` (same session_id).
+11. Click **Clear** in chat dock — history resets.
+12. **History → Past investigations** — open a saved session in chat.
+13. **Escalate On-Call** — preview-only unless NOTIFY LIVE badge (configured dispatch).
+14. **Close** — hybrid Bedrock when configured; offline KB banner when fallback.
+
+## Pre-class commands
 
 ```powershell
-docker compose up --build -d
-# http://localhost:8080/
+aws sts get-caller-identity
+cd projects/piter-aiops
+py -3.12 -m pytest -q
+cd frontend; npm run build; cd ..
+py -3.12 scripts/verify_credentials.py
+py -3.12 scripts/agent_smoke_test.py
+py -3.12 app.py
+py -3.12 scripts/verify_live_demo.py --base-url http://<host>:8080
 ```
 
-## Presenter flow (5–7 minutes)
-
-1. **Context** — PITER = Priority, Investigation, Triage, Escalation, Resolution; grounded in runbooks + operational data.
-2. **Knowledge Base question:** `What should I check when users cannot log in after the latest deployment?`
-   - Show structured PITER sections, citations from `knowledge_base/`, confidence, and next action.
-3. **Alert storm / triage** — Select the P1 betting outage alert (or POST `/api/triage` with the demo alert).
-   - Highlight deployment correlation, business impact (UKGC), owner team, similar incidents.
-4. **Tools** — Point to tool results: recent deployments, service context, similar incidents, escalation preview (mock/preview only).
-5. **Follow-up** — `Based on the previous incident, who should I escalate to?`
-   - Show session memory and `/api/history`.
-6. **Safety** — Escalation preview does not auto-send SMS/email unless explicitly configured for live dispatch.
-7. **Closing** — Works with Bedrock Agent + KB on AWS; falls back to local TF-IDF when Bedrock is unavailable.
-
-## Sample incident analysis payload
+## Sample triage payload
 
 ```json
 {
-  "alert_title": "High error rate on auth-service",
-  "service": "auth-service",
-  "environment": "production",
-  "severity": "high",
-  "description": "Many users cannot log in after the latest production deployment."
+  "service": "bet-service",
+  "environment": "GIB-UKGC",
+  "severity": "P1",
+  "symptom": "100% error rate on bet placement",
+  "alert_time": "2026-06-10T10:02:00Z",
+  "alert_id": "ALT-2026-06-10-0251"
 }
 ```
 
-POST to `/api/incidents/analyze` or use the SPA triage panel.
-
-## Pre-demo checklist
-
-```powershell
-py -3.12 scripts/verify_credentials.py
-py -3.12 scripts/agent_smoke_test.py
-py -3.12 scripts/verify_live_demo.py --base-url http://<public-dns>:8080
-```
+POST `/api/triage`.

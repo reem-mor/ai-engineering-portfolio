@@ -19,6 +19,19 @@
 > [!IMPORTANT]
 > Escalation is **preview-only by default** — no auto-SMS or email unless `PITER_ENABLE_LIVE_DISPATCH=true` and notification channels are explicitly configured.
 
+### 2-hour quick start
+
+```powershell
+cd projects/piter-aiops
+py -3.12 -m pip install -r requirements-dev.txt
+py -3.12 -m pytest -q
+cd frontend; npm ci; npm run build; cd ..
+docker compose up --build -d
+# http://localhost:8080/ → Start Alert Stream → P1 at ~20s → Analyze
+```
+
+Demo walkthrough: [`docs/demo_script.md`](docs/demo_script.md) · Deploy: [`docs/deployment.md`](docs/deployment.md)
+
 ---
 
 ## Table of contents

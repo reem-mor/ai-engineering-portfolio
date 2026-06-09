@@ -7,10 +7,12 @@ from pathlib import Path
 from typing import Any
 
 _DATA_DIR = Path(__file__).resolve().parent / "data"
+_ARCHIVE_DATA = Path(__file__).resolve().parents[1] / "archive" / "legacy-htmx" / "data"
 
 
-def _load_json(name: str) -> Any:
-    return json.loads((_DATA_DIR / name).read_text(encoding="utf-8"))
+def _load_json(name: str, *, base: Path | None = None) -> Any:
+    root = base or _DATA_DIR
+    return json.loads((root / name).read_text(encoding="utf-8"))
 
 
 @lru_cache
@@ -20,7 +22,11 @@ def load_example_questions() -> list[dict[str, str]]:
 
 @lru_cache
 def load_workflow_alerts() -> list[dict[str, Any]]:
-    return _load_json("workflow_alerts.json")
+    """Legacy HTMX workflow alerts (archived JSON, tests only)."""
+    path = _ARCHIVE_DATA / "workflow_alerts.json"
+    if path.is_file():
+        return _load_json("workflow_alerts.json", base=_ARCHIVE_DATA)
+    return []
 
 
 def flat_example_questions() -> list[str]:

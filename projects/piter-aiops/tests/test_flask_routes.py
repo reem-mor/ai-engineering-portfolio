@@ -93,10 +93,12 @@ def test_follow_up_unknown_session(local_client):
     assert resp.get_json()["reason"] == "unknown_session"
 
 
-def test_console_page(local_client):
+def test_console_legacy_archived_when_spa_disabled(local_client):
+    """FORCE_LEGACY_UI disables SPA; archived console returns spa_not_built."""
     resp = local_client.get("/console")
-    assert resp.status_code == 200
-    assert b"AI Incident" in resp.data
+    assert resp.status_code == 503
+    body = resp.get_json()
+    assert body["reason"] == "spa_not_built"
 
 
 # --- Bedrock auto-fallback to local ----------------------------------------
@@ -111,7 +113,7 @@ def test_ask_falls_back_to_local(fake_config):
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True, LOCAL_FALLBACK=True)
     app.extensions["bedrock_client"] = _FailingClient()
     client = app.test_client()
-    resp = client.post("/ask", json={"question": "Postgres CPU is 95% on prod-db-1 — what is the runbook?"})
+    resp = client.post("/api/chat", json={"message": "Postgres CPU is 95% on prod-db-1 — what is the runbook?"})
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
@@ -156,5 +158,5 @@ def test_validation_error_not_masked_by_fallback(fake_config):
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, FORCE_LEGACY_UI=True, LOCAL_FALLBACK=True)
     app.extensions["bedrock_client"] = _FailingClient()
     client = app.test_client()
-    resp = client.post("/ask", json={"question": "x"})
+    resp = client.post("/api/chat", json={"message": "x"})
     assert resp.status_code == 400  # short_question, not a fallback

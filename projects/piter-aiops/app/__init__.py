@@ -41,6 +41,7 @@ def create_app(config: Config | None = None):
     config_obj = config or _resolve_config()
     app.config.from_object(config_obj)
     app.config["PITER_CONFIG"] = config_obj
+    app.config["LOCAL_FALLBACK"] = config_obj.LOCAL_FALLBACK
 
     app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
     app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")

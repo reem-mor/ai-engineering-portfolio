@@ -212,3 +212,33 @@ export type ChatDockPrefill = {
   sessionId?: string | null;
   alert?: Partial<AlertRow>;
 };
+
+export type PersistedInvestigation = {
+  session_id: string;
+  created_at?: number;
+  alert_id?: string;
+  timestamp?: string;
+  severity?: string;
+  service?: string;
+  environment?: string;
+  symptom?: string;
+  mode?: string;
+  fallback_used?: boolean;
+};
+
+export type IncidentsHistoryResponse = {
+  ok: boolean;
+  investigations: PersistedInvestigation[];
+  count: number;
+};
+
+export type IncidentDetailResponse = {
+  ok: boolean;
+  session_id: string;
+  created_at?: number;
+  alert: Record<string, unknown>;
+  triage_card: Record<string, unknown>;
+  citations: unknown[];
+  tool_outputs: Record<string, unknown>;
+  followups: Array<{ question: string; answer: Record<string, unknown>; ts?: number }>;
+};

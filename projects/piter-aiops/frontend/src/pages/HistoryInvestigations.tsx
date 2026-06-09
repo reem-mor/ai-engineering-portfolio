@@ -1,33 +1,50 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchAlertStream, fetchInvestigations } from "@/lib/api-contract";
+import {
+  fetchAlertStream,
+  fetchIncidentDetail,
+  fetchIncidentsHistory,
+  fetchInvestigations,
+} from "@/lib/api-contract";
 import { useChatDock } from "@/context/chat-dock";
-import type { AlertRow, Investigation } from "@/types/api";
+import type { AlertRow, Investigation, PersistedInvestigation } from "@/types/api";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
 import { ErrorState } from "@/components/noc/ErrorState";
 import { LoadingSkeleton } from "@/components/noc/LoadingSkeleton";
 
-type View = "alerts" | "incidents";
+type View = "alerts" | "incidents" | "past";
+
+function formatTs(ts?: number | string): string {
+  if (ts == null) return "—";
+  if (typeof ts === "number") {
+    return new Date(ts * 1000).toISOString().slice(0, 19).replace("T", " ");
+  }
+  return String(ts).slice(0, 19);
+}
 
 export function HistoryInvestigationsPage() {
   const [view, setView] = useState<View>("alerts");
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [incidents, setIncidents] = useState<Investigation[]>([]);
+  const [past, setPast] = useState<PersistedInvestigation[]>([]);
   const [q, setQ] = useState("");
   const [sev, setSev] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { openWith } = useChatDock();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [stream, inv] = await Promise.all([
+      const [stream, inv, hist] = await Promise.all([
         fetchAlertStream(true),
         fetchInvestigations(100),
+        fetchIncidentsHistory(100),
       ]);
       setAlerts(stream.rows || []);
       setIncidents(inv.investigations || []);
+      setPast(hist.investigations || []);
     } catch {
       setError("Failed to load history data");
     } finally {
@@ -56,6 +73,27 @@ export function HistoryInvestigationsPage() {
       return hay.includes(q.toLowerCase());
     });
   }, [incidents, q, sev]);
+
+  const filteredPast = useMemo(() => {
+    return past.filter((p) => {
+      if (sev && p.severity !== sev) return false;
+      if (!q) return true;
+      const hay = `${p.service} ${p.environment} ${p.symptom} ${p.alert_id}`.toLowerCase();
+      return hay.includes(q.toLowerCase());
+    });
+  }, [past, q, sev]);
+
+  const openPastSession = async (sessionId: string) => {
+    setDetailLoading(sessionId);
+    try {
+      await fetchIncidentDetail(sessionId);
+      openWith({ sessionId });
+    } catch {
+      setError("Failed to load investigation session");
+    } finally {
+      setDetailLoading(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -87,6 +125,13 @@ export function HistoryInvestigationsPage() {
             onClick={() => setView("incidents")}
           >
             Incidents
+          </button>
+          <button
+            type="button"
+            className={`btn${view === "past" ? " active" : ""}`}
+            onClick={() => setView("past")}
+          >
+            Past investigations
           </button>
         </div>
         <input
@@ -146,7 +191,7 @@ export function HistoryInvestigationsPage() {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : view === "incidents" ? (
         <div className="grid-stack">
           {filteredIncidents.map((i) => (
             <article key={i.id} className="panel">
@@ -181,6 +226,55 @@ export function HistoryInvestigationsPage() {
               ) : null}
             </article>
           ))}
+        </div>
+      ) : (
+        <div className="table-wrap panel">
+          {filteredPast.length === 0 ? (
+            <p className="mono" style={{ padding: 12, color: "var(--text-muted)" }}>
+              No persisted investigations yet. Run Analyze on a P1 alert first.
+            </p>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Time</th>
+                  <th>Service</th>
+                  <th>Sev</th>
+                  <th>Symptom</th>
+                  <th>Mode</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPast.map((p) => (
+                  <tr key={p.session_id}>
+                    <td className="mono">{p.session_id.slice(0, 8)}…</td>
+                    <td className="mono">{formatTs(p.timestamp || p.created_at)}</td>
+                    <td>{p.service || "—"}</td>
+                    <td>
+                      <PriorityBadge priority={(p.severity as "P1") || "P4"} />
+                    </td>
+                    <td>{(p.symptom || "").slice(0, 64)}</td>
+                    <td className="mono">
+                      {p.mode || "—"}
+                      {p.fallback_used ? " · fb" : ""}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        disabled={detailLoading === p.session_id}
+                        onClick={() => void openPastSession(p.session_id)}
+                      >
+                        {detailLoading === p.session_id ? "Loading…" : "Open in chat"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>

@@ -36,11 +36,15 @@ class _FakeBedrockClient:
 def _isolate_chat_history(tmp_path):
     """Point the persistent chat-history store at a per-test temp file."""
     from app.services import chat_history
+    from app.services import session_memory
 
     chat_history.set_store_path(tmp_path / "chat_history.json")
+    session_memory.set_store_path(tmp_path / "session_memory.json")
     chat_history.reset()
+    session_memory.reset()
     yield
     chat_history.reset()
+    session_memory.reset()
 
 
 @pytest.fixture
@@ -73,7 +77,7 @@ def app(fake_config, fake_bedrock):
     app.config.update(
         TESTING=True,
         WTF_CSRF_ENABLED=False,
-        FORCE_LEGACY_UI=True,
+        FORCE_LEGACY_UI=False,
         LOCAL_FALLBACK=False,
     )
     app.extensions["bedrock_client"] = fake_bedrock

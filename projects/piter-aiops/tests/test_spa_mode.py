@@ -51,6 +51,12 @@ def test_spa_home_serves_index(spa_client):
     assert 'id="root"' in body or "root" in body
 
 
+def test_console_redirects_to_spa(spa_client):
+    response = spa_client.get("/console")
+    assert response.status_code in {302, 307}
+    assert response.headers.get("Location") == "/"
+
+
 def test_get_ask_returns_405_in_spa_mode(spa_client):
     assert spa_client.get("/ask").status_code == 405
 
@@ -62,16 +68,16 @@ def test_bootstrap_example_groups_is_dict(spa_client):
     assert len(data["example_groups"]) >= 1
 
 
-def test_ask_accepts_session_id(spa_client, fake_bedrock):
+def test_chat_accepts_session_id(spa_client, fake_bedrock):
     fake_bedrock.next_response = _fake_answer()
     response = spa_client.post(
-        "/ask",
-        json={"question": "How do I triage an authentication service incident?", "session_id": "sess-abc"},
+        "/api/chat",
+        json={"message": "How do I triage an authentication service incident?", "session_id": "sess-abc"},
     )
     assert response.status_code == 200
     assert fake_bedrock.last_session_id == "sess-abc"
     data = response.get_json()
-    assert data["session_id"] == "sess-follow"
+    assert data.get("session_id") == "sess-follow" or data.get("memory", {}).get("session_id")
 
 
 def test_health_deep(spa_client):

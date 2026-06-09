@@ -70,6 +70,7 @@ class Config:
     RAG_BACKEND: str = "agent"
     USE_BEDROCK: bool = True
     MEMORY_ENABLED: bool = True
+    LOCAL_FALLBACK: bool = False
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -118,6 +119,7 @@ class Config:
             RAG_BACKEND=rag_backend,
             USE_BEDROCK=use_bedrock,
             MEMORY_ENABLED=_env_bool("MEMORY_ENABLED", True),
+            LOCAL_FALLBACK=_env_bool("LOCAL_FALLBACK", False, legacy="LOCAL_FALLBACK"),
         )
 
     @classmethod
@@ -151,4 +153,5 @@ class Config:
             RAG_BACKEND="local",
             USE_BEDROCK=False,
             MEMORY_ENABLED=_env_bool("MEMORY_ENABLED", True),
+            LOCAL_FALLBACK=_env_bool("LOCAL_FALLBACK", True, legacy="LOCAL_FALLBACK"),
         )

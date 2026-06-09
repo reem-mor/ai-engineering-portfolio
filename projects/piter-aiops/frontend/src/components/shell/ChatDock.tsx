@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useChatDock } from "@/context/chat-dock";
+import { useSession } from "@/context/session";
 import { fetchHistory } from "@/lib/api-contract";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 
@@ -17,7 +18,9 @@ export function ChatDock() {
     lastResponse,
     send,
     loadSession,
+    clearChat,
   } = useChatDock();
+  const { setSessionId } = useSession();
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,14 @@ export function ChatDock() {
         <div className="chat-dock-tools">
           <button
             type="button"
+            className="btn btn-sm"
+            onClick={() => void clearChat()}
+            title="Clear chat history"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
             className="btn btn-icon"
             onClick={() => setMode(mode === "fullscreen" ? "open" : "fullscreen")}
             title={mode === "fullscreen" ? "Exit full panel" : "Expand full panel"}
@@ -79,6 +90,7 @@ export function ChatDock() {
             onChange={(e) => {
               const id = e.target.value;
               setActiveSessionId(id || null);
+              setSessionId(id || null);
               if (id) void loadSession(id);
             }}
           >

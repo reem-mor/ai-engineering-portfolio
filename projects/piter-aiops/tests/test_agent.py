@@ -5,7 +5,7 @@ import pytest
 
 from app.local_agent import LocalRagClient
 from app.services import session_memory
-from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
+from app.services.triage_service import get_demo_alert, run_follow_up, run_triage
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +21,7 @@ def _ask():
 
 
 def test_run_triage_returns_full_contract():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     for key in (
         "answer", "citations", "recommended_steps", "suspect_deploys",
         "owner", "impact", "similar_incidents", "session_id", "memory_used", "mode",
@@ -36,7 +36,7 @@ def test_run_triage_returns_full_contract():
 
 
 def test_triage_persists_session():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     stored = session_memory.get_session(card["session_id"])
     assert stored is not None
     assert stored["triage_card"]["matched_runbook"] == "deployment_rollback.json"
@@ -44,7 +44,7 @@ def test_triage_persists_session():
 
 
 def test_follow_up_owner_uses_memory():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     res = run_follow_up(card["session_id"], "who do I escalate to?", ask_fn=_ask())
     assert res is not None
     assert res["memory_used"] is True
@@ -53,14 +53,14 @@ def test_follow_up_owner_uses_memory():
 
 
 def test_follow_up_impact_uses_memory():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     res = run_follow_up(card["session_id"], "what is the business impact?", ask_fn=_ask())
     assert res["memory_used"] is True
     assert res["kind"] == "impact"
 
 
 def test_follow_up_general_does_fresh_lookup():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     res = run_follow_up(card["session_id"], "show me the SQL again", ask_fn=_ask())
     assert res["memory_used"] is False
     assert res["kind"] == "sql"
@@ -71,7 +71,7 @@ def test_follow_up_unknown_session_returns_none():
 
 
 def test_followup_history_is_recorded():
-    card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
+    card = run_triage(get_demo_alert(), ask_fn=_ask())
     run_follow_up(card["session_id"], "who owns this?", ask_fn=_ask())
     stored = session_memory.get_session(card["session_id"])
     assert len(stored["followups"]) == 1

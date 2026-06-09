@@ -96,7 +96,7 @@ def test_upload_file_too_large_400(real_upload_client):
     assert resp.get_json()["reason"] == "file_too_large"
 
 
-def test_upload_success_html(upload_client, upload_service):
+def test_upload_success_json(upload_client, upload_service):
     upload_service.next_result = UploadResult(
         filename="note.txt",
         s3_key="projects/piter-aiops/knowledge_base/x_note.txt",
@@ -106,25 +106,29 @@ def test_upload_success_html(upload_client, upload_service):
         ingestion_job_id="job-1",
     )
     resp = upload_client.post(
-        "/documents/upload",
+        "/documents/upload?format=json",
         data={"document": _file("note.txt", b"hello world"), "sync_kb": "on"},
         content_type="multipart/form-data",
+        headers={"Accept": "application/json"},
     )
     assert resp.status_code == 200
-    assert b"Document saved" in resp.data
-    assert b"ingestion job started" in resp.data
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["filename"] == "note.txt"
+    assert data["ingestion_job_id"] == "job-1"
     assert upload_service.calls[0][2] is True
 
 
 def test_upload_unsupported_type_400(upload_client, upload_service):
     upload_service.next_error = BedrockError("Unsupported", code="unsupported_type")
     resp = upload_client.post(
-        "/documents/upload",
+        "/documents/upload?format=json",
         data={"document": _file("bad.exe", b"x")},
         content_type="multipart/form-data",
+        headers={"Accept": "application/json"},
     )
     assert resp.status_code == 400
-    assert b"Upload failed" in resp.data
+    assert resp.get_json()["reason"] == "unsupported_type"
 
 
 def test_upload_s3_error_502(upload_client, upload_service):

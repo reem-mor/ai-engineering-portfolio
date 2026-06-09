@@ -1,29 +1,23 @@
-"""HTTP routes: SPA bootstrap, /ask, workflow triage, uploads, /health."""
+"""HTTP routes: SPA bootstrap, JSON API, uploads, /health."""
 from __future__ import annotations
 
 import logging
 from dataclasses import replace
 from typing import Any
 
-from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
+from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from flask_wtf.csrf import generate_csrf
 
 from app.bedrock_agent_client import build_session_attributes
 from app.bedrock_client import RagAnswer
 from app.rag_factory import RagClient, get_local_client, get_rag_client
 from app.config import Config
-from app.data_loader import (
-    find_workflow_alert,
-    flat_example_questions,
-    grouped_example_questions,
-    load_workflow_alerts,
-)
+from app.data_loader import flat_example_questions, grouped_example_questions
 from app.errors import BedrockError
 from app.spa import _SPA_ROOT, spa_enabled
 from app.upload_service import DocumentUploadService
 from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
-from app.workflow import build_workflow_payload
 from app.services.alert_stream import load_active_alerts, load_alert_stream, p1_demo_alert, summarize_alert_stream
 from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.escalation_service import notify_demo_channel
@@ -35,7 +29,7 @@ from app.services.notification_dispatch import (
     sms_configured,
     whatsapp_configured,
 )
-from app.services.triage_service import DEMO_ALERT, run_follow_up, run_triage
+from app.services.triage_service import get_demo_alert, run_follow_up, run_triage
 from app.services import session_memory
 from app.services.chat_history import append_turn, clear_history, get_messages
 from app.services.response_format import normalize_api_response
@@ -169,7 +163,6 @@ def _bootstrap_context() -> dict:
     return {
         "examples": flat_example_questions(),
         "example_groups": grouped_example_questions(),
-        "workflow_alerts": load_workflow_alerts(),
         "max_len": MAX_QUESTION_LEN,
         "model_label": _model_label(),
         "kb_id": _cfg_get("BEDROCK_KB_ID"),
@@ -221,30 +214,6 @@ def _handle_ask(
         return replace(local, fallback_used=True, mode="local_fallback")
 
 
-def _validation_response(exc: BedrockError, question: str):
-    if _wants_json():
-        return jsonify(ok=False, reason=exc.code, message=exc.user_message), 400
-    return render_template("_answer.html", error=exc.user_message, question=question), 400
-
-
-def _bedrock_error_response(exc: BedrockError, question: str):
-    log.warning("Bedrock error %s: %s", exc.code, exc.user_message)
-    if _wants_json():
-        return jsonify(ok=False, reason=exc.code, message=exc.user_message), 502
-    return render_template("_answer.html", error=exc.user_message, question=question), 502
-
-
-def _success_response(result: RagAnswer, question: str):
-    if _wants_json():
-        return jsonify(ok=True, **result.to_dict()), 200
-    return render_template(
-        "_answer.html",
-        result=result,
-        question=question,
-        model_label=_model_label(),
-    )
-
-
 @bp.get("/api/bootstrap")
 def api_bootstrap():
     payload = _bootstrap_context()
@@ -252,161 +221,53 @@ def api_bootstrap():
     return jsonify(ok=True, **payload), 200
 
 
+_LEGACY_ARCHIVED_MSG = (
+    "Legacy HTMX path archived. Use the React SPA and /api/chat or /api/triage."
+)
+
+
 @bp.get("/")
 def index():
     if spa_enabled():
         return send_from_directory(_SPA_ROOT, "index.html")
-    ctx = _bootstrap_context()
-    return render_template(
-        "index.html",
-        examples=ctx["examples"],
-        example_groups=ctx["example_groups"],
-        workflow_alerts=ctx["workflow_alerts"],
-        max_len=ctx["max_len"],
-        model_label=ctx["model_label"],
-        kb_id=ctx["kb_id"],
-        s3_bucket=ctx["s3_bucket"],
-        s3_prefix=ctx["s3_prefix"],
-        max_upload_mb=ctx["max_upload_mb"],
-        allowed_types=", ".join(ctx["allowed_types"]),
-        sync_kb_default=ctx["sync_kb_default"],
+    return (
+        jsonify(
+            ok=False,
+            reason="spa_not_built",
+            message="SPA not built. Run: cd frontend && npm run build",
+        ),
+        503,
     )
 
 
 @bp.get("/ask")
 def ask_get_not_allowed():
-    return jsonify(ok=False, message="Method not allowed. Use POST."), 405
+    return jsonify(ok=False, message="Method not allowed. Use POST /api/chat."), 405
 
 
 @bp.post("/ask")
 def ask():
-    session_id: str | None = None
-    if request.is_json:
-        payload = request.get_json(silent=True) or {}
-        question = str(payload.get("question", ""))
-        raw_session = payload.get("session_id")
-        if raw_session:
-            session_id = str(raw_session).strip() or None
-    else:
-        question = request.form.get("question") or ""
-        raw_session = request.form.get("session_id")
-        if raw_session:
-            session_id = str(raw_session).strip() or None
-
-    question = question.strip()
-    try:
-        result = _handle_ask(question, session_id=session_id)
-    except BedrockError as exc:
-        if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"}:
-            return _validation_response(exc, question)
-        return _bedrock_error_response(exc, question)
-
-    return _success_response(result, question)
-
-
-def _workflow_triage_core(
-    alert_id: str | None,
-    question: str,
-    *,
-    session_id: str | None = None,
-):
-    alert = find_workflow_alert(alert_id)
-    question = (question or (alert or {}).get("question") or "").strip()
-    session_attrs, prompt_attrs = build_session_attributes(
-        alert_id=alert_id,
-        service=str((alert or {}).get("service") or ""),
-        environment=str((alert or {}).get("environment") or ""),
-        severity=str((alert or {}).get("severity") or ""),
-        symptom=str((alert or {}).get("symptom") or ""),
-        alert_time=str((alert or {}).get("alert_time") or ""),
-        triage_complete="false",
-    )
-    result = _handle_ask(
-        question,
-        session_id=session_id,
-        session_attributes=session_attrs,
-        prompt_session_attributes=prompt_attrs,
-    )
-    payload = build_workflow_payload(
-        result=result,
-        alert=alert,
-        question=question,
-        model_label=_model_label(),
-    )
-    return alert, question, payload
+    return jsonify(ok=False, reason="legacy_archived", message=_LEGACY_ARCHIVED_MSG), 410
 
 
 @bp.post("/workflow/triage")
 def workflow_triage():
-    if request.is_json:
-        body = request.get_json(silent=True) or {}
-        alert_id = body.get("alert_id")
-        question = str(body.get("question", "")).strip()
-    else:
-        alert_id = request.form.get("alert_id")
-        question = (request.form.get("question") or "").strip()
-
-    try:
-        alert, question, payload = _workflow_triage_core(alert_id, question)
-    except BedrockError as exc:
-        if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"}:
-            if _wants_json():
-                return jsonify(ok=False, reason=exc.code, message=exc.user_message), 400
-            return render_template(
-                "_workflow_result.html",
-                error=exc.user_message,
-                alert=find_workflow_alert(alert_id),
-                question=question,
-            ), 400
-        if _wants_json():
-            return jsonify(ok=False, reason=exc.code, message=exc.user_message), 502
-        return render_template(
-            "_workflow_result.html",
-            error=exc.user_message,
-            alert=find_workflow_alert(alert_id),
-            question=question,
-        ), 502
-
-    if _wants_json():
-        return jsonify(ok=True, **payload), 200
-
-    return render_template("_workflow_result.html", **payload)
+    return jsonify(ok=False, reason="legacy_archived", message=_LEGACY_ARCHIVED_MSG), 410
 
 
 @bp.post("/api/workflow/triage")
 def api_workflow_triage():
-    body = request.get_json(silent=True) or {}
-    alert_id = body.get("alert_id")
-    question = str(body.get("question", "")).strip()
-    session_id = body.get("session_id")
-    if session_id is not None:
-        session_id = str(session_id).strip() or None
-    try:
-        _alert, _question, payload = _workflow_triage_core(
-            alert_id, question, session_id=session_id
-        )
-    except BedrockError as exc:
-        status = 400 if exc.code in {"empty_question", "short_question", "oversize_question", "stopwords_only"} else 502
-        return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
-    return jsonify(ok=True, **payload), 200
+    return jsonify(ok=False, reason="legacy_archived", message=_LEGACY_ARCHIVED_MSG), 410
 
 
 @bp.get("/console")
 def console():
-    """Self-contained local-first triage console for the live demo."""
-    import os
+    """Legacy console path — redirect to SPA when built."""
+    from flask import redirect
 
-    redirect_spa = os.environ.get("PITER_CONSOLE_REDIRECT_SPA", "").lower() in {
-        "true",
-        "1",
-        "yes",
-        "on",
-    }
-    if spa_enabled() and redirect_spa:
-        from flask import redirect
-
-        return redirect("/?section=storm")
-    return render_template("console.html")
+    if spa_enabled():
+        return redirect("/")
+    return jsonify(ok=False, reason="spa_not_built", message=_LEGACY_ARCHIVED_MSG), 503
 
 
 @bp.get("/api/alert-stream")
@@ -542,7 +403,7 @@ def _api_triage_response(body: dict):
 @bp.get("/api/demo-alert")
 def api_demo_alert():
     """Return the canned demo alert (P1 bet-service storm trigger, GIB-UKGC)."""
-    return jsonify(ok=True, alert=DEMO_ALERT), 200
+    return jsonify(ok=True, alert=get_demo_alert()), 200
 
 
 @bp.post("/api/triage")
@@ -785,7 +646,40 @@ def api_follow_up():
     if result is None:
         return jsonify(ok=False, reason="unknown_session",
                        message="That incident session was not found. Run triage first."), 404
-    return jsonify(ok=True, **result), 200
+    result["memory"] = {"last_question": question, "session_id": session_id}
+    normalized = normalize_api_response(result)
+    append_turn(
+        session_id=session_id,
+        question=question,
+        answer=str(normalized.get("answer") or normalized.get("summary") or ""),
+        mode=normalized.get("mode"),
+    )
+    return jsonify(ok=True, **normalized), 200
+
+
+@bp.get("/api/incidents/history")
+def api_incidents_history():
+    """List persisted triage sessions (newest first)."""
+    limit = request.args.get("limit", "50")
+    try:
+        cap = max(1, min(200, int(limit)))
+    except (TypeError, ValueError):
+        cap = 50
+    items = session_memory.list_sessions(limit=cap)
+    return jsonify(ok=True, investigations=items, count=len(items)), 200
+
+
+@bp.get("/api/incidents/history/<session_id>")
+def api_incident_history_detail(session_id: str):
+    """Full investigation detail for one session."""
+    detail = session_memory.get_incident_detail(session_id)
+    if detail is None:
+        return jsonify(
+            ok=False,
+            reason="unknown_session",
+            message="That incident session was not found. Run triage first.",
+        ), 404
+    return jsonify(ok=True, **detail), 200
 
 
 @bp.get("/api/sessions/<session_id>/history")
@@ -822,12 +716,38 @@ def health():
     else:
         checks["s3"] = "configured"
 
+    cfg = _app_config()
+    agent_id = _cfg_get("BEDROCK_AGENT_ID") or getattr(cfg, "BEDROCK_AGENT_ID", "")
+    agent_alias = _cfg_get("BEDROCK_AGENT_ALIAS_ID") or getattr(cfg, "BEDROCK_AGENT_ALIAS_ID", "")
     if not kb_id or not model_arn:
         checks["bedrock"] = "missing_config"
     else:
         checks["bedrock"] = "configured"
+    if cfg.USE_BEDROCK and cfg.RAG_BACKEND == "agent":
+        checks["bedrock_agent_configured"] = (
+            "configured" if agent_id and agent_alias else "missing_config"
+        )
+    else:
+        checks["bedrock_agent_configured"] = "not_required"
 
-    status = "ok" if all(v in {"ok", "configured"} for v in checks.values()) else "degraded"
+    mem_path = session_memory.store_path()
+    try:
+        mem_path.parent.mkdir(parents=True, exist_ok=True)
+        probe = mem_path.parent / ".health_probe"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        checks["memory_writable"] = "ok"
+    except OSError:
+        checks["memory_writable"] = "error"
+
+    try:
+        tools = build_tools_status()
+        checks["tools_ok"] = "ok" if tools.get("all_ready") else "degraded"
+    except Exception:
+        checks["tools_ok"] = "error"
+
+    ok_values = {"ok", "configured", "not_required"}
+    status = "ok" if all(v in ok_values for v in checks.values()) else "degraded"
     return jsonify(status=status, checks=checks), 200
 
 
@@ -851,21 +771,11 @@ def upload_document():
         result = _upload_service().upload(filename, body, sync_kb=sync_kb)
     except BedrockError as exc:
         status = 400 if exc.code in _UPLOAD_VALIDATION_CODES else 502
-        if _wants_json():
-            return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
-        return render_template("_upload_result.html", error=exc.user_message), status
+        return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
 
     payload = {"ok": True, **result.to_dict()}
     if result.sync_warning:
         payload["message"] = result.sync_warning
-        if _wants_json():
-            return jsonify(**payload), 202
-        return render_template(
-            "_upload_result.html",
-            result=result,
-            warning=result.sync_warning,
-        ), 202
+        return jsonify(**payload), 202
 
-    if _wants_json():
-        return jsonify(**payload), 200
-    return render_template("_upload_result.html", result=result), 200
+    return jsonify(**payload), 200

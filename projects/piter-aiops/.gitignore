@@ -78,3 +78,7 @@ docs/review/var/
 
 # runtime state (chat history JSON store)
 var/
+
+# deploy artifacts
+piter-aiops.tar
+scripts/ssm-*.json

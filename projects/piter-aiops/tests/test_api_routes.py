@@ -30,8 +30,7 @@ def test_api_bootstrap(client):
     assert len(data["examples"]) > 0
     assert isinstance(data["example_groups"], dict)
     assert sum(len(v) for v in data["example_groups"].values()) >= len(data["examples"])
-    assert "workflow_alerts" in data
-    assert len(data["workflow_alerts"]) == 6
+    assert "workflow_alerts" not in data
     assert "max_len" in data
     assert "csrf_token" in data
 
@@ -42,31 +41,19 @@ def test_api_health_alias(client):
     assert response.get_json()["status"] == "ok"
 
 
-def test_api_workflow_triage_json(client, fake_bedrock):
-    fake_bedrock.next_response = _fake_answer()
+def test_api_workflow_triage_json_archived(client):
     response = client.post(
         "/api/workflow/triage",
         json={"alert_id": "A-2041", "question": ""},
     )
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data["ok"] is True
-    assert data["result"]["grounded"] is True
-    assert data["actions"]
-    assert data["effective_decision"]
-    assert fake_bedrock.calls
+    assert response.status_code == 410
+    assert response.get_json()["reason"] == "legacy_archived"
 
 
-def test_ask_json_body(client, fake_bedrock):
-    fake_bedrock.next_response = _fake_answer()
+def test_ask_json_body_archived(client):
     response = client.post("/ask", json={"question": "What is the runbook for high CPU?"})
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data["ok"] is True
-    assert "answer" in data
-    assert "answer_sections" in data
-    assert data["citations"]
-    assert "preview" in data["citations"][0]
+    assert response.status_code == 410
+    assert response.get_json()["reason"] == "legacy_archived"
 
 
 def test_api_chat_alias(client, fake_bedrock):

@@ -73,7 +73,17 @@ function formatValue(value: unknown): string {
     return String(value);
   }
   if (Array.isArray(value)) {
-    return value.length ? `${value.length} items` : "[]";
+    if (!value.length) return "[]";
+    if (typeof value[0] === "object" && value[0] !== null) {
+      return value
+        .slice(0, 5)
+        .map((item) => {
+          const r = item as Record<string, unknown>;
+          return [r.incident_id, r.service, r.summary || r.title].filter(Boolean).join(" · ");
+        })
+        .join("\n");
+    }
+    return value.slice(0, 8).join(", ");
   }
   return JSON.stringify(value);
 }

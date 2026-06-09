@@ -7,6 +7,8 @@ import type {
   EscalationNotifyResponse,
   HealthResponse,
   HistoryResponse,
+  IncidentDetailResponse,
+  IncidentsHistoryResponse,
   InvestigationsResponse,
   MetricsResult,
   TriageResponse,
@@ -69,6 +71,22 @@ export async function fetchAlertStream(includeRows = true): Promise<AlertStreamR
     credentials: "same-origin",
   });
   return parseJson<AlertStreamResponse>(response);
+}
+
+export async function fetchIncidentsHistory(limit = 50): Promise<IncidentsHistoryResponse> {
+  const response = await fetch(`/api/incidents/history?limit=${limit}`, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  return parseJson<IncidentsHistoryResponse>(response);
+}
+
+export async function fetchIncidentDetail(sessionId: string): Promise<IncidentDetailResponse> {
+  const response = await fetch(`/api/incidents/history/${encodeURIComponent(sessionId)}`, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  return parseJson<IncidentDetailResponse>(response);
 }
 
 export async function fetchInvestigations(limit = 50): Promise<InvestigationsResponse> {
@@ -240,6 +258,8 @@ export const FROZEN_API_ENDPOINTS = [
   "GET /api/bootstrap",
   "GET /api/alert-stream",
   "GET /api/investigations",
+  "GET /api/incidents/history",
+  "GET /api/incidents/history/:id",
   "GET /api/history",
   "DELETE /api/history",
   "POST /api/chat",

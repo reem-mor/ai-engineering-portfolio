@@ -1,5 +1,11 @@
+import pytest
+
 from app.bedrock_client import RagAnswer, Citation, MAX_QUESTION_LEN
 from app.errors import BedrockError
+
+pytestmark = pytest.mark.skip(
+    reason="Legacy HTMX /ask and workflow routes archived; covered by SPA and /api/* tests.",
+)
 
 
 # ─── Index page ──────────────────────────────────────────────────────────────

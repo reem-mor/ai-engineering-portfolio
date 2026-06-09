@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.triage_service import DEMO_ALERT
+from app.services.triage_service import get_demo_alert
 from app.services.tool_router import TOOLS, execute_tool
 
 # Public labels expected by reviewers and the React demo.
@@ -32,7 +32,7 @@ TOOL_STATUS_SPEC: list[dict[str, str]] = [
 
 
 def _demo_arguments(tool_name: str) -> dict[str, Any]:
-    alert = DEMO_ALERT
+    alert = get_demo_alert()
     service = str(alert.get("service", "")).strip()
     environment = str(alert.get("environment", "")).strip()
     severity = str(alert.get("severity", "")).strip()
@@ -116,5 +116,5 @@ def build_tools_status() -> dict[str, Any]:
     return {
         "all_ready": all_ready,
         "tools": tools,
-        "demo_alert": DEMO_ALERT,
+        "demo_alert": get_demo_alert(),
     }

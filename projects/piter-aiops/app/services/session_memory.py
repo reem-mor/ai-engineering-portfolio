@@ -123,6 +123,49 @@ def get_session(session_id: str | None) -> dict[str, Any] | None:
         return dict(session) if session is not None else None
 
 
+def list_sessions(*, limit: int = 50) -> list[dict[str, Any]]:
+    """Summaries for incident history UI (newest first)."""
+    _ensure_loaded()
+    with _LOCK:
+        rows: list[dict[str, Any]] = []
+        for sid, session in _SESSIONS.items():
+            alert = session.get("alert") or {}
+            card = session.get("triage_card") or {}
+            rows.append(
+                {
+                    "session_id": sid,
+                    "created_at": session.get("created_at"),
+                    "alert_id": alert.get("alert_id") or card.get("alert_id"),
+                    "timestamp": alert.get("alert_time") or card.get("alert_time"),
+                    "severity": alert.get("severity") or card.get("priority"),
+                    "service": alert.get("service") or card.get("service"),
+                    "environment": alert.get("environment") or card.get("environment"),
+                    "symptom": alert.get("symptom") or alert.get("description") or card.get("summary"),
+                    "mode": card.get("mode"),
+                    "fallback_used": card.get("fallback_used"),
+                }
+            )
+        rows.sort(key=lambda r: float(r.get("created_at") or 0), reverse=True)
+        return rows[: max(1, min(limit, 200))]
+
+
+def get_incident_detail(session_id: str | None) -> dict[str, Any] | None:
+    """Full persisted investigation for history drill-down."""
+    session = get_session(session_id)
+    if session is None:
+        return None
+    card = session.get("triage_card") or {}
+    return {
+        "session_id": session["session_id"],
+        "created_at": session.get("created_at"),
+        "alert": session.get("alert", {}),
+        "triage_card": card,
+        "citations": session.get("citations", []),
+        "tool_outputs": session.get("tool_outputs", {}),
+        "followups": list(session.get("followups", [])),
+    }
+
+
 def get_history(session_id: str | None) -> dict[str, Any] | None:
     session = get_session(session_id)
     if session is None:

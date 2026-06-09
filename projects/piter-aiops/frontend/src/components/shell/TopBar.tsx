@@ -13,7 +13,7 @@ function healthDotClass(status: string | undefined): string {
 
 export function TopBar() {
   const navigate = useNavigate();
-  const { demoMode, startStorm, resetDemo, bootstrap } = useDemo();
+  const { demoMode, startStorm, resetDemo, bootstrap, wallSec, visible, paused } = useDemo();
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [utc, setUtc] = useState(() => new Date().toISOString().slice(11, 19));
 
@@ -52,6 +52,12 @@ export function TopBar() {
 
       <div className="top-bar-center">
         {demoMode ? <span className="demo-tag">DEMO</span> : null}
+        {demoMode ? (
+          <span className="storm-timer mono" title="Storm playback elapsed">
+            Storm {wallSec.toFixed(0)}s · {visible.length} alerts
+            {paused ? " · paused" : ""}
+          </span>
+        ) : null}
         <span className={`notify-tag ${notifyLive ? "notify-live" : "notify-preview"}`}>
           NOTIFY {notifyLive ? "LIVE" : "PREVIEW"}
         </span>

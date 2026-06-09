@@ -22,6 +22,7 @@ export function HomePage() {
     bootstrap,
     triageResult,
     escalatedIds,
+    p1Row,
   } = useDemo();
   const { openWith } = useChatDock();
   const [inv, setInv] = useState<InvestigationsResponse | null>(null);
@@ -115,7 +116,16 @@ export function HomePage() {
                     .reverse()
                     .slice(0, 40)
                     .map((r) => (
-                      <tr key={r.alert_id}>
+                      <tr
+                        key={r.alert_id}
+                        className={
+                          p1Row && r.alert_id === p1Row.alert_id
+                            ? "alert-row-p1"
+                            : r.is_trigger === "true"
+                              ? "alert-row-trigger"
+                              : undefined
+                        }
+                      >
                         <td className="mono">{r.timestamp.slice(11, 19)}</td>
                         <td>{r.service}</td>
                         <td>{r.environment}</td>
