@@ -30,17 +30,33 @@ def mask_recipient(recipient: str) -> str:
     return f"{recipient[:2]}***{recipient[-2:]}"
 
 
+def _first_env(*names: str) -> str:
+    """Return the first non-empty environment value among names."""
+    for name in names:
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value
+    return ""
+
+
 def resolve_demo_recipient(channel: str) -> str:
+    """Resolve the escalation recipient from environment variables ONLY.
+
+    Prefers the canonical PITER_ESCALATION_* variables (the documented contract),
+    falling back to the legacy PITER_DEMO_* names. Recipients are never read from
+    git or request bodies.
+    """
     channel = channel.strip().lower()
     if channel == "sms":
-        return os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
+        return _first_env("PITER_ESCALATION_SMS", "PITER_DEMO_SMS_RECIPIENT")
     if channel == "whatsapp":
-        return (
-            os.environ.get("PITER_DEMO_WHATSAPP_RECIPIENT", "").strip()
-            or os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip()
+        return _first_env(
+            "PITER_ESCALATION_SMS",
+            "PITER_DEMO_WHATSAPP_RECIPIENT",
+            "PITER_DEMO_SMS_RECIPIENT",
         )
     if channel == "email":
-        return os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()
+        return _first_env("PITER_ESCALATION_EMAIL", "PITER_DEMO_EMAIL_RECIPIENT")
     raise ValueError(f"Unknown channel: {channel}")
 
 
@@ -90,7 +106,10 @@ def notify_demo_channel(
         return {
             "http_status": 400,
             "ok": False,
-            "error": f"PITER_DEMO_{channel.upper()}_RECIPIENT is not configured",
+            "error": (
+                f"No escalation recipient configured for {channel}: set "
+                f"PITER_ESCALATION_{'EMAIL' if channel == 'email' else 'SMS'} on the instance"
+            ),
             "sent": False,
         }
     ctx = enrich_escalation_context(
