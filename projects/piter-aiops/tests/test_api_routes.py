@@ -92,10 +92,10 @@ def test_api_incidents_analyze_alias(client, fake_bedrock):
     response = client.post(
         "/api/incidents/analyze",
         json={
-            "service": "postgres",
-            "environment": "production",
-            "severity": "P2",
-            "symptom": "Postgres CPU is 95 percent on the primary database",
+            "service": "bet-service",
+            "environment": "GIB-UKGC",
+            "severity": "P1",
+            "symptom": "bet-service 100% error rate, nodes unresponsive",
         },
     )
     assert response.status_code == 200
