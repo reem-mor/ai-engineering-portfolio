@@ -29,8 +29,8 @@ def test_demo_alert(local_client):
     resp = local_client.get("/api/demo-alert")
     body = resp.get_json()
     assert body["ok"] is True
-    assert body["alert"]["service"] == "postgres"
-    assert body["alert"]["environment"] == "NJ-DGE"
+    assert body["alert"]["service"] == "bet-service"
+    assert body["alert"]["environment"] == "GIB-UKGC"
 
 
 # --- /api/triage -----------------------------------------------------------
@@ -43,7 +43,7 @@ def test_triage_returns_card(local_client):
     assert body["ok"] is True
     assert body["mode"] == "local"
     assert body["grounded"] is True
-    assert body["citations"][0]["document"] == "database_connectivity.json"
+    assert any(c["document"] == "deployment_rollback.json" for c in body["citations"])
     for key in ("recommended_steps", "owner", "impact", "similar_incidents", "session_id"):
         assert key in body
 
@@ -78,7 +78,7 @@ def test_follow_up_reuses_session(local_client):
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["memory_used"] is True
-    assert "dba-oncall" in body["answer"]
+    assert "Primary Betting Core On-Call" in body["answer"]
 
 
 def test_follow_up_missing_session(local_client):
