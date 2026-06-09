@@ -32,6 +32,17 @@ class _FakeBedrockClient:
         return self.next_response
 
 
+@pytest.fixture(autouse=True)
+def _isolate_chat_history(tmp_path):
+    """Point the persistent chat-history store at a per-test temp file."""
+    from app.services import chat_history
+
+    chat_history.set_store_path(tmp_path / "chat_history.json")
+    chat_history.reset()
+    yield
+    chat_history.reset()
+
+
 @pytest.fixture
 def fake_config():
     return Config(
