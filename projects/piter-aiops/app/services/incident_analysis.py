@@ -236,8 +236,8 @@ def _classify_priority(
     if cost_per_min >= 5000:
         rationale_parts.append(f"revenue risk ${cost_per_min:,}/min exceeds P1 threshold")
         priority = "P1"
-    elif cost_per_min >= 1500 and priority > "P2":
-        priority = "P2"
+    elif cost_per_min >= 1500:
+        priority = _raise_priority(priority, "P2")
         rationale_parts.append("elevated revenue exposure")
 
     if regulatory and priority in {"P1", "P2"}:

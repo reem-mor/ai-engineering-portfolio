@@ -25,10 +25,12 @@ PITER AiOps is an incident-response assistant for NOC, DevOps, SRE, and producti
 - `GET /health`
 - `GET /api/health`
 - `POST /api/chat`
-- `POST /api/incidents/analyze`
+- `POST /api/incidents/analyze` (alias of triage handler)
 - `GET /api/history`
 - `DELETE /api/history`
 - `GET /api/tools/status`
+
+The React SPA primarily uses `POST /api/triage`, `POST /api/follow-up`, and `POST /ask`. The `/api/chat` and `/api/incidents/analyze` routes remain API-compatible aliases for demos and automated tests.
 
 ## Runtime Modes
 

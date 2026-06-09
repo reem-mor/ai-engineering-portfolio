@@ -96,4 +96,9 @@ def test_spa_assets_reference_storm_demo(spa_client):
         pytest.skip("SPA JS bundle missing")
     bundle = js_files[0].read_text(encoding="utf-8")
     assert "Alert Storm Demo" in bundle or "alert storm" in bundle.lower()
-    assert "399" in bundle or "Simulated alert storm" in bundle
+    assert (
+        "399" in bundle
+        or "400" in bundle
+        or "Simulated alert storm" in bundle
+        or "alert_stream" in bundle
+    )

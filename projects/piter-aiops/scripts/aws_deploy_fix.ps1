@@ -11,6 +11,7 @@
   - Agent rename with spaces (use existing agent name)
   - create-agent-version / invoke-agent (not in AWS CLI — use alias update + Python)
 #>
+# Existing account role; use -LambdaRoleName to override when a piter-aiops role exists.
 param(
     [string]$AwsProfile = "reemmor",
     [string]$AwsRegion = "us-east-1",
@@ -20,6 +21,7 @@ param(
     [string]$AgentId = "HH4YGSLZUE",
     [string]$AgentAliasId = "O2EM03R4R3",
     [string]$AccountId = "329597159579",
+    [string]$LambdaRoleName = "incidentiq-lambda-role",
     [switch]$SkipAgentAlias
 )
 
@@ -33,7 +35,7 @@ $env:AWS_REGION = $AwsRegion
 
 # Canonical KB prefix — must match PITER_S3_PREFIX / app.config.S3_PREFIX and KB data source inclusion.
 $KbPrefix = "projects/piter-aiops/knowledge_base/"
-$LambdaRole = "arn:aws:iam::${AccountId}:role/incidentiq-lambda-role"
+$LambdaRole = "arn:aws:iam::${AccountId}:role/${LambdaRoleName}"
 $AgentSourceArn = "arn:aws:bedrock:${AwsRegion}:${AccountId}:agent/${AgentId}"
 
 function Write-Step([string]$Message) {
@@ -277,11 +279,11 @@ foreach ($def in $lambdaDefs) {
     $lambdaArns[$def.Name] = Ensure-Lambda -Name $def.Name -Description $def.Description
 }
 
-Write-Step "Repoint legacy action groups to new Lambdas"
+Write-Step "Repoint PITER action groups to Lambdas"
 $groupUpdates = @(
-    @{ ActionGroup = "iiq-correlate"; Lambda = "piter-recent-deployments"; S3Key = "agent/iiq-correlate/openapi_schema.yaml" },
-    @{ ActionGroup = "iiq-context"; Lambda = "piter-service-context"; S3Key = "agent/iiq-context/openapi_schema.yaml" },
-    @{ ActionGroup = "iiq-similar"; Lambda = "piter-similar-incidents"; S3Key = "agent/iiq-similar/openapi_schema.yaml" },
+    @{ ActionGroup = "piter-recent-deployments"; Lambda = "piter-recent-deployments"; S3Key = "agent/piter-recent-deployments/openapi_schema.yaml" },
+    @{ ActionGroup = "piter-service-context"; Lambda = "piter-service-context"; S3Key = "agent/piter-service-context/openapi_schema.yaml" },
+    @{ ActionGroup = "piter-similar-incidents"; Lambda = "piter-similar-incidents"; S3Key = "agent/piter-similar-incidents/openapi_schema.yaml" },
     @{ ActionGroup = "piter-escalation"; Lambda = "piter-escalation"; S3Key = "agent/piter-escalation/openapi_schema.yaml" }
 )
 $agJsonDir = Join-Path $RepoRoot "dist/action-groups"

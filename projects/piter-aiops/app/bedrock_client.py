@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import boto3
@@ -100,6 +100,7 @@ class RagAnswer:
     matched_runbook: str | None = None
     enrichment: dict[str, Any] | None = None
     mode: str = "bedrock"
+    fallback_used: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         sections = format_answer_sections(self.answer)
@@ -124,6 +125,7 @@ class RagAnswer:
             "latency_ms": self.latency_ms,
             "matched_runbook": self.matched_runbook,
             "mode": self.mode,
+            "fallback_used": self.fallback_used,
         }
         if self.enrichment is not None:
             payload["enrichment"] = self.enrichment

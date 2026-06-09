@@ -37,8 +37,10 @@ PITER stands for:
 ## Run Locally
 
 ```powershell
-python -m pytest
+py -3.12 -m pip install -r requirements-dev.txt
+py -3.12 -m pytest -q
 cd frontend
+npm ci
 npm run build
 cd ..
 docker compose up --build
@@ -71,17 +73,10 @@ aws s3 sync knowledge_base/ s3://<bucket-name>/projects/piter-aiops/knowledge_ba
 
 ## Data
 
-Top-level demo data:
+Canonical runtime data lives in `data/source/`. See [`docs/data_dictionary.md`](docs/data_dictionary.md).
 
-- `data/deployments.csv`
-- `data/historical_incidents.csv`
-- `data/services.json`
-- `data/escalation_rules.json`
-- `data/demo_questions.json`
-- `data/tool_test_cases.json`
-- `data/sample_alerts.json`
-
-Runtime compatibility datasets remain under `data/source/`, `data/agent_data/`, and `data/sample_documents/incident_history.csv`.
+- `evaluation/demo_questions.json` — presenter questions
+- `data/archive/` — archived duplicate JSON (not loaded at runtime)
 
 Validate:
 
@@ -106,9 +101,11 @@ python mcp/server.py --selftest
 
 ## AWS Setup
 
-See `docs/aws_sync_guide.md` and `infra/`.
+See `docs/aws_sync_guide.md`, `docs/ec2_deployment.md`, and `docs/environment.md`.
 
 Required environment placeholders are in `.env.example`.
+
+Live demo URL (after EC2 deploy): http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/
 
 ## Demo Question
 

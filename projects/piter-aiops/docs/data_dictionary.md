@@ -1,27 +1,42 @@
 # Data Dictionary
 
-## Top-Level Demo Data
+## Canonical runtime data — `data/source/`
 
-- `data/deployments.csv`: recent deployments for demo lookup.
-- `data/historical_incidents.csv`: compact incident history for evaluation and demo explanation.
-- `data/services.json`: service ownership, dependencies, SLA, and escalation team.
-- `data/escalation_rules.json`: priority-based safe escalation rules.
-- `data/demo_questions.json`: presenter-facing demo questions.
-- `data/tool_test_cases.json`: tool input/output expectations.
-- `data/sample_alerts.json`: ready-to-send incident analysis payloads.
+Used by incident analysis, alert storm, enrichment tools, and Lambda action groups:
 
-## Runtime Compatibility Data
+- `alert_stream.csv`, `alerts.csv` — demo alert stream
+- `deploys.csv` — deployment correlation
+- `service_owners.csv` — ownership and on-call roles
+- `past_incidents.csv` — similar incident lookup
+- `business_impact.json`, `priority_matrix.json`, `escalation_policies.json` — scoring and escalation
 
-- `data/source/`: deterministic alert stream and structured data used by the Flask incident-analysis pipeline.
-- `data/agent_data/`: legacy Postgres demo data still covered by tests.
-- `data/sample_documents/incident_history.csv`: legacy incident history used only by the Postgres fallback similarity path.
+Regenerate with `python scripts/generate_demo_data.py`.
+
+## Legacy fallback — `data/agent_data/`
+
+Used when `data/source/service_owners.csv` is unavailable (trimmed Lambda zip or old paths). Prefer `data/source/` for all new work.
+
+## Top-level compatibility files
+
+- `data/deployments.csv`, `data/historical_incidents.csv`, `data/services.json` — legacy fallbacks for enrichment when source catalog is missing
+- `data/external_status.json` — external status demo data
+
+## Archived validation files — `data/archive/`
+
+Moved duplicates and unused JSON; see [`data/archive/README.md`](../data/archive/README.md).
+
+## Demo / evaluation
+
+- `evaluation/demo_questions.json` — presenter questions (canonical)
+- `evaluation/tool_evaluation_cases.json` — tool contract expectations
+
+## Knowledge base
+
+- `knowledge_base/` — authoritative RAG corpus (14 markdown files)
 
 ## Validation
 
-Run:
-
 ```powershell
 python scripts/validate_data.py
+python -m pytest tests/test_source_data.py tests/test_knowledge_base.py -q
 ```
-
-CSV files are loaded with Pandas and JSON files are parsed with required key checks.
