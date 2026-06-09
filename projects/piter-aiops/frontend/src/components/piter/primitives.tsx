@@ -154,14 +154,14 @@ export function CitationPreview({
           source_label: "runbook_bet_service_outage.md",
           snippet:
             "Check recent deployment, dependency health, and rollback availability before restarting services.",
-          source_uri: "local://knowledge_base/runbooks/RB-011-bet-service-outage.md",
+          source_uri: "local://knowledge_base/runbooks/deployment_rollback.md",
           index: 1,
         },
         {
-          source_label: "severity-and-escalation-policy.md",
+          source_label: "escalation_policy.md",
           snippet:
             "P1 incidents in regulated markets require immediate escalation preview and business impact assessment.",
-          source_uri: "local://knowledge_base/policies/severity-and-escalation-policy.md",
+          source_uri: "local://knowledge_base/escalation/escalation_policy.md",
           index: 2,
         },
       ];

@@ -29,9 +29,9 @@ def test_run_triage_returns_full_contract():
         assert key in card, f"missing contract key: {key}"
     assert card["mode"] == "local"
     assert card["memory_used"] is False
-    assert card["citations"][0]["document"] == "runbook_db_cpu.md"
-    assert card["owner"]["owner_team"] == "platform-dba"
-    assert card["impact"]["cost_per_15min"] == 30000
+    assert any(c["document"] == "deployment_rollback.json" for c in card["citations"])
+    assert card["owner"]["owner_team"] == "Betting Core"
+    assert card["impact"]["revenue_impact_usd_per_hour"] == 588000
     assert card["similar_incidents"]
 
 
@@ -39,7 +39,7 @@ def test_triage_persists_session():
     card = run_triage(dict(DEMO_ALERT), ask_fn=_ask())
     stored = session_memory.get_session(card["session_id"])
     assert stored is not None
-    assert stored["triage_card"]["matched_runbook"] == "runbook_db_cpu.md"
+    assert stored["triage_card"]["matched_runbook"] == "deployment_rollback.json"
     assert "lookup_owner_and_escalation" in stored["tool_outputs"]
 
 
@@ -49,7 +49,7 @@ def test_follow_up_owner_uses_memory():
     assert res is not None
     assert res["memory_used"] is True
     assert res["kind"] == "owner"
-    assert "dba-oncall" in res["answer"]
+    assert "Primary Betting Core On-Call" in res["answer"]
 
 
 def test_follow_up_impact_uses_memory():

@@ -11,7 +11,7 @@ import boto3
 from botocore.config import Config as BotoConfig
 from botocore.exceptions import EventStreamError
 
-from app.bedrock_client import Citation, RagAnswer, _dedupe_citations
+from app.bedrock_client import BedrockRagClient, Citation, RagAnswer, _dedupe_citations
 from app.config import Config
 from app.errors import translate
 from app.text_utils import extract_reference_metadata, format_citation_label, format_citation_preview
@@ -134,8 +134,20 @@ class BedrockAgentClient:
         try:
             response = self._client.invoke_agent(**request)
         except Exception as exc:  # noqa: BLE001
-            log.exception("Bedrock invoke_agent failed")
+            log.warning(
+                "Bedrock invoke_agent failed agent=%s alias=%s: %s",
+                self._config.BEDROCK_AGENT_ID,
+                self._config.BEDROCK_AGENT_ALIAS_ID,
+                exc,
+            )
             raise translate(exc) from exc
+
+        log.info(
+            "Bedrock invoke_agent started agent=%s alias=%s session=%s",
+            self._config.BEDROCK_AGENT_ID,
+            self._config.BEDROCK_AGENT_ALIAS_ID,
+            request.get("sessionId"),
+        )
 
         answer_parts: list[str] = []
         citations_raw: list[dict[str, Any]] = []
@@ -167,15 +179,31 @@ class BedrockAgentClient:
                 if action_out:
                     _merge_action_output(enrichment, action_out)
         except EventStreamError as exc:
-            log.exception("Bedrock invoke_agent stream failed")
+            log.warning("Bedrock invoke_agent stream failed: %s", exc)
             raise translate(exc) from exc
 
         latency_ms = int((time.perf_counter() - started) * 1000)
         answer_text = "".join(answer_parts).strip()
         citations = _parse_references(citations_raw)
         grounded = bool(citations)
+        log.info(
+            "Bedrock invoke_agent completed session=%s latency_ms=%d grounded=%s citations=%d",
+            out_session_id,
+            latency_ms,
+            grounded,
+            len(citations),
+        )
         if not grounded and not answer_text:
             answer_text = "I could not find anything in the knowledge base for that question."
+
+        if not grounded:
+            return self._backfill_from_kb(
+                question,
+                session_id=out_session_id,
+                agent_answer=answer_text,
+                enrichment=enrichment,
+                latency_ms=latency_ms,
+            )
 
         matched = citations[0].source_label if citations else None
         return RagAnswer(
@@ -186,6 +214,45 @@ class BedrockAgentClient:
             latency_ms=latency_ms,
             matched_runbook=matched,
             enrichment=enrichment or None,
+            mode="bedrock_agent",
+        )
+
+    def _backfill_from_kb(
+        self,
+        question: str,
+        *,
+        session_id: str | None,
+        agent_answer: str,
+        enrichment: dict[str, Any],
+        latency_ms: int,
+    ) -> RagAnswer:
+        """When invoke_agent skips KB retrieval, use direct RetrieveAndGenerate."""
+        rag = BedrockRagClient(self._config, client=self._client).ask(question)
+        if rag.grounded:
+            log.info(
+                "Agent answer was ungrounded; backfilled citations via retrieve_and_generate (%d sources)",
+                len(rag.citations),
+            )
+            return RagAnswer(
+                answer=rag.answer,
+                citations=rag.citations,
+                session_id=session_id,
+                grounded=True,
+                latency_ms=latency_ms + rag.latency_ms,
+                matched_runbook=rag.matched_runbook,
+                enrichment=enrichment or None,
+                mode="bedrock_agent",
+            )
+
+        return RagAnswer(
+            answer=agent_answer or rag.answer,
+            citations=[],
+            session_id=session_id,
+            grounded=False,
+            latency_ms=latency_ms + rag.latency_ms,
+            matched_runbook=None,
+            enrichment=enrichment or None,
+            mode="bedrock_agent",
         )
 
 

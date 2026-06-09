@@ -33,7 +33,7 @@ def upload_app(app, upload_service):
     app.extensions["upload_service"] = upload_service
     app.config.update(
         S3_BUCKET="reem-amdocs-ai-artifacts-3331",
-        S3_PREFIX="projects/piter-aiops/data/sample_documents",
+        S3_PREFIX="projects/piter-aiops/knowledge_base",
         BEDROCK_DATA_SOURCE_ID="YICXAB6WOG",
         MAX_UPLOAD_BYTES=1024,
     )
@@ -99,8 +99,8 @@ def test_upload_file_too_large_400(real_upload_client):
 def test_upload_success_html(upload_client, upload_service):
     upload_service.next_result = UploadResult(
         filename="note.txt",
-        s3_key="projects/piter-aiops/data/sample_documents/x_note.txt",
-        s3_uri="s3://bucket/projects/piter-aiops/data/sample_documents/x_note.txt",
+        s3_key="projects/piter-aiops/knowledge_base/x_note.txt",
+        s3_uri="s3://bucket/projects/piter-aiops/knowledge_base/x_note.txt",
         size_bytes=12,
         sync_started=True,
         ingestion_job_id="job-1",

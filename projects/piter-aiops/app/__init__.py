@@ -1,27 +1,20 @@
-"""Flask application factory."""
+"""PITER AiOps application package.
+
+Keep this module free of Flask imports so action-group Lambdas can import
+``app.enrichment_tools`` without bundling the web stack.
+"""
 from __future__ import annotations
 
 import logging
 import os
 
-from flask import Flask
-from flask_wtf.csrf import CSRFProtect
-
 from app.config import Config, ConfigError
-
-csrf = CSRFProtect()
 
 log = logging.getLogger(__name__)
 
 
 def _resolve_config() -> Config:
-    """Load Bedrock config, falling back to offline-safe local config.
-
-    ``USE_BEDROCK=true`` forces strict Bedrock config (errors surface loudly).
-    ``USE_BEDROCK=false`` runs local mode directly. When unset, we try Bedrock
-    and gracefully degrade to local mode if AWS configuration is incomplete so
-    the demo never fails to boot.
-    """
+    """Load Bedrock config, falling back to offline-safe local config."""
     mock = os.environ.get("PITER_MOCK_MODE", "").strip().lower()
     if mock in {"true", "1", "yes", "on"}:
         log.info("PITER_MOCK_MODE enabled — starting PITER AiOps in LOCAL mode")
@@ -39,12 +32,14 @@ def _resolve_config() -> Config:
         return Config.local()
 
 
-def create_app(config: Config | None = None) -> Flask:
+def create_app(config: Config | None = None):
+    from flask import Flask
+    from flask_wtf.csrf import CSRFProtect
+
+    csrf = CSRFProtect()
     app = Flask(__name__)
     config_obj = config or _resolve_config()
     app.config.from_object(config_obj)
-    # Keep the resolved Config object so request handlers select the right RAG
-    # backend (local vs Bedrock) instead of re-reading the environment.
     app.config["PITER_CONFIG"] = config_obj
 
     app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)

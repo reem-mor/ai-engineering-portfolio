@@ -140,6 +140,26 @@ export interface FollowUpResult {
   impact?: Record<string, unknown>;
 }
 
+export interface SessionHistoryTurn {
+  question: string;
+  answer: FollowUpResult & Record<string, unknown>;
+  ts: number;
+}
+
+export interface SessionHistoryPayload {
+  ok: boolean;
+  session_id: string;
+  created_at: number;
+  alert: Record<string, unknown>;
+  citations: TriageCitation[];
+  followups: SessionHistoryTurn[];
+  triage_summary: {
+    priority?: string | null;
+    matched_runbook?: string | null;
+    mode?: string | null;
+  };
+}
+
 export interface KbDocumentMeta {
   id: string;
   title: string;
