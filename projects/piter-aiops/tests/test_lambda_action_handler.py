@@ -42,7 +42,7 @@ def test_recent_deployments_lambda_returns_auth_deployments():
     resp = handler(
         _event(
             "piter-recent-deployments",
-            "/recent-deployments",
+            "/correlate",
             {
                 "service": "auth-service",
                 "environment": "NJ-DGE",
@@ -60,7 +60,7 @@ def test_service_context_lambda_returns_owner():
     resp = handler(
         _event(
             "piter-service-context",
-            "/service-context",
+            "/owner",
             {"service": "auth-service", "environment": "NJ-DGE"},
         ),
         None,
@@ -74,7 +74,7 @@ def test_similar_incidents_lambda_returns_matches():
     resp = handler(
         _event(
             "piter-similar-incidents",
-            "/similar-incidents",
+            "/similar",
             {"service": "auth-service", "symptom": "users cannot log in"},
         ),
         None,

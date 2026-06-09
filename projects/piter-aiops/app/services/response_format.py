@@ -192,7 +192,17 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
         piter_sections if isinstance(piter_sections, dict) else None
     )
 
+    impact = payload.get("impact")
+    if isinstance(impact, dict):
+        impact = dict(impact)
+        if business_impact and not impact.get("business_explanation"):
+            impact["business_explanation"] = business_impact
+        if business_impact and not impact.get("business_impact"):
+            impact["business_impact"] = business_impact
+
     normalized = dict(payload)
+    if isinstance(impact, dict):
+        normalized["impact"] = impact
     normalized.update(
         {
             "answer": answer,
@@ -203,6 +213,7 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
             "confidence": confidence,
             "sources": sources,
             "tool_results": tool_results or [],
+            "fallback_used": bool(payload.get("fallback_used")),
         }
     )
     memory = payload.get("memory")

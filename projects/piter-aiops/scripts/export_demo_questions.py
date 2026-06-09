@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    questions = json.loads((ROOT / "data" / "demo_questions.json").read_text(encoding="utf-8"))
+    questions = json.loads((ROOT / "evaluation" / "demo_questions.json").read_text(encoding="utf-8"))
     for item in questions:
         print(f"{item['id']}: {item['question']}")
     return 0

@@ -37,10 +37,7 @@ CSV_SCHEMAS = {
 
 JSON_SCHEMAS = {
     "services.json": ("services", list),
-    "escalation_rules.json": ("rules", list),
-    "demo_questions.json": (None, list),
-    "tool_test_cases.json": (None, list),
-    "sample_alerts.json": (None, list),
+    "external_status.json": (None, dict),
 }
 
 

@@ -156,3 +156,21 @@ def test_api_chat_response_shape(client, fake_bedrock):
     assert "confidence" in data
     assert isinstance(data["sources"], list)
     assert isinstance(data["tool_results"], list)
+
+
+def test_api_chat_history_uses_session_id(client, fake_bedrock):
+    from app.services.chat_history import clear_history, get_messages
+
+    clear_history("chat-session-1")
+    clear_history(None)
+    fake_bedrock.next_response = _fake_answer()
+    response = client.post(
+        "/api/chat",
+        json={"message": "Session scoped question?", "session_id": "chat-session-1"},
+    )
+    assert response.status_code == 200
+    scoped = get_messages("chat-session-1")
+    assert scoped["count"] == 2
+    assert scoped["messages"][0]["content"] == "Session scoped question?"
+    default = get_messages(None)
+    assert default["count"] == 0

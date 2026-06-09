@@ -115,7 +115,7 @@ def test_ask_falls_back_to_local(fake_config):
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
-    assert body["mode"] == "local"
+    assert body["mode"] == "local_fallback"
     assert body["citations"][0]["source_label"] == "database_connectivity.md"
 
 

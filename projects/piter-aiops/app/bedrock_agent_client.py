@@ -134,8 +134,20 @@ class BedrockAgentClient:
         try:
             response = self._client.invoke_agent(**request)
         except Exception as exc:  # noqa: BLE001
-            log.warning("Bedrock invoke_agent failed: %s", exc)
+            log.warning(
+                "Bedrock invoke_agent failed agent=%s alias=%s: %s",
+                self._config.BEDROCK_AGENT_ID,
+                self._config.BEDROCK_AGENT_ALIAS_ID,
+                exc,
+            )
             raise translate(exc) from exc
+
+        log.info(
+            "Bedrock invoke_agent started agent=%s alias=%s session=%s",
+            self._config.BEDROCK_AGENT_ID,
+            self._config.BEDROCK_AGENT_ALIAS_ID,
+            request.get("sessionId"),
+        )
 
         answer_parts: list[str] = []
         citations_raw: list[dict[str, Any]] = []
@@ -174,6 +186,13 @@ class BedrockAgentClient:
         answer_text = "".join(answer_parts).strip()
         citations = _parse_references(citations_raw)
         grounded = bool(citations)
+        log.info(
+            "Bedrock invoke_agent completed session=%s latency_ms=%d grounded=%s citations=%d",
+            out_session_id,
+            latency_ms,
+            grounded,
+            len(citations),
+        )
         if not grounded and not answer_text:
             answer_text = "I could not find anything in the knowledge base for that question."
 

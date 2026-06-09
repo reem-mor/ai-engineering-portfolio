@@ -19,6 +19,15 @@ def storm_alert() -> dict:
     return alert
 
 
+def test_priority_raises_p3_to_p2_on_revenue():
+    from app.services.incident_analysis import _classify_priority
+
+    alert = {"severity": "P3", "error_rate_pct": 1.0, "service": "auth-service"}
+    impact = {"cost_per_minute": 2000, "regulatory_exposure": []}
+    priority = _classify_priority(alert=alert, impact=impact, source_dir=None)
+    assert priority["priority"] == "P2"
+
+
 def test_bet_service_gib_ukgc_p1_full_flow(storm_alert: dict):
     analysis = analyze_incident(storm_alert)
     assert "error" not in analysis

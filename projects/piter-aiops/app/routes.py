@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from typing import Any
 
 from flask import Blueprint, current_app, jsonify, render_template, request, send_from_directory
@@ -197,7 +198,8 @@ def _handle_ask(
         if exc.code in _VALIDATION_CODES or not _fallback_enabled():
             raise
         log.warning("Bedrock failed (%s) — answering from LOCAL knowledge base", exc.code)
-        return _invoke(_local_client())
+        local = _invoke(_local_client())
+        return replace(local, fallback_used=True, mode="local_fallback")
 
 
 def _validation_response(exc: BedrockError, question: str):
@@ -567,7 +569,7 @@ def api_chat():
                 follow_up["memory"] = {"last_question": question, "session_id": session_id}
                 normalized = normalize_api_response(follow_up)
                 append_turn(
-                    session_id=None,
+                    session_id=session_id,
                     question=question,
                     answer=normalized.get("answer", ""),
                     mode=normalized.get("mode"),
@@ -576,14 +578,21 @@ def api_chat():
         result = _handle_ask(question, session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
-        return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
+        return jsonify(
+            ok=False,
+            reason=exc.code,
+            message=exc.user_message,
+            error=exc.code,
+            mode="bedrock",
+            fallback_used=False,
+        ), status
 
     payload = result.to_dict()
-    chat_session = session_id or payload.get("session_id")
-    payload["memory"] = {"last_question": question, "session_id": chat_session}
+    memory_session = session_id or payload.get("session_id")
+    payload["memory"] = {"last_question": question, "session_id": memory_session}
     normalized = normalize_api_response(payload)
     append_turn(
-        session_id=None,
+        session_id=session_id,
         question=question,
         answer=normalized.get("answer", ""),
         mode=normalized.get("mode"),
