@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 _ag_dir = Path(__file__).resolve().parent
 for _path in (_ag_dir, _ag_dir.parent):
@@ -34,15 +38,23 @@ def _respond(event: dict, status: int, body: dict) -> dict:
     }
 
 
+def _safe_int(value: str | None, default: int) -> int:
+    try:
+        return int(value) if value not in (None, "") else default
+    except (TypeError, ValueError):
+        return default
+
+
 def lambda_handler(event, context):
     params = _params(event)
     service = params.get("service", "")
     symptom = params.get("symptom", "")
+    log.info("find_similar_incidents service=%s symptom_len=%s", service, len(symptom))
     if not service or not symptom:
         return _respond(event, 400, {"error": "service and symptom are required"})
     result = find_similar_incidents(
         service=service,
         symptom=symptom,
-        limit=int(params.get("limit", "5")),
+        limit=_safe_int(params.get("limit"), 5),
     )
     return _respond(event, 400 if "error" in result else 200, result)

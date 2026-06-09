@@ -534,7 +534,14 @@ Legacy Flask templates remain for `/console` and HTMX workflow paths.
 | GET | `/api/bootstrap` | SPA bootstrap payload |
 | POST | `/api/chat` | Chat with PITER normalization (course API) |
 | POST | `/api/incidents/analyze` | Incident analysis alias |
+| POST | `/api/incident/analyze` | Singular alias (same as `/api/triage`) |
 | POST | `/api/triage` | Primary SPA triage |
+| GET | `/api/investigations` | Investigation queue from alert stream |
+| GET | `/api/metrics/recent-deployments` | Deploy correlation metrics |
+| GET | `/api/metrics/service-context` | Owner / on-call context |
+| GET | `/api/metrics/similar-incidents` | Historical incident match |
+| GET | `/api/metrics/escalation-preview` | Safe escalation preview (no send) |
+| GET | `/api/metrics/business-impact` | Business impact scoring |
 | POST | `/api/follow-up` | Session follow-up |
 | POST | `/api/escalation/notify` | Escalation dispatch (gated) |
 | GET | `/api/tools/status` | Four enrichment tools readiness |

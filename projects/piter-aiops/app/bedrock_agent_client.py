@@ -19,6 +19,8 @@ from app.validators import validate_question
 
 log = logging.getLogger(__name__)
 
+# Deployed agent instructions live in infra/bedrock_agent_instructions.txt (AWS console).
+# This constant is documentation-only; invoke_agent does not send it at runtime.
 AGENT_INSTRUCTION = """You are PITER AiOps, an enterprise Site Reliability Engineering assistant for regulated betting platforms.
 
 Mandatory workflow (always in this order):

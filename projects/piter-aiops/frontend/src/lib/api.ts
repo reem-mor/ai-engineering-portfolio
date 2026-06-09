@@ -80,6 +80,37 @@ export async function fetchBootstrap(): Promise<BootstrapPayload> {
   return data;
 }
 
+export type InvestigationRow = {
+  id: string;
+  conclusion: string;
+  conclusionDetail: string;
+  alertTime: string;
+  alert: string;
+  service: string;
+  environment: string;
+  entities: string;
+  source: string;
+  status: string;
+  priority: "P1" | "P2" | "P3" | "P4";
+  impact: string;
+};
+
+export async function fetchInvestigations(limit = 12): Promise<{
+  investigations: InvestigationRow[];
+  summary: Record<string, unknown>;
+}> {
+  const response = await fetch(`/api/investigations?limit=${limit}`, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  const data = await parseJson<{
+    ok: boolean;
+    investigations: InvestigationRow[];
+    summary: Record<string, unknown>;
+  }>(response);
+  return { investigations: data.investigations, summary: data.summary };
+}
+
 export async function fetchAlertStream(
   mode: "none" | "include" | "active" = "none",
 ): Promise<AlertStreamSummary & { rows?: Record<string, string>[] }> {

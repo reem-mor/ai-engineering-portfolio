@@ -35,8 +35,10 @@ import {
   askQuestion,
   executionModeLabel,
   fetchAlertStream,
+  fetchInvestigations,
   fetchKbManifest,
   fetchSessionHistory,
+  type InvestigationRow,
   followUp,
   runTriageCard,
   triageToRagAnswer,
@@ -122,80 +124,29 @@ const NAV_ITEMS: {
 const STORM_DEMO_MS = 20_000;
 const STORM_TICK_MS = 80;
 
-const INVESTIGATIONS: Investigation[] = [
-  {
-    id: "INV-2026-0610-001",
-    conclusion: "Critical",
-    conclusionDetail: "Critical betting outage detected; escalation preview prepared.",
-    alertTime: "10:02:55",
-    alert: "P1 bet-service 100% error rate on GIB-UKGC",
-    service: "bet-service",
-    environment: "GIB-UKGC",
-    entities: "bet-api, postgres, kafka-settlement",
-    source: "Alert stream + Bedrock KB",
-    status: "Escalated",
-    priority: "P1",
-    impact: "$520k/hr regulated market exposure",
-  },
-  {
-    id: "INV-2026-0610-002",
-    conclusion: "Noise",
-    conclusionDetail: "Noise grouped: repeated memory warnings under threshold.",
-    alertTime: "10:01:13",
-    alert: "P4 wallet-service memory utilization 78%",
-    service: "wallet-service",
-    environment: "NJ-DGE",
-    entities: "wallet-worker-3",
-    source: "Noise suppression",
-    status: "Noise Grouped",
-    priority: "P4",
-    impact: "No customer impact",
-  },
-  {
-    id: "INV-2026-0610-003",
-    conclusion: "Suspicious",
-    conclusionDetail: "Known pattern: replication warning correlated with previous deploy.",
-    alertTime: "09:58:42",
-    alert: "P2 replication lag above 30s",
-    service: "replication",
-    environment: "GIB-UKGC",
-    entities: "read-replica-2, wallet-service",
-    source: "piter-recent-deployments",
-    status: "Investigating",
-    priority: "P2",
-    impact: "Regulatory exposure",
-  },
-  {
-    id: "INV-2026-0610-004",
-    conclusion: "Benign",
-    conclusionDetail: "False positive: synthetic canary recovered before threshold.",
-    alertTime: "09:55:07",
-    alert: "P3 auth-service canary 502 spike",
-    service: "auth-service",
-    environment: "MGM",
-    entities: "auth-api, edge",
-    source: "Synthetic monitor",
-    status: "False Positive",
-    priority: "P3",
-    impact: "No sustained impact",
-  },
-  {
-    id: "INV-2026-0610-005",
-    conclusion: "Inconclusive",
-    conclusionDetail: "Kafka consumer lag elevated; awaiting dependency correlation.",
-    alertTime: "09:52:30",
-    alert: "P3 Kafka consumer lag on settlement topic",
-    service: "payments-service",
-    environment: "NJ-DGE",
-    entities: "kafka-settlement, payments-api",
-    source: "Metrics pipeline",
-    status: "In Review",
-    priority: "P3",
-    impact: "Settlement delay risk",
-  },
-];
+const STORM_INVESTIGATION_ID = "ALT-2026-06-10-0251";
 
-const STORM_INVESTIGATION_ID = "INV-2026-0610-001";
+const EMPTY_INVESTIGATION: Investigation = {
+  id: "loading",
+  conclusion: "Inconclusive",
+  conclusionDetail: "Loading investigations from alert stream…",
+  alertTime: "—",
+  alert: "—",
+  service: "—",
+  environment: "—",
+  entities: "—",
+  source: "Alert stream API",
+  status: "Loading",
+  priority: "P4",
+  impact: "—",
+};
+
+function mapInvestigation(row: InvestigationRow): Investigation {
+  return {
+    ...row,
+    conclusion: row.conclusion as ConclusionBadge,
+  };
+}
 
 function averageMttrMinutes(triageCard: TriageCard | null): number | null {
   const values = (triageCard?.similar_incidents ?? [])
@@ -407,7 +358,8 @@ function priorityClasses(priority: string) {
 function AppShell() {
   const { data, loading, error } = useBootstrap();
   const [active, setActive] = useState<NavKey>("storm");
-  const [selected, setSelected] = useState<Investigation>(INVESTIGATIONS[0]);
+  const [investigations, setInvestigations] = useState<Investigation[]>([EMPTY_INVESTIGATION]);
+  const [selected, setSelected] = useState<Investigation>(EMPTY_INVESTIGATION);
   const [stormState, setStormState] = useState<StormState>("idle");
   const [triageCard, setTriageCard] = useState<TriageCard | null>(null);
   const [answer, setAnswer] = useState<RagAnswer | null>(null);
@@ -485,6 +437,19 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
+    fetchInvestigations(12)
+      .then((payload) => {
+        const rows = payload.investigations.map(mapInvestigation);
+        if (!rows.length) return;
+        setInvestigations(rows);
+        setSelected((prev) => (prev.id === "loading" ? rows[0] : prev));
+      })
+      .catch(() => {
+        setInvestigations([]);
+      });
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (stormTimerRef.current) window.clearTimeout(stormTimerRef.current);
       if (stormTickRef.current) window.clearInterval(stormTickRef.current);
@@ -536,7 +501,7 @@ function AppShell() {
 
   const kpiCards = useMemo(() => {
     const stormResolved =
-      (invStatuses[STORM_INVESTIGATION_ID] ?? INVESTIGATIONS[0].status) === "Resolved";
+      (invStatuses[STORM_INVESTIGATION_ID] ?? investigations[0]?.status) === "Resolved";
     const dynamicStatic = KPI_CARDS_STATIC.map((card, index) => {
       if (index === 0 && triageCard) {
         return {
@@ -660,7 +625,7 @@ function AppShell() {
     setStormVisibleCount(6);
     setStormState("streaming");
     setStormMarkedResolved(false);
-    setSelected(INVESTIGATIONS[0]);
+    setSelected(investigations[0] ?? EMPTY_INVESTIGATION);
     const preP1Total = preP1RowCount(alertCorpus) || Math.max(streamSummary.total - 1, 1);
     const steps = Math.ceil(STORM_DEMO_MS / STORM_TICK_MS);
     const batch = Math.max(1, Math.ceil(preP1Total / steps));
@@ -773,7 +738,7 @@ function AppShell() {
     setStormState("investigating");
     setChatError(null);
     setStormMarkedResolved(false);
-    setSelected(INVESTIGATIONS[0]);
+    setSelected(investigations[0] ?? EMPTY_INVESTIGATION);
     updateInvStatus(STORM_INVESTIGATION_ID, "In Process");
     try {
       const trigger = streamSummary.p1_trigger;
@@ -877,6 +842,7 @@ function AppShell() {
             )}
             {active === "investigations" && (
               <Investigations
+                investigations={investigations}
                 selected={selected}
                 setSelected={setSelected}
                 openInvestigation={openInvestigation}
@@ -1346,6 +1312,7 @@ function HeroCard({
 }
 
 function Investigations({
+  investigations,
   selected,
   setSelected,
   openInvestigation,
@@ -1355,6 +1322,7 @@ function Investigations({
   updateInvStatus,
   onAskAgent,
 }: {
+  investigations: Investigation[];
   selected: Investigation;
   setSelected: (inv: Investigation) => void;
   openInvestigation: (inv: Investigation) => void;
@@ -1365,11 +1333,11 @@ function Investigations({
   onAskAgent: () => void;
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const statuses = INVESTIGATIONS.map((inv) => getInvStatus(inv));
+  const statuses = investigations.map((inv) => getInvStatus(inv));
   const counters = {
     inReview: statuses.filter((s) => s === "In Review").length,
     reviewed: statuses.filter((s) => s === "Resolved" || s === "False Positive").length,
-    all: INVESTIGATIONS.length,
+    all: investigations.length,
     queued: 2,
     running: statuses.filter((s) => s === "Investigating" || s === "In Process").length,
     stopped: statuses.filter((s) => s === "Noise Grouped").length,
@@ -1444,7 +1412,7 @@ function Investigations({
               </tr>
             </thead>
             <tbody>
-              {INVESTIGATIONS.map((inv) => {
+              {investigations.map((inv) => {
                 const status = getInvStatus(inv);
                 return (
                   <tr

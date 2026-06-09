@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 _ag_dir = Path(__file__).resolve().parent
 for _path in (_ag_dir, _ag_dir.parent):
@@ -34,17 +38,30 @@ def _respond(event: dict, status: int, body: dict) -> dict:
     }
 
 
+def _safe_int(value: str | None, default: int) -> int:
+    try:
+        return int(value) if value not in (None, "") else default
+    except (TypeError, ValueError):
+        return default
+
+
 def lambda_handler(event, context):
     params = _params(event)
     service = params.get("service", "")
     environment = params.get("environment", "")
     alert_time = params.get("alert_time", "")
+    log.info(
+        "correlate_deployments service=%s environment=%s alert_time=%s",
+        service,
+        environment,
+        alert_time,
+    )
     if not all([service, environment, alert_time]):
         return _respond(event, 400, {"error": "service, environment, and alert_time are required"})
     result = correlate_deployments(
         service=service,
         environment=environment,
         alert_time=alert_time,
-        lookback_hours=int(params.get("lookback_hours", "6")),
+        lookback_hours=_safe_int(params.get("lookback_hours"), 6),
     )
     return _respond(event, 400 if "error" in result else 200, result)

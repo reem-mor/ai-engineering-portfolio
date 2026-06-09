@@ -40,6 +40,14 @@ from app.services import session_memory
 from app.services.chat_history import append_turn, clear_history, get_messages
 from app.services.response_format import normalize_api_response
 from app.services.tools_status import build_tools_status
+from app.services.metrics_service import (
+    business_impact_metrics,
+    escalation_preview_metrics,
+    recent_deployments_metrics,
+    service_context_metrics,
+    similar_incidents_metrics,
+)
+from app.services.investigations import build_investigations
 
 log = logging.getLogger(__name__)
 bp = Blueprint("main", __name__)
@@ -71,8 +79,14 @@ def _local_client() -> RagClient:
 
 
 def _fallback_enabled() -> bool:
-    """Local fallback is on by default but skipped during tests of the error path."""
-    return bool(current_app.config.get("LOCAL_FALLBACK", True))
+    """Local fallback only when explicitly enabled; off in production by default."""
+    explicit = current_app.config.get("LOCAL_FALLBACK")
+    if explicit is not None:
+        return bool(explicit)
+    cfg = _app_config()
+    if cfg.FLASK_ENV == "production":
+        return False
+    return True
 
 
 def _upload_service() -> DocumentUploadService:
@@ -460,11 +474,6 @@ def _ask_fn_for_session(session_id: str):
     return _ask_fn_for_alert(alert, triage_complete="true")
 
 
-def _ask_fn():
-    """Closure that asks the active RAG backend with local auto-fallback."""
-    return lambda question, *, session_id=None: _handle_ask(question, session_id=session_id)
-
-
 def _api_triage_response(body: dict):
     session_id = body.get("session_id")
     if session_id is not None:
@@ -543,6 +552,83 @@ def api_incidents_analyze():
     """Canonical incident analysis endpoint for the React/API demo contract."""
     body = request.get_json(silent=True) or {}
     return _api_triage_response(body)
+
+
+@bp.post("/api/incident/analyze")
+def api_incident_analyze():
+    """Alias for reviewers expecting singular /api/incident/analyze."""
+    body = request.get_json(silent=True) or {}
+    return _api_triage_response(body)
+
+
+@bp.get("/api/investigations")
+def api_investigations():
+    """Investigation cards derived from the live alert stream (no static UI data)."""
+    limit = request.args.get("limit", "12")
+    try:
+        cap = max(1, min(50, int(limit)))
+    except (TypeError, ValueError):
+        cap = 12
+    payload = build_investigations(limit=cap)
+    return jsonify(ok=True, **payload), 200
+
+
+@bp.get("/api/metrics/recent-deployments")
+def api_metrics_recent_deployments():
+    result = recent_deployments_metrics(
+        service=request.args.get("service", ""),
+        environment=request.args.get("environment", ""),
+        alert_time=request.args.get("alert_time", ""),
+        lookback_hours=request.args.get("lookback_hours"),
+    )
+    status = 400 if result.get("error") else 200
+    return jsonify(ok=not result.get("error"), **result), status
+
+
+@bp.get("/api/metrics/service-context")
+def api_metrics_service_context():
+    result = service_context_metrics(
+        service=request.args.get("service", ""),
+        environment=request.args.get("environment", ""),
+        severity=request.args.get("severity"),
+    )
+    status = 400 if result.get("error") else 200
+    return jsonify(ok=not result.get("error"), **result), status
+
+
+@bp.get("/api/metrics/similar-incidents")
+def api_metrics_similar_incidents():
+    result = similar_incidents_metrics(
+        service=request.args.get("service", ""),
+        symptom=request.args.get("symptom", ""),
+        environment=request.args.get("environment"),
+        limit=request.args.get("limit"),
+    )
+    status = 400 if result.get("error") else 200
+    return jsonify(ok=not result.get("error"), **result), status
+
+
+@bp.get("/api/metrics/escalation-preview")
+def api_metrics_escalation_preview():
+    result = escalation_preview_metrics(
+        service=request.args.get("service", ""),
+        severity=request.args.get("severity"),
+        business_impact=request.args.get("business_impact"),
+    )
+    status = 400 if result.get("error") else 200
+    return jsonify(ok=not result.get("error"), **result), status
+
+
+@bp.get("/api/metrics/business-impact")
+def api_metrics_business_impact():
+    result = business_impact_metrics(
+        service=request.args.get("service", ""),
+        environment=request.args.get("environment", ""),
+        severity=request.args.get("severity", ""),
+        duration_minutes=request.args.get("duration_minutes"),
+    )
+    status = 400 if result.get("error") else 200
+    return jsonify(ok=not result.get("error"), **result), status
 
 
 @bp.get("/api/tools/status")

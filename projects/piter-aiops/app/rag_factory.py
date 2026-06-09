@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from app.bedrock_agent_client import BedrockAgentClient
+from app.services.bedrock_agent_service import get_agent_client
 from app.bedrock_client import BedrockRagClient, RagAnswer
 from app.config import Config
 from app.local_agent import LocalRagClient
@@ -24,7 +24,7 @@ def get_rag_client(config: Config, *, client: object | None = None) -> RagClient
         return LocalRagClient(config)
     if config.RAG_BACKEND == "retrieve_and_generate":
         return BedrockRagClient(config, client=client)
-    return BedrockAgentClient(config, client=client)
+    return get_agent_client(config, client=client)
 
 
 def get_local_client(config: Config | None = None) -> LocalRagClient:

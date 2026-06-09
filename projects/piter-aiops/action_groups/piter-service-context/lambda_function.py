@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 _ag_dir = Path(__file__).resolve().parent
 for _path in (_ag_dir, _ag_dir.parent):
@@ -12,7 +16,7 @@ for _path in (_ag_dir, _ag_dir.parent):
 from lambda_root import ensure_project_root  # noqa: E402
 
 ensure_project_root()
-from app.enrichment_tools import lookup_owner, score_business_impact  # noqa: E402
+from app.enrichment_tools import lookup_owner_and_escalation, score_business_impact  # noqa: E402
 
 
 def _params(event: dict) -> dict[str, str]:
@@ -41,11 +45,21 @@ def lambda_handler(event, context):
     environment = params.get("environment", "")
     if not service or not environment:
         return _respond(event, 400, {"error": "service and environment are required"})
+    log.info("service_context path=%s service=%s environment=%s", path, service, environment)
     if path == "/impact":
         severity = params.get("severity", "")
         if not severity:
             return _respond(event, 400, {"error": "severity is required"})
         result = score_business_impact(service=service, environment=environment, severity=severity)
+        if "error" not in result:
+            result["impact_tier"] = result.get("impact_tier") or result.get("service_tier", "")
     else:
-        result = lookup_owner(service=service, environment=environment)
+        result = lookup_owner_and_escalation(
+            service=service,
+            environment=environment,
+            severity=params.get("severity", ""),
+        )
+        if "error" not in result:
+            result["on_call_channel"] = result.get("slack_channel", "")
+            result["escalation"] = result.get("escalation_path", "")
     return _respond(event, 400 if "error" in result else 200, result)
