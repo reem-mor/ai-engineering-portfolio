@@ -696,6 +696,8 @@ flowchart LR
 
 ## Quick start
 
+> Daily development (Vite + local Flask/Docker, EC2 deploy-only): [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md)
+
 ### 1. Install and test
 
 ```powershell
@@ -782,6 +784,7 @@ Presenter script: [`docs/demo_script.md`](docs/demo_script.md)
 | [`docs/environment.md`](docs/environment.md) | Environment variables |
 | [`docs/aws_sync_guide.md`](docs/aws_sync_guide.md) | S3 sync and KB ingestion |
 | [`docs/aws_credentials.md`](docs/aws_credentials.md) | Credential setup |
+| [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md) | Local-first dev loop + EC2 ship workflow |
 | [`docs/ec2_deployment.md`](docs/ec2_deployment.md) | EC2 deploy checklist |
 | [`docs/demo_script.md`](docs/demo_script.md) | 5–7 minute presenter flow |
 | [`docs/data_dictionary.md`](docs/data_dictionary.md) | CSV/JSON data layout |

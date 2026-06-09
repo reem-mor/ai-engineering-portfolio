@@ -1,0 +1,133 @@
+# Local Development — PITER AiOps
+
+Develop on your Windows workstation with Cursor. Ship to EC2 only for live demos.
+
+**EC2 instance:** `i-0c53b195878f0ea5f` — http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/
+
+## Mental model
+
+```text
+Local (daily)     →  Vite :5173 + Flask/Docker :8080
+EC2 (demo ship)   →  build SPA → docker build → docker run on instance
+```
+
+Production on EC2 runs **Gunicorn inside Docker**, not `flask run --debug`. The SPA is copied into the image at build time ([`Dockerfile`](../Dockerfile)).
+
+## Generic advice vs PITER
+
+| Common suggestion | PITER reality |
+|-------------------|---------------|
+| `FLASK_DEBUG=1` on EC2 | Use local dev; keep EC2 production-like |
+| rsync source to EC2 | Bypasses Docker and leaves stale SPA assets |
+| `python app.py` on EC2 | Use `docker run` with Gunicorn ([`wsgi:app`](../wsgi.py)) |
+| Port 5000 | App listens on **8080** only |
+| Cursor Remote-SSH as editor | Optional for logs/ops; not the primary dev loop |
+| `inotify` file watcher | Not needed on Windows; use local Vite HMR |
+
+## Daily loop
+
+### Backend (pick one)
+
+**Option A — venv (fastest for Python changes)**
+
+```powershell
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
+.\scripts\run-local.ps1
+```
+
+Serves `http://127.0.0.1:8080` via [`app.py`](../app.py).
+
+**Option B — Flask CLI (equivalent)**
+
+```powershell
+.\.venv\Scripts\python.exe -m flask --app wsgi:app run -p 8080 --host=127.0.0.1
+```
+
+Note: [`wsgi.py`](../wsgi.py) only exports `app` for Gunicorn — running `python wsgi.py` does not start a server.
+
+**Option C — Docker (parity with EC2)**
+
+```powershell
+docker compose up --build
+```
+
+Offline by default. Live Bedrock in Docker: `$env:PITER_DOCKER_USE_BEDROCK = "true"` then rebuild. See [`docker-compose.yml`](../docker-compose.yml).
+
+### Frontend (F2-R SPA)
+
+With backend on 8080:
+
+```powershell
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite proxies `/api` and `/health` to 8080 ([`vite.config.ts`](../frontend/vite.config.ts)).
+
+Edit `frontend/src/**` in Cursor; changes hot-reload through Vite. No EC2 involvement.
+
+### Pre-ship gates
+
+| Check | Command |
+|-------|---------|
+| SPA build | `cd frontend && npm run build` |
+| Tests | `pytest -q` (297+ expected) |
+| Deep health | `Invoke-RestMethod http://localhost:8080/api/health?deep=1` |
+
+Full click-test matrix: [`frontend/VERIFY.md`](../frontend/VERIFY.md).
+
+## EC2 deploy (demo only)
+
+Three steps: **build SPA → build image → restart container**.
+
+### Workstation helper
+
+```powershell
+.\scripts\deploy-ec2.ps1
+```
+
+Builds locally and prints SSH commands. To run remote restart after `git push`:
+
+```powershell
+.\scripts\deploy-ec2.ps1 -Execute -SshKey C:\path\to\key.pem
+.\scripts\deploy-ec2.ps1 -Verify
+```
+
+Manual numbered steps: [`frontend/EC2_DEPLOY.md`](../frontend/EC2_DEPLOY.md).
+
+**Do not** rsync project trees to EC2 for routine development.
+
+## SSH (ops only)
+
+Configure once in `~/.ssh/config`:
+
+```sshconfig
+Host piter-demo
+  HostName ec2-3-235-22-143.compute-1.amazonaws.com
+  User ec2-user
+  IdentityFile C:/path/to/YOUR_KEY.pem
+```
+
+Useful commands:
+
+```bash
+ssh piter-demo "docker logs -f --tail 100 piter-aiops"
+ssh piter-demo "curl -s http://localhost:8080/api/health?deep=1"
+ssh piter-demo "docker ps"
+```
+
+Security group: **22** from your IP; **8080** for demo audience only ([`ec2_deployment.md`](ec2_deployment.md)).
+
+## Optional: Cursor Remote-SSH
+
+Install Remote-SSH only if you need to inspect files or logs on the instance. Prefer local editing + `deploy-ec2.ps1` for code changes.
+
+## Related docs
+
+| Document | Purpose |
+|----------|---------|
+| [`frontend/VERIFY.md`](../frontend/VERIFY.md) | F2-R verification checklist |
+| [`frontend/EC2_DEPLOY.md`](../frontend/EC2_DEPLOY.md) | Manual EC2 deploy steps |
+| [`ec2_deployment.md`](ec2_deployment.md) | AWS resources and launch checklist |
+| [`troubleshooting.md`](troubleshooting.md) | Common failures |
+| [`environment.md`](environment.md) | `.env` variables |
