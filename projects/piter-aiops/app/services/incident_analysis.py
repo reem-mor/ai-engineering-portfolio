@@ -1,6 +1,7 @@
 """Structured incident analysis from canonical data/source datasets + KB runbooks."""
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -356,10 +357,17 @@ def _find_similar_incidents(
 
 def _extract_runbook_sections(runbook_file: str) -> dict[str, Any]:
     path = _KB_RUNBOOKS / runbook_file
+    if not path.is_file() and runbook_file.endswith(".md"):
+        path = _KB_RUNBOOKS / runbook_file.replace(".md", ".json")
     if not path.is_file():
         return {"runbook_file": runbook_file, "found": False}
 
-    text = path.read_text(encoding="utf-8")
+    if path.suffix.lower() == ".json":
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        text = str(payload.get("body", ""))
+        runbook_file = path.name
+    else:
+        text = path.read_text(encoding="utf-8")
     sections: dict[str, list[str]] = {}
     current: str | None = None
     for line in text.splitlines():

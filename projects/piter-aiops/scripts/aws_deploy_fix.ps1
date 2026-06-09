@@ -43,6 +43,11 @@ function Write-Step([string]$Message) {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function Write-JsonFileUtf8NoBom([string]$Path, [string]$Json) {
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($Path, $Json, $utf8NoBom)
+}
+
 function Copy-TreeNoCache([string]$Source, [string]$Destination) {
     New-Item -ItemType Directory -Force -Path $Destination | Out-Null
     Get-ChildItem -Path $Source -Recurse -File |
@@ -153,17 +158,34 @@ function Ensure-Lambda([string]$Name, [string]$Description) {
     $arn = & aws lambda get-function --function-name $Name --query Configuration.FunctionArn --output text
     if ($LASTEXITCODE -ne 0) { throw "get-function failed for $Name" }
 
-    if ((Invoke-Aws @(
-            "lambda", "add-permission",
-            "--function-name", $Name,
-            "--statement-id", "AllowBedrockAgentInvoke-$Name",
-            "--action", "lambda:InvokeFunction",
-            "--principal", "bedrock.amazonaws.com",
-            "--source-arn", $AgentSourceArn
-        )) -ne 0) {
-        Write-Host "Permission already present or add-permission skipped for $Name"
-    }
+    Ensure-LambdaBedrockPermission -Name $Name
     return $arn
+}
+
+function Ensure-LambdaBedrockPermission([string]$Name) {
+    $statementId = "AllowBedrockAgentInvoke-$Name"
+    $policyJson = aws lambda get-policy --function-name $Name --output json 2>$null
+    if ($LASTEXITCODE -eq 0 -and $policyJson) {
+        $policy = $policyJson | ConvertFrom-Json
+        $doc = $policy.Policy | ConvertFrom-Json
+        $existing = @($doc.Statement) | Where-Object { $_.Sid -eq $statementId } | Select-Object -First 1
+        if ($existing) {
+            Write-Host "Bedrock invoke permission already present for $Name"
+            return
+        }
+    }
+
+    $addExit = Invoke-Aws @(
+        "lambda", "add-permission",
+        "--function-name", $Name,
+        "--statement-id", $statementId,
+        "--action", "lambda:InvokeFunction",
+        "--principal", "bedrock.amazonaws.com",
+        "--source-arn", $AgentSourceArn
+    )
+    if ($addExit -ne 0) {
+        Write-Host "add-permission skipped for $Name (likely already present)"
+    }
 }
 
 function Remove-OldIamPolicyVersions([string]$PolicyArn) {
@@ -176,32 +198,116 @@ function Remove-OldIamPolicyVersions([string]$PolicyArn) {
     }
 }
 
+function Test-KbS3PolicyIncludesPrefix([string]$PolicyArn, [string]$Prefix) {
+    $defaultVersion = aws iam get-policy --policy-arn $PolicyArn --query Policy.DefaultVersionId --output text
+    if ($LASTEXITCODE -ne 0) { return $false }
+    $docJson = aws iam get-policy-version `
+        --policy-arn $PolicyArn `
+        --version-id $defaultVersion `
+        --query PolicyVersion.Document `
+        --output json
+    if ($LASTEXITCODE -ne 0) { return $false }
+    return ($docJson -match [regex]::Escape($Prefix))
+}
+
+function Set-KbS3Policy([string]$PolicyArn, [string]$PolicyDocUri, [string]$RequiredPrefix) {
+    if (Test-KbS3PolicyIncludesPrefix -PolicyArn $PolicyArn -Prefix $RequiredPrefix) {
+        Write-Host "KB S3 policy default version already includes $RequiredPrefix"
+        return
+    }
+
+    for ($attempt = 0; $attempt -lt 4; $attempt++) {
+        $policyExit = Invoke-Aws @(
+            "iam", "create-policy-version",
+            "--policy-arn", $PolicyArn,
+            "--policy-document", "file://$policyDocUri",
+            "--set-as-default"
+        )
+        if ($policyExit -eq 0) {
+            Write-Host "KB S3 policy updated"
+            return
+        }
+        Write-Host "KB S3 policy update failed (attempt $($attempt + 1)); pruning old versions"
+        Remove-OldIamPolicyVersions $PolicyArn
+    }
+    Write-Host "KB S3 policy update skipped (verify default version includes $RequiredPrefix)" -ForegroundColor Yellow
+}
+
+# Canonical piter-* names with legacy Bedrock action group aliases on existing agents.
+$Script:ActionGroupAliases = @{
+    "piter-recent-deployments" = @("piter-recent-deployments", "iiq-correlate")
+    "piter-service-context"    = @("piter-service-context", "iiq-context")
+    "piter-similar-incidents"  = @("piter-similar-incidents", "iiq-similar")
+    "piter-escalation"         = @("piter-escalation")
+}
+
+function Resolve-ActionGroupSummary([string]$CanonicalName, $Summaries) {
+    $aliases = $Script:ActionGroupAliases[$CanonicalName]
+    if (-not $aliases) { $aliases = @($CanonicalName) }
+    foreach ($alias in $aliases) {
+        $match = $Summaries | Where-Object { $_.actionGroupName -eq $alias } | Select-Object -First 1
+        if ($match) { return $match }
+    }
+    return $null
+}
+
+function Ensure-AgentActionGroup(
+    [string]$CanonicalName,
+    [string]$LambdaName,
+    [string]$S3Key,
+    [string]$LambdaArn,
+    [string]$AgJsonDir
+) {
+    $groups = aws bedrock-agent list-agent-action-groups --agent-id $AgentId --agent-version DRAFT | ConvertFrom-Json
+    $match = Resolve-ActionGroupSummary -CanonicalName $CanonicalName -Summaries $groups.actionGroupSummaries
+
+    aws s3 cp "action_groups/$LambdaName/openapi_schema.yaml" "s3://$Bucket/$S3Key"
+    if ($LASTEXITCODE -ne 0) { throw "s3 cp openapi schema failed for $CanonicalName" }
+
+    $payload = @{
+        agentId = $AgentId
+        agentVersion = "DRAFT"
+        actionGroupName = $CanonicalName
+        actionGroupExecutor = @{ lambda = $LambdaArn }
+        apiSchema = @{
+            s3 = @{
+                s3BucketName = $Bucket
+                s3ObjectKey = $S3Key
+            }
+        }
+        actionGroupState = "ENABLED"
+    }
+    if ($match) {
+        $payload.actionGroupId = $match.actionGroupId
+    }
+
+    $agPath = Join-Path $AgJsonDir "$CanonicalName.json"
+    Write-JsonFileUtf8NoBom -Path $agPath -Json ($payload | ConvertTo-Json -Depth 6 -Compress)
+    $agUri = (Resolve-Path -LiteralPath $agPath).Path.Replace("\", "/")
+
+    if ($match) {
+        & aws bedrock-agent update-agent-action-group --cli-input-json "file://$agUri" | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "update-agent-action-group failed for $CanonicalName" }
+        if ($match.actionGroupName -ne $CanonicalName) {
+            Write-Host "Renamed action group $($match.actionGroupName) -> $CanonicalName"
+        } else {
+            Write-Host "Updated $CanonicalName -> $LambdaName"
+        }
+    } else {
+        & aws bedrock-agent create-agent-action-group --cli-input-json "file://$agUri" | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "create-agent-action-group failed for $CanonicalName" }
+        Write-Host "Created action group $CanonicalName -> $LambdaName"
+    }
+}
+
 Write-Step "Ensure Bedrock KB role can read knowledge_base S3 prefix"
 $kbS3PolicyArn = "arn:aws:iam::${AccountId}:policy/service-role/AmazonBedrockS3PolicyForKnowledgeBase_2q8xn"
 $kbS3PolicyPath = Join-Path $RepoRoot "infra/kb_s3_policy_patch.json"
 $policyDocUri = (Resolve-Path -LiteralPath $kbS3PolicyPath).Path.Replace("\", "/")
-$policyExit = Invoke-Aws @(
-    "iam", "create-policy-version",
-    "--policy-arn", $kbS3PolicyArn,
-    "--policy-document", "file://$policyDocUri",
-    "--set-as-default"
-)
-if ($policyExit -ne 0) {
-    Write-Host "KB S3 policy update failed; pruning non-default versions and retrying"
-    Remove-OldIamPolicyVersions $kbS3PolicyArn
-    $policyExit = Invoke-Aws @(
-        "iam", "create-policy-version",
-        "--policy-arn", $kbS3PolicyArn,
-        "--policy-document", "file://$policyDocUri",
-        "--set-as-default"
-    )
-}
-if ($policyExit -ne 0) {
-    Write-Host "KB S3 policy update skipped (verify default version includes $KbPrefix)"
-}
+Set-KbS3Policy -PolicyArn $kbS3PolicyArn -PolicyDocUri $policyDocUri -RequiredPrefix $KbPrefix
 
-Write-Step "Sync knowledge_base markdown to S3 (canonical prefix)"
-aws s3 sync (Join-Path $RepoRoot "knowledge_base") "s3://$Bucket/$KbPrefix" --exclude "*" --include "*.md" --delete
+Write-Step "Sync knowledge_base JSON/CSV corpus to S3 (canonical prefix)"
+aws s3 sync (Join-Path $RepoRoot "knowledge_base") "s3://$Bucket/$KbPrefix" --exclude "*" --include "*.json" --include "*.csv" --delete
 
 Write-Step "Point KB data source at knowledge_base S3 prefix"
 $dataSourcePath = Join-Path $RepoRoot "dist/update-data-source.json"
@@ -228,7 +334,7 @@ $dataSourceJson = @"
   }
 }
 "@
-[System.IO.File]::WriteAllText($dataSourcePath, $dataSourceJson)
+Write-JsonFileUtf8NoBom -Path $dataSourcePath -Json $dataSourceJson
 aws bedrock-agent update-data-source --cli-input-json "file://$dataSourcePath"
 if ($LASTEXITCODE -ne 0) { throw "update-data-source failed" }
 
@@ -288,36 +394,13 @@ $groupUpdates = @(
 )
 $agJsonDir = Join-Path $RepoRoot "dist/action-groups"
 New-Item -ItemType Directory -Force -Path $agJsonDir | Out-Null
-$groups = aws bedrock-agent list-agent-action-groups --agent-id $AgentId --agent-version DRAFT | ConvertFrom-Json
 foreach ($entry in $groupUpdates) {
-    $match = $groups.actionGroupSummaries | Where-Object { $_.actionGroupName -eq $entry.ActionGroup } | Select-Object -First 1
-    if (-not $match) {
-        Write-Host "Skipping missing action group $($entry.ActionGroup)"
-        continue
-    }
-    $lambdaArn = $lambdaArns[$entry.Lambda]
-    aws s3 cp "action_groups/$($entry.Lambda)/openapi_schema.yaml" "s3://$Bucket/$($entry.S3Key)"
-    if ($LASTEXITCODE -ne 0) { throw "s3 cp openapi schema failed for $($entry.ActionGroup)" }
-    $agPayload = @{
-        agentId = $AgentId
-        agentVersion = "DRAFT"
-        actionGroupId = $match.actionGroupId
-        actionGroupName = $match.actionGroupName
-        actionGroupExecutor = @{ lambda = $lambdaArn }
-        apiSchema = @{
-            s3 = @{
-                s3BucketName = $Bucket
-                s3ObjectKey = $entry.S3Key
-            }
-        }
-        actionGroupState = "ENABLED"
-    } | ConvertTo-Json -Depth 6 -Compress
-    $agPath = Join-Path $agJsonDir "$($entry.ActionGroup).json"
-    [System.IO.File]::WriteAllText($agPath, $agPayload)
-    $agUri = (Resolve-Path -LiteralPath $agPath).Path.Replace("\", "/")
-    & aws bedrock-agent update-agent-action-group --cli-input-json "file://$agUri" | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "update-agent-action-group failed for $($entry.ActionGroup)" }
-    Write-Host "Updated $($entry.ActionGroup) -> $($entry.Lambda)"
+    Ensure-AgentActionGroup `
+        -CanonicalName $entry.ActionGroup `
+        -LambdaName $entry.Lambda `
+        -S3Key $entry.S3Key `
+        -LambdaArn $lambdaArns[$entry.Lambda] `
+        -AgJsonDir $agJsonDir
 }
 
 Write-Step "Update agent instructions (keep existing agent name)"

@@ -24,20 +24,18 @@ def test_example_questions_unique_labels_and_text():
 
 
 DEMO_CORPUS_FILES = (
-    "auth_service_login_failure.md",
-    "deployment_rollback.md",
-    "redis_token_store_degradation.md",
-    "database_connectivity.md",
-    "api_gateway_5xx.md",
-    "escalation_policy.md",
-    "business_impact_matrix.md",
-    "piter_workflow.md",
+    "auth_service_login_failure.json",
+    "deployment_rollback.json",
+    "redis_token_store_degradation.json",
+    "database_connectivity.json",
+    "api_gateway_5xx.json",
+    "piter_workflow.json",
 )
 
 
 def test_demo_corpus_files_exist():
     for name in DEMO_CORPUS_FILES:
-        assert any(path.name == name for path in CORPUS.rglob("*.md")), (
+        assert any(path.name == name for path in CORPUS.rglob("*.json")), (
             f"missing demo corpus file: {name}"
         )
 
@@ -63,8 +61,8 @@ def test_evaluation_questions_schema():
     assert isinstance(cases, list)
     ids = [c["id"] for c in cases]
     assert len(ids) == len(set(ids))
-    corpus_names = {p.stem for p in CORPUS.rglob("*.md") if p.is_file()}
-    corpus_names |= {p.name for p in CORPUS.rglob("*.md") if p.is_file()}
+    corpus_names = {p.stem for p in CORPUS.rglob("*.json") if p.is_file()}
+    corpus_names |= {p.name for p in CORPUS.rglob("*.json") if p.is_file()}
     for case in cases:
         if case.get("expect_validation_error"):
             assert case.get("expected_reason")

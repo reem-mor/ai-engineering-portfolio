@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync knowledge_base/ to S3 and start a Bedrock Knowledge Base ingestion job."""
+"""Sync knowledge_base/ (JSON + catalog CSV) to S3 and start KB ingestion."""
 from __future__ import annotations
 
 import argparse
@@ -13,12 +13,13 @@ sys.path.insert(0, str(ROOT))
 import boto3  # noqa: E402
 
 from app.config import Config  # noqa: E402
+from app.services.kb_corpus import KB_ROOT, write_catalog_csv  # noqa: E402
 
-KB_ROOT = ROOT / "knowledge_base"
+KB_SUFFIXES = (".json", ".csv")
 
 
-def sync_markdown_to_s3(cfg: Config) -> int:
-    """Upload all knowledge_base/**/*.md under cfg.S3_PREFIX."""
+def sync_corpus_to_s3(cfg: Config) -> int:
+    """Upload knowledge_base/**/*.json and catalog.csv under cfg.S3_PREFIX (prune stale keys)."""
     if not cfg.S3_BUCKET:
         print("S3_BUCKET is required to sync knowledge base documents")
         return 1
@@ -27,14 +28,51 @@ def sync_markdown_to_s3(cfg: Config) -> int:
         print(f"Missing knowledge base directory: {KB_ROOT}")
         return 1
 
-    s3 = boto3.client("s3", region_name=cfg.AWS_REGION)
-    uploaded = 0
-    for path in sorted(KB_ROOT.rglob("*.md")):
-        rel = path.relative_to(KB_ROOT).as_posix()
-        key = f"{prefix}{rel}"
-        s3.upload_file(str(path), cfg.S3_BUCKET, key)
-        uploaded += 1
-    print(f"Uploaded {uploaded} markdown files to s3://{cfg.S3_BUCKET}/{prefix}")
+    write_catalog_csv()
+    import os
+    import subprocess
+
+    dest = f"s3://{cfg.S3_BUCKET}/{prefix}"
+    cmd = [
+        "aws",
+        "s3",
+        "sync",
+        str(KB_ROOT),
+        dest,
+        "--exclude",
+        "*",
+        "--include",
+        "*.json",
+        "--include",
+        "*.csv",
+        "--delete",
+    ]
+    profile = os.environ.get("AWS_PROFILE", "").strip()
+    if profile:
+        cmd.extend(["--profile", profile])
+    print("Running:", " ".join(cmd))
+    result = subprocess.run(cmd, check=False)
+    if result.returncode != 0:
+        return result.returncode
+    print(f"Synced JSON/CSV corpus to {dest}")
+
+    # Remove legacy markdown objects so Bedrock KB does not retain duplicate chunks.
+    rm_cmd = [
+        "aws",
+        "s3",
+        "rm",
+        dest,
+        "--recursive",
+        "--exclude",
+        "*",
+        "--include",
+        "*.md",
+    ]
+    if profile:
+        rm_cmd.extend(["--profile", profile])
+    print("Running:", " ".join(rm_cmd))
+    subprocess.run(rm_cmd, check=False)
+
     return 0
 
 
@@ -85,7 +123,7 @@ def main() -> int:
     parser.add_argument(
         "--skip-ingest",
         action="store_true",
-        help="Only upload markdown to S3",
+        help="Only upload JSON/CSV corpus to S3",
     )
     parser.add_argument(
         "--wait",
@@ -96,7 +134,7 @@ def main() -> int:
 
     cfg = Config.from_env()
     if not args.skip_upload:
-        code = sync_markdown_to_s3(cfg)
+        code = sync_corpus_to_s3(cfg)
         if code != 0:
             return code
     if args.skip_ingest:
@@ -106,3 +144,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

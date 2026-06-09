@@ -43,7 +43,7 @@ def test_triage_returns_card(local_client):
     assert body["ok"] is True
     assert body["mode"] == "local"
     assert body["grounded"] is True
-    assert body["citations"][0]["document"] == "database_connectivity.md"
+    assert body["citations"][0]["document"] == "database_connectivity.json"
     for key in ("recommended_steps", "owner", "impact", "similar_incidents", "session_id"):
         assert key in body
 
@@ -116,7 +116,7 @@ def test_ask_falls_back_to_local(fake_config):
     body = resp.get_json()
     assert body["ok"] is True
     assert body["mode"] == "local_fallback"
-    assert body["citations"][0]["source_label"] == "database_connectivity.md"
+    assert body["citations"][0]["source_label"] == "database_connectivity.json"
 
 
 def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
@@ -125,8 +125,8 @@ def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
         citations=[
             Citation(
                 snippet="Roll back if deploy correlated.",
-                source_uri="s3://bucket/knowledge_base/runbooks/deployment_rollback.md",
-                source_label="deployment_rollback.md",
+                source_uri="s3://bucket/knowledge_base/runbooks/deployment_rollback.json",
+                source_label="deployment_rollback.json",
             )
         ],
         session_id="agent-sess-1",
