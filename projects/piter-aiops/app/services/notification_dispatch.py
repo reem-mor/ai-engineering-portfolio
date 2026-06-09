@@ -354,9 +354,13 @@ def check_sms_account_ready(*, region: str | None = None, phone: str | None = No
             "message": message,
             "console_url": SMS_CONSOLE_URL,
         }
-    except BotoCoreError:
+    except BotoCoreError as exc:
         # No AWS credentials / no network (local + offline demo): SMS simply isn't ready.
         # This keeps /bootstrap, /console and local fallback working without AWS access.
+        # Log the cause so the graceful degradation is still diagnosable.
+        logger.debug(
+            "SMS readiness check unavailable (%s)", exc.__class__.__name__, exc_info=True
+        )
         return {
             "ready": False,
             "reason": "sms_check_unavailable",
