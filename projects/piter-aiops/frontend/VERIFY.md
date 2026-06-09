@@ -7,6 +7,8 @@ Manual click-test and automated gates for the enterprise layout + demo choreogra
 | Check | Command | Expected |
 |-------|---------|----------|
 | Production build | `cd frontend && npm run build` | `app/static/spa/index.html` + `assets/index-*.js` |
+| ESLint | `cd frontend && npm run lint` | 0 errors |
+| Playwright demo path | `cd frontend && npm run test:e2e` | Skips if server down; 4 specs when `:8080` is up |
 | Backend tests | `pytest -q` (project root) | **297+** passed |
 | Deep health | `curl http://localhost:8080/api/health?deep=1` | JSON `status` + `checks` |
 | Live API smoke | `python scripts/verify_live_demo.py --base-url http://127.0.0.1:8080` | All checks OK |
@@ -34,12 +36,21 @@ npm run dev
 | `http://localhost:5173/` | Daily UI iteration (Vite HMR; proxies `/api` to :8080) |
 | `http://localhost:8080/` | Built SPA after `npm run build` |
 
+After `npm run build`, **restart** the backend (Flask or `docker compose up --build -d`) so `:8080` serves the new asset hash. Docker Compose forces `FORCE_LEGACY_UI=false`; a developer `.env` with `FORCE_LEGACY_UI=true` disables the SPA on venv/Flask unless unset.
+
+E2E expects `data-ui-version="demo-polish-v1"` on `.app-shell` — if tests skip with "Built demo-polish SPA not served", rebuild + restart.
+
 See [`docs/LOCAL_DEV.md`](../docs/LOCAL_DEV.md).
 
 ## F2-R click-test matrix
 
 - [ ] **Logo → Home** — Click PITER logo from every nav page; lands on Operations Dashboard.
-- [ ] **Nav** — Operations, Agent Analytics, History, Analyzer, System.
+- [ ] **Nav** — Operations, Analyzer, Agent Analytics, History, System & KB, Demo Guide (grouped sidebar).
+- [ ] **Critical mode** — After P1 (~20s), shell gets red accent (`critical-mode` class); sticky P1 banner on dashboard.
+- [ ] **Analyze P1 Incident** — Modal shows stepped progress; Home renders structured PITER cards (not raw markdown).
+- [ ] **Safety guardrail** — Purple panel below analysis header; lists blocked auto-actions.
+- [ ] **MTTR panel** — Demo-estimate KPIs after triage or storm complete.
+- [ ] **Source badge** — Bedrock vs local fallback labeled correctly on analysis and chat.
 - [ ] **Notify badge** — Top bar shows `NOTIFY LIVE` or `NOTIFY PREVIEW` matching `/api/bootstrap` `notification.mode` (may flash PREVIEW until bootstrap loads).
 - [ ] **Start Alert Stream** — DEMO tag, alert table fills, KPIs tick, decisions feed updates.
 - [ ] **P1 popup (~20s)** — Analyze / Escalate / Ask Agent / Continue Live; no overlapping modals.
@@ -47,8 +58,8 @@ See [`docs/LOCAL_DEV.md`](../docs/LOCAL_DEV.md).
 - [ ] **Alert row Ask agent** — Opens dock with context.
 - [ ] **History toggles** — Alerts and Incidents views with search/filter.
 - [ ] **System tools** — All four metrics forms; System/Metrics pages show live or preview banner per bootstrap.
-- [ ] **Chat dock** — Collapse to rail, expand full panel, session selector load+continue.
-- [ ] **Escalation modal** — Shows LIVE or PREVIEW banner; channel toggle; confirmation token field when `require_confirmation` is true.
+- [ ] **Chat dock** — 420px width; no embedded full analysis; summary card + "View full analysis"; follow-up chips; New Session.
+- [ ] **Escalation modal** — "Preview only — human approval required" banner; structured preview card; dispatch de-emphasized in preview mode.
 - [ ] **Escalation dispatch** — See [Live vs preview](#live-vs-preview-escalation) below.
 
 ## Live vs preview escalation
@@ -69,11 +80,32 @@ EC2 live demo: token and allowlist come from SSM Parameter Store under `/piter-a
 - [ ] Viewport ~1280px width — no clipped modals or sidebar overlap.
 - [ ] After `npm run build`, hard refresh on `:8080` to pick up new asset hash.
 
+## Screenshot checklist (8 shots)
+
+1. Idle dashboard (no stream)
+2. Alert stream with counter
+3. P1 banner / modal
+4. Analyze stepped progress
+5. Structured PITER result + guardrail + MTTR
+6. Slim chat dock with summary card
+7. Escalation preview modal
+8. History sections (sessions + context)
+
 ## Demo choreography (run twice)
 
-1. Start Alert Stream → wait for P1 modal.
-2. Test each action once per rehearsal (Analyze, Escalate confirm, Ask Agent, Continue Live).
-3. Let stream complete or Reset Demo between runs.
+1. Start Alert Stream → wait for P1 modal (~20s).
+2. **Analyze P1 Incident** → structured panels on Home.
+3. Open chat → follow-up chip → **View full analysis** scroll.
+4. Escalation preview (no live send in preview mode).
+5. Reset Demo between runs.
+
+## Playwright
+
+```powershell
+cd projects\piter-aiops\frontend
+npm run test:e2e
+# optional: PITER_BASE_URL=http://ec2-host:8080 npm run test:e2e
+```
 
 ## Docker (optional)
 

@@ -106,9 +106,45 @@ export function HistoryInvestigationsPage() {
 
   if (error) return <ErrorState message={error} onRetry={load} />;
 
+  const selectedPast = expanded ? filteredPast.find((p) => p.session_id === expanded) : null;
+
   return (
     <div className="grid-stack">
       <h1 style={{ margin: 0, fontSize: "1.125rem" }}>History & Investigations</h1>
+
+      <section className="history-section panel">
+        <h2 className="history-section-title">Conversation history</h2>
+        <p className="mono" style={{ fontSize: "0.8125rem", margin: 0, color: "var(--text-muted)" }}>
+          {filteredPast.length} persisted session{filteredPast.length === 1 ? "" : "s"} — open in Agent Chat
+          for follow-ups.
+        </p>
+      </section>
+
+      {selectedPast ? (
+        <section className="history-section panel">
+          <h2 className="history-section-title">Selected incident context</h2>
+          <div className="piter-field-grid">
+            <div className="piter-field">
+              <div className="piter-field-label">Session</div>
+              <div className="piter-field-value mono">{selectedPast.session_id}</div>
+            </div>
+            <div className="piter-field">
+              <div className="piter-field-label">Service</div>
+              <div className="piter-field-value">{selectedPast.service || "—"}</div>
+            </div>
+            <div className="piter-field">
+              <div className="piter-field-label">Severity</div>
+              <div className="piter-field-value">
+                <PriorityBadge priority={(selectedPast.severity as "P1") || "P4"} />
+              </div>
+            </div>
+            <div className="piter-field">
+              <div className="piter-field-label">Symptom</div>
+              <div className="piter-field-value">{selectedPast.symptom || "—"}</div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className="history-toolbar">
         <div className="toggle-group">
@@ -150,6 +186,8 @@ export function HistoryInvestigationsPage() {
       </div>
 
       {view === "alerts" ? (
+        <section className="history-section">
+          <h2 className="history-section-title">Alert history</h2>
         <div className="table-wrap panel">
           <table className="data-table">
             <thead>
@@ -191,7 +229,10 @@ export function HistoryInvestigationsPage() {
             </tbody>
           </table>
         </div>
+        </section>
       ) : view === "incidents" ? (
+        <section className="history-section">
+          <h2 className="history-section-title">Incident investigation history</h2>
         <div className="grid-stack">
           {filteredIncidents.map((i) => (
             <article key={i.id} className="panel">
@@ -227,7 +268,10 @@ export function HistoryInvestigationsPage() {
             </article>
           ))}
         </div>
+        </section>
       ) : (
+        <section className="history-section">
+          <h2 className="history-section-title">Recent follow-ups & past investigations</h2>
         <div className="table-wrap panel">
           {filteredPast.length === 0 ? (
             <p className="mono" style={{ padding: 12, color: "var(--text-muted)" }}>
@@ -265,7 +309,10 @@ export function HistoryInvestigationsPage() {
                         type="button"
                         className="btn btn-sm"
                         disabled={detailLoading === p.session_id}
-                        onClick={() => void openPastSession(p.session_id)}
+                        onClick={() => {
+                          setExpanded(p.session_id);
+                          void openPastSession(p.session_id);
+                        }}
                       >
                         {detailLoading === p.session_id ? "Loading…" : "Open in chat"}
                       </button>
@@ -276,6 +323,7 @@ export function HistoryInvestigationsPage() {
             </table>
           )}
         </div>
+        </section>
       )}
     </div>
   );

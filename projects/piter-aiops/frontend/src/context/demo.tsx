@@ -32,6 +32,8 @@ type DemoContextValue = {
   decisions: AgentDecision[];
   p1Row: AlertRow | null;
   showP1Modal: boolean;
+  p1Shown: boolean;
+  criticalMode: boolean;
   stormComplete: boolean;
   escalatedIds: Set<string>;
   triageResult: TriageResponse | null;
@@ -145,6 +147,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     prevVisibleRef.current = [];
   }, []);
 
+  const criticalMode = showP1Modal || p1Shown || Boolean(triageResult);
+
   const value = useMemo(
     () => ({
       demoMode,
@@ -155,6 +159,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       decisions,
       p1Row,
       showP1Modal,
+      p1Shown,
+      criticalMode,
       stormComplete,
       escalatedIds,
       triageResult,
@@ -180,6 +186,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       decisions,
       p1Row,
       showP1Modal,
+      p1Shown,
+      criticalMode,
       stormComplete,
       escalatedIds,
       triageResult,

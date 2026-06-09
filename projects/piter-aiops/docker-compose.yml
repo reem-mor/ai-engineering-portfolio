@@ -18,6 +18,8 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # SPA is the default console; ignore legacy FORCE_LEGACY_UI in developer .env.
+      - FORCE_LEGACY_UI=false
       # Keep Docker local-first even if a developer .env contains live AWS IDs.
       # Opt in with PITER_DOCKER_USE_BEDROCK=true for live Bedrock Docker tests.
       - PITER_USE_BEDROCK=${PITER_DOCKER_USE_BEDROCK:-false}

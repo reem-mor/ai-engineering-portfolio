@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  ChevronRight,
+  Maximize2,
+  MessageSquare,
+  Minimize2,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
+import { useDemo } from "@/context/demo";
 import { fetchHistory } from "@/lib/api-contract";
-import { PiterResponseView } from "@/components/noc/PiterResponseView";
+import { formatChatText, investigationSnippet } from "@/lib/chat-format";
+import { SourceBadge } from "@/components/ui/SourceBadge";
+import { Button } from "@/components/ui/Button";
+import { PriorityBadge } from "@/components/noc/PriorityBadge";
+import type { Priority } from "@/types/api";
 
 export function ChatDock() {
   const {
@@ -19,8 +32,11 @@ export function ChatDock() {
     send,
     loadSession,
     clearChat,
+    newSession,
+    contextAlert,
   } = useChatDock();
   const { setSessionId } = useSession();
+  const { p1Row } = useDemo();
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +57,7 @@ export function ChatDock() {
     return (
       <aside className="chat-dock chat-dock-collapsed">
         <button type="button" className="dock-rail-btn" onClick={toggleCollapsed} title="Open agent chat">
-          ◈
+          <MessageSquare size={18} />
         </button>
       </aside>
     );
@@ -54,18 +70,28 @@ export function ChatDock() {
     void send(text);
   };
 
+  const alert = contextAlert || p1Row;
+  const followups = lastResponse?.recommended_followups || lastResponse?.next_questions || [];
+
+  const scrollToAnalysis = () => {
+    document.getElementById("piter-analysis-panel")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <aside className={`chat-dock${mode === "fullscreen" ? " chat-dock-full" : ""}`}>
       <header className="chat-dock-header">
         <span>Agent Chat</span>
         <div className="chat-dock-tools">
+          <button type="button" className="btn btn-sm" onClick={() => void newSession()} title="New session">
+            <Plus size={14} /> New
+          </button>
           <button
             type="button"
             className="btn btn-sm"
             onClick={() => void clearChat()}
             title="Clear chat history"
           >
-            Clear
+            <Trash2 size={14} />
           </button>
           <button
             type="button"
@@ -73,13 +99,20 @@ export function ChatDock() {
             onClick={() => setMode(mode === "fullscreen" ? "open" : "fullscreen")}
             title={mode === "fullscreen" ? "Exit full panel" : "Expand full panel"}
           >
-            {mode === "fullscreen" ? "⊟" : "⊞"}
+            {mode === "fullscreen" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
           <button type="button" className="btn btn-icon" onClick={toggleCollapsed} title="Collapse">
-            ›
+            <ChevronRight size={16} />
           </button>
         </div>
       </header>
+
+      {alert ? (
+        <div className="chat-context-chip">
+          <PriorityBadge priority={(alert.severity as Priority) || "P4"} />
+          {alert.service} · {alert.environment} · {alert.alert_id}
+        </div>
+      ) : null}
 
       {sessions.length > 0 ? (
         <div className="chat-sessions">
@@ -110,8 +143,15 @@ export function ChatDock() {
         ) : null}
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble chat-${m.role}`}>
-            <div className="chat-role">{m.role === "user" ? "You" : "PITER"}</div>
-            <div className="chat-text">{m.content}</div>
+            <div className="chat-role">
+              {m.role === "user" ? "You" : "PITER"}
+              {m.role === "assistant" && m.mode ? (
+                <span style={{ marginLeft: 8 }}>
+                  <SourceBadge mode={m.mode} />
+                </span>
+              ) : null}
+            </div>
+            <div className="chat-text">{formatChatText(m.content)}</div>
           </div>
         ))}
         {pending ? <div className="chat-bubble chat-assistant chat-thinking">Agent thinking…</div> : null}
@@ -120,8 +160,29 @@ export function ChatDock() {
       </div>
 
       {lastResponse?.piter && messages.length > 0 ? (
-        <div className="chat-structured">
-          <PiterResponseView response={lastResponse} />
+        <div className="chat-summary-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong>Analysis summary</strong>
+            <SourceBadge mode={lastResponse.mode} fallbackUsed={lastResponse.fallback_used} />
+          </div>
+          {lastResponse.piter.priority ? (
+            <div style={{ marginTop: 6 }}>
+              <PriorityBadge priority={lastResponse.piter.priority as Priority} />
+            </div>
+          ) : null}
+          <p className="chat-summary-snippet">{investigationSnippet(lastResponse)}</p>
+          <Button variant="secondary" size="sm" onClick={scrollToAnalysis}>
+            View full analysis
+          </Button>
+          {followups.length > 0 ? (
+            <div className="follow-up-chips">
+              {followups.slice(0, 4).map((q) => (
+                <button key={q} type="button" className="follow-up-chip" onClick={() => void send(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -139,9 +200,9 @@ export function ChatDock() {
             }
           }}
         />
-        <button type="button" className="btn btn-primary" onClick={submit} disabled={pending}>
+        <Button variant="primary" onClick={submit} disabled={pending} loading={pending}>
           Send
-        </button>
+        </Button>
       </footer>
     </aside>
   );

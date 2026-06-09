@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ChatDockPrefill, ChatResponse, HistoryMessage } from "@/types/api";
+import type { AlertRow, ChatDockPrefill, ChatResponse, HistoryMessage } from "@/types/api";
 import { ApiError, clearHistory, fetchHistory, postChat, postFollowUp } from "@/lib/api-contract";
 import { useSession } from "@/context/session";
 
@@ -30,6 +30,8 @@ type ChatDockContextValue = {
   openWith: (prefill: ChatDockPrefill) => void;
   loadSession: (sessionId: string) => Promise<void>;
   clearChat: () => Promise<void>;
+  newSession: () => Promise<void>;
+  contextAlert: Partial<AlertRow> | null;
 };
 
 const ChatDockContext = createContext<ChatDockContextValue | null>(null);
@@ -43,6 +45,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
+  const [contextAlert, setContextAlert] = useState<Partial<AlertRow> | null>(null);
 
   const registerSession = useCallback(
     (id: string, label?: string) => {
@@ -89,8 +92,10 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
           registerSession(nextSid);
         }
         const hasStructured = Boolean(data.piter?.investigation || data.piter?.priority);
-        if (!hasStructured) {
-          const answer = data.answer || "";
+        const answer = hasStructured
+          ? data.piter?.investigation?.slice(0, 400) || data.answer || "Structured analysis ready."
+          : data.answer || "";
+        if (answer) {
           setMessages((m) => [
             ...m,
             { role: "assistant", content: answer, ts: Date.now() / 1000, mode: data.mode },
@@ -117,9 +122,24 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
     }
   }, [activeSessionId, globalSessionId]);
 
+  const newSession = useCallback(async () => {
+    setError(null);
+    setActiveSessionId(null);
+    setGlobalSessionId(null);
+    setMessages([]);
+    setLastResponse(null);
+    setContextAlert(null);
+    try {
+      await clearHistory();
+    } catch {
+      /* fresh session — ignore if no prior history */
+    }
+  }, [setGlobalSessionId]);
+
   const openWith = useCallback(
     (prefill: ChatDockPrefill) => {
       setMode("open");
+      if (prefill.alert) setContextAlert(prefill.alert);
       if (prefill.sessionId) {
         setActiveSessionId(prefill.sessionId);
         setGlobalSessionId(prefill.sessionId);
@@ -154,6 +174,8 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       openWith,
       loadSession,
       clearChat,
+      newSession,
+      contextAlert,
     }),
     [
       mode,
@@ -169,6 +191,8 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       registerSession,
       toggleCollapsed,
       clearChat,
+      newSession,
+      contextAlert,
     ],
   );
 

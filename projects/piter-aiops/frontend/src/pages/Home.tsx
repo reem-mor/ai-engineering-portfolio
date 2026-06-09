@@ -7,6 +7,9 @@ import type { AlertRow, Investigation, InvestigationsResponse, Priority } from "
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { LoadingSkeleton } from "@/components/noc/LoadingSkeleton";
+import { CriticalIncidentBanner } from "@/components/demo/CriticalIncidentBanner";
+import { MTTRPanel } from "@/components/noc/MTTRPanel";
+import { MetricCard } from "@/components/ui/MetricCard";
 
 function noiseCount(rows: AlertRow[]): number {
   return rows.filter((r) => r.is_noise_candidate === "true").length;
@@ -23,8 +26,9 @@ export function HomePage() {
     triageResult,
     escalatedIds,
     p1Row,
+    wallSec,
   } = useDemo();
-  const { openWith } = useChatDock();
+  const { openWith, send } = useChatDock();
   const [inv, setInv] = useState<InvestigationsResponse | null>(null);
 
   const loadInv = useCallback(async () => {
@@ -41,15 +45,11 @@ export function HomePage() {
 
   const alertRows = demoMode ? visible : [];
   const sev = countSeverities(alertRows);
-  const totalReceived = demoMode
-    ? alertRows.length
-    : bootstrap?.alert_stream?.total ?? 0;
-  const suppressed = demoMode
-    ? noiseCount(alertRows)
-    : bootstrap?.alert_stream?.noise_suppressed ?? 0;
+  const totalReceived = demoMode ? alertRows.length : (bootstrap?.alert_stream?.total ?? 0);
+  const suppressed = demoMode ? noiseCount(alertRows) : (bootstrap?.alert_stream?.noise_suppressed ?? 0);
   const activeIncidents = demoMode
     ? alertRows.filter((r) => r.incident_candidate_id).length
-    : inv?.summary?.active_count ?? 0;
+    : (inv?.summary?.active_count ?? 0);
 
   const demoKpis = useMemo(() => {
     if (!demoMode || !demoImpact) return null;
@@ -65,32 +65,60 @@ export function HomePage() {
     });
   };
 
+  const scrollToAnalysis = () => {
+    document.getElementById("piter-analysis-panel")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="grid-stack home-page">
       <h1 style={{ margin: 0, fontSize: "1.125rem" }}>Operations Dashboard</h1>
 
+      <CriticalIncidentBanner />
+
       <div className="kpi-grid">
-        <Kpi label="Alerts received" value={totalReceived} />
-        <Kpi label="Noise suppressed" value={suppressed} />
-        <Kpi label="Active incidents" value={activeIncidents} />
-        <Kpi label="P1 / P2 / P3" value={`${sev.P1} / ${sev.P2} / ${sev.P3}`} mono />
-        <Kpi label="Escalations" value={escalatedIds.size} />
+        <MetricCard label="Alerts received" value={totalReceived} />
+        <MetricCard label="Noise suppressed" value={suppressed} />
+        <MetricCard label="Active incidents" value={activeIncidents} />
+        <MetricCard label="P1 / P2 / P3" value={`${sev.P1} / ${sev.P2} / ${sev.P3}`} mono />
+        <MetricCard label="Escalations" value={escalatedIds.size} />
         {demoMode && demoKpis ? (
           <>
-            <Kpi label="MTTR reduced (min)" value={String(demoKpis.mttr ?? "—")} demo />
-            <Kpi label="Cost avoided (USD)" value={String(demoKpis.cost ?? "—")} demo />
+            <MetricCard label="MTTR reduced (min)" value={String(demoKpis.mttr ?? "—")} demo />
+            <MetricCard label="Cost avoided (USD)" value={String(demoKpis.cost ?? "—")} demo />
           </>
         ) : null}
       </div>
 
+      {(demoMode && (demoImpact || triageResult)) || triageResult ? (
+        <MTTRPanel
+          demoImpact={demoImpact}
+          triageResult={triageResult}
+          noiseSuppressed={suppressed}
+          p1DetectionSec={p1Row && demoMode ? Math.round(wallSec) || 20 : undefined}
+        />
+      ) : null}
+
       <div className="home-grid">
         <section className="panel home-panel">
-          <h2 className="panel-title">Alert stream</h2>
+          <div className="stream-header">
+            <h2 className="panel-title" style={{ margin: 0 }}>
+              Alert stream
+            </h2>
+            {demoMode ? (
+              <span className="stream-counter">Alerts: {alertRows.length}</span>
+            ) : null}
+          </div>
           {!demoMode ? (
-            <p className="mono" style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>
-              Idle — use Start Alert Stream to begin demo playback.
+            <div className="idle-state-card">
+              <p>
+                Idle — use <strong>Start Alert Stream</strong> in the top bar to begin demo playback.
+              </p>
+            </div>
+          ) : (
+            <p className="mono" style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: "0 0 8px" }}>
+              Noise suppression active · correlated groups merged
             </p>
-          ) : null}
+          )}
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -107,7 +135,7 @@ export function HomePage() {
                 {alertRows.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="mono" style={{ color: "var(--text-muted)" }}>
-                      No alerts in view
+                      {demoMode ? "Awaiting alerts…" : "No alerts in view"}
                     </td>
                   </tr>
                 ) : (
@@ -121,9 +149,11 @@ export function HomePage() {
                         className={
                           p1Row && r.alert_id === p1Row.alert_id
                             ? "alert-row-p1"
-                            : r.is_trigger === "true"
-                              ? "alert-row-trigger"
-                              : undefined
+                            : r.is_noise_candidate === "true"
+                              ? "alert-row-noise"
+                              : r.is_trigger === "true"
+                                ? "alert-row-trigger"
+                                : undefined
                         }
                       >
                         <td className="mono">{r.timestamp.slice(11, 19)}</td>
@@ -184,32 +214,18 @@ export function HomePage() {
 
       {triageResult ? (
         <section>
-          <h2 className="panel-title">P1 analysis</h2>
-          <PiterResponseView response={triageResult} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 className="panel-title">P1 analysis</h2>
+            <button type="button" className="btn btn-sm" onClick={scrollToAnalysis}>
+              Jump to analysis
+            </button>
+          </div>
+          <PiterResponseView
+            response={triageResult}
+            onFollowUp={(q) => void send(q)}
+          />
         </section>
       ) : null}
-    </div>
-  );
-}
-
-function Kpi({
-  label,
-  value,
-  mono,
-  demo,
-}: {
-  label: string;
-  value: string | number;
-  mono?: boolean;
-  demo?: boolean;
-}) {
-  return (
-    <div className={`panel kpi-card${demo ? " kpi-demo" : ""}`}>
-      <div className="kpi-label">
-        {label}
-        {demo ? <span className="demo-tag-inline">DEMO</span> : null}
-      </div>
-      <div className={mono ? "mono kpi-value" : "kpi-value"}>{value}</div>
     </div>
   );
 }
@@ -233,7 +249,7 @@ function IncidentQueue({
         const st = state[item.id] || item.status || "open";
         const escalated = escalatedIds.has(item.id);
         return (
-          <li key={item.id} className="incident-row">
+          <li key={item.id} className={`incident-row${item.priority === "P1" ? " incident-row-p1" : ""}`}>
             <div>
               <PriorityBadge priority={item.priority} />
               <span className="mono" style={{ marginLeft: 8 }}>

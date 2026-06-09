@@ -1,11 +1,22 @@
+import { useEffect, useState } from "react";
+import { Check, Circle, Loader2 } from "lucide-react";
 import { useDemo } from "@/context/demo";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
 import { useNavigate } from "@/context/navigation";
 import { alertToTriagePayload } from "@/lib/storm-engine";
 import { postTriage } from "@/lib/api-contract";
-import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { EscalationModal } from "./EscalationModal";
+
+const ANALYZE_STEPS = [
+  "Reading alert context",
+  "Checking deployments",
+  "Querying knowledge base",
+  "Similar incidents",
+  "Escalation recommendation",
+  "Generating PITER response",
+];
 
 export function P1Modal() {
   const {
@@ -21,7 +32,21 @@ export function P1Modal() {
   const { setSessionId } = useSession();
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
+  const [stepIndex, setStepIndex] = useState(-1);
+  const [done, setDone] = useState(false);
   const [showEscalation, setShowEscalation] = useState(false);
+
+  useEffect(() => {
+    if (!analyzing) {
+      setStepIndex(-1);
+      return;
+    }
+    setStepIndex(0);
+    const timers = ANALYZE_STEPS.map((_, i) =>
+      window.setTimeout(() => setStepIndex(i), i * 450),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [analyzing]);
 
   if (!showP1Modal || !p1Row) return null;
 
@@ -29,8 +54,10 @@ export function P1Modal() {
   const escalated = escalatedIds.has(incidentId);
 
   const analyze = async () => {
+    if (analyzing) return;
     pauseStorm();
     setAnalyzing(true);
+    setDone(false);
     try {
       const data = await postTriage(alertToTriagePayload(p1Row));
       setTriageResult(data);
@@ -39,8 +66,10 @@ export function P1Modal() {
         registerSession(sid, `${p1Row.service} P1`);
         setSessionId(sid);
       }
+      setStepIndex(ANALYZE_STEPS.length);
+      setDone(true);
       navigate("home");
-      dismissP1();
+      window.setTimeout(() => dismissP1(), 600);
     } finally {
       setAnalyzing(false);
     }
@@ -61,7 +90,7 @@ export function P1Modal() {
       <div className="modal-backdrop" role="presentation">
         <div className="modal p1-modal" role="dialog" aria-labelledby="p1-title">
           <h2 id="p1-title" className="p1-modal-title">
-            P1 INCIDENT CANDIDATE
+            P1 critical incident
           </h2>
           <p className="mono" style={{ margin: "0 0 8px", color: "var(--sev-p1)" }}>
             {p1Row.service} · {p1Row.environment} · {p1Row.severity}
@@ -72,19 +101,44 @@ export function P1Modal() {
               Escalated
             </p>
           ) : null}
+
+          {analyzing || done ? (
+            <ul className="analyze-steps" aria-live="polite">
+              {ANALYZE_STEPS.map((label, i) => {
+                const isDone = stepIndex > i || done;
+                const isActive = analyzing && stepIndex === i;
+                return (
+                  <li
+                    key={label}
+                    className={`analyze-step${isDone ? " done" : ""}${isActive ? " active" : ""}`}
+                  >
+                    {isDone ? (
+                      <Check size={14} />
+                    ) : isActive ? (
+                      <Loader2 size={14} className="btn-spinner" />
+                    ) : (
+                      <Circle size={14} />
+                    )}
+                    {label}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+
           <div className="p1-modal-actions">
-            <button type="button" className="btn btn-primary" onClick={() => void analyze()} disabled={analyzing}>
-              {analyzing ? "Analyzing…" : "Analyze Incident"}
-            </button>
-            <button type="button" className="btn" onClick={() => setShowEscalation(true)}>
+            <Button variant="primary" size="lg" loading={analyzing} onClick={() => void analyze()}>
+              Analyze P1 Incident
+            </Button>
+            <Button variant="secondary" onClick={() => setShowEscalation(true)} disabled={analyzing}>
               Escalate On-Call
-            </button>
-            <button type="button" className="btn" onClick={askAgent}>
+            </Button>
+            <Button variant="secondary" onClick={askAgent} disabled={analyzing}>
               Ask Agent
-            </button>
-            <button type="button" className="btn" onClick={dismissP1}>
+            </Button>
+            <Button variant="ghost" onClick={dismissP1} disabled={analyzing}>
               Continue Live
-            </button>
+            </Button>
           </div>
         </div>
       </div>

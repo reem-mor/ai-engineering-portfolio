@@ -1,6 +1,20 @@
 export type Priority = "P1" | "P2" | "P3" | "P4";
 
-export type PageKey = "home" | "analytics" | "history" | "analyzer" | "system";
+export type PageKey = "home" | "analytics" | "history" | "analyzer" | "system" | "guide";
+
+export type TriageOwner = {
+  owner_team?: string;
+  primary_oncall?: string;
+  escalation_path?: string;
+  backup_oncall?: string;
+};
+
+export type TriageImpact = {
+  revenue_impact_usd_per_hour?: number;
+  users_affected?: number;
+  sla_risk?: string;
+  customer_segments?: string;
+};
 
 export type HealthResponse = {
   status: "ok" | "degraded" | string;
@@ -132,6 +146,7 @@ export type TriageResponse = {
   session_id?: string;
   mode?: string;
   fallback_used?: boolean;
+  grounded?: boolean;
   message?: string;
   reason?: string;
   priority?: string;
@@ -140,6 +155,12 @@ export type TriageResponse = {
   suspect_deployment?: unknown;
   similar_incidents?: unknown[];
   escalation_policy?: Record<string, unknown>;
+  owner?: TriageOwner;
+  impact?: TriageImpact;
+  recommended_steps?: string[];
+  requires_escalation?: boolean;
+  recommended_followups?: string[];
+  next_questions?: string[];
 };
 
 export type ChatResponse = TriageResponse;

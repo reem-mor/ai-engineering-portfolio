@@ -27,7 +27,8 @@ py -3.12 -m pip install -r requirements-dev.txt
 py -3.12 -m pytest -q
 cd frontend; npm ci; npm run build; cd ..
 docker compose up --build -d
-# http://localhost:8080/ → Start Alert Stream → P1 at ~20s → Analyze
+# http://localhost:8080/ → Start Alert Stream → P1 at ~20s → Analyze P1 Incident
+# cd frontend; npm run test:e2e   # Playwright demo path (server must be up)
 ```
 
 Demo walkthrough: [`docs/demo_script.md`](docs/demo_script.md) · Deploy: [`docs/deployment.md`](docs/deployment.md)

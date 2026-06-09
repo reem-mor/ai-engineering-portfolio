@@ -11,17 +11,19 @@
 1. **Intro** — PITER = Priority, Investigation, Triage, Escalation, Resolution; grounded in KB + tools.
 2. Click **Start Alert Stream** — storm timer and alert count appear in the top bar.
 3. Watch alerts populate; noise suppression KPI updates.
-4. At **~20s** — P1 modal fires (`ALT-2026-06-10-0251`, bet-service).
-5. Click **Analyze Incident** — triage runs; Home shows **P1 analysis** with structured PITER panels.
-6. Point to **Priority** and **Business impact** sections.
-7. Point to **Investigation** — deployment suspect and similar incidents table (not "N items").
-8. Expand **Triage** timeline and **Escalation** policy snippet.
-9. Open **Agent Chat** — session matches triage; ask: `What should I check next?`
-10. Show follow-up uses `/api/follow-up` (same session_id).
-11. Click **Clear** in chat dock — history resets.
-12. **History → Past investigations** — open a saved session in chat.
-13. **Escalate On-Call** — preview-only unless NOTIFY LIVE badge (configured dispatch).
-14. **Close** — hybrid Bedrock when configured; offline KB banner when fallback.
+4. At **~20s** — P1 modal fires; shell enters **critical mode** (red accent).
+5. Click **Analyze P1 Incident** — stepped progress in modal; triage runs; Home shows **P1 analysis** with structured PITER cards.
+6. Point to **Safety guardrail** (no auto rollback/failover) and **MTTR demo estimates**.
+7. Point to **Priority** and **Business impact** field cards.
+8. Point to **Investigation** — bullet lists, deployment suspect, similar incidents table.
+9. Expand **Triage** timeline and **Escalation** owner/on-call fields.
+10. Open **Agent Chat** (420px) — compact summary card, **View full analysis**, source badge.
+11. Tap a **follow-up chip** or ask: `What should I check next?` — uses `/api/follow-up` (same session_id).
+12. **New Session** or **Clear** in chat dock — fresh context.
+13. **History** — Conversation history, incident context card, past investigations.
+14. **Escalate On-Call** — "Preview only — human approval required" unless NOTIFY LIVE.
+15. **Demo Guide** page in sidebar for 60–90s recap.
+16. **Close** — Source badge: Bedrock Agent + KB vs local fallback (never mislabeled).
 
 ## Pre-class commands
 
