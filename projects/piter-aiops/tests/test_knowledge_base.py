@@ -5,7 +5,7 @@ import csv
 from pathlib import Path
 
 from app.services.kb_corpus import (
-    CATALOG_NAME,
+    CATALOG_PATH,
     KB_ROOT,
     REQUIRED_DOC_KEYS,
     VALID_DOC_TYPES,
@@ -29,9 +29,11 @@ def test_knowledge_base_json_has_required_fields():
         assert doc["doc_type"] in VALID_DOC_TYPES
 
 
-def test_knowledge_base_catalog_csv_matches_json_corpus():
-    catalog_path = KB_ROOT / CATALOG_NAME
+def test_knowledge_base_catalog_csv_is_outside_kb_prefix_and_matches_corpus():
+    catalog_path = CATALOG_PATH
     assert catalog_path.is_file()
+    # The catalog must NOT live under the KB prefix (it is a structured index).
+    assert KB_ROOT not in catalog_path.parents
     with catalog_path.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     json_ids = {load_kb_document(p)["doc_id"] for p in iter_corpus_json_paths()}

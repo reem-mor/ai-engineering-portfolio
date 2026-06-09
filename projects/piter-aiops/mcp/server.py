@@ -34,7 +34,7 @@ _REPO_ROOT = _HERE.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from mcp.tools import call_tool, list_tools  # noqa: E402
+from mcp.tools import UnknownToolError, call_tool, list_tools  # noqa: E402
 
 SERVER_NAME = "piter-aiops"
 SERVER_VERSION = "1.0.0"
@@ -76,9 +76,9 @@ def handle(message: dict[str, Any]) -> dict[str, Any] | None:
         arguments = params.get("arguments") or {}
         try:
             payload = call_tool(name, arguments)
-        except KeyError as exc:
+        except UnknownToolError as exc:
             return _error(request_id, -32601, str(exc))
-        except (KeyError, ValueError, TypeError) as exc:  # invalid arguments
+        except (KeyError, ValueError, TypeError) as exc:  # invalid/missing arguments
             return _error(request_id, -32602, f"invalid arguments: {exc}")
         text = json.dumps(payload, indent=2, default=str)
         return _result(

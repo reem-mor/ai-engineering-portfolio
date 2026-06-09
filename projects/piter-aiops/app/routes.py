@@ -511,7 +511,7 @@ def _api_triage_response(body: dict):
 
 @bp.get("/api/demo-alert")
 def api_demo_alert():
-    """Return the canned demo alert (Postgres CPU 95% on prod-db-1, NJ-DGE, P2)."""
+    """Return the canned demo alert (P1 bet-service storm trigger, GIB-UKGC)."""
     return jsonify(ok=True, alert=DEMO_ALERT), 200
 
 

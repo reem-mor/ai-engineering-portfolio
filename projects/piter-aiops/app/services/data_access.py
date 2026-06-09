@@ -19,43 +19,12 @@ from typing import Any
 
 from app.environment_codes import normalize_environment
 
+# Canonical structured data lives under data/source/ ONLY. Legacy
+# data/agent_data/, top-level demo CSV/JSON, and data/sample_documents/ paths
+# have been quarantined to data/archive/ and are no longer read here.
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_AGENT_DATA = _PROJECT_ROOT / "data" / "agent_data"
 _SOURCE_DATA = _PROJECT_ROOT / "data" / "source"
-_DATA_ROOT = _PROJECT_ROOT / "data"
 _KB_RUNBOOKS = _PROJECT_ROOT / "knowledge_base" / "runbooks"
-_HISTORY = _PROJECT_ROOT / "data" / "sample_documents" / "incident_history.csv"
-
-DEPLOYS_COLUMNS = {
-    "deploy_id",
-    "service",
-    "environment",
-    "version",
-    "deployed_at",
-    "deployed_by",
-    "change_summary",
-}
-IMPACT_COLUMNS = {
-    "environment",
-    "service",
-    "severity",
-    "tier",
-    "revenue_impact_usd_per_hour",
-    "player_impact_pct",
-    "regulatory_flag",
-    "escalation_minutes",
-}
-HISTORY_COLUMNS = {
-    "incident_id",
-    "date",
-    "severity",
-    "service",
-    "root_cause",
-    "mttr_minutes",
-    "customer_impact",
-    "environment",
-    "resolution",
-}
 
 SOURCE_DEPLOYS_COLUMNS = {
     "deploy_id",
@@ -214,74 +183,6 @@ def _read_json(path: Path) -> Any:
     return payload
 
 
-def load_deploys(data_dir: str | Path | None = None) -> list[dict[str, str]]:
-    """Return deployments as validated dict rows."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    return _read_csv_rows(base / "deploys.csv", DEPLOYS_COLUMNS)
-
-
-def load_service_catalog(data_dir: str | Path | None = None) -> dict[str, Any]:
-    """Return the service catalog dict, validating the top-level shape."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    catalog = _read_json(base / "service_catalog.json")
-    if not isinstance(catalog, dict) or "services" not in catalog:
-        raise DataAccessError("service_catalog.json must contain a 'services' list")
-    if not isinstance(catalog["services"], list):
-        raise DataAccessError("service_catalog.json 'services' must be a list")
-    return catalog
-
-
-def load_impact_matrix(data_dir: str | Path | None = None) -> list[dict[str, str]]:
-    """Return the impact matrix as validated dict rows."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    return _read_csv_rows(base / "impact_matrix.csv", IMPACT_COLUMNS)
-
-
-def load_incident_history(history_path: str | Path | None = None) -> list[dict[str, str]]:
-    """Return incident history as validated dict rows."""
-    path = Path(history_path) if history_path else _HISTORY
-    return _read_csv_rows(path, HISTORY_COLUMNS)
-
-
-def load_external_status(data_dir: str | Path | None = None) -> dict[str, Any]:
-    """Return external dependency status, validating the top-level shape."""
-    base = Path(data_dir) if data_dir else _DATA_ROOT
-    status = _read_json(base / "external_status.json")
-    if not isinstance(status, dict) or "providers" not in status:
-        raise DataAccessError("external_status.json must contain a 'providers' list")
-    if not isinstance(status["providers"], list):
-        raise DataAccessError("external_status.json 'providers' must be a list")
-    return status
-
-
-def incident_history_summary(history_path: str | Path | None = None) -> dict[str, Any]:
-    """Aggregate incident history into per-service counts and mean MTTR.
-
-    Demonstrates pandas-based processing when pandas is available; falls back to
-    a pure-Python aggregation otherwise. Returns identical output either way.
-    """
-    rows = load_incident_history(history_path)
-    pd = _get_pandas()
-    if pd is None:
-        return _summary_stdlib(rows)
-
-    frame = pd.DataFrame(rows)
-    frame = frame.assign(
-        mttr_minutes=pd.to_numeric(frame["mttr_minutes"], errors="coerce")
-    )
-    grouped = frame.groupby("service")["mttr_minutes"].agg(["count", "mean"])
-    return {
-        "total_incidents": int(len(frame)),
-        "by_service": {
-            service: {
-                "count": int(stats["count"]),
-                "avg_mttr_minutes": round(float(stats["mean"]), 1),
-            }
-            for service, stats in grouped.iterrows()
-        },
-    }
-
-
 def source_data_dir() -> Path:
     """Return the canonical structured dataset directory."""
     return _SOURCE_DATA
@@ -342,17 +243,6 @@ def load_escalation_policies(source_dir: str | Path | None = None) -> dict[str, 
     return data
 
 
-def load_escalation_rules(data_dir: str | Path | None = None) -> dict[str, Any]:
-    """Return top-level escalation_rules.json (demo/validation corpus)."""
-    base = Path(data_dir) if data_dir else _DATA_ROOT
-    data = _read_json(base / "escalation_rules.json")
-    if not isinstance(data, dict) or "rules" not in data:
-        raise DataAccessError("escalation_rules.json must contain a 'rules' list")
-    if not isinstance(data["rules"], list):
-        raise DataAccessError("escalation_rules.json 'rules' must be a list")
-    return data
-
-
 def load_past_incidents(source_dir: str | Path | None = None) -> list[dict[str, str]]:
     base = Path(source_dir) if source_dir else _SOURCE_DATA
     return _read_csv_rows(base / "past_incidents.csv", PAST_INCIDENTS_COLUMNS)
@@ -404,23 +294,3 @@ def resolve_alert(
                 return dict(row)
 
     return None
-
-
-def _summary_stdlib(rows: list[dict[str, str]]) -> dict[str, Any]:
-    by_service: dict[str, list[int]] = {}
-    for row in rows:
-        try:
-            mttr = int(row["mttr_minutes"])
-        except (KeyError, ValueError):
-            continue
-        by_service.setdefault(row["service"], []).append(mttr)
-    return {
-        "total_incidents": len(rows),
-        "by_service": {
-            service: {
-                "count": len(values),
-                "avg_mttr_minutes": round(sum(values) / len(values), 1),
-            }
-            for service, values in by_service.items()
-        },
-    }

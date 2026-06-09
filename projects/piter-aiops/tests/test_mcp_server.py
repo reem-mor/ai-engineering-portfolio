@@ -36,13 +36,13 @@ def test_initialized_notification_has_no_response():
 def test_tools_call_service_context_returns_owner():
     out = call_tool(
         "service_context",
-        {"service": "postgres", "severity": "P2", "environment": "NJ-DGE"},
+        {"service": "bet-service", "severity": "P2", "environment": "NJ-DGE"},
     )
     assert "owner" in out
 
 
 def test_escalation_preview_never_sends_and_masks_recipient():
-    out = call_tool("escalation_preview", {"service": "postgres", "severity": "P1"})
+    out = call_tool("escalation_preview", {"service": "bet-service", "severity": "P1"})
     assert out["mode"] == "preview"
     assert out["sends_notifications"] is False
     # masked recipient must not equal a full raw value
@@ -57,7 +57,7 @@ def test_tools_call_via_protocol_returns_text_content():
             "method": "tools/call",
             "params": {
                 "name": "similar_incidents",
-                "arguments": {"service": "postgres", "symptom": "CPU above 90%"},
+                "arguments": {"service": "bet-service", "symptom": "CPU above 90%"},
             },
         }
     )
@@ -71,6 +71,20 @@ def test_unknown_tool_returns_method_not_found_error():
         {"jsonrpc": "2.0", "id": 10, "method": "tools/call", "params": {"name": "nope", "arguments": {}}}
     )
     assert resp["error"]["code"] == -32601
+
+
+def test_missing_required_argument_returns_invalid_params_error():
+    # A known tool invoked without its required arguments must be -32602
+    # (invalid params), not -32601 (method not found).
+    resp = server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {"name": "recent_deployments", "arguments": {}},
+        }
+    )
+    assert resp["error"]["code"] == -32602
 
 
 def test_explicit_piter_tool_registry_exposes_required_names():

@@ -73,4 +73,7 @@ Desktop.ini
 *.swo
 *~
 incoming/
-docs/review/
+docs/review/var/
+
+# runtime state (chat history JSON store)
+var/

@@ -18,14 +18,16 @@ from app.text_utils import parse_action_bullets
 
 AskFn = Callable[..., RagAnswer]
 
+# Canonical demo alert: the P1 storm trigger (bet-service, GIB-UKGC) resolved
+# entirely from data/source/. Mirrors app.services.alert_stream.p1_demo_alert.
 DEMO_ALERT: dict[str, Any] = {
-    "alert_id": "ALERT-DEMO-PG-CPU",
-    "service": "postgres",
-    "environment": "NJ-DGE",
-    "severity": "P2",
-    "symptom": "Postgres CPU is 95% on prod-db-1",
-    "description": "Postgres CPU is 95% on prod-db-1",
-    "alert_time": "2026-06-10T09:00:00Z",
+    "alert_id": "ALT-2026-06-10-0042",
+    "service": "bet-service",
+    "environment": "GIB-UKGC",
+    "severity": "P1",
+    "symptom": "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
+    "description": "CRITICAL: bet-service nodes unresponsive — 100% error rate on GIB-UKGC",
+    "alert_time": "2026-06-10T10:02:55Z",
     "duration_minutes": 45,
 }
 
