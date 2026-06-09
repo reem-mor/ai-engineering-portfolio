@@ -73,6 +73,20 @@ def test_unknown_tool_returns_method_not_found_error():
     assert resp["error"]["code"] == -32601
 
 
+def test_missing_required_argument_returns_invalid_params_error():
+    # A known tool invoked without its required arguments must be -32602
+    # (invalid params), not -32601 (method not found).
+    resp = server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {"name": "recent_deployments", "arguments": {}},
+        }
+    )
+    assert resp["error"]["code"] == -32602
+
+
 def test_explicit_piter_tool_registry_exposes_required_names():
     assert list_registered_tools() == [
         "find_similar_incidents",

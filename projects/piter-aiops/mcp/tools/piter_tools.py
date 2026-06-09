@@ -152,8 +152,12 @@ def list_tools() -> list[dict[str, Any]]:
     ]
 
 
+class UnknownToolError(KeyError):
+    """Raised when a tool name is not in the registry (JSON-RPC method-not-found)."""
+
+
 def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     if name not in TOOLS:
-        raise KeyError(f"unknown tool: {name}")
+        raise UnknownToolError(f"unknown tool: {name}")
     handler, _, _ = TOOLS[name]
     return handler(arguments or {})
