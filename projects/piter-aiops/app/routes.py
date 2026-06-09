@@ -137,12 +137,17 @@ def _notification_settings() -> dict:
     sms_status = check_sms_account_ready(
         phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
     )
+    mode = os.environ.get("PITER_NOTIFICATION_MODE", "preview").strip().lower()
+    live = live_dispatch_enabled()
+    email_ready = email_configured()
+    allowlist = allowlist_count()
     return {
-        "mode": os.environ.get("PITER_NOTIFICATION_MODE", "preview"),
+        "mode": mode,
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
         in {"true", "1", "yes"},
         "max_sends_per_incident": int(os.environ.get("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "1") or 1),
-        "live_dispatch_enabled": live_dispatch_enabled(),
+        "live_dispatch_enabled": live,
+        "dispatch_ready": live and mode == "live" and email_ready and allowlist > 0,
         "sms_configured": sms_configured(),
         "sms_delivery_ready": bool(sms_status.get("ready")),
         "sms_delivery_message": sms_status.get("message"),

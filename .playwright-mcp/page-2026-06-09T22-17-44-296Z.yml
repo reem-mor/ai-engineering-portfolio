@@ -1,0 +1,192 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - button "NOC" [ref=e5] [cursor=pointer]
+    - navigation [ref=e6]:
+      - button "Operations" [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: Operations
+      - button "Agent Analytics" [ref=e9] [cursor=pointer]:
+        - generic [ref=e10]: Agent Analytics
+      - button "History" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: History
+      - button "Analyzer" [ref=e13] [cursor=pointer]:
+        - generic [ref=e14]: Analyzer
+      - button "System" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: System
+  - generic [ref=e17]:
+    - banner [ref=e18]:
+      - button "PITER AiOps" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: ◆
+        - generic [ref=e21]: PITER
+        - generic [ref=e22]: AiOps
+      - generic [ref=e23]:
+        - generic [ref=e24]: NOTIFY LIVE
+        - generic [ref=e25]: ENV production
+        - generic [ref=e26]: UTC 22:17:43
+        - 'generic "Infrastructure: ok" [ref=e94]': Infra
+      - generic [ref=e29]:
+        - button "Start Alert Stream" [ref=e30] [cursor=pointer]
+        - generic "Operator" [ref=e31]: OP
+    - generic [ref=e32]:
+      - main [ref=e33]:
+        - generic [ref=e34]:
+          - heading "Operations Dashboard" [level=1] [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: Alerts received
+              - generic [ref=e39]: "400"
+            - generic [ref=e40]:
+              - generic [ref=e41]: Noise suppressed
+              - generic [ref=e42]: "276"
+            - generic [ref=e43]:
+              - generic [ref=e44]: Active incidents
+              - generic [ref=e45]: "15"
+            - generic [ref=e46]:
+              - generic [ref=e47]: P1 / P2 / P3
+              - generic [ref=e48]: 0 / 0 / 0
+            - generic [ref=e49]:
+              - generic [ref=e50]: Escalations
+              - generic [ref=e51]: "0"
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - heading "Alert stream" [level=2] [ref=e54]
+              - paragraph [ref=e55]: Idle — use Start Alert Stream to begin demo playback.
+              - table [ref=e57]:
+                - rowgroup [ref=e58]:
+                  - row "Time Service Env Sev Title" [ref=e59]:
+                    - columnheader "Time" [ref=e60]
+                    - columnheader "Service" [ref=e61]
+                    - columnheader "Env" [ref=e62]
+                    - columnheader "Sev" [ref=e63]
+                    - columnheader "Title" [ref=e64]
+                    - columnheader [ref=e65]
+                - rowgroup [ref=e66]:
+                  - row "No alerts in view" [ref=e67]:
+                    - cell "No alerts in view" [ref=e68]
+            - generic [ref=e69]:
+              - heading "Agent decisions" [level=2] [ref=e70]
+              - list [ref=e71]:
+                - listitem [ref=e72]: Awaiting stream…
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - heading "Noise patterns" [level=2] [ref=e75]
+              - paragraph [ref=e76]: "Suppressed candidates: 276"
+            - generic [ref=e77]:
+              - heading "Incident queue" [level=2] [ref=e78]
+              - list [ref=e95]:
+                - listitem [ref=e96]:
+                  - generic [ref=e97]:
+                    - generic [ref=e98]: P2
+                    - text: game-service
+                    - generic [ref=e99]: "P2 game-service game-service 5xx rate above threshold: 6.5%"
+                  - generic [ref=e100]:
+                    - combobox [ref=e101]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e102] [cursor=pointer]
+                - listitem [ref=e103]:
+                  - generic [ref=e104]:
+                    - generic [ref=e105]: P2
+                    - text: wallet-service
+                    - generic [ref=e106]: "P2 wallet-service wallet-service sync delay exceeding SLA: 44.6s"
+                  - generic [ref=e107]:
+                    - combobox [ref=e108]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e109] [cursor=pointer]
+                - listitem [ref=e110]:
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: P3
+                    - text: payments-service
+                    - generic [ref=e113]: "P3 payments-service Connection pool pressure on payments-service: 81.3%"
+                  - generic [ref=e114]:
+                    - combobox [ref=e115]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e116] [cursor=pointer]
+                - listitem [ref=e117]:
+                  - generic [ref=e118]:
+                    - generic [ref=e119]: P3
+                    - text: game-service
+                    - generic [ref=e120]: "P3 game-service Connection pool pressure on game-service: 85.9%"
+                  - generic [ref=e121]:
+                    - combobox [ref=e122]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e123] [cursor=pointer]
+                - listitem [ref=e124]:
+                  - generic [ref=e125]:
+                    - generic [ref=e126]: P2
+                    - text: auth-service
+                    - generic [ref=e127]: P2 auth-service auth-service circuit breaker tripped briefly
+                  - generic [ref=e128]:
+                    - combobox [ref=e129]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e130] [cursor=pointer]
+                - listitem [ref=e131]:
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: P3
+                    - text: auth-service
+                    - generic [ref=e134]: "P3 auth-service Queue depth elevated on auth-service: 1955"
+                  - generic [ref=e135]:
+                    - combobox [ref=e136]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e137] [cursor=pointer]
+                - listitem [ref=e138]:
+                  - generic [ref=e139]:
+                    - generic [ref=e140]: P3
+                    - text: promotion-engine
+                    - generic [ref=e141]: "P3 promotion-engine Replication lag on promotion-engine: 17.6s"
+                  - generic [ref=e142]:
+                    - combobox [ref=e143]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e144] [cursor=pointer]
+                - listitem [ref=e145]:
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: P2
+                    - text: replication
+                    - generic [ref=e148]: "P2 replication replication sync delay exceeding SLA: 46.1s"
+                  - generic [ref=e149]:
+                    - combobox [ref=e150]:
+                      - option "Open" [selected]
+                      - option "In process"
+                      - option "Resolved"
+                      - option "Escalated"
+                    - button "Ask agent" [ref=e151] [cursor=pointer]
+      - complementary [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e85]: Agent Chat
+          - generic [ref=e86]:
+            - button "⊞" [ref=e87] [cursor=pointer]
+            - button "›" [ref=e88] [cursor=pointer]
+        - generic [ref=e152]:
+          - generic [ref=e153]: Sessions
+          - combobox [ref=e154]:
+            - option "—"
+            - option "demo-default (2)" [selected]
+        - generic [ref=e89]:
+          - generic [ref=e155]:
+            - generic [ref=e156]: You
+            - generic [ref=e157]: What should I check when users cannot log in after the latest deployment?
+          - generic [ref=e158]:
+            - generic [ref=e159]: PITER
+            - generic [ref=e160]: "**Priority:** Likely P1 or P2 depending on scope (login failures are typically high severity on regulated betting platforms). **Investigation Steps (ordered priority):** 1. **Confirm deployment correlation** – Check if login failures started within 60 minutes of the deployment. Compare deployment time with alert start time and customer-impact timeline. 2. **Check recent auth-service changes** – Review deployments, feature flags, schema migrations, and token-signing key changes. 3. **Validate auth-service health** – Check pod health, readiness probes, and `/health/ready` endpoint responses. 4. **Check Redis token store** – Verify latency, evictions, memory pressure, and primary/replica status (login issues often correlate with Redis problems). 5. **Check customer-db connectivity** – Look for connection pool exhaustion, lock waits, and migration locks. 6. **Confirm API Gateway routes** – Verify OIDC discovery and public API Gateway routes are returning valid responses (not 5xx). **Triage Decision Tree:** - **If deployment was within the last hour and failures started immediately** → Prepare rollback first - **If login returns 401 for valid users and Redis shows evictions/high latency** → Follow Redis token store runbook - **If auth-service pods are healthy but API Gateway returns 5xx** → Follow API Gateway 5xx runbook - **If customer-db has lock waits or exhausted connections** → Follow database connectivity runbook **Remediation (ordered, reversible steps first):** 1. **Freeze additional releases** – Stop all auth-service deployments until incident commander approves. 2. **Roll back the deployment** if deployment correlation is strong and rollback is available. 3. **Disable new feature flags** – Especially for token validation, MFA routing, or session write behavior. 4. **Restart unhealthy pods only** – After capturing logs first. 5. **Validate recovery** – Monitor `auth_login_success_rate` returning to baseline and `auth_login_error_rate` staying below 1% for 10 minutes. **Escalation:** P1/P2 login incidents escalate to **Identity and Access primary on-call**, then secondary on-call per policy. For P1 rollback, notify service owner, incident commander, and platform release owner. **To run deployment correlation and find similar incidents, I need:** - Service name (e.g., auth-service) - Environment (e.g., prod, GIB-UKGC) - Alert time (ISO-8601 format) Provide these details and I can correlate recent deployments, check for similar past incidents, and retrieve ownership/escalation contacts."
+        - generic [ref=e91]:
+          - textbox "Message agent…" [ref=e92]
+          - button "Send" [ref=e93] [cursor=pointer]

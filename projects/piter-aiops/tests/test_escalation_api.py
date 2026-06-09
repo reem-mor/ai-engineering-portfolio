@@ -129,3 +129,14 @@ def test_bootstrap_includes_notification_readiness(client, monkeypatch):
     assert notification["live_dispatch_enabled"] is True
     assert notification["demo_sms_configured"] is True
     assert notification["email_configured"] is True
+
+
+def test_bootstrap_dispatch_ready_requires_allowlist(client, monkeypatch):
+    monkeypatch.setenv("PITER_NOTIFICATION_MODE", "live")
+    monkeypatch.setenv("PITER_ENABLE_LIVE_DISPATCH", "true")
+    monkeypatch.setenv("PITER_SES_SENDER_EMAIL", "noreply@example.com")
+    monkeypatch.setenv("PITER_NOTIFICATION_ALLOWLIST", "oncall@example.com")
+
+    response = client.get("/api/bootstrap")
+    notification = response.get_json()["notification"]
+    assert notification["dispatch_ready"] is True

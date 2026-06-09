@@ -1,0 +1,7 @@
+{
+  "commands": [
+    "curl -sf http://localhost:8080/api/bootstrap | python3 -c \"import sys,json; d=json.load(sys.stdin); n=d.get('notification',{}); print('mode',n.get('mode'),'live',n.get('live_dispatch_enabled'),'ready',n.get('dispatch_ready'))\"",
+    "curl -sf http://localhost:8080/ | tr '\"' '\\n' | grep '^index-' | head -5",
+    "curl -sf http://localhost:8080/api/health?deep=1"
+  ]
+}

@@ -27,8 +27,9 @@ Document-only deploy plan. **Do not run SSH from CI.** Execute from your worksta
    ```
 
 3. **Transfer image to EC2** — choose one:
-   - **Option A — rebuild on EC2:** `git pull` on the instance and `docker build` there (step 6).
-   - **Option B — tarball:** `docker save piter-aiops:latest -o piter-aiops.tar` then `scp` to the instance and `docker load -i piter-aiops.tar`.
+   - **Option A (recommended) — SSM + S3:** `.\scripts\deploy-ec2-ssm.ps1 -Verify` (no SSH). See [`docs/LOCAL_DEV.md`](../docs/LOCAL_DEV.md).
+   - **Option B — rebuild on EC2:** `git pull` on the instance and `docker build` there (step 6).
+   - **Option C — tarball + SSH:** `docker save` then `scp` and `docker load` on the instance.
 
 4. **Confirm target instance** (workstation):
    ```powershell

@@ -6,6 +6,8 @@ import {
   fetchServiceContext,
   fetchSimilarIncidents,
 } from "@/lib/api-contract";
+import { useDemo } from "@/context/demo";
+import { isLiveDispatchReady } from "@/lib/notification-ui";
 import type { MetricsResult } from "@/types/api";
 import { ToolResultPanel } from "@/components/noc/ToolResultPanel";
 import { ErrorState } from "@/components/noc/ErrorState";
@@ -131,6 +133,8 @@ function SimilarIncidentsCard() {
 }
 
 function EscalationCard() {
+  const { bootstrap } = useDemo();
+  const liveReady = isLiveDispatchReady(bootstrap?.notification);
   const [service, setService] = useState("bet-service");
   const [severity, setSeverity] = useState("P1");
   const [result, setResult] = useState<MetricsResult | null>(null);
@@ -149,13 +153,22 @@ function EscalationCard() {
     }
   };
 
-  const previewOnly = result?.safe_preview_only === true || result?.sends_notifications === false;
+  const previewOnly =
+    !liveReady || result?.safe_preview_only === true || result?.sends_notifications === false;
 
   return (
-    <MetricCard title="Escalation preview" onRun={run} pending={pending} error={error} onRetry={run}>
-      {previewOnly ? (
-        <div className="preview-banner">PREVIEW ONLY — no notifications sent</div>
-      ) : null}
+    <MetricCard
+      title={liveReady ? "Escalation (live dispatch)" : "Escalation preview"}
+      onRun={run}
+      pending={pending}
+      error={error}
+      onRetry={run}
+    >
+      <div className={liveReady ? "live-banner" : "preview-banner"}>
+        {liveReady
+          ? "LIVE DISPATCH ENABLED — use Escalate on-call in the incident flow to send notifications"
+          : "PREVIEW ONLY — no notifications sent"}
+      </div>
       <MiniForm
         fields={[
           { label: "Service", value: service, onChange: setService },

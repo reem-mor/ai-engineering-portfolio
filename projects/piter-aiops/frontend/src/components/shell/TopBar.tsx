@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchHealth } from "@/lib/api-contract";
 import { useDemo } from "@/context/demo";
+import { isLiveDispatchReady } from "@/lib/notification-ui";
 import { useNavigate } from "@/context/navigation";
 import type { HealthResponse } from "@/types/api";
 
@@ -37,6 +38,7 @@ export function TopBar() {
   const env = bootstrap?.alert_stream?.label?.includes("GIB")
     ? "GIB-UKGC"
     : "production";
+  const notifyLive = isLiveDispatchReady(bootstrap?.notification);
 
   return (
     <header className="top-bar">
@@ -50,6 +52,9 @@ export function TopBar() {
 
       <div className="top-bar-center">
         {demoMode ? <span className="demo-tag">DEMO</span> : null}
+        <span className={`notify-tag ${notifyLive ? "notify-live" : "notify-preview"}`}>
+          NOTIFY {notifyLive ? "LIVE" : "PREVIEW"}
+        </span>
         <span className="mono">ENV {env}</span>
         <span className="mono">UTC {utc}</span>
         <span className="top-bar-health" title={`Infrastructure: ${health?.status ?? "unknown"}`}>

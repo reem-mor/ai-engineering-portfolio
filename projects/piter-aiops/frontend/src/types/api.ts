@@ -56,8 +56,10 @@ export type BootstrapResponse = {
     mode?: string;
     require_confirmation?: boolean;
     live_dispatch_enabled?: boolean;
+    dispatch_ready?: boolean;
     email_configured?: boolean;
     sms_configured?: boolean;
+    allowlist_count?: number;
     demo_email_configured?: boolean;
     demo_sms_configured?: boolean;
   };

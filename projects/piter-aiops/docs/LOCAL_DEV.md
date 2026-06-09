@@ -66,6 +66,21 @@ Open `http://localhost:5173`. Vite proxies `/api` and `/health` to 8080 ([`vite.
 
 Edit `frontend/src/**` in Cursor; changes hot-reload through Vite. No EC2 involvement.
 
+### Where to change what
+
+| Goal | Primary files |
+|------|----------------|
+| Layout, nav, top bar | `frontend/src/components/shell/` (`AppShell`, `Sidebar`, `TopBar`) |
+| Pages / screens | `frontend/src/pages/` (`Home`, `Metrics`, `SystemMetrics`, …) |
+| Buttons, modals, demo flow | `frontend/src/components/demo/` (`P1Modal`, `EscalationModal`) |
+| NOC cards, badges | `frontend/src/components/noc/` |
+| Global look | `frontend/src/styles.css` |
+| shadcn primitives | `frontend/src/components/ui/` |
+| API client types | `frontend/src/lib/api-contract.ts`, `frontend/src/types/api.ts` |
+| API response shape (server) | `app/routes.py`, `app/services/` |
+
+If you change an API field, update **both** backend and `api.ts` plus the component that renders it.
+
 ### Pre-ship gates
 
 | Check | Command |
@@ -78,24 +93,64 @@ Full click-test matrix: [`frontend/VERIFY.md`](../frontend/VERIFY.md).
 
 ## EC2 deploy (demo only)
 
-Three steps: **build SPA → build image → restart container**.
+Three steps: **build SPA → build image → restart container**. The SPA is baked into the image at `docker build` time ([`Dockerfile`](../Dockerfile)).
 
-### Workstation helper
+### Path A — SSH (`deploy-ec2.ps1`)
 
 ```powershell
 .\scripts\deploy-ec2.ps1
-```
-
-Builds locally and prints SSH commands. To run remote restart after `git push`:
-
-```powershell
 .\scripts\deploy-ec2.ps1 -Execute -SshKey C:\path\to\key.pem
 .\scripts\deploy-ec2.ps1 -Verify
 ```
 
-Manual numbered steps: [`frontend/EC2_DEPLOY.md`](../frontend/EC2_DEPLOY.md).
+Requires security group port **22** from your IP. Manual steps: [`frontend/EC2_DEPLOY.md`](../frontend/EC2_DEPLOY.md).
+
+### Path B — SSM + S3 (recommended when SSH is blocked)
+
+One-shot from project root:
+
+```powershell
+.\scripts\deploy-ec2-ssm.ps1 -Verify
+```
+
+Or step by step:
+
+```powershell
+docker build -t piter-aiops:latest .
+docker save piter-aiops:latest -o piter-aiops.tar
+aws s3 cp piter-aiops.tar s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/deploy/piter-aiops.tar
+aws s3 cp scripts/ec2-deploy-from-s3.sh s3://reem-amdocs-ai-artifacts-3331/projects/piter-aiops/deploy/ec2-deploy-from-s3.sh
+aws ssm send-command --instance-ids i-0c53b195878f0ea5f `
+  --document-name AWS-RunShellScript `
+  --parameters file://scripts/ssm-deploy-image.json
+```
+
+[`scripts/ec2-deploy-from-s3.sh`](../scripts/ec2-deploy-from-s3.sh) loads the image, merges notification keys from SSM Parameter Store into `/opt/piter-aiops/.env`, and restarts the container. Bedrock/S3 settings on the instance are preserved.
+
+### Path C — notification/env only (no new image)
+
+```powershell
+.\scripts\deploy-ec2-ssm.ps1 -NotificationOnly -Verify
+```
+
+Or: `aws ssm send-command` with [`scripts/ssm-patch-notification-live.json`](../scripts/ssm-patch-notification-live.json).
+
+### Post-deploy verify
+
+```powershell
+python scripts/verify_live_demo.py --base-url http://ec2-3-235-22-143.compute-1.amazonaws.com:8080
+```
+
+Browser: hard refresh (Ctrl+Shift+R), then [`frontend/VERIFY.md`](../frontend/VERIFY.md) click-test.
 
 **Do not** rsync project trees to EC2 for routine development.
+
+### Daily rhythm
+
+1. `run-local.ps1` + `npm run dev` → iterate UI on `:5173`
+2. `npm run build` + VERIFY.md on `:8080` before lunch
+3. `deploy-ec2-ssm.ps1 -Verify` before demo
+4. Rollback: redeploy previous `piter-aiops.tar` from S3 or prior git commit under `app/static/spa/`
 
 ## SSH (ops only)
 
