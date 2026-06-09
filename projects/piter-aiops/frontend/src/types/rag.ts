@@ -98,6 +98,8 @@ export interface AlertStreamSummary {
   duration_seconds: number;
   by_severity: Record<string, number>;
   noise_suppressed: number;
+  active_count?: number;
+  active_alerts?: Record<string, string>[];
   warning_signals: number;
   p1_trigger?: Record<string, string> | null;
   p1_count: number;

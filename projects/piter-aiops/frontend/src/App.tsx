@@ -119,7 +119,7 @@ const NAV_ITEMS: {
 ];
 
 /** Compressed playback of the 5-minute alert storm corpus (~400 rows). */
-const STORM_DEMO_MS = 30_000;
+const STORM_DEMO_MS = 20_000;
 const STORM_TICK_MS = 80;
 
 const INVESTIGATIONS: Investigation[] = [
@@ -450,7 +450,7 @@ function AppShell() {
     ? executionModeLabel(triageCard.mode, data?.rag_backend, data?.use_bedrock)
     : data?.execution_mode_hint || data?.model_label || "Bedrock Agent / KB";
   const sessionId = triageCard?.session_id ?? answer?.session_id ?? "demo-session-preview";
-  const notificationMode = data?.notification?.mode ?? "mock";
+  const notificationMode = data?.notification?.mode ?? "preview";
   const liveDispatchEnabled = data?.notification?.live_dispatch_enabled ?? false;
   const demoSmsConfigured = data?.notification?.demo_sms_configured ?? false;
   const demoWhatsappConfigured = data?.notification?.demo_whatsapp_configured ?? false;
@@ -473,8 +473,13 @@ function AppShell() {
       .catch(() => setSessionHistory(null));
   }
 
+  const landingAlerts = useMemo(() => {
+    if (streamSummary.active_alerts?.length) return streamSummary.active_alerts;
+    return alertCorpus.filter((r) => r.is_noise_candidate !== "true").slice(0, 15);
+  }, [streamSummary, alertCorpus]);
+
   useEffect(() => {
-    fetchAlertStream(true)
+    fetchAlertStream("include")
       .then((payload) => setAlertCorpus(payload.rows ?? []))
       .catch(() => setAlertCorpus([]));
   }, []);
@@ -900,6 +905,7 @@ function AppShell() {
                 selected={selected}
                 streamSummary={streamSummary}
                 alertCorpus={alertCorpus}
+                landingAlerts={landingAlerts}
                 stormVisibleCount={stormVisibleCount}
                 notificationMode={notificationMode}
                 liveDispatchEnabled={liveDispatchEnabled}
@@ -1563,6 +1569,7 @@ function AlertStorm({
   selected,
   streamSummary,
   alertCorpus,
+  landingAlerts,
   stormVisibleCount,
   notificationMode,
   liveDispatchEnabled,
@@ -1586,6 +1593,7 @@ function AlertStorm({
   selected: Investigation;
   streamSummary: AlertStreamSummary;
   alertCorpus: Record<string, string>[];
+  landingAlerts: Record<string, string>[];
   stormVisibleCount: number;
   notificationMode: string;
   liveDispatchEnabled: boolean;
@@ -1719,9 +1727,23 @@ function AlertStorm({
       <div className="grid grid-cols-[1.1fr_0.9fr] gap-4 max-[1100px]:grid-cols-1">
         <Panel title="Alert Stream" icon={TerminalSquare}>
           {stormState === "idle" ? (
-            <p className="text-sm text-slate-500">
-              No alerts yet. Press Start 5-Min Alert Storm.
-            </p>
+            landingAlerts.length ? (
+              <div className="grid gap-2">
+                <p className="text-sm text-slate-500">
+                  {landingAlerts.length} active alerts (noise candidates hidden). Start the storm for
+                  full playback.
+                </p>
+                <AlertStreamTable
+                  rows={landingAlerts.map(rowToStreamRow)}
+                  visibleTotal={landingAlerts.length}
+                  total={streamSummary.total}
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">
+                No alerts yet. Press Start 5-Min Alert Storm.
+              </p>
+            )
           ) : (
             <AlertStreamTable
               rows={streamRows}

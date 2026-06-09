@@ -70,10 +70,34 @@ def _email_configured() -> bool:
 
 
 def _policy_preview(service: str, severity: str, recipient: str) -> dict:
+    policy_name = "piter-standard-escalation"
+    notify_roles: list[str] = []
+    pagerduty_service_id = ""
+    try:
+        _ensure_app_import_path()
+        from app.services import data_access
+
+        policies = data_access.load_escalation_policies()
+        default = policies.get("default_policy", {})
+        sev_block = default.get(severity, {}) if isinstance(default, dict) else {}
+        if isinstance(sev_block, dict):
+            notify_roles = list(sev_block.get("notify_immediately") or [])
+        policy_name = str(policies.get("policy_id") or policy_name)
+
+        owners = data_access.load_service_owners()
+        for row in owners:
+            if str(row.get("service", "")).strip() == service:
+                pagerduty_service_id = str(row.get("pagerduty_service_id") or "")
+                break
+    except Exception:
+        pass
+
     return {
         "service": service,
         "severity": severity,
-        "policy": "piter-standard-escalation",
+        "policy": policy_name,
+        "notify_roles": notify_roles,
+        "pagerduty_service_id": pagerduty_service_id,
         "recipient": _mask_recipient(recipient),
         "channels": ["sns", "ses"],
         "live_dispatch_allowed": _live_dispatch_enabled(),
@@ -84,7 +108,7 @@ def _live_block_reasons(params: dict[str, str], key: str) -> list[str]:
     reasons = []
     severity = params.get("severity", "")
     recipient = params.get("recipient", "")
-    if os.environ.get("PITER_NOTIFICATION_MODE", "mock") != "live":
+    if os.environ.get("PITER_NOTIFICATION_MODE", "preview") != "live":
         reasons.append("PITER_NOTIFICATION_MODE is not live")
     if not _live_dispatch_enabled():
         reasons.append("PITER_ENABLE_LIVE_DISPATCH is not true")
@@ -143,7 +167,7 @@ def lambda_handler(event, context):
             event,
             403,
             {
-                "mode": os.environ.get("PITER_NOTIFICATION_MODE", "mock"),
+                "mode": os.environ.get("PITER_NOTIFICATION_MODE", "preview"),
                 "sent": False,
                 "blocked": True,
                 "reasons": block_reasons,

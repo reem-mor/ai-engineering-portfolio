@@ -24,7 +24,7 @@ from app.upload_service import DocumentUploadService
 from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
 from app.workflow import build_workflow_payload
-from app.services.alert_stream import load_alert_stream, p1_demo_alert, summarize_alert_stream
+from app.services.alert_stream import load_active_alerts, load_alert_stream, p1_demo_alert, summarize_alert_stream
 from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.escalation_service import notify_demo_channel
 from app.services.notification_dispatch import (
@@ -124,7 +124,7 @@ def _notification_settings() -> dict:
         phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
     )
     return {
-        "mode": os.environ.get("PITER_NOTIFICATION_MODE", "mock"),
+        "mode": os.environ.get("PITER_NOTIFICATION_MODE", "preview"),
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
         in {"true", "1", "yes"},
         "max_sends_per_incident": int(os.environ.get("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "1") or 1),
@@ -395,8 +395,12 @@ def api_alert_stream():
     """Return deterministic alert storm metadata and optional row payload."""
     summary = summarize_alert_stream()
     include_rows = request.args.get("include_rows", "").lower() in {"1", "true", "yes"}
+    active_only = request.args.get("active", "").lower() in {"1", "true", "yes"}
     payload: dict = {"ok": True, **summary}
-    if include_rows:
+    if active_only:
+        payload["rows"] = load_active_alerts()
+        payload["active_only"] = True
+    elif include_rows:
         payload["rows"] = load_alert_stream()
     return jsonify(payload), 200
 
@@ -506,6 +510,18 @@ def _api_triage_response(body: dict):
     if isinstance(impact, dict) and impact.get("business_explanation"):
         card.setdefault("business_impact", impact["business_explanation"])
     normalized = normalize_api_response(card)
+    sid = normalized.get("session_id")
+    if sid:
+        summary = (
+            f"Triage complete for {alert.get('service', 'service')}: "
+            f"priority {normalized.get('priority', 'unknown')}"
+        )
+        append_turn(
+            session_id=str(sid),
+            question=f"Analyse alert {alert.get('alert_id') or alert.get('service', '')}",
+            answer=summary,
+            mode=normalized.get("mode"),
+        )
     return jsonify(ok=True, **normalized), 200
 
 

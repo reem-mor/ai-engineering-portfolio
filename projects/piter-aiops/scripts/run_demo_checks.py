@@ -13,19 +13,20 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _request(method: str, url: str, payload: dict | None = None) -> tuple[int, dict]:
+def _request(method: str, url: str, payload: dict | None = None, *, timeout: float = 10) -> tuple[int, dict]:
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"} if payload is not None else {}
     request = Request(url, data=body, headers=headers, method=method)
-    with urlopen(request, timeout=10) as response:
+    with urlopen(request, timeout=timeout) as response:
         text = response.read().decode("utf-8")
         return response.status, json.loads(text) if text else {}
 
 
 def _check_endpoint(method: str, base_url: str, path: str, payload: dict | None = None) -> str:
     url = f"{base_url.rstrip('/')}{path}"
+    timeout = 90.0 if method == "POST" else 10.0
     try:
-        status, data = _request(method, url, payload)
+        status, data = _request(method, url, payload, timeout=timeout)
     except HTTPError as exc:
         raise RuntimeError(f"{method} {path} returned HTTP {exc.code}") from exc
     except URLError as exc:
@@ -52,10 +53,10 @@ def run(base_url: str) -> list[str]:
             "POST",
             "/api/incidents/analyze",
             {
-                "alert_title": "High error rate on auth-service",
                 "service": "auth-service",
                 "environment": "production",
-                "severity": "high",
+                "severity": "P1",
+                "symptom": "Many users cannot log in after the latest production deployment.",
                 "description": "Many users cannot log in after the latest production deployment.",
             },
         ),

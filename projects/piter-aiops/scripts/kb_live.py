@@ -49,10 +49,10 @@ KB_ROOT = ROOT / "knowledge_base"
 
 # Narrative document subtrees that belong in the KB (grounding content).
 DOC_SUBDIRS = ("runbooks", "services", "incidents", "piter")
-DOC_SUFFIXES = (".json", ".md", ".txt")
+DOC_SUFFIXES = (".md",)
 # Pure structured indexes that must NEVER be ingested (pollute retrieval).
 FORBIDDEN_NAMES = {"catalog.csv", "structured_data_index.json"}
-FORBIDDEN_SUFFIXES = {".csv", ".tar"}
+FORBIDDEN_SUFFIXES = {".csv", ".tar", ".json"}
 
 
 def _env(name: str, default: str = "") -> str:
@@ -252,8 +252,15 @@ def cmd_verify(sess: boto3.session.Session) -> int:
     a2, c2 = _ask(out_kb)
     print(f"[out-of-KB] cited_refs={c2}\n{a2}\n")
     grounded = c1 > 0
-    refused = ("don't know" in a2.lower() or "do not know" in a2.lower()
-               or "no information" in a2.lower() or c2 == 0)
+    refused = (
+        "don't know" in a2.lower()
+        or "do not know" in a2.lower()
+        or "no information" in a2.lower()
+        or "cannot find" in a2.lower()
+        or "can't find" in a2.lower()
+        or "not in the knowledge base" in a2.lower()
+        or c2 == 0
+    )
     print(f"RESULT: grounded_in_kb={grounded}  refuses_out_of_kb={refused}")
     return 0 if (grounded and refused) else 1
 

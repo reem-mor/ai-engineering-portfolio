@@ -306,8 +306,11 @@ $kbS3PolicyPath = Join-Path $RepoRoot "infra/kb_s3_policy_patch.json"
 $policyDocUri = (Resolve-Path -LiteralPath $kbS3PolicyPath).Path.Replace("\", "/")
 Set-KbS3Policy -PolicyArn $kbS3PolicyArn -PolicyDocUri $policyDocUri -RequiredPrefix $KbPrefix
 
-Write-Step "Sync knowledge_base JSON/CSV corpus to S3 (canonical prefix)"
-aws s3 sync (Join-Path $RepoRoot "knowledge_base") "s3://$Bucket/$KbPrefix" --exclude "*" --include "*.json" --include "*.csv" --delete
+Write-Step "Sync knowledge_base markdown corpus to S3 (canonical prefix)"
+aws s3 sync (Join-Path $RepoRoot "knowledge_base/runbooks") "s3://$Bucket/${KbPrefix}runbooks/" --exclude "*" --include "*.md" --delete
+aws s3 sync (Join-Path $RepoRoot "knowledge_base/services") "s3://$Bucket/${KbPrefix}services/" --exclude "*" --include "*.md" --delete
+aws s3 sync (Join-Path $RepoRoot "knowledge_base/incidents") "s3://$Bucket/${KbPrefix}incidents/" --exclude "*" --include "*.md" --delete
+aws s3 sync (Join-Path $RepoRoot "knowledge_base/piter") "s3://$Bucket/${KbPrefix}piter/" --exclude "*" --include "*.md" --delete
 
 Write-Step "Point KB data source at knowledge_base S3 prefix"
 $dataSourcePath = Join-Path $RepoRoot "dist/update-data-source.json"

@@ -80,8 +80,11 @@ export async function fetchBootstrap(): Promise<BootstrapPayload> {
   return data;
 }
 
-export async function fetchAlertStream(includeRows = false): Promise<AlertStreamSummary & { rows?: Record<string, string>[] }> {
-  const qs = includeRows ? "?include_rows=true" : "";
+export async function fetchAlertStream(
+  mode: "none" | "include" | "active" = "none",
+): Promise<AlertStreamSummary & { rows?: Record<string, string>[] }> {
+  const qs =
+    mode === "active" ? "?active=true" : mode === "include" ? "?include_rows=true" : "";
   const response = await fetch(`/api/alert-stream${qs}`, {
     headers: { Accept: "application/json" },
     credentials: "same-origin",

@@ -32,6 +32,8 @@ COPY --chown=app:app knowledge_base ./knowledge_base
 COPY --chown=app:app data ./data
 COPY --from=frontend-build --chown=app:app /build/app/static/spa ./app/static/spa
 
+RUN mkdir -p /home/app/var && chown app:app /home/app/var
+
 USER app
 
 EXPOSE 8080
@@ -39,8 +41,10 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8080/health || exit 1
 
-# Single worker + threads: session_memory is an in-process store, so follow-up
-# requests must reach the same process that handled the original triage.
+# Persist chat + session memory across container restarts (mount at /home/app/var).
+
+# Single worker + threads: follow-up requests should hit the same process when possible;
+# session state is persisted under var/ for restart survival.
 CMD ["gunicorn", \
      "--workers", "1", \
      "--threads", "4", \
