@@ -37,7 +37,7 @@ OPS_QUESTIONS = [
 def _load_questions(*, ops_only: bool) -> list[dict]:
     if ops_only:
         return OPS_QUESTIONS
-    path = ROOT / "evaluation" / "test_questions.json"
+    path = ROOT / "evaluation" / "demo_questions.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 

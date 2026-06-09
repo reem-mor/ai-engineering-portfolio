@@ -312,6 +312,7 @@ def test_to_dict_shape(config):
         "latency_ms",
         "matched_runbook",
         "mode",
+        "fallback_used",
     }
     assert d["citations"][0]["source_label"] == "a.md"
     assert d["citations"][0]["index"] == 1

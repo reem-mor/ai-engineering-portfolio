@@ -38,6 +38,29 @@ def test_escalation_notify_requires_confirmation_token(client):
     assert data["reason"] == "missing_confirmation"
 
 
+def test_escalation_notify_unconfigured_recipient_returns_clean_error(client, monkeypatch):
+    """Regression: dispatch result carrying its own "ok" must not 500 the route."""
+    monkeypatch.setenv("PITER_NOTIFICATION_MODE", "mock")
+    monkeypatch.delenv("PITER_ENABLE_LIVE_DISPATCH", raising=False)
+    monkeypatch.delenv("PITER_DEMO_EMAIL_RECIPIENT", raising=False)
+
+    response = client.post(
+        "/api/escalation/notify",
+        json={
+            "channel": "email",
+            "incident_id": "INC-API-ERR",
+            "service": "bet-service",
+            "severity": "P1",
+            "confirmation_token": "token-ok",
+        },
+    )
+    assert response.status_code != 500
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["ok"] is False
+    assert data.get("sent") in (False, None)
+
+
 def test_escalation_notify_blocked_without_live_gates(client, monkeypatch):
     monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
     monkeypatch.setenv("PITER_NOTIFICATION_MODE", "mock")

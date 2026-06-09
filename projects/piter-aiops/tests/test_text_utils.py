@@ -22,13 +22,13 @@ Escalation:
 - Page DBA on-call if CPU stays above 90% for 15 minutes.
 
 Why this answer:
-Based on runbook_db_cpu.md."""
+Based on database_connectivity.md."""
     sections = format_answer_sections(raw)
     assert "Postgres CPU" in sections["summary"]
     assert len(sections["steps"]) >= 2
     assert sections["steps"][0].startswith("Check pg_stat_activity")
     assert any("DBA" in item for item in sections["escalation"])
-    assert "runbook_db_cpu" in sections["why"]
+    assert "database_connectivity" in sections["why"]
 
 
 def test_format_answer_sections_derives_steps_from_plain_text():
@@ -55,7 +55,7 @@ def test_format_citation_preview_parses_json_alert():
 
 def test_format_citation_preview_markdown_heading():
     snippet = "# Database CPU runbook\n\nCheck pg_stat_activity first."
-    preview = format_citation_preview(snippet, "runbook_db_cpu.md")
+    preview = format_citation_preview(snippet, "database_connectivity.md")
     assert "Database CPU" in preview
     assert "pg_stat_activity" in preview
 
@@ -95,7 +95,7 @@ Business impact:
 Checkout latency risk if DB remains saturated.
 
 Sources:
-runbook_db_cpu.md
+database_connectivity.md
 
 Confidence and uncertainty:
 High confidence — steps match runbook; uncertain if index rebuild needed."""

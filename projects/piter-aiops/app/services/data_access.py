@@ -17,40 +17,65 @@ import json
 from pathlib import Path
 from typing import Any
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_AGENT_DATA = _PROJECT_ROOT / "data" / "agent_data"
-_DATA_ROOT = _PROJECT_ROOT / "data"
-_HISTORY = _PROJECT_ROOT / "data" / "sample_documents" / "incident_history.csv"
+from app.environment_codes import normalize_environment
 
-DEPLOYS_COLUMNS = {
+# Canonical structured data lives under data/source/ ONLY. Legacy
+# data/agent_data/, top-level demo CSV/JSON, and data/sample_documents/ paths
+# have been quarantined to data/archive/ and are no longer read here.
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_SOURCE_DATA = _PROJECT_ROOT / "data" / "source"
+_KB_RUNBOOKS = _PROJECT_ROOT / "knowledge_base" / "runbooks"
+
+SOURCE_DEPLOYS_COLUMNS = {
     "deploy_id",
-    "service",
+    "timestamp",
     "environment",
+    "service",
     "version",
-    "deployed_at",
-    "deployed_by",
+    "status",
     "change_summary",
+    "risk_level",
+    "rollback_available",
 }
-IMPACT_COLUMNS = {
-    "environment",
+SERVICE_OWNERS_COLUMNS = {
     "service",
-    "severity",
-    "tier",
-    "revenue_impact_usd_per_hour",
-    "player_impact_pct",
-    "regulatory_flag",
-    "escalation_minutes",
+    "owning_team",
+    "service_tier",
+    "business_function",
+    "slack_channel",
+    "primary_on_call_role",
+    "secondary_on_call_role",
+    "runbook",
+    "dashboard",
+    "dependencies",
+    "regulatory_exposure",
 }
-HISTORY_COLUMNS = {
+PAST_INCIDENTS_COLUMNS = {
     "incident_id",
-    "date",
-    "severity",
     "service",
-    "root_cause",
-    "mttr_minutes",
-    "customer_impact",
     "environment",
+    "severity",
+    "root_cause",
     "resolution",
+    "mttr_minutes",
+    "lessons_learned",
+    "related_runbook",
+}
+ALERT_STREAM_COLUMNS = {
+    "alert_id",
+    "timestamp",
+    "environment",
+    "service",
+    "severity",
+    "title",
+}
+SOURCE_ALERTS_COLUMNS = {
+    "alert_id",
+    "timestamp",
+    "environment",
+    "service",
+    "severity",
+    "title",
 }
 
 
@@ -63,6 +88,16 @@ class DataAccessError(RuntimeError):
 # "tried and unavailable"; ``None`` means "not tried yet".
 _PANDAS_MODULE: Any = None
 _PANDAS_TRIED = False
+
+# In-process cache for static demo datasets (keyed by path + mtime).
+_CSV_CACHE: dict[str, tuple[float, list[dict[str, str]]]] = {}
+_JSON_CACHE: dict[str, tuple[float, Any]] = {}
+
+
+def reset_data_cache() -> None:
+    """Clear cached CSV/JSON loads (tests and demo reload)."""
+    _CSV_CACHE.clear()
+    _JSON_CACHE.clear()
 
 
 def _get_pandas():
@@ -92,22 +127,30 @@ def _read_csv_rows(path: Path, required: set[str]) -> list[dict[str, str]]:
     """
     if not path.is_file():
         raise DataAccessError(f"Missing data file: {path.name}")
+    resolved = path.resolve()
+    cache_key = str(resolved)
+    mtime = resolved.stat().st_mtime
+    cached = _CSV_CACHE.get(cache_key)
+    if cached and cached[0] == mtime:
+        return cached[1]
     pd = _get_pandas()
     if pd is None:
-        return _read_csv_stdlib(path, required)
-
-    try:
-        frame = pd.read_csv(path, dtype=str, keep_default_na=False)
-    except pd.errors.EmptyDataError as exc:
-        raise DataAccessError(f"Data file is empty: {path.name}") from exc
-    except pd.errors.ParserError as exc:
-        raise DataAccessError(f"Malformed CSV: {path.name} ({exc})") from exc
-    missing = required - set(frame.columns)
-    if missing:
-        raise DataAccessError(
-            f"{path.name} is missing required columns: {sorted(missing)}"
-        )
-    return frame.to_dict("records")
+        rows = _read_csv_stdlib(path, required)
+    else:
+        try:
+            frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+        except pd.errors.EmptyDataError as exc:
+            raise DataAccessError(f"Data file is empty: {path.name}") from exc
+        except pd.errors.ParserError as exc:
+            raise DataAccessError(f"Malformed CSV: {path.name} ({exc})") from exc
+        missing = required - set(frame.columns)
+        if missing:
+            raise DataAccessError(
+                f"{path.name} is missing required columns: {sorted(missing)}"
+            )
+        rows = frame.to_dict("records")
+    _CSV_CACHE[cache_key] = (mtime, rows)
+    return rows
 
 
 def _read_csv_stdlib(path: Path, required: set[str]) -> list[dict[str, str]]:
@@ -126,95 +169,128 @@ def _read_csv_stdlib(path: Path, required: set[str]) -> list[dict[str, str]]:
 def _read_json(path: Path) -> Any:
     if not path.is_file():
         raise DataAccessError(f"Missing data file: {path.name}")
+    resolved = path.resolve()
+    cache_key = str(resolved)
+    mtime = resolved.stat().st_mtime
+    cached = _JSON_CACHE.get(cache_key)
+    if cached and cached[0] == mtime:
+        return cached[1]
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise DataAccessError(f"Malformed JSON: {path.name} ({exc})") from exc
+    _JSON_CACHE[cache_key] = (mtime, payload)
+    return payload
 
 
-def load_deploys(data_dir: str | Path | None = None) -> list[dict[str, str]]:
-    """Return deployments as validated dict rows."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    return _read_csv_rows(base / "deploys.csv", DEPLOYS_COLUMNS)
+def source_data_dir() -> Path:
+    """Return the canonical structured dataset directory."""
+    return _SOURCE_DATA
 
 
-def load_service_catalog(data_dir: str | Path | None = None) -> dict[str, Any]:
-    """Return the service catalog dict, validating the top-level shape."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    catalog = _read_json(base / "service_catalog.json")
-    if not isinstance(catalog, dict) or "services" not in catalog:
-        raise DataAccessError("service_catalog.json must contain a 'services' list")
-    if not isinstance(catalog["services"], list):
-        raise DataAccessError("service_catalog.json 'services' must be a list")
-    return catalog
-
-
-def load_impact_matrix(data_dir: str | Path | None = None) -> list[dict[str, str]]:
-    """Return the impact matrix as validated dict rows."""
-    base = Path(data_dir) if data_dir else _AGENT_DATA
-    return _read_csv_rows(base / "impact_matrix.csv", IMPACT_COLUMNS)
-
-
-def load_incident_history(history_path: str | Path | None = None) -> list[dict[str, str]]:
-    """Return incident history as validated dict rows."""
-    path = Path(history_path) if history_path else _HISTORY
-    return _read_csv_rows(path, HISTORY_COLUMNS)
-
-
-def load_external_status(data_dir: str | Path | None = None) -> dict[str, Any]:
-    """Return external dependency status, validating the top-level shape."""
-    base = Path(data_dir) if data_dir else _DATA_ROOT
-    status = _read_json(base / "external_status.json")
-    if not isinstance(status, dict) or "providers" not in status:
-        raise DataAccessError("external_status.json must contain a 'providers' list")
-    if not isinstance(status["providers"], list):
-        raise DataAccessError("external_status.json 'providers' must be a list")
-    return status
-
-
-def incident_history_summary(history_path: str | Path | None = None) -> dict[str, Any]:
-    """Aggregate incident history into per-service counts and mean MTTR.
-
-    Demonstrates pandas-based processing when pandas is available; falls back to
-    a pure-Python aggregation otherwise. Returns identical output either way.
-    """
-    rows = load_incident_history(history_path)
-    pd = _get_pandas()
-    if pd is None:
-        return _summary_stdlib(rows)
-
-    frame = pd.DataFrame(rows)
-    frame = frame.assign(
-        mttr_minutes=pd.to_numeric(frame["mttr_minutes"], errors="coerce")
-    )
-    grouped = frame.groupby("service")["mttr_minutes"].agg(["count", "mean"])
+def list_runbook_files() -> set[str]:
+    """Return runbook filenames present under knowledge_base/runbooks/."""
+    if not _KB_RUNBOOKS.is_dir():
+        return set()
     return {
-        "total_incidents": int(len(frame)),
-        "by_service": {
-            service: {
-                "count": int(stats["count"]),
-                "avg_mttr_minutes": round(float(stats["mean"]), 1),
-            }
-            for service, stats in grouped.iterrows()
-        },
+        path.name
+        for path in _KB_RUNBOOKS.rglob("*.json")
+        if path.is_file() and path.suffix == ".json"
     }
 
 
-def _summary_stdlib(rows: list[dict[str, str]]) -> dict[str, Any]:
-    by_service: dict[str, list[int]] = {}
-    for row in rows:
-        try:
-            mttr = int(row["mttr_minutes"])
-        except (KeyError, ValueError):
-            continue
-        by_service.setdefault(row["service"], []).append(mttr)
-    return {
-        "total_incidents": len(rows),
-        "by_service": {
-            service: {
-                "count": len(values),
-                "avg_mttr_minutes": round(sum(values) / len(values), 1),
-            }
-            for service, values in by_service.items()
-        },
-    }
+def load_source_alert_stream(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "alert_stream.csv", ALERT_STREAM_COLUMNS)
+
+
+def load_source_alerts(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "alerts.csv", SOURCE_ALERTS_COLUMNS)
+
+
+def load_service_owners(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "service_owners.csv", SERVICE_OWNERS_COLUMNS)
+
+
+def load_source_deploys(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "deploys.csv", SOURCE_DEPLOYS_COLUMNS)
+
+
+def load_business_impact(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "business_impact.json")
+    if not isinstance(data, dict) or "services" not in data:
+        raise DataAccessError("business_impact.json must contain a 'services' object")
+    return data
+
+
+def load_priority_matrix(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "priority_matrix.json")
+    if not isinstance(data, dict) or "thresholds" not in data:
+        raise DataAccessError("priority_matrix.json must contain 'thresholds'")
+    return data
+
+
+def load_escalation_policies(source_dir: str | Path | None = None) -> dict[str, Any]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    data = _read_json(base / "escalation_policies.json")
+    if not isinstance(data, dict) or "default_policy" not in data:
+        raise DataAccessError("escalation_policies.json must contain 'default_policy'")
+    return data
+
+
+def load_past_incidents(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    return _read_csv_rows(base / "past_incidents.csv", PAST_INCIDENTS_COLUMNS)
+
+
+def load_on_call_schedule(source_dir: str | Path | None = None) -> list[dict[str, str]]:
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    path = base / "on_call_schedule.csv"
+    if not path.is_file():
+        raise DataAccessError("Missing data file: on_call_schedule.csv")
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def resolve_alert(
+    *,
+    alert_id: str = "",
+    service: str = "",
+    environment: str = "",
+    source_dir: str | Path | None = None,
+) -> dict[str, str] | None:
+    """Resolve an alert from alert_stream, summary alerts, or service+env match."""
+    base = Path(source_dir) if source_dir else _SOURCE_DATA
+    aid = (alert_id or "").strip()
+    svc = (service or "").strip().lower()
+    env = normalize_environment(environment)
+
+    if aid:
+        for row in load_source_alert_stream(base):
+            if row.get("alert_id") == aid:
+                return dict(row)
+        for row in load_source_alerts(base):
+            if row.get("alert_id") == aid:
+                return dict(row)
+
+    if svc and env:
+        for row in load_source_alert_stream(base):
+            if (
+                row.get("service", "").lower() == svc
+                and normalize_environment(row.get("environment", "")) == env
+                and row.get("is_trigger", "").lower() == "true"
+            ):
+                return dict(row)
+        for row in load_source_alerts(base):
+            if (
+                row.get("service", "").lower() == svc
+                and normalize_environment(row.get("environment", "")) == env
+            ):
+                return dict(row)
+
+    return None

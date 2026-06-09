@@ -1,52 +1,68 @@
-# PLAN — PITER AiOps: Answer UI Redesign + AWS/Docker + Screenshots
+# PLAN - PITER AiOps Final Demo Readiness
 
-Scope: only `projects/piter-aiops/`. Do not change overall theme/nav/layout.
+Scope: `projects/piter-aiops/`. Keep the app simple, explainable, and safe for a 5-7 minute mid-project demo.
 
-## PART A — Answer output section (fully in my control)
-Targets: `frontend/src/components/FormattedAnswer.tsx` (+ new `CodeBlock.tsx`,
-`lib/answer-format.ts`), and minimal call-site edits in `frontend/src/App.tsx`.
+## Completed baseline
 
-- A1 Code blocks: parse SQL/shell/python out of step text + citation snippets;
-  render as `<pre>` blocks (mono, distinct bg, rounded border, padding, preserved
-  whitespace). Syntax highlighting via a small dependency-free tokenizer
-  (lighter than highlight.js/Prism — no install, no bundle bloat). Copy button +
-  language badge per block. Group a step's multiple statements as a session with
-  "Copy all". Destructive SQL (`pg_terminate_backend`, `DROP`, `DELETE FROM`,
-  `TRUNCATE`, `kill -9`, `rm -rf`) gets an amber left-border + "destructive" label.
-  SQL text itself is never modified.
-- A2 Command emphasis: steps whose core action is a command get a run icon +
-  bold action; prose-only steps stay normal weight.
-- A3 Interactivity: Recommended steps become a client-side checklist; sections
-  get headers/dividers/spacing; Retrieved citations become collapsible (collapsed
-  by default). Body text bumped to `foreground/90` for WCAG AA contrast.
-- A4 Corpus block: move `<DocumentUpload />` to sit with the Knowledge Base flow
-  (after Live KB), relabel eyebrow "Knowledge Base — manage corpus". Keeps the
-  triage view focused. Low-risk reorder; `#document-upload` id preserved.
-- Verify: build + Playwright MCP at 390 / 768 / 1440 (copy, checklist, collapse).
+- Confirmed `app/` is the Flask backend package and `frontend/` is the React/Vite dashboard source.
+- Confirmed Flask serves the built SPA from `app/static/spa/`.
+- Confirmed the AWS path uses `boto3` Bedrock Agent Runtime through `app/bedrock_agent_client.py`.
+- Confirmed local fallback remains available when AWS credentials, Agent IDs, or Knowledge Base access are unavailable.
+- Confirmed four PITER tool contracts exist across local MCP-style logic and Bedrock Action Group handlers.
 
-Decision log:
-- Highlighter: custom regex tokenizer (SQL + bash), not highlight.js/Prism.
-  Reason: lightest option, no network install, no added dependency/bundle weight.
+## Current target flow
 
-## PART B — AWS + Docker (needs cost confirmation before paid resources)
-AWS identity OK: account `329597159579`, user `admin-reem`. Region not set in
-profile — will pass `--region` explicitly (app default region TBD from `.env`).
+```text
+NOC / SRE engineer
+-> React dashboard
+-> Flask API
+-> boto3 Bedrock Agent Runtime invoke_agent
+-> Bedrock Agent + Knowledge Base
+-> Action Group / MCP-style enrichment tools
+-> Structured PITER response
+-> Session memory and chat history
+-> Dashboard display
+```
 
-- B1 S3: confirm/create `reem-amdocs-ai-artifacts-3331` + prefix; upload corpus; tag.
-- B2 Bedrock KB: confirm/create KB + data source; **PAUSE for cost** before
-  OpenSearch Serverless (~$0.24/hr ≈ ~$175/mo if left on). Sync; report IDs.
-- B3 Docker: build from project Dockerfile; run locally; capture `docker ps`.
-- B4 EC2: launch tagged t3.micro; install Docker; run; least-privilege SG;
-  IAM role for Bedrock. **PAUSE for cost** before launch (~$0.0104/hr t3.micro).
+## Final API contract
 
-## PART C — Screenshots → `screenshots/`
-Local (I can do): Flask app, Q&A example, docker ps, pytest, redesigned home.
-Console (need your login): Bedrock KB, sync status, EC2 details, public app.
+- `GET /api/health`
+- `POST /api/chat`
+- `POST /api/incidents/analyze`
+- `POST /api/triage`
+- `POST /api/follow-up`
+- `GET /api/sessions/<session_id>/history`
 
-## TEARDOWN
-List every created resource; on go-ahead delete paid ones (EC2, OpenSearch);
-keep S3 unless told otherwise; cleanup note in README.
+Legacy-compatible routes such as `/health`, `/ask`, and `/console` remain available for Docker health checks and older demo flows.
 
-## Gates requiring user input
-1. Cost confirmation for OpenSearch Serverless (B2) and EC2 (B4).
-2. AWS console login/MFA for console screenshots (C).
+## Demo script
+
+Use [`docs/demo_script.md`](docs/demo_script.md) as the final presenter path:
+
+1. Open dashboard.
+2. Run alert storm or incident analysis.
+3. Show Bedrock Agent/Knowledge Base grounding.
+4. Show tool results.
+5. Ask an escalation follow-up.
+6. Show memory/history.
+7. Close with Settings/Architecture and explain safe fallback.
+
+## Validation checklist
+
+- `python -m pytest -q`
+- `cd frontend && npm run build`
+- `cd frontend && npm run lint`
+- `python scripts/verify_credentials.py`
+- `python scripts/agent_smoke_test.py`
+- `python scripts/verify_live_demo.py`
+- `docker compose build --pull=false`
+- `docker compose up -d`
+- Smoke test `/api/bootstrap`, `/api/health`, `/api/incidents/analyze`, `/api/chat`, and `/api/sessions/<session_id>/history`.
+
+## Manual AWS requirements
+
+- Keep real AWS credentials outside the repo in the AWS CLI profile.
+- Keep `.env` uncommitted.
+- Bedrock Agent must be prepared after Agent/action group changes.
+- Knowledge Base data source must be synced after corpus changes.
+- Live notification dispatch remains gated and mock/preview by default.

@@ -97,7 +97,11 @@ def decide_tools(alert: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "tool": "lookup_owner_and_escalation",
-            "arguments": {"service": service, "severity": severity},
+            "arguments": {
+                "service": service,
+                "severity": severity,
+                "environment": environment,
+            },
         },
         {
             "tool": "score_business_impact",
@@ -106,6 +110,7 @@ def decide_tools(alert: dict[str, Any]) -> list[dict[str, Any]]:
                 "environment": environment,
                 "severity": severity,
                 "duration_minutes": duration,
+                "alert": alert,
             },
         },
         {

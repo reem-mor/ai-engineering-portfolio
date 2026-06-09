@@ -41,7 +41,7 @@
 
 :root {
   --radius: 0.5rem;
-  /* Enterprise dark — restrained palette (DropZone-style SOC) */
+  /* Enterprise dark — restrained SOC/NOC palette */
   --background: oklch(0.14 0.015 265);
   --foreground: oklch(0.94 0.01 250);
   --card: oklch(0.18 0.018 265);

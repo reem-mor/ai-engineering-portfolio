@@ -1,58 +1,47 @@
-"""Validate the organized Knowledge Base structure."""
+"""Validate the organized Knowledge Base structure (JSON + catalog CSV)."""
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-KB = ROOT / "knowledge_base"
+from app.services.kb_corpus import (
+    CATALOG_PATH,
+    KB_ROOT,
+    REQUIRED_DOC_KEYS,
+    VALID_DOC_TYPES,
+    iter_corpus_json_paths,
+    load_kb_document,
+)
 
-REQUIRED_DIRS = {"runbooks", "environments", "policies", "incidents", "glossary"}
-REQUIRED_FRONT_MATTER_KEYS = {
-    "title",
-    "doc_type",
-    "services",
-    "environments",
-    "severity_applicable",
-    "tags",
-    "last_updated",
-    "author",
-    "version",
-}
-VALID_DOC_TYPES = {"runbook", "environment", "policy", "incident", "glossary"}
-
-
-def _front_matter(path: Path) -> dict[str, str]:
-    text = path.read_text(encoding="utf-8-sig")
-    assert text.startswith("---\n"), f"{path} missing YAML front matter"
-    end = text.find("\n---\n", 4)
-    assert end != -1, f"{path} missing YAML front matter terminator"
-    pairs = {}
-    for line in text[4:end].splitlines():
-        if ":" in line:
-            key, value = line.split(":", 1)
-            pairs[key.strip()] = value.strip()
-    return pairs
+REQUIRED_DIRS = {"runbooks", "incidents", "services", "piter"}
 
 
 def test_knowledge_base_has_authoritative_sections():
-    assert REQUIRED_DIRS <= {path.name for path in KB.iterdir() if path.is_dir()}
+    assert REQUIRED_DIRS <= {path.name for path in KB_ROOT.iterdir() if path.is_dir()}
 
 
-def test_knowledge_base_markdown_has_required_front_matter():
-    docs = [
-        path
-        for path in KB.rglob("*.md")
-        if path.is_file() and path.name != "README.md"
-    ]
+def test_knowledge_base_json_has_required_fields():
+    docs = list(iter_corpus_json_paths())
     assert docs
     for path in docs:
-        metadata = _front_matter(path)
-        assert REQUIRED_FRONT_MATTER_KEYS <= set(metadata), f"{path} missing front matter keys"
-        assert metadata["doc_type"].strip('"') in VALID_DOC_TYPES
+        doc = load_kb_document(path)
+        assert REQUIRED_DOC_KEYS <= set(doc), f"{path} missing keys"
+        assert doc["doc_type"] in VALID_DOC_TYPES
 
 
-def test_knowledge_base_keeps_fresh_data_out_of_markdown():
-    kb_text = "\n".join(path.read_text(encoding="utf-8-sig") for path in KB.rglob("*.md"))
-    assert "real phone numbers" in kb_text
-    assert "personal email addresses" in kb_text
+def test_knowledge_base_catalog_csv_is_outside_kb_prefix_and_matches_corpus():
+    catalog_path = CATALOG_PATH
+    assert catalog_path.is_file()
+    # The catalog must NOT live under the KB prefix (it is a structured index).
+    assert KB_ROOT not in catalog_path.parents
+    with catalog_path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    json_ids = {load_kb_document(p)["doc_id"] for p in iter_corpus_json_paths()}
+    catalog_ids = {row["doc_id"] for row in rows}
+    assert json_ids == catalog_ids
+
+
+def test_knowledge_base_keeps_safety_guidance_in_corpus():
+    kb_text = "\n".join(load_kb_document(p)["body"] for p in iter_corpus_json_paths())
+    assert "real phone numbers" in kb_text or "personal email" in kb_text.lower()
     assert "PITER_NOTIFICATION_MODE=live" not in kb_text

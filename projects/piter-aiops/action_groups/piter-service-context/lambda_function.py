@@ -5,10 +5,13 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ag_dir = Path(__file__).resolve().parent
+for _path in (_ag_dir, _ag_dir.parent):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+from lambda_root import ensure_project_root  # noqa: E402
 
+ensure_project_root()
 from app.enrichment_tools import lookup_owner, score_business_impact  # noqa: E402
 
 
@@ -33,7 +36,7 @@ def _respond(event: dict, status: int, body: dict) -> dict:
 
 def lambda_handler(event, context):
     params = _params(event)
-    path = event.get("apiPath", "/service-context")
+    path = event.get("apiPath", "/owner")
     service = params.get("service", "")
     environment = params.get("environment", "")
     if not service or not environment:

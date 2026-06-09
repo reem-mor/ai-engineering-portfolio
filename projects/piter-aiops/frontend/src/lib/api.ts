@@ -6,6 +6,7 @@ import type {
   FollowUpResult,
   KbDocumentMeta,
   RagAnswer,
+  SessionHistoryPayload,
   TriageCard,
   UploadResultPayload,
   WorkflowAlert,
@@ -128,6 +129,14 @@ export async function followUp(sessionId: string, question: string): Promise<Fol
   const data = await parseJson<{ ok: boolean } & FollowUpResult>(response);
   if (!data.ok) throw new Error("Follow-up failed");
   return data;
+}
+
+export async function fetchSessionHistory(sessionId: string): Promise<SessionHistoryPayload> {
+  const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/history`, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  return parseJson<SessionHistoryPayload>(response);
 }
 
 export async function notifyEscalation(payload: {

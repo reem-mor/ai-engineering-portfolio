@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,16 @@ def sms_use_topic() -> bool:
     }
 
 
+def sms_use_voice_v2() -> bool:
+    """AWS End User Messaging SMS Voice v2 (SendTextMessage) — preferred for sandbox + IL."""
+    return os.environ.get("PITER_SMS_USE_VOICE_V2", "true").lower() in {
+        "true",
+        "1",
+        "yes",
+        "on",
+    }
+
+
 def sms_preflight_enabled() -> bool:
     default = "true" if live_dispatch_enabled() else "false"
     return os.environ.get("PITER_SMS_PREFLIGHT_CHECK", default).lower() in {
@@ -95,6 +105,10 @@ def sms_preflight_enabled() -> bool:
 
 def _aws_region() -> str:
     return os.environ.get("PITER_AWS_REGION", os.environ.get("AWS_REGION", "us-east-1")).strip()
+
+
+def _boto3_client(service_name: str):
+    return boto3.client(service_name, region_name=_aws_region())
 
 
 def _sms_message_attributes() -> dict:
@@ -185,8 +199,100 @@ def _sms_publish_route(phone: str) -> str:
     return "direct"
 
 
+def _check_sms_voice_v2_ready(*, region: str | None = None) -> dict | None:
+    """Return status dict when Voice v2 is enabled; None to fall back to SNS checks."""
+    if not sms_use_voice_v2():
+        return None
+    try:
+        reg = region or _aws_region()
+        client = boto3.client("pinpoint-sms-voice-v2", region_name=reg)
+        attrs = client.describe_account_attributes().get("AccountAttributes", [])
+        by_name = {a.get("Name"): a.get("Value") for a in attrs}
+        tier = str(by_name.get("ACCOUNT_TIER") or "UNKNOWN")
+        spend = str(by_name.get("MONTHLY_SPEND_LIMIT") or "").strip()
+        if spend in {"", "0"}:
+            try:
+                sns = boto3.client("sns", region_name=reg)
+                sns_attrs = sns.get_sms_attributes(attributes=["MonthlySpendLimit"]).get("attributes", {})
+                spend = str(sns_attrs.get("MonthlySpendLimit", "")).strip()
+            except (ClientError, BotoCoreError):
+                spend = ""
+        if spend in {"", "0"}:
+            return {
+                "ready": False,
+                "reason": "sms_spend_limit_zero",
+                "message": (
+                    "AWS SMS monthly spend limit is unset or zero. Open End User Messaging, "
+                    "accept SMS terms, and set a monthly spend limit (e.g. $10)."
+                ),
+                "console_url": SMS_CONSOLE_URL,
+                "account_tier": tier,
+            }
+        return {
+            "ready": True,
+            "reason": None,
+            "message": None,
+            "route": "voice_v2",
+            "console_url": SMS_CONSOLE_URL,
+            "account_tier": tier,
+            "monthly_spend_limit": spend,
+        }
+    except ClientError as exc:
+        err = exc.response.get("Error", {})
+        message = err.get("Message", str(exc))
+        if _pinpoint_not_enabled(message):
+            return {
+                "ready": False,
+                "reason": "sms_service_not_enabled",
+                "message": (
+                    "AWS End User Messaging SMS Voice v2 is not enabled. "
+                    "Accept SMS terms in the console before sending."
+                ),
+                "console_url": SMS_CONSOLE_URL,
+                "billing_url": SMS_BILLING_RESUBSCRIBE_URL,
+            }
+        return {
+            "ready": False,
+            "reason": err.get("Code") or "sms_voice_v2_check_failed",
+            "message": message,
+            "console_url": SMS_CONSOLE_URL,
+        }
+    except BotoCoreError:
+        return None
+
+
 def check_sms_account_ready(*, region: str | None = None, phone: str | None = None) -> dict:
     """Probe whether this AWS account can deliver SMS (End User Messaging enabled)."""
+    voice_status = _check_sms_voice_v2_ready(region=region)
+    if voice_status is not None:
+        if not voice_status.get("ready"):
+            return voice_status
+        # Spend/tier OK — sandbox phone still validated via SNS API below when phone given.
+        if phone:
+            try:
+                sns = boto3.client("sns", region_name=region or _aws_region())
+                sandbox = sns.list_sms_sandbox_phone_numbers().get("PhoneNumbers", [])
+                verified = any(
+                    item.get("PhoneNumber") == phone.strip()
+                    and str(item.get("Status", "")).lower() == "verified"
+                    for item in sandbox
+                )
+                tier = str(voice_status.get("account_tier") or "").upper()
+                if tier == "SANDBOX" and not verified:
+                    return {
+                        "ready": False,
+                        "reason": "sandbox_phone_not_verified",
+                        "message": (
+                            f"{phone} is not verified in the SMS sandbox. "
+                            "Run: python scripts/fix_sms_subscription.py"
+                        ),
+                        "console_url": SMS_CONSOLE_URL,
+                        **voice_status,
+                    }
+            except (ClientError, BotoCoreError):
+                pass
+        return voice_status
+
     sns = boto3.client("sns", region_name=region or _aws_region())
     topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
     topic_status = _check_sms_topic_route(phone=phone, region=region) if topic_arn else None
@@ -246,6 +352,22 @@ def check_sms_account_ready(*, region: str | None = None, phone: str | None = No
             "ready": False,
             "reason": code or "sms_check_failed",
             "message": message,
+            "console_url": SMS_CONSOLE_URL,
+        }
+    except BotoCoreError as exc:
+        # No AWS credentials / no network (local + offline demo): SMS simply isn't ready.
+        # This keeps /bootstrap, /console and local fallback working without AWS access.
+        # Log the cause so the graceful degradation is still diagnosable.
+        logger.debug(
+            "SMS readiness check unavailable (%s)", exc.__class__.__name__, exc_info=True
+        )
+        return {
+            "ready": False,
+            "reason": "sms_check_unavailable",
+            "message": (
+                "SMS readiness could not be checked (no AWS credentials or connectivity). "
+                "Running in local/mock mode; SMS delivery is unavailable."
+            ),
             "console_url": SMS_CONSOLE_URL,
         }
 
@@ -367,6 +489,33 @@ def dispatch_whatsapp(phone: str, message: str, *, incident_id: str | None = Non
     return dispatch_whatsapp_callmebot(phone, message)
 
 
+def _dispatch_sms_voice_v2(phone: str, message: str, *, incident_id: str | None = None) -> dict:
+    client = _boto3_client("pinpoint-sms-voice-v2")
+    kwargs: dict = {
+        "DestinationPhoneNumber": phone,
+        "MessageBody": message[:1600],
+        "MessageType": "TRANSACTIONAL",
+    }
+    config_set = os.environ.get("PITER_SMS_CONFIGURATION_SET", "").strip()
+    if config_set:
+        kwargs["ConfigurationSetName"] = config_set
+    if incident_id:
+        kwargs["Context"] = {"incident_id": incident_id[:256]}
+    response = client.send_text_message(**kwargs)
+    message_id = response.get("MessageId")
+    logger.info(
+        "sms_voice_v2_sent message_id=%s phone=%s",
+        message_id,
+        f"{phone[:4]}***{phone[-2:]}" if len(phone) > 6 else "***",
+    )
+    return {
+        "channel": "sms",
+        "message_id": message_id,
+        "sent": True,
+        "route": "voice_v2",
+    }
+
+
 def dispatch_sms(phone: str, message: str, *, incident_id: str | None = None) -> dict:
     phone = phone.strip()
     if not phone.startswith("+"):
@@ -389,8 +538,35 @@ def dispatch_sms(phone: str, message: str, *, incident_id: str | None = None) ->
                 details={"console_url": status.get("console_url"), **status},
             )
 
+    if sms_use_voice_v2():
+        try:
+            return _dispatch_sms_voice_v2(phone, message, incident_id=incident_id)
+        except ClientError as exc:
+            err = exc.response.get("Error", {})
+            code = err.get("Code", "")
+            message_text = err.get("Message", str(exc))
+            if code in {"AccessDeniedException", "UnauthorizedException"}:
+                raise NotificationDispatchError(
+                    code or "sms_voice_v2_denied",
+                    message_text,
+                    details={"console_url": SMS_CONSOLE_URL},
+                ) from exc
+            if code in {"ServiceQuotaExceededException", "ThrottlingException"}:
+                raise NotificationDispatchError(
+                    "sms_quota_exceeded",
+                    (
+                        "AWS SMS monthly spend limit reached. Messages may not deliver until "
+                        "the limit resets or AWS Support raises it."
+                    ),
+                    details={
+                        "console_url": SMS_CONSOLE_URL,
+                        "aws_error": message_text,
+                    },
+                ) from exc
+            logger.warning("sms_voice_v2_failed code=%s falling_back_to_sns", code)
+
     topic_arn = os.environ.get("PITER_SNS_TOPIC_ARN", "").strip()
-    sns = boto3.client("sns", region_name=_aws_region())
+    sns = _boto3_client("sns")
     attrs = _sms_message_attributes()
     if incident_id:
         attrs["incident_id"] = {"DataType": "String", "StringValue": incident_id}

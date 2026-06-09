@@ -1,82 +1,87 @@
-# EC2 Deployment — Public Demo
+# EC2 Deployment — PITER AiOps
 
-Deploy the Dockerized Flask app to a public-facing EC2 instance. Designed for a quick MVP demo, then immediate teardown.
+Public demo checklist for the mid-course presentation.
 
-> 🔐 **Best practice:** we use an **IAM instance profile** so the container can call Bedrock without any long-lived AWS keys. No `AWS_ACCESS_KEY_ID` ever touches the EC2 instance.
+## AWS resources
 
----
+| Resource | Purpose |
+|----------|---------|
+| EC2 (Amazon Linux 2023, t3.small+) | Runs Docker container on port 8080 |
+| IAM instance profile | Bedrock InvokeAgent, KB retrieve, optional S3 read |
+| S3 + prefix `projects/piter-aiops/knowledge_base/` | KB document source |
+| Bedrock Knowledge Base + data source | RAG corpus |
+| Bedrock Agent + **Prepared** alias | Primary inference path |
+| 4 Lambda action groups | Deployments, service context, similar incidents, escalation preview |
+| CloudWatch Logs | Lambda and app troubleshooting |
+| Security group | SSH (22) from your IP; **8080** open for demo audience |
 
-## 1. Publish the Docker image
+## Pre-deploy (from workstation)
 
-The simplest free option for an MVP is **GitHub Container Registry (GHCR)**:
+```powershell
+cd C:\dev\amdocs-ai-course\projects\piter-aiops
+python scripts/verify_credentials.py
+.\scripts\aws_deploy_fix.ps1
+python scripts/sync_knowledge_base.py --ingest --wait
+python scripts/agent_smoke_test.py
+docker build -t piter-aiops:latest .
+```
+
+## Launch EC2 (example)
+
+```powershell
+aws ec2 run-instances `
+  --image-id resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 `
+  --instance-type t3.small `
+  --key-name YOUR_KEY `
+  --security-group-ids sg-XXXXXXXX `
+  --subnet-id subnet-XXXXXXXX `
+  --associate-public-ip-address `
+  --iam-instance-profile Name=YOUR_BEDROCK_EC2_PROFILE `
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=piter-aiops-demo},{Key=Project,Value=piter-aiops}]"
+```
+
+Open security group **8080/tcp** to the classroom network or `0.0.0.0/0` for the demo window only.
+
+## On the instance
 
 ```bash
-# From the project root, after building locally:
-docker build -t ghcr.io/<your-gh-user>/incident-rag-bedrock:demo .
-echo "$GITHUB_TOKEN" | docker login ghcr.io -u <your-gh-user> --password-stdin
-docker push ghcr.io/<your-gh-user>/incident-rag-bedrock:demo
+sudo yum update -y
+sudo yum install -y docker
+sudo systemctl enable --now docker
+sudo usermod -aG docker ec2-user
+
+# Copy image or build from repo clone
+docker run -d --name piter-aiops --restart unless-stopped -p 8080:8080 \
+  -e PITER_USE_BEDROCK=true \
+  -e RAG_BACKEND=agent \
+  --env-file /opt/piter-aiops/.env \
+  piter-aiops:latest
+
+curl -s http://localhost:8080/health
+curl -s http://localhost:8080/api/health?deep=1
 ```
 
-Make the package **public** in GHCR settings so EC2 can pull without authentication.
+Public URL: `http://<public-dns>:8080/` (SPA: `/#live-kb`, storm demo: `/#mvp`).
 
-## 2. Create the IAM role
+## Post-deploy validation
 
-1. **IAM → Roles → Create role**
-   - Trusted entity: **AWS service** → **EC2**
-2. Skip the AWS-managed policies for now. Click **Create role**, name it `IncidentRagBedrockEC2Role` (or your chosen name; match the instance profile).
-3. After it's created, **Add permissions → Create inline policy → JSON tab**.
-4. Paste [`infra/iam_policy.json`](../infra/iam_policy.json), then **replace** the three placeholders:
-   - `REGION` → your region (e.g. `us-east-1`)
-   - `ACCOUNT_ID` → your 12-digit AWS account ID
-   - `KB_ID` → the Knowledge Base ID
-   - `S3_BUCKET_NAME` → the bucket holding the runbooks
+```powershell
+aws ec2 describe-instances --filters "Name=tag:Project,Values=piter-aiops" "Name=instance-state-name,Values=running" `
+  --query "Reservations[].Instances[].[InstanceId,PublicDnsName,State.Name]" --output table
 
-## 3. Launch the EC2 instance
+aws s3 ls s3://YOUR_BUCKET/projects/piter-aiops/knowledge_base/ --recursive
 
-1. **EC2 → Launch instance**
-   - Name: `incident-rag-demo`
-   - AMI: **Amazon Linux 2023** (free-tier eligible)
-   - Instance type: **t3.micro** (or t2.micro)
-   - Key pair: create or reuse one — you'll need it for `scp` of the `.env`
-2. **Network settings**
-   - VPC / Subnet: default
-   - Auto-assign public IP: **Enable**
-   - Create a **new security group** (e.g. `incident-rag-sg`):
-     - Custom TCP **8080** — Source: `0.0.0.0/0` (app port; matches Docker publish)
-     - SSH (22/tcp) — Source: **My IP** (optional)
-3. **Advanced details → IAM instance profile**: select `IncidentRagBedrockEC2Profile` (role `IncidentRagBedrockEC2Role`).
-4. **User data**: paste [`infra/ec2_user_data_demo.sh`](../infra/ec2_user_data_demo.sh) (ECR `:demo` on port 8080).
-5. **Launch**.
+aws bedrock-agent get-agent-alias --agent-id AGENT_ID --agent-alias-id ALIAS_ID
 
-📸 *Screenshots*: `04_ec2_instance_running.png`, `05_security_group_rules.png`
-
-## 4. Drop the `.env` file onto the instance
-
-The user-data script expects `/home/ec2-user/.env`. Send it via `scp` once the instance is reachable:
-
-```bash
-scp -i <your-key.pem> .env ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/.env
-ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo systemctl restart docker && sudo docker restart incident-rag"
+python scripts/verify_live_demo.py --base-url http://PUBLIC_DNS:8080
 ```
 
-> ⚠️ The `.env` must **not** contain `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` — the instance profile handles auth.
+## Teardown
 
-## 5. Verify
+Terminate the demo instance when finished to avoid cost:
 
-```bash
-ssh -i <your-key.pem> ec2-user@<EC2_PUBLIC_DNS> "sudo docker ps"
-```
-You should see `incident-rag` with status `Up (healthy)`.
-
-📸 *Screenshot*: `06_docker_ps_on_ec2.png`
-
-Open the app:
-```
-http://<EC2_PUBLIC_IP>:8080/
+```powershell
+aws ec2 terminate-instances --instance-ids i-xxxxxxxx
 ```
 
-📸 *Screenshots*: `07_app_homepage_public.png`, `08_app_question_and_answer.png`, `08b_app_citations_expanded.png`, `09_app_refusal_or_low_confidence.png`
-
-## 6. After the demo — TEAR DOWN
-
-See [`cleanup_checklist.md`](cleanup_checklist.md). Do not leave OpenSearch Serverless running.
+Record results in [`screenshots/deployment_validation.md`](../screenshots/deployment_validation.md).

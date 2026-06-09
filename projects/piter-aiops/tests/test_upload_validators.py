@@ -37,3 +37,13 @@ def test_validate_size_rejects_oversize():
     with pytest.raises(BedrockError) as exc:
         validate_upload_size(10_000, max_bytes=100)
     assert exc.value.code == "file_too_large"
+
+
+def test_validate_filename_accepts_json():
+    assert validate_upload_filename("config.json") == "config.json"
+
+
+def test_validate_filename_rejects_path_traversal():
+    with pytest.raises(BedrockError) as exc:
+        validate_upload_filename("../../etc/passwd.json")
+    assert exc.value.code == "invalid_filename"

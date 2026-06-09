@@ -16,7 +16,7 @@ from app.errors import BedrockError  # noqa: E402
 
 
 def _load_questions() -> list[dict]:
-    path = ROOT / "evaluation" / "test_questions.json"
+    path = ROOT / "evaluation" / "demo_questions.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -179,7 +179,7 @@ def write_qa_showcase(rows: list[dict], model_arn: str = "") -> Path:
     """Submission artifact: grounded Q&A + off-corpus refusal (screenshot 19)."""
     out = ROOT / "evaluation" / "qa_showcase.md"
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-    s3_prefix = "s3://reem-amdocs-ai-artifacts-3331/projects/incident-rag-bedrock/data/sample_documents/"
+    s3_prefix = "s3://<bucket-name>/projects/piter-aiops/knowledge_base/"
     lines = [
         "# Sample Questions and Answers — Live Bedrock KB",
         "",

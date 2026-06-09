@@ -1,31 +1,39 @@
-"""Pure-Python TF-IDF + keyword retriever for offline RAG.
+﻿"""Pure-Python TF-IDF + keyword retriever for offline RAG.
 
-This module powers the local demo mode so the application never depends on a
-network call to Amazon Bedrock. It loads markdown and text runbooks from
-``data/sample_documents/`` — the same canonical corpus synced to Bedrock KB,
-splits them into heading-delimited chunks, and ranks chunks against a query
-with a small TF-IDF cosine similarity implemented without third-party
-dependencies. Every hit carries the source document name and an excerpt so the
-agent can cite it.
+This module powers local demo mode so the application does not depend on a
+network call to Amazon Bedrock. It loads JSON corpus documents from
+``knowledge_base/`` (same files synced to Bedrock Knowledge Base), splits
+them into heading-delimited chunks, and ranks chunks against a query with a
+small TF-IDF cosine similarity implemented without third-party dependencies.
+Every hit carries the source document name and an excerpt so the agent can
+cite it.
 """
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from app.services.kb_corpus import document_text, iter_corpus_json_paths, kb_root
 from app.validators import tokenize
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_CORPUS_DIR = _PROJECT_ROOT / "data" / "sample_documents"
+_CORPUS_DIR = kb_root()
 
 # Minimum cosine score for a chunk to count as a grounded retrieval. Below this
 # the retriever reports no match so the agent can refuse instead of guessing.
 # Tuned so on-topic incident queries (~0.45+) ground cleanly while off-topic
 # noise (incidental shared tokens, ~0.20) stays below the bar and triggers refusal.
 MIN_SCORE = 0.22
+RUNBOOK_PRIORITY_DOCS = {
+    "auth_service_login_failure.json",
+    "deployment_rollback.json",
+    "redis_token_store_degradation.json",
+    "database_connectivity.json",
+    "api_gateway_5xx.json",
+}
 
 
 @dataclass(frozen=True)
@@ -61,7 +69,7 @@ def _split_chunks(text: str) -> list[str]:
 
 
 class LocalRetriever:
-    """TF-IDF retriever over a directory of markdown/text runbooks."""
+    """TF-IDF retriever over knowledge_base JSON corpus documents."""
 
     def __init__(self, *, runbook_dir: Path | None = None) -> None:
         self._dir = runbook_dir or _CORPUS_DIR
@@ -82,10 +90,9 @@ class LocalRetriever:
         if not self._dir.is_dir():
             return
         raw_chunks: list[tuple[str, int, str]] = []
-        for path in sorted(self._dir.glob("*.md")) + sorted(self._dir.glob("*.txt")):
-            if path.name.upper() == "README.MD":
-                continue
-            text = path.read_text(encoding="utf-8", errors="ignore")
+        for path in iter_corpus_json_paths(root=self._dir):
+            doc = json.loads(path.read_text(encoding="utf-8-sig"))
+            text = document_text(doc)
             for idx, chunk in enumerate(_split_chunks(text)):
                 raw_chunks.append((path.name, idx, chunk))
 
@@ -136,6 +143,8 @@ class LocalRetriever:
         scored: list[RetrievedChunk] = []
         for chunk, vector in zip(self._documents, self._chunk_vectors):
             score = self._cosine(query_vector, vector)
+            if chunk.document in RUNBOOK_PRIORITY_DOCS:
+                score *= 1.4
             if score >= MIN_SCORE:
                 scored.append(
                     RetrievedChunk(
@@ -166,3 +175,5 @@ def _first_excerpt_steps(excerpt: str) -> list[str]:
             if text:
                 steps.append(text)
     return steps
+
+
