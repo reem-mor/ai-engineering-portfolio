@@ -78,3 +78,8 @@ projects/incident-assistant-rag/data/faiss_index/*
 .aws/
 *.pem
 *.key
+# Large local archives
+*.tar
+*.tar.gz
+*.zip
+projects/piter-aiops/*.tar
