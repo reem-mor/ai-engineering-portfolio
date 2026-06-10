@@ -1,0 +1,1219 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - button [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+      - navigation [ref=e8]:
+        - button [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+        - button [ref=e15] [cursor=pointer]:
+          - img [ref=e16]
+        - button [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+        - button [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+        - button [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+        - button [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+        - button [ref=e34] [cursor=pointer]:
+          - img [ref=e35]
+        - button [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+        - button [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+        - button [ref=e44] [cursor=pointer]:
+          - img [ref=e45]
+    - generic [ref=e48]:
+      - banner [ref=e49]:
+        - button "PITER Ops AI Incident Operations Center" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: ◆
+          - generic [ref=e52]: PITER Ops
+          - generic [ref=e53]: AI Incident Operations Center
+        - generic [ref=e54]:
+          - generic [ref=e55]: Demo Mode
+          - generic [ref=e56]: AWS Connected
+          - generic [ref=e57]: "Agent: Alert Mode"
+          - 'generic "Infrastructure: ok" [ref=e227]': Infra
+        - generic [ref=e60]:
+          - button "Resume stream" [ref=e780] [cursor=pointer]:
+            - img [ref=e781]
+          - button "Reset" [ref=e456] [cursor=pointer]:
+            - img [ref=e457]
+            - text: Reset
+          - generic "Operator" [ref=e64]: OP
+      - generic [ref=e65]:
+        - main [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e69]:
+              - heading "Operations Dashboard" [level=1] [ref=e70]
+              - paragraph [ref=e71]: Live production operations state — alert stream, incident queue, and AI copilot
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74]:
+                  - img [ref=e75]
+                  - generic [ref=e81]: Alerts received
+                - generic [ref=e82]: 251 / 400
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - img [ref=e85]
+                  - generic [ref=e88]: Noise suppressed
+                - generic [ref=e89]: "170"
+              - generic [ref=e90]:
+                - generic [ref=e91]:
+                  - img [ref=e92]
+                  - generic [ref=e96]: Active incidents
+                - generic [ref=e97]: "163"
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - img [ref=e100]
+                  - generic [ref=e102]: P1 / P2 / P3
+                - generic [ref=e103]: 1 / 30 / 50
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - img [ref=e106]
+                  - generic [ref=e109]: Escalations
+                - generic [ref=e110]: "0"
+              - generic [ref=e111]:
+                - generic [ref=e112]:
+                  - generic [ref=e116]: MTTR reduced
+                  - generic [ref=e460]: DEMO
+                - generic [ref=e117]: —
+                - generic [ref=e118]: vs baseline
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - generic [ref=e123]: Cost avoided
+                  - generic [ref=e461]: DEMO
+                - generic [ref=e124]: —
+            - generic [ref=e462]:
+              - generic [ref=e463]:
+                - heading "Important vs noise" [level=3] [ref=e464]
+                - img [ref=e467]:
+                  - generic [ref=e783]:
+                    - img [ref=e785]
+                    - img [ref=e787]
+              - generic [ref=e474]:
+                - heading "Severity over storm" [level=3] [ref=e475]
+                - img [ref=e478]:
+                  - generic [ref=e483]:
+                    - generic [ref=e789]: 75s
+                    - generic [ref=e791]: 105s
+                    - generic [ref=e793]: 135s
+                    - generic [ref=e795]: 165s
+                  - generic [ref=e489]:
+                    - generic [ref=e491]: "0"
+                    - generic [ref=e797]: "7"
+                    - generic [ref=e799]: "14"
+                    - generic [ref=e801]: "21"
+                    - generic [ref=e803]: "28"
+              - generic [ref=e512]:
+                - heading "Noisiest services" [level=3] [ref=e513]
+                - img [ref=e516]:
+                  - generic [ref=e520]:
+                    - generic [ref=e522]: "0"
+                    - generic [ref=e818]: "7"
+                    - generic [ref=e820]: "14"
+                    - generic [ref=e822]: "21"
+                    - generic [ref=e824]: "28"
+                  - generic [ref=e530]:
+                    - generic [ref=e826]: promotion-engine
+                    - generic [ref=e828]: replication
+                    - generic [ref=e830]: bet-service
+                    - generic [ref=e832]: redis-token-store
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - generic [ref=e127]:
+                  - heading "Alert stream" [level=2] [ref=e128]
+                  - generic [ref=e550]: 60 visible · 251 total
+                - table [ref=e133]:
+                  - rowgroup [ref=e134]:
+                    - row "Time Service Alert Sev Status" [ref=e135]:
+                      - columnheader "Time" [ref=e136]
+                      - columnheader "Service" [ref=e137]
+                      - columnheader "Alert" [ref=e138]
+                      - columnheader "Sev" [ref=e139]
+                      - columnheader "Status" [ref=e140]
+                      - columnheader [ref=e141]
+                  - rowgroup [ref=e142]:
+                    - 'row "10:02:55 bet-service CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC P1 streaming Ask agent" [ref=e842]':
+                      - cell "10:02:55" [ref=e843]
+                      - cell "bet-service" [ref=e844]
+                      - 'cell "CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC" [ref=e845]'
+                      - cell "P1" [ref=e846]:
+                        - generic [ref=e847]: P1
+                      - cell "streaming" [ref=e848]
+                      - cell "Ask agent" [ref=e849]:
+                        - button "Ask agent" [ref=e850] [cursor=pointer]
+                    - row "10:02:54 redis-token-store redis-token-store cache hit rate changed to 68.4% P4 streaming Ask agent" [ref=e851]:
+                      - cell "10:02:54" [ref=e852]
+                      - cell "redis-token-store" [ref=e853]
+                      - cell "redis-token-store cache hit rate changed to 68.4%" [ref=e854]
+                      - cell "P4" [ref=e855]:
+                        - generic [ref=e856]: P4
+                      - cell "streaming" [ref=e857]
+                      - cell "Ask agent" [ref=e858]:
+                        - button "Ask agent" [ref=e859] [cursor=pointer]
+                    - 'row "10:02:54 payments-service Health check warning: payments-service response time 603ms P4 streaming Ask agent" [ref=e860]':
+                      - cell "10:02:54" [ref=e861]
+                      - cell "payments-service" [ref=e862]
+                      - 'cell "Health check warning: payments-service response time 603ms" [ref=e863]'
+                      - cell "P4" [ref=e864]:
+                        - generic [ref=e865]: P4
+                      - cell "streaming" [ref=e866]
+                      - cell "Ask agent" [ref=e867]:
+                        - button "Ask agent" [ref=e868] [cursor=pointer]
+                    - row "10:02:53 replication replication cache hit rate changed to 66.7% P4 streaming Ask agent" [ref=e869]:
+                      - cell "10:02:53" [ref=e870]
+                      - cell "replication" [ref=e871]
+                      - cell "replication cache hit rate changed to 66.7%" [ref=e872]
+                      - cell "P4" [ref=e873]:
+                        - generic [ref=e874]: P4
+                      - cell "streaming" [ref=e875]
+                      - cell "Ask agent" [ref=e876]:
+                        - button "Ask agent" [ref=e877] [cursor=pointer]
+                    - row "10:02:50 bet-service bet-service circuit breaker tripped briefly P2 streaming Ask agent" [ref=e878]:
+                      - cell "10:02:50" [ref=e879]
+                      - cell "bet-service" [ref=e880]
+                      - cell "bet-service circuit breaker tripped briefly" [ref=e881]
+                      - cell "P2" [ref=e882]:
+                        - generic [ref=e883]: P2
+                      - cell "streaming" [ref=e884]
+                      - cell "Ask agent" [ref=e885]:
+                        - button "Ask agent" [ref=e886] [cursor=pointer]
+                    - 'row "10:02:49 bet-service Background job queue delay on bet-service: 45.8s P4 streaming Ask agent" [ref=e887]':
+                      - cell "10:02:49" [ref=e888]
+                      - cell "bet-service" [ref=e889]
+                      - 'cell "Background job queue delay on bet-service: 45.8s" [ref=e890]'
+                      - cell "P4" [ref=e891]:
+                        - generic [ref=e892]: P4
+                      - cell "streaming" [ref=e893]
+                      - cell "Ask agent" [ref=e894]:
+                        - button "Ask agent" [ref=e895] [cursor=pointer]
+                    - 'row "10:02:48 replication Failed transaction rate on replication: 1.5% P2 streaming Ask agent" [ref=e896]':
+                      - cell "10:02:48" [ref=e897]
+                      - cell "replication" [ref=e898]
+                      - 'cell "Failed transaction rate on replication: 1.5%" [ref=e899]'
+                      - cell "P2" [ref=e900]:
+                        - generic [ref=e901]: P2
+                      - cell "streaming" [ref=e902]
+                      - cell "Ask agent" [ref=e903]:
+                        - button "Ask agent" [ref=e904] [cursor=pointer]
+                    - row "10:02:44 payments-service payments-service memory utilization at 76.5% P4 streaming Ask agent" [ref=e905]:
+                      - cell "10:02:44" [ref=e906]
+                      - cell "payments-service" [ref=e907]
+                      - cell "payments-service memory utilization at 76.5%" [ref=e908]
+                      - cell "P4" [ref=e909]:
+                        - generic [ref=e910]: P4
+                      - cell "streaming" [ref=e911]
+                      - cell "Ask agent" [ref=e912]:
+                        - button "Ask agent" [ref=e913] [cursor=pointer]
+                    - 'row "10:02:44 bet-service TLS handshake duration elevated for bet-service: 224ms P4 streaming Ask agent" [ref=e914]':
+                      - cell "10:02:44" [ref=e915]
+                      - cell "bet-service" [ref=e916]
+                      - 'cell "TLS handshake duration elevated for bet-service: 224ms" [ref=e917]'
+                      - cell "P4" [ref=e918]:
+                        - generic [ref=e919]: P4
+                      - cell "streaming" [ref=e920]
+                      - cell "Ask agent" [ref=e921]:
+                        - button "Ask agent" [ref=e922] [cursor=pointer]
+                    - row "10:02:44 wallet-service wallet-service circuit breaker tripped briefly P2 streaming Ask agent" [ref=e923]:
+                      - cell "10:02:44" [ref=e924]
+                      - cell "wallet-service" [ref=e925]
+                      - cell "wallet-service circuit breaker tripped briefly" [ref=e926]
+                      - cell "P2" [ref=e927]:
+                        - generic [ref=e928]: P2
+                      - cell "streaming" [ref=e929]
+                      - cell "Ask agent" [ref=e930]:
+                        - button "Ask agent" [ref=e931] [cursor=pointer]
+                    - row "10:02:44 redis-token-store redis-token-store disk usage at 78.3% P4 streaming Ask agent" [ref=e932]:
+                      - cell "10:02:44" [ref=e933]
+                      - cell "redis-token-store" [ref=e934]
+                      - cell "redis-token-store disk usage at 78.3%" [ref=e935]
+                      - cell "P4" [ref=e936]:
+                        - generic [ref=e937]: P4
+                      - cell "streaming" [ref=e938]
+                      - cell "Ask agent" [ref=e939]:
+                        - button "Ask agent" [ref=e940] [cursor=pointer]
+                    - 'row "10:02:43 bet-service Health check warning: bet-service response time 767ms P4 streaming Ask agent" [ref=e941]':
+                      - cell "10:02:43" [ref=e942]
+                      - cell "bet-service" [ref=e943]
+                      - 'cell "Health check warning: bet-service response time 767ms" [ref=e944]'
+                      - cell "P4" [ref=e945]:
+                        - generic [ref=e946]: P4
+                      - cell "streaming" [ref=e947]
+                      - cell "Ask agent" [ref=e948]:
+                        - button "Ask agent" [ref=e949] [cursor=pointer]
+                    - row "10:02:43 auth-service auth-service latency p95 increased to 2.0s P3 streaming Ask agent" [ref=e950]:
+                      - cell "10:02:43" [ref=e951]
+                      - cell "auth-service" [ref=e952]
+                      - cell "auth-service latency p95 increased to 2.0s" [ref=e953]
+                      - cell "P3" [ref=e954]:
+                        - generic [ref=e955]: P3
+                      - cell "streaming" [ref=e956]
+                      - cell "Ask agent" [ref=e957]:
+                        - button "Ask agent" [ref=e958] [cursor=pointer]
+                    - 'row "10:02:42 redis-token-store Connection pool pressure on redis-token-store: 88.1% P3 streaming Ask agent" [ref=e959]':
+                      - cell "10:02:42" [ref=e960]
+                      - cell "redis-token-store" [ref=e961]
+                      - 'cell "Connection pool pressure on redis-token-store: 88.1%" [ref=e962]'
+                      - cell "P3" [ref=e963]:
+                        - generic [ref=e964]: P3
+                      - cell "streaming" [ref=e965]
+                      - cell "Ask agent" [ref=e966]:
+                        - button "Ask agent" [ref=e967] [cursor=pointer]
+                    - 'row "10:02:40 promotion-engine Health check warning: promotion-engine response time 739ms P4 streaming Ask agent" [ref=e968]':
+                      - cell "10:02:40" [ref=e969]
+                      - cell "promotion-engine" [ref=e970]
+                      - 'cell "Health check warning: promotion-engine response time 739ms" [ref=e971]'
+                      - cell "P4" [ref=e972]:
+                        - generic [ref=e973]: P4
+                      - cell "streaming" [ref=e974]
+                      - cell "Ask agent" [ref=e975]:
+                        - button "Ask agent" [ref=e976] [cursor=pointer]
+                    - 'row "10:02:40 wallet-service Connection pool pressure on wallet-service: 86.2% P3 streaming Ask agent" [ref=e977]':
+                      - cell "10:02:40" [ref=e978]
+                      - cell "wallet-service" [ref=e979]
+                      - 'cell "Connection pool pressure on wallet-service: 86.2%" [ref=e980]'
+                      - cell "P3" [ref=e981]:
+                        - generic [ref=e982]: P3
+                      - cell "streaming" [ref=e983]
+                      - cell "Ask agent" [ref=e984]:
+                        - button "Ask agent" [ref=e985] [cursor=pointer]
+                    - 'row "10:02:39 promotion-engine Background job queue delay on promotion-engine: 44.3s P4 streaming Ask agent" [ref=e986]':
+                      - cell "10:02:39" [ref=e987]
+                      - cell "promotion-engine" [ref=e988]
+                      - 'cell "Background job queue delay on promotion-engine: 44.3s" [ref=e989]'
+                      - cell "P4" [ref=e990]:
+                        - generic [ref=e991]: P4
+                      - cell "streaming" [ref=e992]
+                      - cell "Ask agent" [ref=e993]:
+                        - button "Ask agent" [ref=e994] [cursor=pointer]
+                    - row "10:02:37 promotion-engine promotion-engine cache hit rate changed to 66.4% P4 streaming Ask agent" [ref=e995]:
+                      - cell "10:02:37" [ref=e996]
+                      - cell "promotion-engine" [ref=e997]
+                      - cell "promotion-engine cache hit rate changed to 66.4%" [ref=e998]
+                      - cell "P4" [ref=e999]:
+                        - generic [ref=e1000]: P4
+                      - cell "streaming" [ref=e1001]
+                      - cell "Ask agent" [ref=e1002]:
+                        - button "Ask agent" [ref=e1003] [cursor=pointer]
+                    - row "10:02:36 replication replication memory utilization at 86.2% P4 streaming Ask agent" [ref=e1004]:
+                      - cell "10:02:36" [ref=e1005]
+                      - cell "replication" [ref=e1006]
+                      - cell "replication memory utilization at 86.2%" [ref=e1007]
+                      - cell "P4" [ref=e1008]:
+                        - generic [ref=e1009]: P4
+                      - cell "streaming" [ref=e1010]
+                      - cell "Ask agent" [ref=e1011]:
+                        - button "Ask agent" [ref=e1012] [cursor=pointer]
+                    - 'row "10:02:36 wallet-service TLS handshake duration elevated for wallet-service: 458ms P4 streaming Ask agent" [ref=e1013]':
+                      - cell "10:02:36" [ref=e1014]
+                      - cell "wallet-service" [ref=e1015]
+                      - 'cell "TLS handshake duration elevated for wallet-service: 458ms" [ref=e1016]'
+                      - cell "P4" [ref=e1017]:
+                        - generic [ref=e1018]: P4
+                      - cell "streaming" [ref=e1019]
+                      - cell "Ask agent" [ref=e1020]:
+                        - button "Ask agent" [ref=e1021] [cursor=pointer]
+                    - row "10:02:35 bet-service bet-service 5xx rate above 2% (3.8%) P2 streaming Ask agent" [ref=e1022]:
+                      - cell "10:02:35" [ref=e1023]
+                      - cell "bet-service" [ref=e1024]
+                      - cell "bet-service 5xx rate above 2% (3.8%)" [ref=e1025]
+                      - cell "P2" [ref=e1026]:
+                        - generic [ref=e1027]: P2
+                      - cell "streaming" [ref=e1028]
+                      - cell "Ask agent" [ref=e1029]:
+                        - button "Ask agent" [ref=e1030] [cursor=pointer]
+                    - 'row "10:02:34 promotion-engine Failed login rate increased on promotion-engine: 7.4% P3 streaming Ask agent" [ref=e1031]':
+                      - cell "10:02:34" [ref=e1032]
+                      - cell "promotion-engine" [ref=e1033]
+                      - 'cell "Failed login rate increased on promotion-engine: 7.4%" [ref=e1034]'
+                      - cell "P3" [ref=e1035]:
+                        - generic [ref=e1036]: P3
+                      - cell "streaming" [ref=e1037]
+                      - cell "Ask agent" [ref=e1038]:
+                        - button "Ask agent" [ref=e1039] [cursor=pointer]
+                    - row "10:02:33 auth-service auth-service disk usage at 78.2% P4 streaming Ask agent" [ref=e1040]:
+                      - cell "10:02:33" [ref=e1041]
+                      - cell "auth-service" [ref=e1042]
+                      - cell "auth-service disk usage at 78.2%" [ref=e1043]
+                      - cell "P4" [ref=e1044]:
+                        - generic [ref=e1045]: P4
+                      - cell "streaming" [ref=e1046]
+                      - cell "Ask agent" [ref=e1047]:
+                        - button "Ask agent" [ref=e1048] [cursor=pointer]
+                    - 'row "10:02:32 game-service Background job queue delay on game-service: 46.3s P4 streaming Ask agent" [ref=e1049]':
+                      - cell "10:02:32" [ref=e1050]
+                      - cell "game-service" [ref=e1051]
+                      - 'cell "Background job queue delay on game-service: 46.3s" [ref=e1052]'
+                      - cell "P4" [ref=e1053]:
+                        - generic [ref=e1054]: P4
+                      - cell "streaming" [ref=e1055]
+                      - cell "Ask agent" [ref=e1056]:
+                        - button "Ask agent" [ref=e1057] [cursor=pointer]
+                    - 'row "10:02:32 payments-service Background job queue delay on payments-service: 44.5s P4 streaming Ask agent" [ref=e1058]':
+                      - cell "10:02:32" [ref=e1059]
+                      - cell "payments-service" [ref=e1060]
+                      - 'cell "Background job queue delay on payments-service: 44.5s" [ref=e1061]'
+                      - cell "P4" [ref=e1062]:
+                        - generic [ref=e1063]: P4
+                      - cell "streaming" [ref=e1064]
+                      - cell "Ask agent" [ref=e1065]:
+                        - button "Ask agent" [ref=e1066] [cursor=pointer]
+                    - 'row "10:02:30 replication TLS handshake duration elevated for replication: 493ms P4 streaming Ask agent" [ref=e1067]':
+                      - cell "10:02:30" [ref=e1068]
+                      - cell "replication" [ref=e1069]
+                      - 'cell "TLS handshake duration elevated for replication: 493ms" [ref=e1070]'
+                      - cell "P4" [ref=e1071]:
+                        - generic [ref=e1072]: P4
+                      - cell "streaming" [ref=e1073]
+                      - cell "Ask agent" [ref=e1074]:
+                        - button "Ask agent" [ref=e1075] [cursor=pointer]
+                    - row "10:02:28 replication replication memory utilization at 78.7% P4 streaming Ask agent" [ref=e1076]:
+                      - cell "10:02:28" [ref=e1077]
+                      - cell "replication" [ref=e1078]
+                      - cell "replication memory utilization at 78.7%" [ref=e1079]
+                      - cell "P4" [ref=e1080]:
+                        - generic [ref=e1081]: P4
+                      - cell "streaming" [ref=e1082]
+                      - cell "Ask agent" [ref=e1083]:
+                        - button "Ask agent" [ref=e1084] [cursor=pointer]
+                    - 'row "10:02:27 auth-service Connection pool pressure on auth-service: 89.3% P3 streaming Ask agent" [ref=e1085]':
+                      - cell "10:02:27" [ref=e1086]
+                      - cell "auth-service" [ref=e1087]
+                      - 'cell "Connection pool pressure on auth-service: 89.3%" [ref=e1088]'
+                      - cell "P3" [ref=e1089]:
+                        - generic [ref=e1090]: P3
+                      - cell "streaming" [ref=e1091]
+                      - cell "Ask agent" [ref=e1092]:
+                        - button "Ask agent" [ref=e1093] [cursor=pointer]
+                    - 'row "10:02:26 auth-service Background job queue delay on auth-service: 45.0s P4 streaming Ask agent" [ref=e1094]':
+                      - cell "10:02:26" [ref=e1095]
+                      - cell "auth-service" [ref=e1096]
+                      - 'cell "Background job queue delay on auth-service: 45.0s" [ref=e1097]'
+                      - cell "P4" [ref=e1098]:
+                        - generic [ref=e1099]: P4
+                      - cell "streaming" [ref=e1100]
+                      - cell "Ask agent" [ref=e1101]:
+                        - button "Ask agent" [ref=e1102] [cursor=pointer]
+                    - 'row "10:02:24 auth-service Queue depth elevated on auth-service: 1294 P3 streaming Ask agent" [ref=e1103]':
+                      - cell "10:02:24" [ref=e1104]
+                      - cell "auth-service" [ref=e1105]
+                      - 'cell "Queue depth elevated on auth-service: 1294" [ref=e1106]'
+                      - cell "P3" [ref=e1107]:
+                        - generic [ref=e1108]: P3
+                      - cell "streaming" [ref=e1109]
+                      - cell "Ask agent" [ref=e1110]:
+                        - button "Ask agent" [ref=e1111] [cursor=pointer]
+                    - row "10:02:24 replication replication cache hit rate changed to 81.8% P4 streaming Ask agent" [ref=e1112]:
+                      - cell "10:02:24" [ref=e1113]
+                      - cell "replication" [ref=e1114]
+                      - cell "replication cache hit rate changed to 81.8%" [ref=e1115]
+                      - cell "P4" [ref=e1116]:
+                        - generic [ref=e1117]: P4
+                      - cell "streaming" [ref=e1118]
+                      - cell "Ask agent" [ref=e1119]:
+                        - button "Ask agent" [ref=e1120] [cursor=pointer]
+                    - 'row "10:02:24 bet-service Connection pool pressure on bet-service: 83.4% P3 streaming Ask agent" [ref=e1121]':
+                      - cell "10:02:24" [ref=e1122]
+                      - cell "bet-service" [ref=e1123]
+                      - 'cell "Connection pool pressure on bet-service: 83.4%" [ref=e1124]'
+                      - cell "P3" [ref=e1125]:
+                        - generic [ref=e1126]: P3
+                      - cell "streaming" [ref=e1127]
+                      - cell "Ask agent" [ref=e1128]:
+                        - button "Ask agent" [ref=e1129] [cursor=pointer]
+                    - 'row "10:02:24 wallet-service TLS handshake duration elevated for wallet-service: 219ms P4 streaming Ask agent" [ref=e1130]':
+                      - cell "10:02:24" [ref=e1131]
+                      - cell "wallet-service" [ref=e1132]
+                      - 'cell "TLS handshake duration elevated for wallet-service: 219ms" [ref=e1133]'
+                      - cell "P4" [ref=e1134]:
+                        - generic [ref=e1135]: P4
+                      - cell "streaming" [ref=e1136]
+                      - cell "Ask agent" [ref=e1137]:
+                        - button "Ask agent" [ref=e1138] [cursor=pointer]
+                    - row "10:02:24 auth-service auth-service circuit breaker tripped briefly P2 streaming Ask agent" [ref=e1139]:
+                      - cell "10:02:24" [ref=e1140]
+                      - cell "auth-service" [ref=e1141]
+                      - cell "auth-service circuit breaker tripped briefly" [ref=e1142]
+                      - cell "P2" [ref=e1143]:
+                        - generic [ref=e1144]: P2
+                      - cell "streaming" [ref=e1145]
+                      - cell "Ask agent" [ref=e1146]:
+                        - button "Ask agent" [ref=e1147] [cursor=pointer]
+                    - 'row "10:02:23 promotion-engine Background job queue delay on promotion-engine: 46.0s P4 streaming Ask agent" [ref=e1148]':
+                      - cell "10:02:23" [ref=e1149]
+                      - cell "promotion-engine" [ref=e1150]
+                      - 'cell "Background job queue delay on promotion-engine: 46.0s" [ref=e1151]'
+                      - cell "P4" [ref=e1152]:
+                        - generic [ref=e1153]: P4
+                      - cell "streaming" [ref=e1154]
+                      - cell "Ask agent" [ref=e1155]:
+                        - button "Ask agent" [ref=e1156] [cursor=pointer]
+                    - row "10:02:22 payments-service payments-service latency p95 increased to 3.1s P3 streaming Ask agent" [ref=e1157]:
+                      - cell "10:02:22" [ref=e1158]
+                      - cell "payments-service" [ref=e1159]
+                      - cell "payments-service latency p95 increased to 3.1s" [ref=e1160]
+                      - cell "P3" [ref=e1161]:
+                        - generic [ref=e1162]: P3
+                      - cell "streaming" [ref=e1163]
+                      - cell "Ask agent" [ref=e1164]:
+                        - button "Ask agent" [ref=e1165] [cursor=pointer]
+                    - 'row "10:02:21 payments-service Replication lag on payments-service: 17.8s P3 streaming Ask agent" [ref=e1166]':
+                      - cell "10:02:21" [ref=e1167]
+                      - cell "payments-service" [ref=e1168]
+                      - 'cell "Replication lag on payments-service: 17.8s" [ref=e1169]'
+                      - cell "P3" [ref=e1170]:
+                        - generic [ref=e1171]: P3
+                      - cell "streaming" [ref=e1172]
+                      - cell "Ask agent" [ref=e1173]:
+                        - button "Ask agent" [ref=e1174] [cursor=pointer]
+                    - 'row "10:02:20 auth-service auth-service 5xx rate above threshold: 1% P2 streaming Ask agent" [ref=e1175]':
+                      - cell "10:02:20" [ref=e1176]
+                      - cell "auth-service" [ref=e1177]
+                      - 'cell "auth-service 5xx rate above threshold: 1%" [ref=e1178]'
+                      - cell "P2" [ref=e1179]:
+                        - generic [ref=e1180]: P2
+                      - cell "streaming" [ref=e1181]
+                      - cell "Ask agent" [ref=e1182]:
+                        - button "Ask agent" [ref=e1183] [cursor=pointer]
+                    - row "10:02:19 game-service game-service latency p95 increased to 2.9s P3 streaming Ask agent" [ref=e1184]:
+                      - cell "10:02:19" [ref=e1185]
+                      - cell "game-service" [ref=e1186]
+                      - cell "game-service latency p95 increased to 2.9s" [ref=e1187]
+                      - cell "P3" [ref=e1188]:
+                        - generic [ref=e1189]: P3
+                      - cell "streaming" [ref=e1190]
+                      - cell "Ask agent" [ref=e1191]:
+                        - button "Ask agent" [ref=e1192] [cursor=pointer]
+                    - row "10:02:18 game-service game-service circuit breaker tripped briefly P2 streaming Ask agent" [ref=e1193]:
+                      - cell "10:02:18" [ref=e1194]
+                      - cell "game-service" [ref=e1195]
+                      - cell "game-service circuit breaker tripped briefly" [ref=e1196]
+                      - cell "P2" [ref=e1197]:
+                        - generic [ref=e1198]: P2
+                      - cell "streaming" [ref=e1199]
+                      - cell "Ask agent" [ref=e1200]:
+                        - button "Ask agent" [ref=e1201] [cursor=pointer]
+                    - 'row "10:02:18 game-service Failed login rate increased on game-service: 12.4% P3 streaming Ask agent" [ref=e1202]':
+                      - cell "10:02:18" [ref=e1203]
+                      - cell "game-service" [ref=e1204]
+                      - 'cell "Failed login rate increased on game-service: 12.4%" [ref=e1205]'
+                      - cell "P3" [ref=e1206]:
+                        - generic [ref=e1207]: P3
+                      - cell "streaming" [ref=e1208]
+                      - cell "Ask agent" [ref=e1209]:
+                        - button "Ask agent" [ref=e1210] [cursor=pointer]
+                    - 'row "10:02:18 auth-service TLS handshake duration elevated for auth-service: 375ms P4 streaming Ask agent" [ref=e1211]':
+                      - cell "10:02:18" [ref=e1212]
+                      - cell "auth-service" [ref=e1213]
+                      - 'cell "TLS handshake duration elevated for auth-service: 375ms" [ref=e1214]'
+                      - cell "P4" [ref=e1215]:
+                        - generic [ref=e1216]: P4
+                      - cell "streaming" [ref=e1217]
+                      - cell "Ask agent" [ref=e1218]:
+                        - button "Ask agent" [ref=e1219] [cursor=pointer]
+                    - 'row "10:02:17 bet-service Replication lag on bet-service: 17.7s P3 streaming Ask agent" [ref=e1220]':
+                      - cell "10:02:17" [ref=e1221]
+                      - cell "bet-service" [ref=e1222]
+                      - 'cell "Replication lag on bet-service: 17.7s" [ref=e1223]'
+                      - cell "P3" [ref=e1224]:
+                        - generic [ref=e1225]: P3
+                      - cell "streaming" [ref=e1226]
+                      - cell "Ask agent" [ref=e1227]:
+                        - button "Ask agent" [ref=e1228] [cursor=pointer]
+                    - 'row "10:02:17 payments-service TLS handshake duration elevated for payments-service: 513ms P4 streaming Ask agent" [ref=e1229]':
+                      - cell "10:02:17" [ref=e1230]
+                      - cell "payments-service" [ref=e1231]
+                      - 'cell "TLS handshake duration elevated for payments-service: 513ms" [ref=e1232]'
+                      - cell "P4" [ref=e1233]:
+                        - generic [ref=e1234]: P4
+                      - cell "streaming" [ref=e1235]
+                      - cell "Ask agent" [ref=e1236]:
+                        - button "Ask agent" [ref=e1237] [cursor=pointer]
+                    - row "10:02:17 bet-service bet-service disk usage at 70.3% P4 streaming Ask agent" [ref=e1238]:
+                      - cell "10:02:17" [ref=e1239]
+                      - cell "bet-service" [ref=e1240]
+                      - cell "bet-service disk usage at 70.3%" [ref=e1241]
+                      - cell "P4" [ref=e1242]:
+                        - generic [ref=e1243]: P4
+                      - cell "streaming" [ref=e1244]
+                      - cell "Ask agent" [ref=e1245]:
+                        - button "Ask agent" [ref=e1246] [cursor=pointer]
+                    - 'row "10:02:17 promotion-engine Replication lag on promotion-engine: 18.6s P3 streaming Ask agent" [ref=e1247]':
+                      - cell "10:02:17" [ref=e1248]
+                      - cell "promotion-engine" [ref=e1249]
+                      - 'cell "Replication lag on promotion-engine: 18.6s" [ref=e1250]'
+                      - cell "P3" [ref=e1251]:
+                        - generic [ref=e1252]: P3
+                      - cell "streaming" [ref=e1253]
+                      - cell "Ask agent" [ref=e1254]:
+                        - button "Ask agent" [ref=e1255] [cursor=pointer]
+                    - 'row "10:02:17 bet-service Health check warning: bet-service response time 865ms P4 streaming Ask agent" [ref=e1256]':
+                      - cell "10:02:17" [ref=e1257]
+                      - cell "bet-service" [ref=e1258]
+                      - 'cell "Health check warning: bet-service response time 865ms" [ref=e1259]'
+                      - cell "P4" [ref=e1260]:
+                        - generic [ref=e1261]: P4
+                      - cell "streaming" [ref=e1262]
+                      - cell "Ask agent" [ref=e1263]:
+                        - button "Ask agent" [ref=e1264] [cursor=pointer]
+                    - 'row "10:02:17 promotion-engine Connection pool pressure on promotion-engine: 94.7% P3 streaming Ask agent" [ref=e1265]':
+                      - cell "10:02:17" [ref=e1266]
+                      - cell "promotion-engine" [ref=e1267]
+                      - 'cell "Connection pool pressure on promotion-engine: 94.7%" [ref=e1268]'
+                      - cell "P3" [ref=e1269]:
+                        - generic [ref=e1270]: P3
+                      - cell "streaming" [ref=e1271]
+                      - cell "Ask agent" [ref=e1272]:
+                        - button "Ask agent" [ref=e1273] [cursor=pointer]
+                    - 'row "10:02:17 auth-service TLS handshake duration elevated for auth-service: 353ms P4 streaming Ask agent" [ref=e1274]':
+                      - cell "10:02:17" [ref=e1275]
+                      - cell "auth-service" [ref=e1276]
+                      - 'cell "TLS handshake duration elevated for auth-service: 353ms" [ref=e1277]'
+                      - cell "P4" [ref=e1278]:
+                        - generic [ref=e1279]: P4
+                      - cell "streaming" [ref=e1280]
+                      - cell "Ask agent" [ref=e1281]:
+                        - button "Ask agent" [ref=e1282] [cursor=pointer]
+                    - 'row "10:02:17 promotion-engine TLS handshake duration elevated for promotion-engine: 463ms P4 streaming Ask agent" [ref=e1283]':
+                      - cell "10:02:17" [ref=e1284]
+                      - cell "promotion-engine" [ref=e1285]
+                      - 'cell "TLS handshake duration elevated for promotion-engine: 463ms" [ref=e1286]'
+                      - cell "P4" [ref=e1287]:
+                        - generic [ref=e1288]: P4
+                      - cell "streaming" [ref=e1289]
+                      - cell "Ask agent" [ref=e1290]:
+                        - button "Ask agent" [ref=e1291] [cursor=pointer]
+                    - row "10:02:16 redis-token-store redis-token-store memory utilization at 74.7% P4 streaming Ask agent" [ref=e1292]:
+                      - cell "10:02:16" [ref=e1293]
+                      - cell "redis-token-store" [ref=e1294]
+                      - cell "redis-token-store memory utilization at 74.7%" [ref=e1295]
+                      - cell "P4" [ref=e1296]:
+                        - generic [ref=e1297]: P4
+                      - cell "streaming" [ref=e1298]
+                      - cell "Ask agent" [ref=e1299]:
+                        - button "Ask agent" [ref=e1300] [cursor=pointer]
+                    - 'row "10:02:16 wallet-service wallet-service 5xx rate above threshold: 2.9% P2 streaming Ask agent" [ref=e1301]':
+                      - cell "10:02:16" [ref=e1302]
+                      - cell "wallet-service" [ref=e1303]
+                      - 'cell "wallet-service 5xx rate above threshold: 2.9%" [ref=e1304]'
+                      - cell "P2" [ref=e1305]:
+                        - generic [ref=e1306]: P2
+                      - cell "streaming" [ref=e1307]
+                      - cell "Ask agent" [ref=e1308]:
+                        - button "Ask agent" [ref=e1309] [cursor=pointer]
+                    - 'row "10:02:16 wallet-service TLS handshake duration elevated for wallet-service: 430ms P4 streaming Ask agent" [ref=e1310]':
+                      - cell "10:02:16" [ref=e1311]
+                      - cell "wallet-service" [ref=e1312]
+                      - 'cell "TLS handshake duration elevated for wallet-service: 430ms" [ref=e1313]'
+                      - cell "P4" [ref=e1314]:
+                        - generic [ref=e1315]: P4
+                      - cell "streaming" [ref=e1316]
+                      - cell "Ask agent" [ref=e1317]:
+                        - button "Ask agent" [ref=e1318] [cursor=pointer]
+                    - 'row "10:02:15 replication Queue depth elevated on replication: 992 P3 streaming Ask agent" [ref=e1319]':
+                      - cell "10:02:15" [ref=e1320]
+                      - cell "replication" [ref=e1321]
+                      - 'cell "Queue depth elevated on replication: 992" [ref=e1322]'
+                      - cell "P3" [ref=e1323]:
+                        - generic [ref=e1324]: P3
+                      - cell "streaming" [ref=e1325]
+                      - cell "Ask agent" [ref=e1326]:
+                        - button "Ask agent" [ref=e1327] [cursor=pointer]
+                    - 'row "10:02:10 promotion-engine TLS handshake duration elevated for promotion-engine: 204ms P4 streaming Ask agent" [ref=e1328]':
+                      - cell "10:02:10" [ref=e1329]
+                      - cell "promotion-engine" [ref=e1330]
+                      - 'cell "TLS handshake duration elevated for promotion-engine: 204ms" [ref=e1331]'
+                      - cell "P4" [ref=e1332]:
+                        - generic [ref=e1333]: P4
+                      - cell "streaming" [ref=e1334]
+                      - cell "Ask agent" [ref=e1335]:
+                        - button "Ask agent" [ref=e1336] [cursor=pointer]
+                    - row "10:02:10 promotion-engine promotion-engine disk usage at 80.5% P4 streaming Ask agent" [ref=e1337]:
+                      - cell "10:02:10" [ref=e1338]
+                      - cell "promotion-engine" [ref=e1339]
+                      - cell "promotion-engine disk usage at 80.5%" [ref=e1340]
+                      - cell "P4" [ref=e1341]:
+                        - generic [ref=e1342]: P4
+                      - cell "streaming" [ref=e1343]
+                      - cell "Ask agent" [ref=e1344]:
+                        - button "Ask agent" [ref=e1345] [cursor=pointer]
+                    - 'row "10:02:09 promotion-engine Health check warning: promotion-engine response time 784ms P4 streaming Ask agent" [ref=e1346]':
+                      - cell "10:02:09" [ref=e1347]
+                      - cell "promotion-engine" [ref=e1348]
+                      - 'cell "Health check warning: promotion-engine response time 784ms" [ref=e1349]'
+                      - cell "P4" [ref=e1350]:
+                        - generic [ref=e1351]: P4
+                      - cell "streaming" [ref=e1352]
+                      - cell "Ask agent" [ref=e1353]:
+                        - button "Ask agent" [ref=e1354] [cursor=pointer]
+                    - 'row "10:02:09 auth-service TLS handshake duration elevated for auth-service: 360ms P4 streaming Ask agent" [ref=e1355]':
+                      - cell "10:02:09" [ref=e1356]
+                      - cell "auth-service" [ref=e1357]
+                      - 'cell "TLS handshake duration elevated for auth-service: 360ms" [ref=e1358]'
+                      - cell "P4" [ref=e1359]:
+                        - generic [ref=e1360]: P4
+                      - cell "streaming" [ref=e1361]
+                      - cell "Ask agent" [ref=e1362]:
+                        - button "Ask agent" [ref=e1363] [cursor=pointer]
+                    - row "10:02:09 auth-service auth-service memory utilization at 79.2% P4 streaming Ask agent" [ref=e1364]:
+                      - cell "10:02:09" [ref=e1365]
+                      - cell "auth-service" [ref=e1366]
+                      - cell "auth-service memory utilization at 79.2%" [ref=e1367]
+                      - cell "P4" [ref=e1368]:
+                        - generic [ref=e1369]: P4
+                      - cell "streaming" [ref=e1370]
+                      - cell "Ask agent" [ref=e1371]:
+                        - button "Ask agent" [ref=e1372] [cursor=pointer]
+                    - 'row "10:02:09 replication Health check warning: replication response time 653ms P4 streaming Ask agent" [ref=e1373]':
+                      - cell "10:02:09" [ref=e1374]
+                      - cell "replication" [ref=e1375]
+                      - 'cell "Health check warning: replication response time 653ms" [ref=e1376]'
+                      - cell "P4" [ref=e1377]:
+                        - generic [ref=e1378]: P4
+                      - cell "streaming" [ref=e1379]
+                      - cell "Ask agent" [ref=e1380]:
+                        - button "Ask agent" [ref=e1381] [cursor=pointer]
+              - generic [ref=e145]:
+                - heading "Agent decisions" [level=2] [ref=e146]
+                - list [ref=e147]:
+                  - listitem [ref=e1382]:
+                    - generic [ref=e1383]: 00:00:20 · P1
+                    - generic [ref=e1384]: "P1 candidate detected: CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC — bet-service."
+                  - listitem [ref=e1385]:
+                    - generic [ref=e1386]: 00:00:20 · NOISE
+                    - generic [ref=e1387]: "Noise pattern detected: replication replication cache hit rate changed to 66.7%."
+                  - listitem [ref=e1388]:
+                    - generic [ref=e1389]: 00:00:20 · NOISE
+                    - generic [ref=e1390]: Suppressed 3 duplicate alerts (rolling window).
+                  - listitem [ref=e1391]:
+                    - generic [ref=e1392]: 00:00:19 · NOISE
+                    - generic [ref=e1393]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1394]:
+                    - generic [ref=e1395]: 00:00:18 · NOISE
+                    - generic [ref=e1396]: "Noise pattern detected: bet-service Health check warning: bet-service response time 767ms."
+                  - listitem [ref=e1397]:
+                    - generic [ref=e1398]: 00:00:18 · NOISE
+                    - generic [ref=e1399]: Suppressed 4 duplicate alerts (rolling window).
+                  - listitem [ref=e1400]:
+                    - generic [ref=e1401]: 00:00:18 · NOISE
+                    - generic [ref=e1402]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1403]:
+                    - generic [ref=e1404]: 00:00:18 · NOISE
+                    - generic [ref=e1405]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1406]:
+                    - generic [ref=e1407]: 00:00:18 · NOISE
+                    - generic [ref=e1408]: "Noise pattern detected: wallet-service TLS handshake duration elevated for wallet-service: 458ms."
+                  - listitem [ref=e1409]:
+                    - generic [ref=e1410]: 00:00:18 · NOISE
+                    - generic [ref=e1411]: Suppressed 3 duplicate alerts (rolling window).
+                  - listitem [ref=e1412]:
+                    - generic [ref=e1413]: 00:00:17 · NOISE
+                    - generic [ref=e1414]: "Noise pattern detected: payments-service Background job queue delay on payments-service: 44.5s."
+                  - listitem [ref=e1415]:
+                    - generic [ref=e1416]: 00:00:17 · NOISE
+                    - generic [ref=e1417]: Suppressed 3 duplicate alerts (rolling window).
+                  - listitem [ref=e1418]:
+                    - generic [ref=e1419]: 00:00:17 · NOISE
+                    - generic [ref=e1420]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1421]:
+                    - generic [ref=e1422]: 00:00:17 · NOISE
+                    - generic [ref=e1423]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1424]:
+                    - generic [ref=e1425]: 00:00:16 · NOISE
+                    - generic [ref=e1426]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1427]:
+                    - generic [ref=e1428]: 00:00:16 · NOISE
+                    - generic [ref=e1429]: "Noise pattern detected: promotion-engine Background job queue delay on promotion-engine: 46.0s."
+                  - listitem [ref=e1430]:
+                    - generic [ref=e1431]: 00:00:16 · GROUP
+                    - generic [ref=e1432]: Grouping 2 auth-service alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1433]:
+                    - generic [ref=e1434]: 00:00:16 · NOISE
+                    - generic [ref=e1435]: Suppressed 3 duplicate alerts (rolling window).
+                  - listitem [ref=e1436]:
+                    - generic [ref=e1437]: 00:00:16 · GROUP
+                    - generic [ref=e1438]: Grouping 2 payments-service alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1439]:
+                    - generic [ref=e1440]: 00:00:16 · NOISE
+                    - generic [ref=e1441]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1442]:
+                    - generic [ref=e1443]: 00:00:15 · NOISE
+                    - generic [ref=e1444]: "Noise pattern detected: wallet-service TLS handshake duration elevated for wallet-service: 430ms."
+                  - listitem [ref=e1445]:
+                    - generic [ref=e1446]: 00:00:15 · GROUP
+                    - generic [ref=e1447]: Grouping 2 promotion-engine alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1448]:
+                    - generic [ref=e1449]: 00:00:15 · NOISE
+                    - generic [ref=e1450]: Suppressed 7 duplicate alerts (rolling window).
+                  - listitem [ref=e1451]:
+                    - generic [ref=e1452]: 00:00:15 · NOISE
+                    - generic [ref=e1453]: Suppressed 2 duplicate alerts (rolling window).
+                  - listitem [ref=e1454]:
+                    - generic [ref=e1455]: 00:00:14 · NOISE
+                    - generic [ref=e1456]: "Noise pattern detected: auth-service auth-service disk usage at 81.9%."
+                  - listitem [ref=e1457]:
+                    - generic [ref=e1458]: 00:00:14 · NOISE
+                    - generic [ref=e1459]: Suppressed 10 duplicate alerts (rolling window).
+                  - listitem [ref=e1460]:
+                    - generic [ref=e1461]: 00:00:14 · GROUP
+                    - generic [ref=e1462]: Grouping 2 redis-token-store alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1463]:
+                    - generic [ref=e1464]: 00:00:14 · NOISE
+                    - generic [ref=e1465]: Suppressed 2 duplicate alerts (rolling window).
+                  - listitem [ref=e1466]:
+                    - generic [ref=e1467]: 00:00:14 · NOISE
+                    - generic [ref=e1468]: "Noise pattern detected: replication Background job queue delay on replication: 44.3s."
+                  - listitem [ref=e1469]:
+                    - generic [ref=e1470]: 00:00:14 · GROUP
+                    - generic [ref=e1471]: Grouping 2 auth-service alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1472]:
+                    - generic [ref=e1473]: 00:00:14 · NOISE
+                    - generic [ref=e1474]: Suppressed 4 duplicate alerts (rolling window).
+                  - listitem [ref=e1475]:
+                    - generic [ref=e1476]: 00:00:13 · NOISE
+                    - generic [ref=e1477]: Suppressed 1 duplicate alert (rolling window).
+                  - listitem [ref=e1478]:
+                    - generic [ref=e1479]: 00:00:13 · NOISE
+                    - generic [ref=e1480]: "Noise pattern detected: promotion-engine promotion-engine cache hit rate changed to 64.8%."
+                  - listitem [ref=e1481]:
+                    - generic [ref=e1482]: 00:00:13 · GROUP
+                    - generic [ref=e1483]: Grouping 2 replication alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1484]:
+                    - generic [ref=e1485]: 00:00:13 · NOISE
+                    - generic [ref=e1486]: Suppressed 5 duplicate alerts (rolling window).
+                  - listitem [ref=e1487]:
+                    - generic [ref=e1488]: 00:00:13 · NOISE
+                    - generic [ref=e1489]: Suppressed 2 duplicate alerts (rolling window).
+                  - listitem [ref=e1490]:
+                    - generic [ref=e1491]: 00:00:13 · NOISE
+                    - generic [ref=e1492]: "Noise pattern detected: bet-service bet-service memory utilization at 80.2%."
+                  - listitem [ref=e1493]:
+                    - generic [ref=e1494]: 00:00:13 · GROUP
+                    - generic [ref=e1495]: Grouping 2 bet-service alerts by service, time window, environment, error signature.
+                  - listitem [ref=e1496]:
+                    - generic [ref=e1497]: 00:00:13 · NOISE
+                    - generic [ref=e1498]: Suppressed 5 duplicate alerts (rolling window).
+                  - listitem [ref=e1499]:
+                    - generic [ref=e1500]: 00:00:12 · NOISE
+                    - generic [ref=e1501]: "Noise pattern detected: redis-token-store redis-token-store memory utilization at 76.0%."
+            - generic [ref=e149]:
+              - generic [ref=e150]:
+                - generic [ref=e151]:
+                  - heading "Noise pattern detected" [level=2] [ref=e152]
+                  - generic [ref=e764]: 170 duplicates suppressed
+                - generic [ref=e765]:
+                  - generic [ref=e766]:
+                    - term [ref=e767]: Pattern
+                    - definition [ref=e768]: "replication TLS handshake duration elevated for replication: 471ms"
+                  - generic [ref=e769]:
+                    - term [ref=e770]: Frequency
+                    - definition [ref=e771]: 2 alerts in 1 minutes
+                  - generic [ref=e772]:
+                    - term [ref=e773]: Reason
+                    - definition [ref=e774]: Same service, error signature, env & window
+                  - generic [ref=e775]:
+                    - term [ref=e776]: Action
+                    - definition [ref=e777]: Grouped into one incident candidate
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - heading "Incident queue" [level=2] [ref=e156]
+                  - generic [ref=e778]: 163 active
+                - list [ref=e228]:
+                  - listitem [ref=e229]:
+                    - generic [ref=e230]:
+                      - generic [ref=e231]: P2
+                      - text: "P2 game-service game-service 5xx rate above threshold: 6.5%"
+                      - generic [ref=e232]: game-service · ALT-2026-06-10-0003
+                    - generic [ref=e233]:
+                      - generic [ref=e234]: In process
+                      - button "Resolve" [ref=e235] [cursor=pointer]
+                      - button "Ask agent" [ref=e236] [cursor=pointer]
+                  - listitem [ref=e237]:
+                    - generic [ref=e238]:
+                      - generic [ref=e239]: P2
+                      - text: "P2 wallet-service wallet-service sync delay exceeding SLA: 44.6s"
+                      - generic [ref=e240]: wallet-service · ALT-2026-06-10-0004
+                    - generic [ref=e241]:
+                      - button "Mark in process" [ref=e242] [cursor=pointer]
+                      - button "Resolve" [ref=e243] [cursor=pointer]
+                      - button "Ask agent" [ref=e244] [cursor=pointer]
+                  - listitem [ref=e245]:
+                    - generic [ref=e246]:
+                      - generic [ref=e247]: P3
+                      - text: "P3 payments-service Connection pool pressure on payments-service: 81.3%"
+                      - generic [ref=e248]: payments-service · ALT-2026-06-10-0005
+                    - generic [ref=e249]:
+                      - button "Mark in process" [ref=e250] [cursor=pointer]
+                      - button "Resolve" [ref=e251] [cursor=pointer]
+                      - button "Ask agent" [ref=e252] [cursor=pointer]
+                  - listitem [ref=e253]:
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: P3
+                      - text: "P3 game-service Connection pool pressure on game-service: 85.9%"
+                      - generic [ref=e256]: game-service · ALT-2026-06-10-0006
+                    - generic [ref=e257]:
+                      - button "Mark in process" [ref=e258] [cursor=pointer]
+                      - button "Resolve" [ref=e259] [cursor=pointer]
+                      - button "Ask agent" [ref=e260] [cursor=pointer]
+                  - listitem [ref=e261]:
+                    - generic [ref=e262]:
+                      - generic [ref=e263]: P2
+                      - text: P2 auth-service auth-service circuit breaker tripped briefly
+                      - generic [ref=e264]: auth-service · ALT-2026-06-10-0007
+                    - generic [ref=e265]:
+                      - button "Mark in process" [ref=e266] [cursor=pointer]
+                      - button "Resolve" [ref=e267] [cursor=pointer]
+                      - button "Ask agent" [ref=e268] [cursor=pointer]
+                  - listitem [ref=e269]:
+                    - generic [ref=e270]:
+                      - generic [ref=e271]: P3
+                      - text: "P3 auth-service Queue depth elevated on auth-service: 1955"
+                      - generic [ref=e272]: auth-service · ALT-2026-06-10-0009
+                    - generic [ref=e273]:
+                      - button "Mark in process" [ref=e274] [cursor=pointer]
+                      - button "Resolve" [ref=e275] [cursor=pointer]
+                      - button "Ask agent" [ref=e276] [cursor=pointer]
+                  - listitem [ref=e277]:
+                    - generic [ref=e278]:
+                      - generic [ref=e279]: P3
+                      - text: "P3 promotion-engine Replication lag on promotion-engine: 17.6s"
+                      - generic [ref=e280]: promotion-engine · ALT-2026-06-10-0011
+                    - generic [ref=e281]:
+                      - button "Mark in process" [ref=e282] [cursor=pointer]
+                      - button "Resolve" [ref=e283] [cursor=pointer]
+                      - button "Ask agent" [ref=e284] [cursor=pointer]
+                  - listitem [ref=e285]:
+                    - generic [ref=e286]:
+                      - generic [ref=e287]: P2
+                      - text: "P2 replication replication sync delay exceeding SLA: 46.1s"
+                      - generic [ref=e288]: replication · ALT-2026-06-10-0014
+                    - generic [ref=e289]:
+                      - button "Mark in process" [ref=e290] [cursor=pointer]
+                      - button "Resolve" [ref=e291] [cursor=pointer]
+                      - button "Ask agent" [ref=e292] [cursor=pointer]
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - heading "MCP / Lambda tool calls" [level=2] [ref=e160]:
+                  - img [ref=e161]
+                  - text: MCP / Lambda tool calls
+                - paragraph [ref=e163]: No tools called yet — start the demo and trigger Analyze.
+              - generic [ref=e164]:
+                - heading "Business impact" [level=2] [ref=e165]
+                - paragraph [ref=e166]: Impact metrics appear after the storm completes and the P1 is analyzed.
+        - complementary [ref=e167]:
+          - generic [ref=e168]:
+            - generic [ref=e169]:
+              - img [ref=e170]
+              - generic [ref=e173]:
+                - generic [ref=e174]: Agent Copilot
+                - generic [ref=e175]: PITER Ops incident assistant
+            - generic [ref=e176]:
+              - button "New Session" [ref=e177] [cursor=pointer]:
+                - img [ref=e178]
+                - text: New Session
+              - button "Clear Chat" [ref=e179] [cursor=pointer]:
+                - img [ref=e180]
+                - text: Clear Chat
+              - button "Expand full panel" [ref=e183] [cursor=pointer]:
+                - img [ref=e184]
+              - button "Collapse" [ref=e189] [cursor=pointer]:
+                - img [ref=e190]
+          - generic [ref=e192]:
+            - button "What's the last P1 alert?" [ref=e193] [cursor=pointer]
+            - button "Which service is the noisiest?" [ref=e194] [cursor=pointer]
+            - button "What was the last deployment?" [ref=e195] [cursor=pointer]
+            - button "Who is the data engineer on call today?" [ref=e196] [cursor=pointer]
+            - button "What are the latest 3 incidents?" [ref=e197] [cursor=pointer]
+            - button "Run failover on bet-service" [ref=e198] [cursor=pointer]
+          - generic [ref=e199]:
+            - generic [ref=e200]: Session
+            - combobox "Session" [ref=e201]:
+              - option "New / unsaved session"
+              - option "General chat (2 msgs)" [selected]
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "bet-service · P1"
+              - option "wallet-service · critical"
+              - option "auth-service · critical"
+              - option "bet-service · P1"
+              - option "auth-service · P1"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "wallet-service · critical"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "auth-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "bet-service · P1"
+              - option "auth-service · P2"
+          - generic [ref=e202]:
+            - generic [ref=e293]:
+              - generic [ref=e294]: You
+              - generic [ref=e295]: hey
+            - generic [ref=e296]:
+              - generic [ref=e297]: PITER Agent
+              - generic [ref=e299]:
+                - paragraph [ref=e300]:
+                  - text: I'm the
+                  - strong [ref=e301]: PITER Ops
+                  - text: "incident assistant. I can help you with:"
+                - list [ref=e302]:
+                  - listitem [ref=e303]:
+                    - strong [ref=e304]: Triage
+                    - text: — classify priority and summarize alert context
+                  - listitem [ref=e305]:
+                    - strong [ref=e306]: Runbooks
+                    - text: — grounded answers from the knowledge base
+                  - listitem [ref=e307]:
+                    - strong [ref=e308]: Deployments
+                    - text: — recent changes for a service
+                  - listitem [ref=e309]:
+                    - strong [ref=e310]: Escalation
+                    - text: — on-call paths and notification previews (human approval required)
+                  - listitem [ref=e311]:
+                    - strong [ref=e312]: Post-mortems
+                    - text: — draft summaries from investigation history
+                - paragraph [ref=e313]: Select an incident context or ask one of the suggested questions to get started.
+            - generic [ref=e314]:
+              - generic [ref=e315]: You
+              - generic [ref=e316]: What's the last P1 alert?
+            - generic [ref=e317]:
+              - generic [ref=e318]: PITER Agent
+              - generic [ref=e320]:
+                - paragraph [ref=e321]:
+                  - strong [ref=e322]: "Last P1 alert:"
+                  - text: "`ALT-2026-06-10-0251` —"
+                  - strong [ref=e323]: bet-service
+                  - text: "@ GIB-UKGC (2026-06-10T10:02:55Z)"
+                - paragraph [ref=e324]:
+                  - strong [ref=e325]: "Summary:"
+                  - text: "CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC"
+                - paragraph [ref=e326]: "Storm corpus: 1 P1 trigger(s) in 400 alerts; 276 noise candidates suppressed."
+            - generic [ref=e327]:
+              - generic [ref=e328]: You
+              - generic [ref=e329]: Which service is the noisiest?
+            - generic [ref=e330]:
+              - generic [ref=e331]: PITER Agent
+              - generic [ref=e333]:
+                - paragraph [ref=e334]:
+                  - strong [ref=e335]: "Noisiest service:"
+                  - text: "`promotion-engine` —"
+                  - strong [ref=e336]: "42"
+                  - text: suppressed noise alerts
+                - list [ref=e337]:
+                  - listitem [ref=e338]: "`auth-service`: 41 noise alerts"
+                  - listitem [ref=e339]: "`replication`: 39 noise alerts"
+                  - listitem [ref=e340]: "`redis-token-store`: 37 noise alerts"
+            - generic [ref=e341]:
+              - generic [ref=e342]: You
+              - generic [ref=e343]: What was the last deployment?
+            - generic [ref=e344]:
+              - generic [ref=e345]: PITER Agent
+              - generic [ref=e347]:
+                - paragraph [ref=e348]:
+                  - strong [ref=e349]: "Most recent deployment:"
+                  - text: "`DEP-2026-06-0610-001` —"
+                  - strong [ref=e350]: bet-service
+                  - text: "`v5.16.1` → GIB-UKGC at 2026-06-10T09:55:00Z (rolled_back)"
+                - paragraph [ref=e351]:
+                  - strong [ref=e352]: "Change:"
+                  - text: Bet placement retry policy change - suspected P1 storm trigger
+                  - strong [ref=e353]: "Risk:"
+                  - text: "high · Rollback available: true"
+                - paragraph [ref=e354]:
+                  - strong [ref=e355]: "Prior deploys:"
+                - list [ref=e356]:
+                  - listitem [ref=e357]: redis-token-store v3.0.5 (NJ-DGE) — 2026-06-10
+                  - listitem [ref=e358]: bet-service v2.19.0 (NJ-DGE) — 2026-06-10
+            - generic [ref=e359]:
+              - generic [ref=e360]: You
+              - generic [ref=e361]: Who is the data engineer on call today?
+            - generic [ref=e362]:
+              - generic [ref=e363]: PITER Agent
+              - generic [ref=e365]:
+                - paragraph [ref=e366]:
+                  - strong [ref=e367]: Data Platform on-call today
+                  - text: "(2026-06-10):"
+                - list [ref=e368]:
+                  - listitem [ref=e369]:
+                    - strong [ref=e370]: "Primary:"
+                    - text: Primary Data Platform On-Call
+                  - listitem [ref=e371]:
+                    - strong [ref=e372]: "Secondary:"
+                    - text: Secondary Data Platform On-Call
+                  - listitem [ref=e373]:
+                    - strong [ref=e374]: "Manager escalation:"
+                    - text: Gilad Weiss
+                  - listitem [ref=e375]:
+                    - strong [ref=e376]: "Service scope:"
+                    - text: replication (Data Platform)
+                  - listitem [ref=e377]:
+                    - strong [ref=e378]: "PagerDuty:"
+                    - text: PD-REPL-001
+            - generic [ref=e379]:
+              - generic [ref=e380]: You
+              - generic [ref=e381]: What are the latest 3 incidents?
+            - generic [ref=e382]:
+              - generic [ref=e383]: PITER Agent
+              - generic [ref=e385]:
+                - paragraph [ref=e386]:
+                  - strong [ref=e387]: Latest 3 incidents
+                  - text: "(from incident history):"
+                - list [ref=e388]:
+                  - listitem [ref=e389]:
+                    - strong [ref=e390]: INC-2025-0007
+                    - text: — promotion-engine (P3) · 2026-04-11 — promotion-engine resource saturation in NJ-DGE
+                  - listitem [ref=e391]:
+                    - strong [ref=e392]: INC-2025-0010
+                    - text: — redis-token-store (P3) · 2026-04-08 — redis-token-store dependency timeout in GIB-UKGC
+                  - listitem [ref=e393]:
+                    - strong [ref=e394]: INC-2025-0019
+                    - text: — auth-service (P2) · 2026-04-05 — auth-service dependency timeout in MIRAGE
+            - generic [ref=e395]:
+              - generic [ref=e396]: You
+              - generic [ref=e397]: Run failover on bet-service
+            - generic [ref=e398]:
+              - generic [ref=e399]: PITER Agent
+              - generic [ref=e401]:
+                - paragraph [ref=e402]:
+                  - strong [ref=e403]: Safety guardrail — action blocked
+                - paragraph [ref=e404]:
+                  - text: I cannot execute autonomous failover or traffic shift. PITER Ops is a
+                  - strong [ref=e405]: recommendation-only
+                  - text: "copilot: rollback, failover, restarts, and data mutations require"
+                  - strong [ref=e406]: human approval
+                  - text: through your change-management process.
+                - paragraph [ref=e407]:
+                  - strong [ref=e408]: "What I can do instead:"
+                - list [ref=e409]:
+                  - listitem [ref=e410]: Show the escalation path and on-call owner
+                  - listitem [ref=e411]: Correlate the suspect deployment and runbook steps
+                  - listitem [ref=e412]: Draft a post-mortem or incident summary for review
+                - paragraph [ref=e413]: _No production systems were modified._
+            - generic [ref=e414]:
+              - generic [ref=e415]: You
+              - generic [ref=e416]: What is the current system status?
+            - generic [ref=e417]:
+              - generic [ref=e418]: PITER Agent
+              - generic [ref=e420]:
+                - paragraph [ref=e421]: I cannot determine the current system status from the available search results. The search results contain operational runbooks, escalation policies, and incident response guidelines, but do not include real-time system health data, active alerts, deployment status, or service metrics.
+                - paragraph [ref=e422]: "To assess current system status, I would need:"
+                - list [ref=e423]:
+                  - listitem [ref=e424]: Real-time health check results from production services
+                  - listitem [ref=e425]: Current alert state and metric dashboards
+                  - listitem [ref=e426]: Recent deployment logs and their outcomes
+                  - listitem [ref=e427]: Service dependency status (auth-service, Redis token store, customer-db, API Gateway)
+                  - listitem [ref=e428]: Error rates and latency measurements
+                - paragraph [ref=e429]: Please provide a specific service name, environment, or symptom you are investigating, and I can help triage using the available runbooks and incident response procedures.
+            - generic [ref=e430]:
+              - generic [ref=e431]: You
+              - generic [ref=e432]: What's the last P1 alert?
+            - generic [ref=e433]:
+              - generic [ref=e434]: PITER Agent
+              - generic [ref=e436]:
+                - paragraph [ref=e437]:
+                  - strong [ref=e438]: "Last P1 alert:"
+                  - text: "`ALT-2026-06-10-0251` —"
+                  - strong [ref=e439]: bet-service
+                  - text: "@ GIB-UKGC (2026-06-10T10:02:55Z)"
+                - paragraph [ref=e440]:
+                  - strong [ref=e441]: "Summary:"
+                  - text: "CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC"
+                - paragraph [ref=e442]: "Storm corpus: 1 P1 trigger(s) in 400 alerts; 276 noise candidates suppressed."
+          - generic [ref=e443]:
+            - strong [ref=e445]: Analysis summary
+            - paragraph [ref=e446]: "Last P1 alert: `ALT-2026-06-10-0251` — bet-service @ GIB-UKGC (2026-06-10T10:02:55Z) Summary: CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC Storm corpus: 1 P1 trigger(s) in 400 alerts; 276 noise candidates suppressed."
+            - button "View full analysis" [ref=e447] [cursor=pointer]
+            - generic [ref=e448]:
+              - button "What should I check first?" [ref=e449] [cursor=pointer]
+              - button "Who should I escalate this to?" [ref=e450] [cursor=pointer]
+              - button "Summarize this incident" [ref=e451] [cursor=pointer]
+          - generic [ref=e205]:
+            - generic [ref=e206]:
+              - checkbox "Sync to KB" [ref=e207]
+              - text: Sync to KB
+            - button "Upload doc" [ref=e208] [cursor=pointer]:
+              - img [ref=e209]
+              - text: Upload doc
+          - generic [ref=e212]:
+            - textbox "Ask the copilot about this incident…" [ref=e213]
+            - button "Send" [ref=e214] [cursor=pointer]
+      - contentinfo [ref=e215]:
+        - generic [ref=e216]:
+          - generic [ref=e217]: PITER Ops · Enterprise Demo
+          - generic [ref=e218]: demo-polish-v6
+          - generic [ref=e219]: Bedrock
+          - generic [ref=e220]: Bedrock Agent
+        - generic [ref=e221]:
+          - button "Bedrock Status" [ref=e222]
+          - button "KB Manifest" [ref=e223]
+          - button "Demo Guide" [ref=e224]
+          - generic [ref=e225]: UTC 09:47:24
+          - generic [ref=e226]: © 2026 PITER Ops
+    - dialog "P1 critical incident" [ref=e1502]:
+      - heading "P1 critical incident" [level=2] [ref=e1503]
+      - paragraph [ref=e1504]: bet-service · GIB-UKGC · P1
+      - paragraph [ref=e1505]: "CRITICAL: bet-service nodes unresponsive - 100% error rate on GIB-UKGC"
+      - generic [ref=e1506]:
+        - button "Analyze P1 Incident" [ref=e1507] [cursor=pointer]
+        - button "Escalate On-Call" [active] [ref=e1508] [cursor=pointer]
+        - button "Ask Agent" [ref=e1509] [cursor=pointer]
+        - button "Continue Live" [ref=e1510] [cursor=pointer]
+    - dialog "Escalation preview" [ref=e1511]:
+      - heading "Escalation preview" [level=2] [ref=e1512]
+      - alert [ref=e1513]:
+        - img [ref=e1515]
+        - generic [ref=e1517]:
+          - generic [ref=e1518]: Preview only — human approval required
+          - generic [ref=e1519]: No live notifications will be sent (LIVE). Review the draft below before any dispatch.
+      - generic [ref=e1520]:
+        - generic [ref=e1521]:
+          - generic [ref=e1522]: Summary
+          - generic [ref=e1523]: P1 bet-service degradation
+        - generic [ref=e1524]:
+          - generic [ref=e1525]: Severity
+          - generic [ref=e1526]: P1
+        - generic [ref=e1527]:
+          - generic [ref=e1528]: Service
+          - generic [ref=e1529]: bet-service
+        - generic [ref=e1530]:
+          - generic [ref=e1531]: Incident
+          - generic [ref=e1532]: INC-CAND-BET-GIB-001
+        - generic [ref=e1533]:
+          - generic [ref=e1534]: Owner team
+          - generic [ref=e1535]: Betting Core
+        - generic [ref=e1536]:
+          - generic [ref=e1537]: Recipients (1)
+          - list [ref=e1538]:
+            - listitem [ref=e1539]: reem.mor3@gmail.com
+        - generic [ref=e1540]:
+          - generic [ref=e1541]: Immediate checks
+          - list [ref=e1542]:
+            - listitem [ref=e1543]: Verify error rate spike
+            - listitem [ref=e1544]: Check recent deployment
+            - listitem [ref=e1545]: Confirm on-call availability
+      - generic [ref=e1546]:
+        - generic [ref=e1547]: Channel
+        - combobox [ref=e1548]:
+          - option "Email" [selected]
+          - option "SMS"
+      - generic [ref=e1549]:
+        - button "Close preview" [ref=e1550] [cursor=pointer]
+        - button "Confirm dispatch" [disabled] [ref=e1551]
+      - paragraph [ref=e1552]:
+        - img [ref=e1553]
+        - text: Dispatch disabled in preview mode — demo focuses on draft quality.
+  - generic [ref=e779]: 165s

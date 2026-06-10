@@ -1,0 +1,176 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - button [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+    - navigation [ref=e8]:
+      - button [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+      - button [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+      - button [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+      - button [ref=e22] [cursor=pointer]:
+        - img [ref=e23]
+      - button [ref=e26] [cursor=pointer]:
+        - img [ref=e27]
+      - button [ref=e30] [cursor=pointer]:
+        - img [ref=e31]
+      - button [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+      - button [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+      - button [ref=e40] [cursor=pointer]:
+        - img [ref=e41]
+      - button [ref=e44] [cursor=pointer]:
+        - img [ref=e45]
+  - generic [ref=e48]:
+    - banner [ref=e49]:
+      - button "PITER Ops AI Incident Operations Center" [ref=e50] [cursor=pointer]:
+        - generic [ref=e51]: ◆
+        - generic [ref=e52]: PITER Ops
+        - generic [ref=e53]: AI Incident Operations Center
+      - generic [ref=e54]:
+        - generic [ref=e55]: Demo Mode
+        - generic [ref=e56]: Preview Mode
+        - generic [ref=e57]: "Agent: Ready"
+        - 'generic "Infrastructure: unknown" [ref=e58]': Infra
+      - generic [ref=e60]:
+        - button "Start Alert Stream" [ref=e61] [cursor=pointer]:
+          - img [ref=e62]
+          - text: Start Alert Stream
+        - generic "Operator" [ref=e64]: OP
+    - generic [ref=e65]:
+      - main [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e69]:
+            - heading "Operations Dashboard" [level=1] [ref=e70]
+            - paragraph [ref=e71]: Live production operations state — alert stream, incident queue, and AI copilot
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - img [ref=e75]
+                - generic [ref=e81]: Alerts received
+              - generic [ref=e82]: "0"
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - img [ref=e85]
+                - generic [ref=e88]: Noise suppressed
+              - generic [ref=e89]: "0"
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - img [ref=e92]
+                - generic [ref=e96]: Active incidents
+              - generic [ref=e97]: "0"
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - img [ref=e100]
+                - generic [ref=e102]: P1 / P2 / P3
+              - generic [ref=e103]: 0 / 0 / 0
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - img [ref=e106]
+                - generic [ref=e109]: Escalations
+              - generic [ref=e110]: "0"
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e116]: MTTR reduced
+              - generic [ref=e117]: —
+              - generic [ref=e118]: vs baseline
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - img [ref=e121]
+                - generic [ref=e123]: Cost avoided
+              - generic [ref=e124]: —
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - heading "Alert stream" [level=2] [ref=e128]
+              - paragraph [ref=e130]:
+                - text: Idle — use
+                - strong [ref=e131]: Start Alert Stream
+                - text: in the top bar to begin demo playback.
+              - table [ref=e133]:
+                - rowgroup [ref=e134]:
+                  - row "Time Service Alert Sev Status" [ref=e135]:
+                    - columnheader "Time" [ref=e136]
+                    - columnheader "Service" [ref=e137]
+                    - columnheader "Alert" [ref=e138]
+                    - columnheader "Sev" [ref=e139]
+                    - columnheader "Status" [ref=e140]
+                    - columnheader [ref=e141]
+                - rowgroup [ref=e142]:
+                  - row "No alerts in view" [ref=e143]:
+                    - cell "No alerts in view" [ref=e144]
+            - generic [ref=e145]:
+              - heading "Agent decisions" [level=2] [ref=e146]
+              - list [ref=e147]:
+                - listitem [ref=e148]: Awaiting stream…
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - heading "Noise pattern detected" [level=2] [ref=e152]
+              - paragraph [ref=e153]: No noise pattern yet — start the alert stream to see suppression in action.
+            - generic [ref=e154]:
+              - heading "Incident queue" [level=2] [ref=e156]
+              - paragraph [ref=e157]: No incidents yet — start the alert stream to populate the queue.
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - heading "MCP / Lambda tool calls" [level=2] [ref=e160]:
+                - img [ref=e161]
+                - text: MCP / Lambda tool calls
+              - paragraph [ref=e163]: No tools called yet — start the demo and trigger Analyze.
+            - generic [ref=e164]:
+              - heading "Business impact" [level=2] [ref=e165]
+              - paragraph [ref=e166]: Impact metrics appear after the storm completes and the P1 is analyzed.
+      - complementary [ref=e167]:
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - img [ref=e170]
+            - generic [ref=e173]:
+              - generic [ref=e174]: Agent Copilot
+              - generic [ref=e175]: PITER Ops incident assistant
+          - generic [ref=e176]:
+            - button "New Session" [ref=e177] [cursor=pointer]:
+              - img [ref=e178]
+              - text: New Session
+            - button "Clear Chat" [ref=e179] [cursor=pointer]:
+              - img [ref=e180]
+              - text: Clear Chat
+            - button "Expand full panel" [ref=e183] [cursor=pointer]:
+              - img [ref=e184]
+            - button "Collapse" [ref=e189] [cursor=pointer]:
+              - img [ref=e190]
+        - generic [ref=e192]:
+          - button "What's the last P1 alert?" [ref=e193] [cursor=pointer]
+          - button "Which service is the noisiest?" [ref=e194] [cursor=pointer]
+          - button "What was the last deployment?" [ref=e195] [cursor=pointer]
+          - button "Who is the data engineer on call today?" [ref=e196] [cursor=pointer]
+          - button "What are the latest 3 incidents?" [ref=e197] [cursor=pointer]
+          - button "Run failover on bet-service" [ref=e198] [cursor=pointer]
+        - generic [ref=e199]:
+          - generic [ref=e200]: Session
+          - combobox "Session" [ref=e201]:
+            - option "New / unsaved session"
+            - option "General chat" [selected]
+        - paragraph [ref=e203]: Ask about the selected incident, prior alerts, runbooks, or escalation paths. Follow-ups use session memory when an incident session is active.
+        - generic [ref=e205]:
+          - generic [ref=e206]:
+            - checkbox "Sync to KB" [ref=e207]
+            - text: Sync to KB
+          - button "Upload doc" [ref=e208] [cursor=pointer]:
+            - img [ref=e209]
+            - text: Upload doc
+        - generic [ref=e212]:
+          - textbox "Ask the copilot about this incident…" [ref=e213]
+          - button "Send" [ref=e214] [cursor=pointer]
+    - contentinfo [ref=e215]:
+      - generic [ref=e216]:
+        - generic [ref=e217]: PITER Ops · Enterprise Demo
+        - generic [ref=e218]: demo-polish-v6
+        - generic [ref=e219]: Local
+        - generic [ref=e220]: demo
+      - generic [ref=e221]:
+        - button "Bedrock Status" [ref=e222]
+        - button "KB Manifest" [ref=e223]
+        - button "Demo Guide" [ref=e224]
+        - generic [ref=e225]: UTC 09:45:08
+        - generic [ref=e226]: © 2026 PITER Ops
