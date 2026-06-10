@@ -37,9 +37,13 @@ export function EscalationModal({
     pauseStorm();
   }, [service, severity, pauseStorm, mode]);
 
+  const emailRecipients = Array.isArray(notification?.email_recipients)
+    ? (notification.email_recipients as string[])
+    : [];
   const recipient =
     channel === "email"
-      ? String(preview?.recipient || preview?.on_call_email || "on-call@ops")
+      ? emailRecipients.join(", ") ||
+        String(preview?.recipient || preview?.on_call_email || "on-call@ops")
       : String(preview?.sms_recipient || preview?.on_call_phone || "+1-555-0100");
   const team = String(preview?.team || preview?.escalation_team || "Platform On-Call");
   const rootCause = String(preview?.root_cause || preview?.summary || `P1 ${service} degradation`);
