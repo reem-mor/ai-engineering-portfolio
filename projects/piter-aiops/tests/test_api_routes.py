@@ -76,6 +76,7 @@ def test_api_chat_rejects_empty_message(client):
 
 def test_api_incidents_analyze_alias(client, fake_bedrock):
     fake_bedrock.next_response = _fake_answer()
+    client.application.extensions["triage_client"] = fake_bedrock
     response = client.post(
         "/api/incidents/analyze",
         json={

@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from flask_wtf.csrf import generate_csrf
 
 from app.bedrock_agent_client import build_session_attributes
-from app.bedrock_client import RagAnswer
+from app.bedrock_client import BedrockRagClient, RagAnswer
 from app.rag_factory import RagClient, get_local_client, get_rag_client
 from app.config import Config
 from app.data_loader import flat_example_questions, grouped_example_questions
@@ -73,6 +73,31 @@ def _local_client() -> RagClient:
         cached = get_local_client()
         current_app.extensions["local_client"] = cached
     return cached
+
+
+def _triage_client() -> RagClient:
+    """Triage-only RAG: direct KB RetrieveAndGenerate when agent backend is active."""
+    cached = current_app.extensions.get("triage_client")
+    if cached is not None:
+        return cached
+    cfg = _app_config()
+    if cfg.USE_BEDROCK and cfg.RAG_BACKEND == "agent":
+        cached = BedrockRagClient(cfg)
+    else:
+        cached = _client()
+    current_app.extensions["triage_client"] = cached
+    return cached
+
+
+def _ask_fn_for_triage():
+    """Fast triage path: single KB round-trip; chat/follow-up stay on Bedrock Agent."""
+
+    def ask(question: str, *, session_id: str | None = None) -> RagAnswer:
+        # RetrieveAndGenerate session IDs are Bedrock-issued; local triage memory IDs are not valid.
+        _ = session_id
+        return _triage_client().ask(question)
+
+    return ask
 
 
 def _fallback_enabled() -> bool:
@@ -364,7 +389,7 @@ def _api_triage_response(body: dict):
             message="An alert needs at least a service and a symptom/description.",
         ), 400
     try:
-        card = run_triage(alert, ask_fn=_ask_fn_for_alert(alert), session_id=session_id)
+        card = run_triage(alert, ask_fn=_ask_fn_for_triage(), session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status

@@ -67,13 +67,7 @@ def build_triage_question(alert: dict[str, Any]) -> str:
     pieces = [symptom or "incident"]
     if service:
         pieces.append(service)
-    base = " ".join(pieces).strip()
-    directive = (
-        "Answer from knowledge base retrieval only — do NOT invoke action group tools "
-        "(deployment, owner, impact, and similar-incident data is supplied separately). "
-        "Be concise: under 200 words total across the PITER sections."
-    )
-    return f"{base}. {directive}"
+    return " ".join(pieces).strip()
 
 
 def _citations_payload(rag: RagAnswer) -> list[dict[str, Any]]:

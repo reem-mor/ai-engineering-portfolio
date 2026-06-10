@@ -141,7 +141,7 @@ def test_ask_falls_back_to_local(fake_config):
     assert body["citations"][0]["source_label"] == "database_connectivity.json"
 
 
-def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
+def test_triage_uses_direct_kb_client(client, fake_bedrock):
     fake_bedrock.next_response = RagAnswer(
         answer="Priority:\nP2\n\nTriage plan:\n1. Check deploy logs.",
         citations=[
@@ -151,10 +151,11 @@ def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
                 source_label="deployment_rollback.json",
             )
         ],
-        session_id="agent-sess-1",
+        session_id="kb-sess-1",
         grounded=True,
-        mode="bedrock_agent",
+        mode="bedrock",
     )
+    client.application.extensions["triage_client"] = fake_bedrock
     alert = {
         "alert_id": "ALT-TEST-1",
         "service": "bet-service",
@@ -167,10 +168,12 @@ def test_triage_passes_bedrock_agent_session_attributes(client, fake_bedrock):
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["ok"] is True
-    assert fake_bedrock.last_session_attributes["service"] == "bet-service"
-    assert fake_bedrock.last_session_attributes["environment"] == "GIB-UKGC"
-    assert fake_bedrock.last_session_attributes["triage_complete"] == "false"
-    assert fake_bedrock.last_prompt_session_attributes["current_service"] == "bet-service"
+    assert len(fake_bedrock.calls) == 1
+    assert "100% error rate" in fake_bedrock.calls[0]
+    assert fake_bedrock.last_session_attributes is None
+    assert body.get("citations")
+    assert body.get("piter_sections") or body.get("piter")
+    assert body["mode"] == "bedrock"
 
 
 def test_validation_error_not_masked_by_fallback(fake_config):
