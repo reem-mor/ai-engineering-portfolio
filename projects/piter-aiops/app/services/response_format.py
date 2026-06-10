@@ -224,7 +224,26 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(payload)
     if isinstance(impact, dict):
         normalized["impact"] = impact
-    structured = build_structured_analysis({**payload, "piter": piter, "recommended_steps": recommended})
+
+    det_sections = payload.get("deterministic_piter_sections")
+    structured_piter = piter
+    if isinstance(det_sections, dict) and det_sections.get("investigation"):
+        structured_piter = {
+            "priority": str(det_sections.get("priority") or piter.get("priority") or ""),
+            "investigation": str(det_sections.get("investigation") or ""),
+            "triage": str(det_sections.get("triage") or piter.get("triage") or ""),
+            "escalation": _escalation_text(det_sections.get("escalation") or piter.get("escalation")),
+            "resolution": str(det_sections.get("resolution") or piter.get("resolution") or ""),
+        }
+
+    structured = build_structured_analysis(
+        {
+            **payload,
+            "piter": structured_piter,
+            "recommended_steps": recommended,
+            "business_impact": business_impact or payload.get("business_impact") or "",
+        }
+    )
     normalized.update(
         {
             "answer": answer,

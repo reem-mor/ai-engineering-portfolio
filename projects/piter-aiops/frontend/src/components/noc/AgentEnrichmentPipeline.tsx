@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Check, Circle, Loader2 } from "lucide-react";
 import type { ChatResponse } from "@/types/api";
 
@@ -39,13 +40,29 @@ export function AgentEnrichmentPipeline({
   response,
   analyzing,
   stepIndex = -1,
+  revealOnComplete = false,
 }: {
   response?: ChatResponse | null;
   analyzing?: boolean;
   stepIndex?: number;
+  revealOnComplete?: boolean;
 }) {
+  const [revealedCount, setRevealedCount] = useState(0);
+
+  useEffect(() => {
+    if (!revealOnComplete || !response || analyzing) {
+      setRevealedCount(0);
+      return;
+    }
+    setRevealedCount(0);
+    const timers = PIPELINE_STAGES.map((_, i) =>
+      window.setTimeout(() => setRevealedCount(i + 1), (i + 1) * 120),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [revealOnComplete, response, analyzing]);
+
   return (
-    <section className="enrichment-pipeline" aria-label="Agent enrichment pipeline">
+    <section className="enrichment-pipeline reveal-item" aria-label="Agent enrichment pipeline">
       <div className="enrichment-pipeline-header">
         <h3 className="enrichment-pipeline-title">Agent Enrichment Pipeline</h3>
         <span className="enrichment-pipeline-sub">
@@ -57,12 +74,16 @@ export function AgentEnrichmentPipeline({
           const done = response ? stageComplete(response, stage.key) : false;
           const active = analyzing && stepIndex === i;
           const pending = analyzing && stepIndex < i && !done;
+          const revealed = !revealOnComplete || revealedCount > i || analyzing;
+          const showDone = done && revealed;
+
           return (
             <div
               key={stage.key}
-              className={`enrichment-stage${done ? " done" : ""}${active ? " active" : ""}${pending ? " pending" : ""}`}
+              className={`enrichment-stage${showDone ? " done" : ""}${active ? " active" : ""}${pending ? " pending" : ""}${revealed ? " revealed" : ""}`}
+              style={{ animationDelay: `${i * 60}ms` }}
             >
-              {done ? (
+              {showDone ? (
                 <Check size={14} aria-hidden />
               ) : active ? (
                 <Loader2 size={14} className="btn-spinner" aria-hidden />

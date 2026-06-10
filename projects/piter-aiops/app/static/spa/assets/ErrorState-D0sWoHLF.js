@@ -1,0 +1,1 @@
+import{j as r}from"./react-vendor-D0o8I8y7.js";function n({message:e,onRetry:t}){return r.jsxs("div",{className:"panel",style:{borderColor:"var(--danger)",background:"rgba(239,68,68,0.08)"},children:[r.jsx("p",{style:{margin:"0 0 12px",color:"var(--text-primary)"},children:e}),t?r.jsx("button",{type:"button",className:"btn",onClick:t,children:"Retry"}):null]})}export{n as E};

@@ -10,34 +10,24 @@ export function CorrelationChainTimeline({ chain }: { chain: CorrelationChainSte
   if (!chain.length) return null;
 
   return (
-    <ol className="correlation-chain" style={{ margin: 0, padding: 0, listStyle: "none" }}>
+    <ol className="correlation-chain">
       {chain.map((item, index) => (
         <li
           key={`${item.step}-${item.label}-${index}`}
-          className="correlation-chain-item"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "120px 1fr",
-            gap: "12px",
-            padding: "10px 0",
-            borderBottom: index < chain.length - 1 ? "1px solid var(--border-subtle)" : undefined,
-          }}
+          className="correlation-chain-item reveal-item"
+          style={{ animationDelay: `${index * 80}ms` }}
         >
-          <div>
-            <div className="piter-field-label">{STEP_LABELS[item.step] || item.step}</div>
-            {item.timestamp ? (
-              <div className="mono" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                {item.timestamp}
-              </div>
-            ) : null}
+          <div className="correlation-chain-marker" aria-hidden>
+            <span className="correlation-chain-dot" />
+            {index < chain.length - 1 ? <span className="correlation-chain-line" /> : null}
           </div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{item.label}</div>
-            {item.detail ? (
-              <div style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: 4 }}>
-                {item.detail}
-              </div>
-            ) : null}
+          <div className="correlation-chain-body">
+            <div className="correlation-chain-meta">
+              <span className="piter-field-label">{STEP_LABELS[item.step] || item.step}</span>
+              {item.timestamp ? <span className="mono correlation-chain-time">{item.timestamp}</span> : null}
+            </div>
+            <div className="correlation-chain-label">{item.label}</div>
+            {item.detail ? <div className="correlation-chain-detail">{item.detail}</div> : null}
           </div>
         </li>
       ))}

@@ -47,6 +47,21 @@ def test_metrics_similar_incidents(client):
     assert response.get_json().get("similar_incidents") is not None
 
 
+def test_metrics_business_impact(client):
+    response = client.get(
+        "/api/metrics/business-impact",
+        query_string={
+            "service": "auth-service",
+            "environment": "MGM",
+            "severity": "P1",
+        },
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body.get("ok") is True
+    assert body.get("business_explanation") or body.get("revenue_impact_usd_per_hour") is not None
+
+
 def test_metrics_escalation_preview_never_sends(client):
     response = client.get(
         "/api/metrics/escalation-preview",

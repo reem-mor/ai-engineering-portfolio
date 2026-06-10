@@ -16,6 +16,7 @@ export function P1Modal() {
     p1Row,
     dismissP1,
     pauseStorm,
+    resumeStorm,
     setTriageResult,
     triageResult,
     escalatedIds,
@@ -114,7 +115,14 @@ export function P1Modal() {
             <Button variant="secondary" onClick={askAgent} disabled={analyzing}>
               Ask Agent
             </Button>
-            <Button variant="ghost" onClick={dismissP1} disabled={analyzing}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                resumeStorm();
+                dismissP1();
+              }}
+              disabled={analyzing}
+            >
               Continue Live
             </Button>
           </div>

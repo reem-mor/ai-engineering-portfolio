@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
-const UI_VERSION = "demo-polish-v4";
+const UI_VERSION = "demo-polish-v5";
 const screenshotDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../screenshots/final",
@@ -46,8 +46,9 @@ test.describe("Output hardening evidence", () => {
 
     const panel = page.locator("#piter-analysis-panel");
     await expect(panel).toBeVisible({ timeout: 120_000 });
-    await expect(panel.getByText("Correlation chain")).toBeVisible({ timeout: 30_000 });
-    await expect(panel.locator(".correlation-chain .correlation-chain-item, .correlation-chain-item").first()).toBeVisible();
+    await expect(panel.getByText("Recommended action plan")).toBeVisible({ timeout: 30_000 });
+    await expect(panel.getByRole("heading", { name: "Business impact" })).toBeVisible();
+    await expect(panel.locator(".correlation-chain-item").first()).toBeVisible();
 
     const panelText = await panel.innerText();
     expect(panelText).not.toMatch(/\*\*[^*]+\*\*/);

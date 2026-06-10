@@ -263,6 +263,10 @@ export type StructuredAnalysis = {
     requires_escalation?: boolean;
     summary?: string;
   };
+  detected_pattern?: string;
+  log_enrichment?: string;
+  tools_called?: string[];
+  noise_suppressed?: number | null;
 };
 
 export type EscalationNotifyPayload = {

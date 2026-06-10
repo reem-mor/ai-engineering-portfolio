@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import type { PageKey } from "@/types/api";
 import { SessionProvider } from "@/context/session";
 import { NavigationProvider } from "@/context/navigation";
@@ -8,41 +8,50 @@ import { ToastProvider } from "@/context/toast";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ChatDock } from "./ChatDock";
+import { AppFooter } from "./AppFooter";
 import { P1Modal } from "@/components/demo/P1Modal";
 import { HomePage } from "@/pages/Home";
-import { AnalyticsPage } from "@/pages/Analytics";
-import { HistoryInvestigationsPage } from "@/pages/HistoryInvestigations";
-import { AnalyzerPage } from "@/pages/Analyzer";
-import { SystemPage } from "@/pages/System";
-import { DemoGuidePage } from "@/pages/DemoGuide";
-import { KnowledgeBasePage } from "@/pages/KnowledgeBasePage";
-import { BedrockStatusPage } from "@/pages/BedrockStatusPage";
-import { PostMortemsPage } from "@/pages/PostMortemsPage";
 import { useChatDock } from "@/context/chat-dock";
 
+const AnalyticsPage = lazy(() => import("@/pages/Analytics").then((m) => ({ default: m.AnalyticsPage })));
+const HistoryInvestigationsPage = lazy(() =>
+  import("@/pages/HistoryInvestigations").then((m) => ({ default: m.HistoryInvestigationsPage })),
+);
+const AnalyzerPage = lazy(() => import("@/pages/Analyzer").then((m) => ({ default: m.AnalyzerPage })));
+const SystemPage = lazy(() => import("@/pages/System").then((m) => ({ default: m.SystemPage })));
+const DemoGuidePage = lazy(() => import("@/pages/DemoGuide").then((m) => ({ default: m.DemoGuidePage })));
+const KnowledgeBasePage = lazy(() =>
+  import("@/pages/KnowledgeBasePage").then((m) => ({ default: m.KnowledgeBasePage })),
+);
+const BedrockStatusPage = lazy(() =>
+  import("@/pages/BedrockStatusPage").then((m) => ({ default: m.BedrockStatusPage })),
+);
+const PostMortemsPage = lazy(() => import("@/pages/PostMortemsPage").then((m) => ({ default: m.PostMortemsPage })));
+
+function PageFallback() {
+  return (
+    <div className="panel" style={{ padding: "var(--space-5)" }}>
+      <p className="mono" style={{ color: "var(--text-muted)", margin: 0 }}>
+        Loading…
+      </p>
+    </div>
+  );
+}
+
 function PageView({ page }: { page: PageKey }) {
-  switch (page) {
-    case "home":
-      return <HomePage />;
-    case "analytics":
-      return <AnalyticsPage />;
-    case "history":
-      return <HistoryInvestigationsPage />;
-    case "analyzer":
-      return <AnalyzerPage />;
-    case "knowledge":
-      return <KnowledgeBasePage />;
-    case "bedrock":
-      return <BedrockStatusPage />;
-    case "postmortems":
-      return <PostMortemsPage />;
-    case "system":
-      return <SystemPage />;
-    case "guide":
-      return <DemoGuidePage />;
-    default:
-      return <HomePage />;
-  }
+  return (
+    <Suspense fallback={<PageFallback />}>
+      {page === "home" ? <HomePage /> : null}
+      {page === "analytics" ? <AnalyticsPage /> : null}
+      {page === "history" ? <HistoryInvestigationsPage /> : null}
+      {page === "analyzer" ? <AnalyzerPage /> : null}
+      {page === "knowledge" ? <KnowledgeBasePage /> : null}
+      {page === "bedrock" ? <BedrockStatusPage /> : null}
+      {page === "postmortems" ? <PostMortemsPage /> : null}
+      {page === "system" ? <SystemPage /> : null}
+      {page === "guide" ? <DemoGuidePage /> : null}
+    </Suspense>
+  );
 }
 
 function ShellLayout() {
@@ -56,18 +65,19 @@ function ShellLayout() {
     <NavigationProvider navigate={setPage}>
       <div
         className={`app-shell${criticalMode ? " critical-mode" : ""}`}
-        data-ui-version="demo-polish-v4"
+        data-ui-version="demo-polish-v5"
       >
         <Sidebar page={page} onNavigate={setPage} onHome={goHome} onOpenChat={openChat} />
-          <div className="app-body">
-            <TopBar />
-            <div className="app-workspace">
-              <main className="page-content">
-                <PageView page={page} />
-              </main>
-              <ChatDock />
-            </div>
+        <div className="app-body app-body-with-footer">
+          <TopBar />
+          <div className="app-workspace app-workspace-grow">
+            <main className="page-content">
+              <PageView page={page} />
+            </main>
+            <ChatDock />
           </div>
+          <AppFooter onNavigate={setPage} />
+        </div>
         <P1Modal />
       </div>
     </NavigationProvider>

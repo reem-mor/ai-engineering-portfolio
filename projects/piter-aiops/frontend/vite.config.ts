@@ -21,5 +21,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "../app/static/spa"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/recharts")) return "recharts";
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) {
+            return "react-vendor";
+          }
+          if (id.includes("node_modules/lucide-react")) return "icons";
+        },
+      },
+    },
   },
 });

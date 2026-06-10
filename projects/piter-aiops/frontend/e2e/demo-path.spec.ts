@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
-const UI_VERSION = "demo-polish-v4";
+const UI_VERSION = "demo-polish-v5";
 
 const DEMO_QUESTIONS = [
   "What's the last P1 alert?",

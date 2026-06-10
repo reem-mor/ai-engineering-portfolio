@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   DollarSign,
@@ -14,10 +14,13 @@ import { useDemo } from "@/context/demo";
 import { useChatDock } from "@/context/chat-dock";
 import { countSeverities } from "@/lib/storm-engine";
 import type { AlertRow, Investigation, InvestigationsResponse, Priority } from "@/types/api";
+import { AlertStreamRow } from "@/components/noc/AlertStreamRow";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { CriticalIncidentBanner } from "@/components/demo/CriticalIncidentBanner";
-import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
+const AnalyticsCharts = lazy(() =>
+  import("@/components/analytics/AnalyticsCharts").then((m) => ({ default: m.AnalyticsCharts })),
+);
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -150,7 +153,11 @@ export function HomePage() {
         <MetricCard label="Cost avoided" value={demoKpis.cost} icon={DollarSign} tone="success" demo={demoMode} />
       </div>
 
-      {demoMode ? <AnalyticsCharts visible={alertRows} decisions={decisions} compact /> : null}
+      {demoMode ? (
+        <Suspense fallback={null}>
+          <AnalyticsCharts visible={alertRows} decisions={decisions} compact />
+        </Suspense>
+      ) : null}
 
       <div className="home-grid">
         <section className="panel home-panel">
@@ -203,20 +210,13 @@ export function HomePage() {
                       .filter(Boolean)
                       .join(" ");
                     return (
-                      <tr key={r.alert_id} className={rowClass || undefined}>
-                        <td className="mono">{r.timestamp.slice(11, 19)}</td>
-                        <td className="mono">{r.service}</td>
-                        <td className="mono">{r.title}</td>
-                        <td>
-                          <PriorityBadge priority={(r.severity as Priority) || "P4"} />
-                        </td>
-                        <td className="mono stream-status">{streamStatus}</td>
-                        <td>
-                          <button type="button" className="btn btn-sm" onClick={() => askAlert(r)}>
-                            Ask agent
-                          </button>
-                        </td>
-                      </tr>
+                      <AlertStreamRow
+                        key={r.alert_id}
+                        row={r}
+                        rowClass={rowClass}
+                        streamStatus={streamStatus}
+                        onAsk={askAlert}
+                      />
                     );
                   })
                 )}

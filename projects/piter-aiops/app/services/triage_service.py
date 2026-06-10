@@ -190,6 +190,8 @@ def run_triage(
         analysis if analysis_ok else {},
         rag_answer=rag.answer,
     )
+    deterministic_sections = compose_piter_sections(analysis if analysis_ok else {}, rag_answer="")
+    deterministic_piter_sections = deterministic_sections.get("piter_sections")
 
     citations = _citations_payload(rag)
     if analysis_ok:
@@ -247,6 +249,11 @@ def run_triage(
             "escalation": "complete" if requires_escalation else "skipped",
             "resolution": "pending",
         },
+        "deterministic_piter_sections": deterministic_piter_sections,
+        "business_impact": (
+            impact.get("business_explanation") if isinstance(impact, dict) else ""
+        )
+        or "",
     }
 
     session_memory.save_triage(
