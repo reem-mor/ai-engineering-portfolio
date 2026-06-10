@@ -124,12 +124,36 @@ def _execution_mode_hint(mode: str | None = None) -> str:
     return "Bedrock Agent"
 
 
+_SMS_READY_CACHE: dict = {"at": 0.0, "value": None}
+_SMS_READY_TTL_SECONDS = 300.0
+
+
+def _sms_account_status_cached() -> dict:
+    """SMS readiness probe hits several AWS APIs; cache it so /api/bootstrap stays fast."""
+    import os
+    import time
+
+    now = time.monotonic()
+    if _SMS_READY_CACHE["value"] is not None and now - _SMS_READY_CACHE["at"] < _SMS_READY_TTL_SECONDS:
+        return _SMS_READY_CACHE["value"]
+    try:
+        status = check_sms_account_ready(
+            phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
+        )
+    except Exception as exc:  # network timeout must never block bootstrap
+        log.warning("sms_ready_probe_failed: %s", exc)
+        status = {"ready": False, "message": "SMS readiness probe unavailable"}
+    _SMS_READY_CACHE["value"] = status
+    _SMS_READY_CACHE["at"] = now
+    return status
+
+
 def _notification_settings() -> dict:
     import os
 
-    sms_status = check_sms_account_ready(
-        phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
-    )
+    from app.services.escalation_service import mask_recipient, resolve_demo_recipients
+
+    sms_status = _sms_account_status_cached()
     mode = os.environ.get("PITER_NOTIFICATION_MODE", "preview").strip().lower()
     live = live_dispatch_enabled()
     email_ready = email_configured()
@@ -152,6 +176,7 @@ def _notification_settings() -> dict:
         "demo_whatsapp_configured": whatsapp_configured(),
         "whatsapp_configured": whatsapp_configured(),
         "demo_email_configured": bool(os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()),
+        "email_recipients": [mask_recipient(item) for item in resolve_demo_recipients("email")],
     }
 
 

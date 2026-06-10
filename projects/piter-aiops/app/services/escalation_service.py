@@ -39,25 +39,40 @@ def _first_env(*names: str) -> str:
     return ""
 
 
-def resolve_demo_recipient(channel: str) -> str:
-    """Resolve the escalation recipient from environment variables ONLY.
+def resolve_demo_recipients(channel: str) -> list[str]:
+    """Resolve all escalation recipients for a channel from environment variables ONLY.
 
-    Prefers the canonical PITER_ESCALATION_* variables (the documented contract),
-    falling back to the legacy PITER_DEMO_* names. Recipients are never read from
-    git or request bodies.
+    Values may be comma/semicolon-separated to support multi-recipient escalation
+    (e.g. PITER_ESCALATION_EMAIL="a@x.com,b@y.com"). Recipients are never read
+    from git or request bodies.
     """
     channel = channel.strip().lower()
     if channel == "sms":
-        return _first_env("PITER_ESCALATION_SMS", "PITER_DEMO_SMS_RECIPIENT")
-    if channel == "whatsapp":
-        return _first_env(
+        raw = _first_env("PITER_ESCALATION_SMS", "PITER_DEMO_SMS_RECIPIENT")
+    elif channel == "whatsapp":
+        raw = _first_env(
             "PITER_ESCALATION_SMS",
             "PITER_DEMO_WHATSAPP_RECIPIENT",
             "PITER_DEMO_SMS_RECIPIENT",
         )
-    if channel == "email":
-        return _first_env("PITER_ESCALATION_EMAIL", "PITER_DEMO_EMAIL_RECIPIENT")
-    raise ValueError(f"Unknown channel: {channel}")
+    elif channel == "email":
+        raw = _first_env("PITER_ESCALATION_EMAIL", "PITER_DEMO_EMAIL_RECIPIENT")
+    else:
+        raise ValueError(f"Unknown channel: {channel}")
+    seen: set[str] = set()
+    recipients: list[str] = []
+    for part in raw.replace(";", ",").split(","):
+        value = part.strip()
+        if value and value.lower() not in seen:
+            seen.add(value.lower())
+            recipients.append(value)
+    return recipients
+
+
+def resolve_demo_recipient(channel: str) -> str:
+    """Resolve the primary escalation recipient (first configured) for a channel."""
+    recipients = resolve_demo_recipients(channel)
+    return recipients[0] if recipients else ""
 
 
 def _build_event(operation: str, params: dict[str, str]) -> dict[str, Any]:
@@ -101,8 +116,8 @@ def notify_demo_channel(
 ) -> dict[str, Any]:
     from app.services.escalation_message import enrich_escalation_context, format_escalation_messages
 
-    recipient = resolve_demo_recipient(channel)
-    if not recipient:
+    recipients = resolve_demo_recipients(channel)
+    if not recipients:
         return {
             "http_status": 400,
             "ok": False,
@@ -123,25 +138,58 @@ def notify_demo_channel(
         channel="sms" if channel == "whatsapp" else channel,
     )
     default_message = formatted["body"]
-    params: dict[str, str] = {
-        "operation": "live_notify",
-        "service": service,
-        "severity": severity,
-        "incident_id": incident_id,
-        "recipient": recipient,
-        "message": message or default_message,
-        "subject": subject or formatted.get("subject") or "",
-        "confirmation_token": confirmation_token,
-        "delivery_channel": channel,
-    }
     html = html_body or formatted.get("html_body") or ""
-    if html and channel == "email":
-        params["html_body"] = html
-    if idempotency_key:
-        params["idempotency_key"] = idempotency_key
-    else:
-        params["idempotency_key"] = f"{incident_id}:{channel}:{recipient}:{severity}"
-    result = invoke_escalation("live_notify", params)
-    result["recipient_configured"] = True
-    result["channel"] = channel
-    return result
+
+    deliveries: list[dict[str, Any]] = []
+    last_result: dict[str, Any] = {}
+    any_sent = False
+    for recipient in recipients:
+        params: dict[str, str] = {
+            "operation": "live_notify",
+            "service": service,
+            "severity": severity,
+            "incident_id": incident_id,
+            "recipient": recipient,
+            "message": message or default_message,
+            "subject": subject or formatted.get("subject") or "",
+            "confirmation_token": confirmation_token,
+            "delivery_channel": channel,
+        }
+        if html and channel == "email":
+            params["html_body"] = html
+        if idempotency_key:
+            params["idempotency_key"] = f"{idempotency_key}:{recipient}"
+        else:
+            params["idempotency_key"] = f"{incident_id}:{channel}:{recipient}:{severity}"
+        result = invoke_escalation("live_notify", params)
+        last_result = result
+        sent = bool(result.get("sent"))
+        any_sent = any_sent or sent
+        deliveries.append(
+            {
+                "recipient": mask_recipient(recipient),
+                "sent": sent,
+                "ok": bool(result.get("ok", sent)),
+                "error": result.get("error") or result.get("reason"),
+                "message_id": result.get("message_id"),
+            }
+        )
+
+    aggregate = dict(last_result)
+    aggregate["recipient_configured"] = True
+    aggregate["channel"] = channel
+    aggregate["sent"] = any_sent
+    aggregate["ok"] = any_sent or bool(last_result.get("ok"))
+    aggregate["recipients_total"] = len(recipients)
+    aggregate["recipients_sent"] = sum(1 for item in deliveries if item["sent"])
+    aggregate["deliveries"] = deliveries
+    if any_sent:
+        aggregate["http_status"] = 200
+        if aggregate["recipients_sent"] < len(recipients):
+            aggregate["partial_failure"] = True
+            failed = [item for item in deliveries if not item["sent"]]
+            aggregate["partial_failure_detail"] = "; ".join(
+                f"{item['recipient']}: {item['error']}" for item in failed if item.get("error")
+            )
+        aggregate.pop("error", None)
+    return aggregate

@@ -20,7 +20,6 @@ import { useSession } from "@/context/session";
 import { useDemo } from "@/context/demo";
 import { investigationSnippet } from "@/lib/chat-format";
 import { SafetyGuardrail } from "@/components/noc/SafetyGuardrail";
-import { SourceBadge } from "@/components/ui/SourceBadge";
 import { Button } from "@/components/ui/Button";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
 import type { Priority } from "@/types/api";
@@ -52,18 +51,27 @@ export function ChatDock() {
   const [draft, setDraft] = useState("");
   const [memoryOpen, setMemoryOpen] = useState(true);
   const [activityIndex, setActivityIndex] = useState(0);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Rotate the "what is the agent doing" label while a reply is pending.
+  // Rotate the "what is the agent doing" label and tick the elapsed timer while pending.
   useEffect(() => {
     if (!pending) {
       setActivityIndex(0);
+      setElapsedSec(0);
       return;
     }
-    const timer = window.setInterval(() => {
-      setActivityIndex((i) => (i + 1) % AGENT_ACTIVITY_LABELS.length);
+    const startedAt = Date.now();
+    const labelTimer = window.setInterval(() => {
+      setActivityIndex((i) => Math.min(i + 1, AGENT_ACTIVITY_LABELS.length - 1));
     }, 1600);
-    return () => window.clearInterval(timer);
+    const clockTimer = window.setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => {
+      window.clearInterval(labelTimer);
+      window.clearInterval(clockTimer);
+    };
   }, [pending]);
 
   useEffect(() => {
@@ -245,14 +253,7 @@ export function ChatDock() {
             key={i}
             className={`chat-bubble chat-${m.role}${m.guardrail_blocked ? " chat-guardrail" : ""}`}
           >
-            <div className="chat-role">
-              {m.role === "user" ? "You" : "PITER Agent"}
-              {m.role === "assistant" && m.mode ? (
-                <span style={{ marginLeft: 8 }}>
-                  <SourceBadge mode={m.mode} />
-                </span>
-              ) : null}
-            </div>
+            <div className="chat-role">{m.role === "user" ? "You" : "PITER Agent"}</div>
             {m.guardrail_blocked ? (
               <div className="chat-guardrail-wrap">
                 <SafetyGuardrail previewOnly />
@@ -265,8 +266,24 @@ export function ChatDock() {
         ))}
         {pending ? (
           <div className="chat-bubble chat-assistant chat-thinking" role="status" aria-live="polite">
-            <Loader2 size={14} className="chat-thinking-spinner" aria-hidden />
-            <span className="chat-thinking-label">{AGENT_ACTIVITY_LABELS[activityIndex]}</span>
+            <div className="chat-thinking-head">
+              <Loader2 size={14} className="chat-thinking-spinner" aria-hidden />
+              <span className="chat-thinking-label">{AGENT_ACTIVITY_LABELS[activityIndex]}</span>
+              <span className="chat-thinking-clock mono">{elapsedSec}s</span>
+            </div>
+            <div className="chat-thinking-steps" aria-hidden>
+              {AGENT_ACTIVITY_LABELS.map((label, i) => (
+                <span
+                  key={label}
+                  className={`chat-thinking-dot${
+                    i < activityIndex ? " done" : i === activityIndex ? " active" : ""
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="chat-thinking-bar" aria-hidden>
+              <span className="chat-thinking-bar-fill" />
+            </div>
           </div>
         ) : null}
         {error ? <div className="chat-error">{error}</div> : null}
@@ -277,7 +294,6 @@ export function ChatDock() {
         <div className="chat-summary-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <strong>Analysis summary</strong>
-            <SourceBadge mode={lastResponse.mode} fallbackUsed={lastResponse.fallback_used} />
           </div>
           {lastResponse.piter.priority ? (
             <div style={{ marginTop: 6 }}>

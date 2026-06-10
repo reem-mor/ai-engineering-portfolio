@@ -12,7 +12,6 @@ import { ConfidenceIndicator } from "./ConfidenceIndicator";
 import { ToolResultPanel } from "./ToolResultPanel";
 import { PriorityBadge } from "./PriorityBadge";
 import { SafetyGuardrail } from "./SafetyGuardrail";
-import { SourceBadge } from "@/components/ui/SourceBadge";
 import { AgentEnrichmentPipeline } from "./AgentEnrichmentPipeline";
 
 function FieldGrid({ fields }: { fields: Array<{ label: string; value: ReactNode }> }) {
@@ -155,7 +154,6 @@ export function PiterAnalysisPanel({
         <div className="piter-response-badges">
           {piter?.priority ? <PriorityBadge priority={piter.priority as "P1"} /> : null}
           <ConfidenceIndicator level={response.confidence} />
-          <SourceBadge mode={response.mode} fallbackUsed={response.fallback_used} />
         </div>
       </header>
 
