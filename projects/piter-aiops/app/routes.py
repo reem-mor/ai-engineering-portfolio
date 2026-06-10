@@ -644,8 +644,24 @@ def api_follow_up():
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
     if result is None:
-        return jsonify(ok=False, reason="unknown_session",
-                       message="That incident session was not found. Run triage first."), 404
+        try:
+            rag = _handle_ask(question)
+            payload = rag.to_dict()
+            payload["memory_used"] = False
+            payload["kind"] = "general"
+            payload["session_id"] = session_id
+            payload["memory"] = {"last_question": question, "session_id": session_id}
+            normalized = normalize_api_response(payload)
+            append_turn(
+                session_id=session_id,
+                question=question,
+                answer=str(normalized.get("answer") or ""),
+                mode=normalized.get("mode"),
+            )
+            return jsonify(ok=True, **normalized), 200
+        except BedrockError as exc:
+            status = 400 if exc.code in _VALIDATION_CODES else 502
+            return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
     result["memory"] = {"last_question": question, "session_id": session_id}
     normalized = normalize_api_response(result)
     append_turn(

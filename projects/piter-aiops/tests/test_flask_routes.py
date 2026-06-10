@@ -87,10 +87,30 @@ def test_follow_up_missing_session(local_client):
     assert resp.get_json()["reason"] == "missing_session"
 
 
-def test_follow_up_unknown_session(local_client):
-    resp = local_client.post("/api/follow-up", json={"session_id": "nope", "question": "who owns this?"})
-    assert resp.status_code == 404
-    assert resp.get_json()["reason"] == "unknown_session"
+def test_follow_up_unknown_session_falls_back_to_rag(local_client):
+    resp = local_client.post(
+        "/api/follow-up",
+        json={"session_id": "nope", "question": "What should I check when users cannot log in after deployment?"},
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body.get("memory_used") is False
+    assert body.get("answer")
+
+
+def test_chat_with_chat_only_session_id_uses_rag(local_client):
+    resp = local_client.post(
+        "/api/chat",
+        json={
+            "session_id": "demo-default",
+            "message": "What should I check when users cannot log in after deployment?",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body.get("answer")
 
 
 def test_console_legacy_archived_when_spa_disabled(local_client):

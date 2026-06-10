@@ -56,7 +56,7 @@ export function P1Modal() {
       setTriageResult(data);
       const sid = data.memory?.session_id || data.session_id;
       if (sid) {
-        registerSession(sid, `${p1Row.service} P1`);
+        registerSession(sid, `${p1Row.service} P1`, { incident: true, activate: true });
         setSessionId(sid);
       }
       setStepIndex(P1_ANALYZE_STEPS.length);

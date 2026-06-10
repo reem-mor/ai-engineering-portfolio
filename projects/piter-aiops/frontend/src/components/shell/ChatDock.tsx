@@ -15,7 +15,6 @@ import { DocumentUploadPanel } from "@/components/shell/DocumentUploadPanel";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
 import { useDemo } from "@/context/demo";
-import { fetchHistory } from "@/lib/api-contract";
 import { formatChatText, investigationSnippet } from "@/lib/chat-format";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { Button } from "@/components/ui/Button";
@@ -29,33 +28,32 @@ export function ChatDock() {
     toggleCollapsed,
     sessions,
     activeSessionId,
-    setActiveSessionId,
+    selectSession,
     messages,
     pending,
     error,
     lastResponse,
     send,
-    loadSession,
     clearChat,
     newSession,
-    hydrateSessions,
     clearIncidentContext,
     contextAlert,
+    incidentSessionId,
+    registerSession,
   } = useChatDock();
   const { setSessionId } = useSession();
-  const { p1Row } = useDemo();
+  const { p1Row, triageResult } = useDemo();
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    void hydrateSessions();
-    void fetchHistory().then((h) => {
-      if (h.session_id) {
-        setActiveSessionId(h.session_id);
-        void loadSession(h.session_id);
-      }
+    const sid = triageResult?.memory?.session_id || triageResult?.session_id;
+    if (!sid) return;
+    registerSession(sid, `${p1Row?.service || "Investigation"} P1`, {
+      incident: true,
+      activate: !incidentSessionId,
     });
-  }, [hydrateSessions, loadSession, setActiveSessionId]);
+  }, [triageResult, p1Row?.service, registerSession, incidentSessionId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,7 +121,9 @@ export function ChatDock() {
 
       {alert ? (
         <div className="chat-context-chip">
-          <span className="chat-context-label">Incident context</span>
+          <span className="chat-context-label">
+            Current context: {(alert.severity as string) || "P1"} {alert.service} incident
+          </span>
           <PriorityBadge priority={(alert.severity as Priority) || "P4"} />
           <span>
             {alert.service} · {alert.environment} · {alert.alert_id}
@@ -157,10 +157,9 @@ export function ChatDock() {
           className="select"
           value={activeSessionId || ""}
           onChange={(e) => {
-            const id = e.target.value;
-            setActiveSessionId(id || null);
-            setSessionId(id || null);
-            if (id) void loadSession(id);
+            const id = e.target.value || null;
+            selectSession(id);
+            setSessionId(id);
           }}
         >
           <option value="">New / unsaved session</option>

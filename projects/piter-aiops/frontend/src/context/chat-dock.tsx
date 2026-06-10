@@ -2,7 +2,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -13,13 +15,15 @@ import {
   fetchHistory,
   fetchIncidentsHistory,
   postChat,
-  postFollowUp,
 } from "@/lib/api-contract";
+import { formatChatText } from "@/lib/chat-format";
 import { useSession } from "@/context/session";
 
 export type DockMode = "collapsed" | "open" | "fullscreen";
 
-type SessionEntry = { id: string; label: string; count: number };
+type SessionEntry = { id: string; label: string; count: number; incident?: boolean };
+
+type RegisterOptions = { label?: string; activate?: boolean; incident?: boolean };
 
 type ChatDockContextValue = {
   mode: DockMode;
@@ -27,8 +31,10 @@ type ChatDockContextValue = {
   toggleCollapsed: () => void;
   sessions: SessionEntry[];
   activeSessionId: string | null;
+  incidentSessionId: string | null;
   setActiveSessionId: (id: string | null) => void;
-  registerSession: (id: string, label?: string) => void;
+  selectSession: (id: string | null) => void;
+  registerSession: (id: string, label?: string, options?: RegisterOptions) => void;
   messages: HistoryMessage[];
   pending: boolean;
   error: string | null;
@@ -45,42 +51,87 @@ type ChatDockContextValue = {
 
 const ChatDockContext = createContext<ChatDockContextValue | null>(null);
 
+const CHAT_DEFAULT_ID = "demo-default";
+
+function assistantBubbleText(data: ChatResponse): string {
+  if (data.answer?.trim()) return formatChatText(data.answer, 1200);
+  const inv = data.piter?.investigation?.trim();
+  if (inv) return formatChatText(inv, 1200);
+  return "Analysis ready — see the workspace panel for full PITER output.";
+}
+
 export function ChatDockProvider({ children }: { children: ReactNode }) {
   const { sessionId: globalSessionId, setSessionId: setGlobalSessionId } = useSession();
+  const incidentIdsRef = useRef(new Set<string>());
   const [mode, setMode] = useState<DockMode>("open");
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [incidentSessionId, setIncidentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
   const [contextAlert, setContextAlert] = useState<Partial<AlertRow> | null>(null);
 
+  const isIncidentSession = useCallback((id: string | null | undefined) => {
+    return Boolean(id && incidentIdsRef.current.has(id));
+  }, []);
+
   const registerSession = useCallback(
-    (id: string, label?: string) => {
+    (id: string, label?: string, options?: RegisterOptions) => {
+      const incident = options?.incident !== false;
+      if (incident) incidentIdsRef.current.add(id);
       setSessions((prev) => {
-        if (prev.some((s) => s.id === id)) return prev;
-        return [{ id, label: label || id.slice(0, 12), count: 0 }, ...prev];
+        const next = prev.some((s) => s.id === id)
+          ? prev.map((s) =>
+              s.id === id ? { ...s, label: label || s.label, incident: incident || s.incident } : s,
+            )
+          : [{ id, label: label || id.slice(0, 12), count: 0, incident }, ...prev];
+        return next;
       });
-      setGlobalSessionId(id);
+      if (options?.activate) {
+        setActiveSessionId(id);
+        setIncidentSessionId(incident ? id : null);
+        setGlobalSessionId(id);
+      }
     },
     [setGlobalSessionId],
   );
 
-  const loadSession = useCallback(async (sessionId: string) => {
-    setError(null);
-    try {
-      const data = await fetchHistory(sessionId);
-      setActiveSessionId(data.session_id);
-      setMessages(data.messages);
-      registerSession(data.session_id, data.session_id.slice(0, 12));
-      setSessions((prev) =>
-        prev.map((s) => (s.id === data.session_id ? { ...s, count: data.count } : s)),
-      );
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to load session");
-    }
-  }, [registerSession]);
+  const routingSessionId = useCallback(() => {
+    if (incidentSessionId && isIncidentSession(incidentSessionId)) return incidentSessionId;
+    const sid = activeSessionId || globalSessionId;
+    if (sid && isIncidentSession(sid)) return sid;
+    return null;
+  }, [activeSessionId, globalSessionId, incidentSessionId, isIncidentSession]);
+
+  const loadSession = useCallback(
+    async (sessionId: string) => {
+      setError(null);
+      try {
+        const data = await fetchHistory(sessionId);
+        setActiveSessionId(data.session_id);
+        setMessages(data.messages);
+        const incident = isIncidentSession(data.session_id);
+        if (incident) {
+          setIncidentSessionId(data.session_id);
+          setGlobalSessionId(data.session_id);
+        } else if (data.session_id === CHAT_DEFAULT_ID) {
+          setIncidentSessionId(null);
+        }
+        registerSession(data.session_id, data.session_id.slice(0, 12), {
+          incident,
+          activate: false,
+        });
+        setSessions((prev) =>
+          prev.map((s) => (s.id === data.session_id ? { ...s, count: data.count } : s)),
+        );
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : "Failed to load session");
+      }
+    },
+    [isIncidentSession, registerSession, setGlobalSessionId],
+  );
 
   const send = useCallback(
     async (text: string) => {
@@ -90,37 +141,36 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       setError(null);
       setMessages((m) => [...m, { role: "user", content: trimmed, ts: Date.now() / 1000 }]);
       try {
-        const sid = activeSessionId || globalSessionId;
-        const data = sid
-          ? await postFollowUp(sid, trimmed)
-          : await postChat(trimmed, sid);
+        const incidentSid = routingSessionId();
+        const data = await postChat(trimmed, incidentSid);
         setLastResponse(data);
-        const nextSid = data.memory?.session_id || data.session_id || sid;
-        if (nextSid) {
+        const nextSid = data.memory?.session_id || data.session_id;
+        if (nextSid && isIncidentSession(nextSid)) {
+          setIncidentSessionId(nextSid);
           setActiveSessionId(nextSid);
-          registerSession(nextSid);
+          registerSession(nextSid, undefined, { incident: true, activate: false });
         }
-        const hasStructured = Boolean(data.piter?.investigation || data.piter?.priority);
-        const answer = hasStructured
-          ? data.piter?.investigation?.slice(0, 400) || data.answer || "Structured analysis ready."
-          : data.answer || "";
-        if (answer) {
-          setMessages((m) => [
-            ...m,
-            { role: "assistant", content: answer, ts: Date.now() / 1000, mode: data.mode },
-          ]);
-        }
+        const answer = assistantBubbleText(data);
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            content: answer,
+            ts: Date.now() / 1000,
+            mode: data.fallback_used ? "local_fallback" : data.mode,
+          },
+        ]);
       } catch (e) {
         setError(e instanceof ApiError ? e.message : "Chat failed");
       } finally {
         setPending(false);
       }
     },
-    [activeSessionId, globalSessionId, pending, registerSession],
+    [pending, registerSession, routingSessionId, isIncidentSession],
   );
 
   const clearChat = useCallback(async () => {
-    const sid = activeSessionId || globalSessionId;
+    const sid = activeSessionId || globalSessionId || CHAT_DEFAULT_ID;
     setError(null);
     try {
       await clearHistory(sid);
@@ -134,11 +184,15 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
   const hydrateSessions = useCallback(async () => {
     try {
       const hist = await fetchIncidentsHistory(50);
-      const entries: SessionEntry[] = (hist.investigations || []).map((p) => ({
-        id: p.session_id,
-        label: `${p.service || "Investigation"} · ${p.severity || "—"}`,
-        count: 0,
-      }));
+      const entries: SessionEntry[] = (hist.investigations || []).map((p) => {
+        incidentIdsRef.current.add(p.session_id);
+        return {
+          id: p.session_id,
+          label: `${p.service || "Investigation"} · ${p.severity || "—"}`,
+          count: 0,
+          incident: true,
+        };
+      });
       setSessions((prev) => {
         const seen = new Set(prev.map((s) => s.id));
         const merged = [...prev];
@@ -155,6 +209,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
   const newSession = useCallback(async () => {
     setError(null);
     setActiveSessionId(null);
+    setIncidentSessionId(null);
     setGlobalSessionId(null);
     setMessages([]);
     setLastResponse(null);
@@ -172,16 +227,14 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       if (prefill.alert) setContextAlert(prefill.alert);
       if (prefill.triageResponse) setLastResponse(prefill.triageResponse);
       if (prefill.sessionId) {
-        setActiveSessionId(prefill.sessionId);
-        setGlobalSessionId(prefill.sessionId);
-        registerSession(prefill.sessionId);
+        registerSession(prefill.sessionId, undefined, { incident: true, activate: true });
         void loadSession(prefill.sessionId);
       }
       if (prefill.message) {
         void send(prefill.message);
       }
     },
-    [loadSession, registerSession, send, setGlobalSessionId],
+    [loadSession, registerSession, send],
   );
 
   const toggleCollapsed = useCallback(() => {
@@ -190,7 +243,30 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
 
   const clearIncidentContext = useCallback(() => {
     setContextAlert(null);
+    setIncidentSessionId(null);
   }, []);
+
+  const selectSession = useCallback(
+    (id: string | null) => {
+      setActiveSessionId(id);
+      setGlobalSessionId(id);
+      if (!id) {
+        setIncidentSessionId(null);
+        setMessages([]);
+        setLastResponse(null);
+        return;
+      }
+      void loadSession(id);
+    },
+    [loadSession, setGlobalSessionId],
+  );
+
+  useEffect(() => {
+    void hydrateSessions();
+    void fetchHistory().then((h) => {
+      if (h.messages?.length) setMessages(h.messages);
+    });
+  }, [hydrateSessions]);
 
   const value = useMemo(
     () => ({
@@ -199,7 +275,9 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       toggleCollapsed,
       sessions,
       activeSessionId,
+      incidentSessionId,
       setActiveSessionId,
+      selectSession,
       registerSession,
       messages,
       pending,
@@ -218,6 +296,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       mode,
       sessions,
       activeSessionId,
+      incidentSessionId,
       messages,
       pending,
       error,
@@ -225,6 +304,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       send,
       openWith,
       loadSession,
+      selectSession,
       registerSession,
       toggleCollapsed,
       clearChat,

@@ -60,7 +60,7 @@ export function AnalyzerPage() {
       });
       setResponse(data);
       const sid = data.memory?.session_id || data.session_id;
-      if (sid) registerSession(sid);
+      if (sid) registerSession(sid, undefined, { incident: true, activate: true });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Analysis failed");
     } finally {
