@@ -15,7 +15,7 @@ EVAL_PATH = ROOT / "evaluation" / "demo_questions.json"
 
 def test_example_questions_unique_labels_and_text():
     items = load_example_questions()
-    assert len(items) == 5
+    assert len(items) == 6
     questions = [i["question"] for i in items]
     assert len(questions) == len(set(questions))
     for item in items:

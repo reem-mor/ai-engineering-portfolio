@@ -178,7 +178,8 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
             role: "assistant",
             content: answer,
             ts: Date.now() / 1000,
-            mode: data.fallback_used ? "local_fallback" : data.mode,
+            mode: data.guardrail_blocked ? "guardrail" : data.fallback_used ? "local_fallback" : data.mode,
+            guardrail_blocked: data.guardrail_blocked,
           },
         ]);
         setSessions((prev) =>

@@ -150,6 +150,25 @@ export type ToolResult = {
   result: unknown;
 };
 
+export type KbManifestDocument = {
+  id?: string;
+  doc_id: string;
+  title: string;
+  doc_type: string;
+  format?: string;
+  last_updated?: string;
+  indexed?: boolean;
+  sync_status?: string;
+  services?: string[];
+  environments?: string[];
+};
+
+export type KbManifestResponse = {
+  ok: boolean;
+  documents: KbManifestDocument[];
+  sections?: Record<string, KbManifestDocument[]>;
+};
+
 export type TriageResponse = {
   ok: boolean;
   answer?: string;
@@ -163,6 +182,8 @@ export type TriageResponse = {
   mode?: string;
   fallback_used?: boolean;
   grounded?: boolean;
+  guardrail_blocked?: boolean;
+  demo_grounded?: boolean;
   message?: string;
   reason?: string;
   priority?: string;
@@ -187,6 +208,7 @@ export type HistoryMessage = {
   content: string;
   ts?: number;
   mode?: string;
+  guardrail_blocked?: boolean;
 };
 
 export type HistoryResponse = {

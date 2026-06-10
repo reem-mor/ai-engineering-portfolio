@@ -38,7 +38,7 @@ npm run dev
 
 After `npm run build`, **restart** the backend (Flask or `docker compose up --build -d`) so `:8080` serves the new asset hash. Docker Compose forces `FORCE_LEGACY_UI=false`; a developer `.env` with `FORCE_LEGACY_UI=true` disables the SPA on venv/Flask unless unset.
 
-E2E expects `data-ui-version="demo-polish-v1"` on `.app-shell` — if tests skip with "Built demo-polish SPA not served", rebuild + restart.
+E2E expects `data-ui-version="demo-polish-v4"` on `.app-shell` — if tests skip with "Built demo-polish SPA not served", rebuild + restart.
 
 See [`docs/LOCAL_DEV.md`](../docs/LOCAL_DEV.md).
 

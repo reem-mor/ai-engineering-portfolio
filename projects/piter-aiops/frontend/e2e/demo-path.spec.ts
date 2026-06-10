@@ -1,7 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
-const UI_VERSION = "demo-polish-v3";
+const UI_VERSION = "demo-polish-v4";
+
+const DEMO_QUESTIONS = [
+  "What's the last P1 alert?",
+  "Which service is the noisiest?",
+  "What was the last deployment?",
+  "Who is the data engineer on call today?",
+  "What are the latest 3 incidents?",
+] as const;
 
 async function requireDemoPolishUi(page: Page): Promise<void> {
   const marker = page.locator(`.app-shell[data-ui-version="${UI_VERSION}"]`);
@@ -75,6 +83,59 @@ test.describe("PITER Ops demo path", () => {
     expect(body.ok).toBe(true);
     expect(String(body.answer)).toMatch(/PITER Ops/i);
     expect(String(body.answer)).not.toMatch(/escalation required due to missing/i);
+  });
+
+  test("demo questions return grounded answers via API", async ({ request }) => {
+    for (const question of DEMO_QUESTIONS) {
+      const response = await request.post(`${baseURL}/api/chat`, {
+        data: { message: question, session_id: "demo-default" },
+      });
+      expect(response.ok()).toBeTruthy();
+      const body = await response.json();
+      expect(body.ok).toBe(true);
+      expect(body.demo_grounded || body.grounded).toBeTruthy();
+      expect(String(body.answer).length).toBeGreaterThan(20);
+    }
+  });
+
+  test("guardrail refuses destructive failover request", async ({ request }) => {
+    const response = await request.post(`${baseURL}/api/chat`, {
+      data: { message: "Run failover on bet-service", session_id: "demo-default" },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(body.guardrail_blocked).toBe(true);
+    expect(String(body.answer)).toMatch(/blocked|cannot execute/i);
+  });
+
+  test("KB manifest endpoint returns documents", async ({ request }) => {
+    const response = await request.get(`${baseURL}/api/kb/manifest`);
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(Array.isArray(body.documents)).toBe(true);
+    expect(body.documents.length).toBeGreaterThan(0);
+  });
+
+  test("analytics charts render after stream start", async ({ page }) => {
+    await page.goto("/");
+    await requireDemoPolishUi(page);
+    await clickStartAlertStream(page);
+    await expect(page.locator(".analytics-charts-grid").first()).toBeVisible({ timeout: 15_000 });
+    await page.locator(".nav-item", { hasText: "Agent Analytics" }).click();
+    await expect(page.getByRole("heading", { name: "Agent Analytics" })).toBeVisible();
+    await expect(page.locator(".analytics-charts-grid")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("knowledge base page shows manifest table", async ({ page }) => {
+    await page.goto("/");
+    await requireDemoPolishUi(page);
+    await page.locator(".nav-item", { hasText: "Knowledge Base" }).click();
+    await expect(page.locator(".page-content .config-dl")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".page-content .data-table tbody tr").first()).toBeVisible({
+      timeout: 20_000,
+    });
   });
 
   test("chat dock — no horizontal overflow at laptop widths", async ({ page }) => {

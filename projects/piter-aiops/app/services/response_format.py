@@ -172,6 +172,25 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
     sources = payload.get("sources")
     if not sources:
         sources = _sources_from_citations(citations)
+    elif citations:
+        cite_keys = {
+            (
+                str(c.get("document") or c.get("source_label") or ""),
+                str(c.get("excerpt") or c.get("snippet") or "")[:80],
+            )
+            for c in citations
+            if isinstance(c, dict)
+        }
+        sources = [
+            s
+            for s in sources
+            if isinstance(s, dict)
+            and (
+                str(s.get("document") or ""),
+                str(s.get("excerpt") or "")[:80],
+            )
+            not in cite_keys
+        ]
 
     tool_results = payload.get("tool_results")
     if tool_results is None:

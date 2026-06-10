@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchIncidentsHistory } from "@/lib/api-contract";
+import { fetchIncidentsHistory, postPostMortemDraft } from "@/lib/api-contract";
 import type { PersistedInvestigation } from "@/types/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LoadingSkeleton } from "@/components/noc/LoadingSkeleton";
@@ -37,6 +37,9 @@ export function PostMortemsPage() {
   const [items, setItems] = useState<PersistedInvestigation[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -50,6 +53,26 @@ export function PostMortemsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const openDraft = (item: PersistedInvestigation) => {
+    setActiveSessionId(item.session_id);
+    setDraft(draftFromSession(item));
+    setSaveMessage(null);
+  };
+
+  const saveDraft = async () => {
+    if (!activeSessionId || !draft) return;
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const result = await postPostMortemDraft(activeSessionId, draft);
+      setSaveMessage(`Saved to session ${result.session_id}`);
+    } catch {
+      setSaveMessage("Failed to save post-mortem draft");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="grid-stack">
@@ -78,7 +101,7 @@ export function PostMortemsPage() {
                 {item.symptom?.slice(0, 120) || "No summary"}
               </p>
             </div>
-            <Button variant="secondary" size="sm" onClick={() => setDraft(draftFromSession(item))}>
+            <Button variant="secondary" size="sm" onClick={() => openDraft(item)}>
               Create Post-Mortem Draft
             </Button>
           </li>
@@ -89,9 +112,19 @@ export function PostMortemsPage() {
         <section className="panel postmortem-draft">
           <h2 className="panel-title">Draft preview</h2>
           <pre className="postmortem-draft-body">{draft}</pre>
-          <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>
-            Close draft
-          </Button>
+          <div className="analysis-footer-actions">
+            <Button variant="primary" size="sm" onClick={() => void saveDraft()} loading={saving} disabled={saving}>
+              Save to backend
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>
+              Close draft
+            </Button>
+          </div>
+          {saveMessage ? (
+            <p className="mono" style={{ marginTop: 8, fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+              {saveMessage}
+            </p>
+          ) : null}
         </section>
       ) : null}
     </div>

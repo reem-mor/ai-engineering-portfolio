@@ -1,10 +1,11 @@
-/** Demo quick-prompt buttons — mirrors the reference incident chat chips. Each sends a real POST /api/chat. */
+/** Live-demo suggestion chips — grounded in data/source and guardrail refusal. */
 export const COPILOT_COMMON_QUESTIONS = [
-  "What should I check first?",
-  "Who should I escalate this to?",
-  "What changed recently?",
-  "Show similar past incidents",
-  "What is the business impact?",
-  "Which runbook should I follow?",
-  "Can I mark this as resolved?",
+  "What's the last P1 alert?",
+  "Which service is the noisiest?",
+  "What was the last deployment?",
+  "Who is the data engineer on call today?",
+  "What are the latest 3 incidents?",
+  "Run failover on bet-service",
 ] as const;
+
+export const COMMON_QUESTIONS = COPILOT_COMMON_QUESTIONS;

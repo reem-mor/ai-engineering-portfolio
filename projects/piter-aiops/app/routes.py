@@ -31,7 +31,7 @@ from app.services.notification_dispatch import (
 )
 from app.services.triage_service import get_demo_alert, run_follow_up, run_triage
 from app.services import session_memory
-from app.services.chat_intent import small_talk_reply
+from app.services.chat_intent import small_talk_reply, structured_chat_reply
 from app.services.chat_history import append_turn, clear_history, get_messages
 from app.services.response_format import normalize_api_response
 from app.services.tools_status import build_tools_status
@@ -75,14 +75,11 @@ def _local_client() -> RagClient:
 
 
 def _fallback_enabled() -> bool:
-    """Local fallback only when explicitly enabled; off in production by default."""
+    """Local TF-IDF fallback when Bedrock/KB fails — controlled by PITER_LOCAL_FALLBACK."""
     explicit = current_app.config.get("LOCAL_FALLBACK")
     if explicit is not None:
         return bool(explicit)
-    cfg = _app_config()
-    if cfg.FLASK_ENV == "production":
-        return False
-    return True
+    return _app_config().LOCAL_FALLBACK
 
 
 def _upload_service() -> DocumentUploadService:
@@ -537,6 +534,26 @@ def api_history_delete():
     return jsonify(ok=True, **clear_history(session_id)), 200
 
 
+def _chat_json_response(
+    question: str,
+    payload: dict[str, Any],
+    *,
+    session_id: str | None,
+) -> tuple[Any, int]:
+    memory_session = session_id or str(payload.get("session_id") or "demo-default")
+    payload.setdefault("session_id", memory_session)
+    normalized = normalize_api_response(payload)
+    append_turn(
+        session_id=session_id,
+        question=question,
+        answer=str(normalized.get("answer") or ""),
+        mode=normalized.get("mode"),
+    )
+    out = dict(normalized)
+    out["memory"] = {"last_question": question, "session_id": memory_session}
+    return jsonify(ok=True, **out), 200
+
+
 @bp.post("/api/chat")
 def api_chat():
     """Canonical chat endpoint with optional incident-session follow-up memory."""
@@ -545,34 +562,38 @@ def api_chat():
     session_id = str(body.get("session_id") or "").strip() or None
     if not question:
         return jsonify(ok=False, reason="empty_question", message="Please enter a message."), 400
+    if len(question) > MAX_QUESTION_LEN:
+        return (
+            jsonify(
+                ok=False,
+                reason="oversize_question",
+                message=f"Message is too long ({len(question)} chars). Maximum is {MAX_QUESTION_LEN}.",
+            ),
+            400,
+        )
+
+    structured = structured_chat_reply(question)
+    if structured:
+        return _chat_json_response(question, dict(structured), session_id=session_id)
 
     canned = small_talk_reply(question)
     if canned:
-        memory_session = session_id or "demo-default"
-        normalized = normalize_api_response(
+        return _chat_json_response(
+            question,
             {
                 "answer": canned,
                 "mode": "local",
                 "fallback_used": False,
                 "grounded": False,
                 "citations": [],
-                "session_id": memory_session,
                 "recommended_followups": [
-                    "What should I check first for this incident?",
-                    "Who owns auth-service in production?",
-                    "What is the escalation policy for P1?",
+                    "What's the last P1 alert?",
+                    "Which service is the noisiest?",
+                    "What was the last deployment?",
                 ],
-            }
-        )
-        append_turn(
+            },
             session_id=session_id,
-            question=question,
-            answer=normalized.get("answer", ""),
-            mode=normalized.get("mode"),
         )
-        payload = dict(normalized)
-        payload["memory"] = {"last_question": question, "session_id": memory_session}
-        return jsonify(ok=True, **payload), 200
 
     try:
         if session_id:
@@ -580,16 +601,8 @@ def api_chat():
                 session_id, question, ask_fn=_ask_fn_for_session(session_id)
             )
             if follow_up is not None:
-                follow_up["memory"] = {"last_question": question, "session_id": session_id}
-                normalized = normalize_api_response(follow_up)
-                append_turn(
-                    session_id=session_id,
-                    question=question,
-                    answer=normalized.get("answer", ""),
-                    mode=normalized.get("mode"),
-                )
-                return jsonify(ok=True, **normalized), 200
-        result = _handle_ask(question, session_id=session_id)
+                return _chat_json_response(question, follow_up, session_id=session_id)
+        result = _handle_ask(validate_question(question), session_id=session_id)
     except BedrockError as exc:
         status = 400 if exc.code in _VALIDATION_CODES else 502
         return jsonify(
@@ -601,17 +614,7 @@ def api_chat():
             fallback_used=False,
         ), status
 
-    payload = result.to_dict()
-    memory_session = session_id or payload.get("session_id")
-    payload["memory"] = {"last_question": question, "session_id": memory_session}
-    normalized = normalize_api_response(payload)
-    append_turn(
-        session_id=session_id,
-        question=question,
-        answer=normalized.get("answer", ""),
-        mode=normalized.get("mode"),
-    )
-    return jsonify(ok=True, **normalized), 200
+    return _chat_json_response(question, result.to_dict(), session_id=session_id)
 
 
 @bp.post("/api/escalation/notify")
@@ -684,6 +687,20 @@ def api_follow_up():
                        message="A follow-up needs the session_id from the triage card."), 400
     if not question:
         return jsonify(ok=False, reason="empty_question", message="Please enter a follow-up question."), 400
+    if len(question) > MAX_QUESTION_LEN:
+        return (
+            jsonify(
+                ok=False,
+                reason="oversize_question",
+                message=f"Question is too long ({len(question)} chars). Maximum is {MAX_QUESTION_LEN}.",
+            ),
+            400,
+        )
+
+    structured = structured_chat_reply(question)
+    if structured:
+        return _chat_json_response(question, dict(structured), session_id=session_id)
+
     try:
         result = run_follow_up(session_id, question, ask_fn=_ask_fn_for_session(session_id))
     except BedrockError as exc:
@@ -691,7 +708,7 @@ def api_follow_up():
         return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
     if result is None:
         try:
-            rag = _handle_ask(question)
+            rag = _handle_ask(validate_question(question))
             payload = rag.to_dict()
             payload["memory_used"] = False
             payload["kind"] = "general"
@@ -708,15 +725,7 @@ def api_follow_up():
         except BedrockError as exc:
             status = 400 if exc.code in _VALIDATION_CODES else 502
             return jsonify(ok=False, reason=exc.code, message=exc.user_message), status
-    result["memory"] = {"last_question": question, "session_id": session_id}
-    normalized = normalize_api_response(result)
-    append_turn(
-        session_id=session_id,
-        question=question,
-        answer=str(normalized.get("answer") or normalized.get("summary") or ""),
-        mode=normalized.get("mode"),
-    )
-    return jsonify(ok=True, **normalized), 200
+    return _chat_json_response(question, result, session_id=session_id)
 
 
 @bp.get("/api/incidents/history")

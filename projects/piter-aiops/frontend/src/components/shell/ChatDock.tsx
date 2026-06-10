@@ -19,6 +19,7 @@ import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
 import { useDemo } from "@/context/demo";
 import { investigationSnippet } from "@/lib/chat-format";
+import { SafetyGuardrail } from "@/components/noc/SafetyGuardrail";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { Button } from "@/components/ui/Button";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
@@ -240,7 +241,10 @@ export function ChatDock() {
           </p>
         ) : null}
         {messages.map((m, i) => (
-          <div key={i} className={`chat-bubble chat-${m.role}`}>
+          <div
+            key={i}
+            className={`chat-bubble chat-${m.role}${m.guardrail_blocked ? " chat-guardrail" : ""}`}
+          >
             <div className="chat-role">
               {m.role === "user" ? "You" : "PITER Agent"}
               {m.role === "assistant" && m.mode ? (
@@ -249,6 +253,11 @@ export function ChatDock() {
                 </span>
               ) : null}
             </div>
+            {m.guardrail_blocked ? (
+              <div className="chat-guardrail-wrap">
+                <SafetyGuardrail previewOnly />
+              </div>
+            ) : null}
             <div className="chat-text">
               {m.role === "assistant" ? <ChatMarkdown text={m.content} /> : m.content}
             </div>

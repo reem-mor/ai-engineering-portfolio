@@ -1,7 +1,10 @@
-"""Lightweight intent guard for /api/chat — greetings and capability prompts."""
+"""Lightweight intent guard for /api/chat — greetings, demo Q&A, and guardrails."""
 from __future__ import annotations
 
 import re
+from typing import Any
+
+from app.services.demo_chat import demo_ops_reply, destructive_action_reply
 
 _GREETING = re.compile(
     r"^(?:hi|hello|hey|yo|howdy|good\s+(?:morning|afternoon|evening)|sup|what(?:'s| is) up)\b[\s!.?]*$",
@@ -33,3 +36,11 @@ def small_talk_reply(question: str) -> str | None:
     if _CAPABILITY.match(q):
         return CAPABILITY_REPLY
     return None
+
+
+def structured_chat_reply(question: str) -> dict[str, Any] | None:
+    """Guardrail refusals and grounded demo answers before RAG/Bedrock."""
+    guard = destructive_action_reply(question)
+    if guard:
+        return guard
+    return demo_ops_reply(question)

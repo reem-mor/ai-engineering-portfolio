@@ -29,15 +29,27 @@ def load_workflow_alerts() -> list[dict[str, Any]]:
     return []
 
 
+def _example_question_text(item: str | dict[str, str]) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    return str(item.get("question") or "").strip()
+
+
 def flat_example_questions() -> list[str]:
-    return [item["question"] for item in load_example_questions()]
+    return [_example_question_text(item) for item in load_example_questions() if _example_question_text(item)]
 
 
 def grouped_example_questions() -> dict[str, list[str]]:
     groups: dict[str, list[str]] = {}
     for item in load_example_questions():
-        label = str(item.get("label") or "General")
-        groups.setdefault(label, []).append(item["question"])
+        if isinstance(item, str):
+            label, question = "General", item.strip()
+        else:
+            label = str(item.get("label") or "General")
+            question = str(item.get("question") or "").strip()
+        if not question:
+            continue
+        groups.setdefault(label, []).append(question)
     return groups
 
 

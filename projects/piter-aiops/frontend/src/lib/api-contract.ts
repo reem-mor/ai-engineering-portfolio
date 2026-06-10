@@ -10,6 +10,7 @@ import type {
   IncidentDetailResponse,
   IncidentsHistoryResponse,
   InvestigationsResponse,
+  KbManifestResponse,
   MetricsResult,
   TriageResponse,
 } from "@/types/api";
@@ -45,6 +46,14 @@ async function parseJson<T>(response: Response): Promise<T> {
     );
   }
   return data;
+}
+
+export async function fetchKbManifest(): Promise<KbManifestResponse> {
+  const response = await fetch("/api/kb/manifest", {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+  });
+  return parseJson<KbManifestResponse>(response);
 }
 
 export async function fetchBootstrap(): Promise<BootstrapResponse> {
@@ -315,6 +324,7 @@ export async function fetchBusinessImpact(params: {
 export const FROZEN_API_ENDPOINTS = [
   "GET /api/health",
   "GET /api/bootstrap",
+  "GET /api/kb/manifest",
   "GET /api/alert-stream",
   "GET /api/investigations",
   "GET /api/incidents/history",

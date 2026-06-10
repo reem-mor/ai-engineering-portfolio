@@ -3,7 +3,7 @@
 **Date:** 2026-06-10  
 **Branch:** `main` (local uncommitted)  
 **Live URL:** http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/  
-**UI marker:** `data-ui-version="demo-polish-v3"`
+**UI marker:** `data-ui-version="demo-polish-v4"`
 
 ---
 

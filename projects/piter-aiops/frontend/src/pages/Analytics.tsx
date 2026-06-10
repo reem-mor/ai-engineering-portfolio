@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import { useDemo } from "@/context/demo";
 import type { AgentDecision, Priority } from "@/types/api";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
@@ -47,6 +48,8 @@ export function AnalyticsPage() {
         <Stat label="Noise decisions" value={suppressionStats.noise} />
         <Stat label="Group decisions" value={suppressionStats.groups} />
       </div>
+
+      <AnalyticsCharts visible={visible} decisions={decisions} />
 
       <section className="panel">
         <h2 className="panel-title">Severity distribution (stream)</h2>

@@ -17,6 +17,7 @@ import type { AlertRow, Investigation, InvestigationsResponse, Priority } from "
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { CriticalIncidentBanner } from "@/components/demo/CriticalIncidentBanner";
+import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -148,6 +149,8 @@ export function HomePage() {
         />
         <MetricCard label="Cost avoided" value={demoKpis.cost} icon={DollarSign} tone="success" demo={demoMode} />
       </div>
+
+      {demoMode ? <AnalyticsCharts visible={alertRows} decisions={decisions} compact /> : null}
 
       <div className="home-grid">
         <section className="panel home-panel">

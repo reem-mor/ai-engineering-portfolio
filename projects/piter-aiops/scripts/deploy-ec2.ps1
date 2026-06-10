@@ -47,6 +47,7 @@ function Get-RemoteDeployScript() {
         "docker run -d --name piter-aiops --restart unless-stopped -p 8080:8080 \"
         "  --env-file $RemotePath/.env \"
         "  -e PITER_USE_BEDROCK=true \"
+        "  -e PITER_LOCAL_FALLBACK=true \"
         "  $ImageTag"
         "curl -s http://localhost:8080/api/health?deep=1"
     )

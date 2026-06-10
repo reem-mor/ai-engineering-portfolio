@@ -9,7 +9,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 $Python = Join-Path $Root ".venv\Scripts\python.exe"
 
 if (-not (Test-Path $Python)) {
-    Write-Error "Missing venv at $Python — run: python -m venv .venv && .\.venv\Scripts\pip install -r requirements-dev.txt"
+    Write-Error "Missing venv at $Python. Run: python -m venv .venv; .\.venv\Scripts\pip install -r requirements-dev.txt"
 }
 
 $env:AWS_PROFILE = $Profile
@@ -27,6 +27,6 @@ if ($conn) {
 
 Write-Host "Starting PITER on http://127.0.0.1:8080 (profile=$Profile)..." -ForegroundColor Cyan
 if ($Gunicorn) {
-    Write-Error "gunicorn does not run on Windows (needs Linux). Use: .\scripts\run-local.ps1  OR  docker compose up --build"
+    Write-Error "gunicorn does not run on Windows (needs Linux). Use run-local.ps1 or: docker compose up --build"
 }
 & $Python app.py

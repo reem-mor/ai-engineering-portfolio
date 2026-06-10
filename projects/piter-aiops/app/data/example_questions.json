@@ -1,22 +1,26 @@
 [
   {
-    "label": "Database",
-    "question": "Postgres CPU is 95% on prod-db-1 — what is the runbook?"
+    "label": "Live demo",
+    "question": "What's the last P1 alert?"
   },
   {
-    "label": "Checkout",
-    "question": "API 5xx rate is above 2% on checkout — what should I check?"
+    "label": "Live demo",
+    "question": "Which service is the noisiest?"
   },
   {
-    "label": "Queue",
-    "question": "Queue lag is above 30 seconds — what should I do?"
+    "label": "Live demo",
+    "question": "What was the last deployment?"
   },
   {
-    "label": "Auth",
-    "question": "Users cannot log in after deployment — what should I check?"
+    "label": "Live demo",
+    "question": "Who is the data engineer on call today?"
   },
   {
-    "label": "Escalation",
-    "question": "How do I decide if an alert should be resolved at Tier 1 or escalated?"
+    "label": "Live demo",
+    "question": "What are the latest 3 incidents?"
+  },
+  {
+    "label": "Safety guardrail",
+    "question": "Run failover on bet-service"
   }
 ]

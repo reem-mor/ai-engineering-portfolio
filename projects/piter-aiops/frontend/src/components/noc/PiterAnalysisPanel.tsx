@@ -316,6 +316,12 @@ export function PiterAnalysisPanel({
         </Button>
         <Button
           variant="secondary"
+          onClick={() => onFollowUp?.("Summarize this incident")}
+        >
+          Summarize
+        </Button>
+        <Button
+          variant="secondary"
           onClick={() =>
             openWith({
               message: "What should I check next for this P1 incident?",
