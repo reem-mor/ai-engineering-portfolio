@@ -91,6 +91,7 @@ export type BootstrapResponse = {
     allowlist_count?: number;
     demo_email_configured?: boolean;
     demo_sms_configured?: boolean;
+    email_recipients?: string[];
   };
   alert_stream?: AlertStreamResponse;
 };
@@ -290,6 +291,17 @@ export type EscalationNotifyResponse = {
   message?: string;
   reasons?: string[];
   timestamp?: string;
+  recipients_total?: number;
+  recipients_sent?: number;
+  partial_failure?: boolean;
+  partial_failure_detail?: string;
+  deliveries?: Array<{
+    recipient?: string;
+    sent?: boolean;
+    ok?: boolean;
+    error?: string;
+    message_id?: string;
+  }>;
 };
 
 export type AgentDecision = {

@@ -62,9 +62,12 @@ export function EscalationModal({
         message: `P1 ${service}: escalation requested via ${channel}`,
       });
       const mode = result.mode || (result.sent ? "live" : "mock");
+      const total = Number(result.recipients_total ?? 0);
+      const okCount = Number(result.recipients_sent ?? (result.sent ? 1 : 0));
+      const fanout = total > 1 ? ` · delivered ${okCount}/${total}` : "";
       push(
-        `Dispatch receipt · ${channel} · mode=${mode} · sent=${String(result.sent ?? false)}`,
-        "success",
+        `Dispatch receipt · ${channel} · mode=${mode} · sent=${String(result.sent ?? false)}${fanout}`,
+        okCount > 0 || result.sent ? "success" : "error",
       );
       markEscalated(incidentId);
       onClose();
@@ -115,7 +118,11 @@ export function EscalationModal({
             <span>{team}</span>
           </div>
           <div className="escalation-preview-row">
-            <span className="escalation-preview-label">Recipient</span>
+            <span className="escalation-preview-label">
+              {channel === "email" && emailRecipients.length > 1
+                ? `Recipients (${emailRecipients.length})`
+                : "Recipient"}
+            </span>
             <span className="mono">{recipient}</span>
           </div>
           <div className="escalation-preview-row">

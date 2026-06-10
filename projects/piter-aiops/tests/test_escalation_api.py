@@ -117,6 +117,53 @@ def test_escalation_notify_succeeds_with_mocked_dispatch(client, monkeypatch):
     assert data["message_id"] == "ses-msg-1"
 
 
+def test_escalation_notify_email_fans_out_to_all_recipients(client, monkeypatch):
+    """PITER_ESCALATION_EMAIL may hold a comma-separated recipient list."""
+    mod = _load_lambda("piter-escalation")
+    mod.SENT_IDEMPOTENCY_KEYS.clear()
+
+    recipients = [
+        "a@example.com",
+        "b@example.com",
+        "c@example.com",
+        "d@example.com",
+    ]
+    monkeypatch.setenv("PITER_NOTIFICATION_MODE", "live")
+    monkeypatch.setenv("PITER_ENABLE_LIVE_DISPATCH", "true")
+    monkeypatch.setenv("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true")
+    monkeypatch.setenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "token-ok")
+    monkeypatch.setenv("PITER_NOTIFICATION_ALLOWLIST", ",".join(recipients))
+    monkeypatch.setenv("PITER_NOTIFICATION_ALLOWED_SEVERITIES", "P1")
+    monkeypatch.setenv("PITER_ESCALATION_EMAIL", ", ".join(recipients))
+    monkeypatch.setenv("PITER_NOTIFICATION_MAX_SENDS_PER_INCIDENT", "10")
+    monkeypatch.setenv("PITER_SES_SENDER_EMAIL", "noreply@example.com")
+
+    mock_ses = MagicMock()
+    mock_ses.send_email.return_value = {"MessageId": "ses-msg-multi"}
+
+    with patch("app.services.notification_dispatch.boto3.client", return_value=mock_ses):
+        response = client.post(
+            "/api/escalation/notify",
+            json={
+                "channel": "email",
+                "incident_id": "INC-API-MULTI",
+                "service": "bet-service",
+                "severity": "P1",
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["sent"] is True
+    assert data["recipients_total"] == 4
+    assert data["recipients_sent"] == 4
+    assert len(data["deliveries"]) == 4
+    assert all(item["sent"] for item in data["deliveries"])
+    sent_to = [call.kwargs["Destination"]["ToAddresses"] for call in mock_ses.send_email.call_args_list]
+    assert [addr for batch in sent_to for addr in batch] == recipients
+
+
 def test_bootstrap_includes_notification_readiness(client, monkeypatch):
     monkeypatch.setenv("PITER_ENABLE_LIVE_DISPATCH", "true")
     monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
