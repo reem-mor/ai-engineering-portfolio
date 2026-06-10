@@ -29,7 +29,9 @@ export function EscalationModal({
   const notification = bootstrap?.notification;
   const liveReady = isLiveDispatchReady(notification);
   const modeLabel = notificationModeLabel(notification);
-  const previewOnly = preview?.safe_preview_only !== false || !liveReady;
+  // The preview endpoint itself never sends (safe_preview_only is always true);
+  // dispatch availability is decided by bootstrap readiness only.
+  const previewOnly = !liveReady;
 
   const emailRecipients = useMemo(() => {
     const fromBootstrap = notification?.email_recipients;
@@ -104,10 +106,13 @@ export function EscalationModal({
           {mode === "email" ? "Email notification preview" : "Escalation preview"}
         </h2>
 
-        <AlertBanner title="Preview only — human approval required" variant="warning">
+        <AlertBanner
+          title={previewOnly ? "Preview only — human approval required" : "Live dispatch armed — confirm to send"}
+          variant="warning"
+        >
           {previewOnly
             ? `No live notifications will be sent (${modeLabel}). Review the draft below before any dispatch.`
-            : "Live dispatch is enabled — review the draft and confirm to send via server-side SES."}
+            : "Nothing is sent until you press Confirm dispatch — then the server dispatches via SES to the recipients below."}
         </AlertBanner>
 
         <div className="escalation-preview-card panel" style={{ marginTop: 12 }}>
