@@ -91,6 +91,7 @@ def create_session(alert: dict[str, Any], *, session_id: str | None = None) -> s
             "tool_outputs": {},
             "triage_card": None,
             "followups": [],
+            "post_mortem_draft": None,
         }
         _save()
     return sid
@@ -149,6 +150,17 @@ def list_sessions(*, limit: int = 50) -> list[dict[str, Any]]:
         return rows[: max(1, min(limit, 200))]
 
 
+def save_post_mortem_draft(session_id: str, draft: str) -> bool:
+    _ensure_loaded()
+    with _LOCK:
+        session = _SESSIONS.get(session_id)
+        if session is None:
+            return False
+        session["post_mortem_draft"] = draft.strip()
+        _save()
+        return True
+
+
 def get_incident_detail(session_id: str | None) -> dict[str, Any] | None:
     """Full persisted investigation for history drill-down."""
     session = get_session(session_id)
@@ -163,6 +175,7 @@ def get_incident_detail(session_id: str | None) -> dict[str, Any] | None:
         "citations": session.get("citations", []),
         "tool_outputs": session.get("tool_outputs", {}),
         "followups": list(session.get("followups", [])),
+        "post_mortem_draft": session.get("post_mortem_draft"),
     }
 
 

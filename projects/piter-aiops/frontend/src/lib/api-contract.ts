@@ -97,6 +97,19 @@ export async function fetchInvestigations(limit = 50): Promise<InvestigationsRes
   return parseJson<InvestigationsResponse>(response);
 }
 
+export async function postIncidentStatus(
+  incidentId: string,
+  status: "open" | "in_process" | "resolved" | "escalated",
+): Promise<{ ok: boolean; incident_id: string; status: string }> {
+  const response = await fetch(`/api/incidents/${encodeURIComponent(incidentId)}/status`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    credentials: "same-origin",
+    body: JSON.stringify({ status }),
+  });
+  return parseJson<{ ok: boolean; incident_id: string; status: string }>(response);
+}
+
 export async function postChat(message: string, sessionId?: string | null): Promise<ChatResponse> {
   const body: { message: string; session_id?: string } = { message };
   if (sessionId) body.session_id = sessionId;
@@ -147,6 +160,19 @@ export async function fetchHistory(sessionId?: string | null): Promise<HistoryRe
     credentials: "same-origin",
   });
   return parseJson<HistoryResponse>(response);
+}
+
+export async function postPostMortemDraft(
+  sessionId: string,
+  draft: string,
+): Promise<{ ok: boolean; session_id: string; post_mortem_draft: string }> {
+  const response = await fetch(`/api/incidents/history/${encodeURIComponent(sessionId)}/post-mortem`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    credentials: "same-origin",
+    body: JSON.stringify({ draft }),
+  });
+  return parseJson(response);
 }
 
 export async function clearHistory(sessionId?: string | null): Promise<{ ok: boolean }> {

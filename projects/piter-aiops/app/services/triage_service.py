@@ -331,10 +331,27 @@ def run_follow_up(
         payload = {"answer": answer, "summary_of": card.get("matched_runbook")}
     else:
         memory_used = False
+        # Inline the active incident context: Bedrock agents do not reliably
+        # surface sessionAttributes in the prompt, so a bare "What should I
+        # check first?" would otherwise be answered without incident data.
+        alert = session.get("alert") or card.get("alert") or {}
+        scoped_question = question
+        if isinstance(alert, dict) and alert.get("service"):
+            header = " ".join(
+                str(alert.get(k) or "").strip()
+                for k in ("severity", "service", "environment")
+                if alert.get(k)
+            )
+            symptom = str(alert.get("symptom") or alert.get("description") or "").strip()
+            scoped_question = (
+                f"Active incident: {header}"
+                + (f" — {symptom}" if symptom else "")
+                + f". Operator follow-up question: {question}"
+            )
         try:
-            rag = ask_fn(question, session_id=session_id)
+            rag = ask_fn(scoped_question, session_id=session_id)
         except TypeError:
-            rag = ask_fn(question)
+            rag = ask_fn(scoped_question)
         mode = rag.mode
         payload = {
             "answer": rag.answer,

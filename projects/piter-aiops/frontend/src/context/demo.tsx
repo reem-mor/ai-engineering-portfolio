@@ -121,7 +121,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setPaused(false);
     setWallSec(0);
     setVisible([]);
-    setDecisions([]);
+    setDecisions([
+      {
+        id: "storm-start",
+        at: 0,
+        kind: "group",
+        text: "Alert storm started. Streaming alerts into the agent.",
+      },
+    ]);
     setShowP1Modal(false);
     setP1Shown(false);
     setStormComplete(false);

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, Loader2 } from "lucide-react";
 import { useDemo } from "@/context/demo";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
@@ -34,9 +33,11 @@ export function P1Modal() {
       setStepIndex(-1);
       return;
     }
+    // Walk steps progressively while the backend works; the final step stays
+    // active until the triage response lands.
     setStepIndex(0);
     const timers = P1_ANALYZE_STEPS.map((_, i) =>
-      window.setTimeout(() => setStepIndex(i), i * 400),
+      window.setTimeout(() => setStepIndex(i), i * 900),
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [analyzing]);
@@ -96,30 +97,11 @@ export function P1Modal() {
           ) : null}
 
           {analyzing || done ? (
-            <>
-            <AgentEnrichmentPipeline analyzing={analyzing && !done} stepIndex={stepIndex} response={triageResult} />
-            <ul className="analyze-steps" aria-live="polite">
-              {P1_ANALYZE_STEPS.map((label, i) => {
-                const isDone = stepIndex > i || done;
-                const isActive = analyzing && stepIndex === i;
-                return (
-                  <li
-                    key={label}
-                    className={`analyze-step${isDone ? " done" : ""}${isActive ? " active" : ""}`}
-                  >
-                    {isDone ? (
-                      <Check size={14} />
-                    ) : isActive ? (
-                      <Loader2 size={14} className="btn-spinner" />
-                    ) : (
-                      <Circle size={14} />
-                    )}
-                    {label}
-                  </li>
-                );
-              })}
-            </ul>
-            </>
+            <AgentEnrichmentPipeline
+              analyzing={analyzing && !done}
+              stepIndex={stepIndex}
+              response={triageResult}
+            />
           ) : null}
 
           <div className="p1-modal-actions">

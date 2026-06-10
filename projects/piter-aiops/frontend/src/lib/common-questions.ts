@@ -1,11 +1,10 @@
-/** Demo quick-prompt chips — grounded in KB / incident context when available. */
+/** Demo quick-prompt buttons — mirrors the reference incident chat chips. Each sends a real POST /api/chat. */
 export const COPILOT_COMMON_QUESTIONS = [
   "What should I check first?",
-  "What changed in the last deployment?",
-  "Who should I escalate to?",
-  "Show similar incidents",
-  "Summarize this for my manager",
-  "Create post-mortem draft",
-  "What actions are unsafe to automate?",
-  "What is the rollback recommendation?",
+  "Who should I escalate this to?",
+  "What changed recently?",
+  "Show similar past incidents",
+  "What is the business impact?",
+  "Which runbook should I follow?",
+  "Can I mark this as resolved?",
 ] as const;

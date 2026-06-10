@@ -2,14 +2,14 @@ import { Check, Circle, Loader2 } from "lucide-react";
 import type { ChatResponse } from "@/types/api";
 
 const PIPELINE_STAGES = [
-  { key: "alert", label: "Alert context" },
-  { key: "deploy", label: "Deployments" },
-  { key: "kb", label: "Knowledge base" },
-  { key: "similar", label: "Similar incidents" },
-  { key: "owner", label: "Service ownership" },
-  { key: "actions", label: "Action groups" },
-  { key: "escalation", label: "Escalation policy" },
-  { key: "piter", label: "PITER synthesis" },
+  { key: "alert", label: "Reading incident context…" },
+  { key: "kb", label: "Searching knowledge base…" },
+  { key: "runbook", label: "Retrieving service runbook…" },
+  { key: "deploy", label: "Checking recent deployments…" },
+  { key: "actions", label: "Querying logs through MCP tool…" },
+  { key: "owner", label: "Looking up service owner and escalation policy…" },
+  { key: "similar", label: "Searching similar past incidents…" },
+  { key: "piter", label: "Generating source-grounded action plan…" },
 ] as const;
 
 function stageComplete(response: ChatResponse, key: (typeof PIPELINE_STAGES)[number]["key"]): boolean {
@@ -19,6 +19,8 @@ function stageComplete(response: ChatResponse, key: (typeof PIPELINE_STAGES)[num
     case "deploy":
       return Boolean(response.suspect_deployment);
     case "kb":
+      return Boolean(response.sources?.length || response.matched_runbook);
+    case "runbook":
       return Boolean(response.matched_runbook || response.sources?.length);
     case "similar":
       return Array.isArray(response.similar_incidents) && response.similar_incidents.length > 0;
@@ -26,8 +28,6 @@ function stageComplete(response: ChatResponse, key: (typeof PIPELINE_STAGES)[num
       return Boolean(response.owner?.owner_team || response.owner?.primary_oncall);
     case "actions":
       return Boolean(response.tool_results?.length);
-    case "escalation":
-      return Boolean(response.escalation_policy || response.owner?.escalation_path);
     case "piter":
       return Boolean(response.piter?.priority && response.piter?.investigation);
     default:

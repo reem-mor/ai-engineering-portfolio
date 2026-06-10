@@ -19,12 +19,10 @@ export function SidebarMetrics() {
       });
   }, []);
 
+  // Counts mirror the live storm only — idle shows zeros (matches reference behavior).
   const sev = countSeverities(demoMode ? visible : []);
-  const stream = bootstrap?.alert_stream;
-  const incidents24h = demoMode ? visible.length : (stream?.total ?? 0);
-  const noise = demoMode
-    ? visible.filter((r) => r.is_noise_candidate === "true").length
-    : (stream?.noise_suppressed ?? 0);
+  const incidents24h = demoMode ? visible.length : 0;
+  const noise = demoMode ? visible.filter((r) => r.is_noise_candidate === "true").length : 0;
   const mttr = demoImpact?.mttr_reduction_minutes ?? demoImpact?.escalation_minutes;
 
   return (

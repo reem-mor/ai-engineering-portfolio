@@ -43,23 +43,34 @@ export function deriveDecisions(
       id: `noise-${wallSec}`,
       at: wallSec,
       kind: "noise",
-      text: `Suppressed ${noise.length} noise candidate${noise.length > 1 ? "s" : ""}`,
+      text: `Suppressed ${noise.length} duplicate alert${noise.length > 1 ? "s" : ""} (rolling window).`,
     });
   }
-  const groups = new Map<string, number>();
+  const groups = new Map<string, { count: number; service: string; title: string }>();
   for (const r of added) {
     const key = r.correlation_id || `${r.environment}:${r.service}`;
-    groups.set(key, (groups.get(key) || 0) + 1);
+    const g = groups.get(key) || { count: 0, service: r.service, title: r.title };
+    g.count += 1;
+    groups.set(key, g);
   }
-  for (const [key, count] of groups) {
-    if (count > 1) {
+  for (const [key, g] of groups) {
+    if (g.count > 1) {
       next.push({
         id: `grp-${key}-${wallSec}`,
         at: wallSec,
         kind: "group",
-        text: `Grouped ${count} alerts on ${key.split(":").pop() || key}`,
+        text: `Grouping ${g.count} ${g.service} alerts by service, time window, environment, error signature.`,
       });
     }
+  }
+  const noisePattern = noise.find((r) => r.service && r.title);
+  if (noisePattern && noise.length >= 3) {
+    next.push({
+      id: `pattern-${wallSec}`,
+      at: wallSec,
+      kind: "noise",
+      text: `Noise pattern detected: ${noisePattern.service} ${noisePattern.title}.`,
+    });
   }
   const p1 = added.find((r) => r.is_trigger === "true" || r.severity === "P1");
   if (p1) {
@@ -67,7 +78,7 @@ export function deriveDecisions(
       id: `p1-${p1.alert_id}`,
       at: wallSec,
       kind: "p1",
-      text: `P1 candidate: ${p1.service} @ ${p1.environment} — ${p1.title}`,
+      text: `P1 candidate detected: ${p1.title} — ${p1.service}.`,
     });
   }
   return next.slice(-40);

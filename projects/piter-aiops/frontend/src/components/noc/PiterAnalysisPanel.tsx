@@ -1,5 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { ChatResponse } from "@/types/api";
+import { useChatDock } from "@/context/chat-dock";
+import { postIncidentStatus } from "@/lib/api-contract";
+import { Button } from "@/components/ui/Button";
+import { EscalationModal } from "@/components/demo/EscalationModal";
 import { parsePiterSection } from "@/lib/piter-format";
 import { ConfidenceIndicator } from "./ConfidenceIndicator";
 import { IncidentTimeline } from "./IncidentTimeline";
@@ -83,6 +87,9 @@ export function PiterAnalysisPanel({
   response: ChatResponse;
   onFollowUp?: (question: string) => void;
 }) {
+  const { openWith } = useChatDock();
+  const [incidentStatus, setIncidentStatus] = useState<"open" | "in_process" | "resolved">("open");
+  const [showEscalation, setShowEscalation] = useState(false);
   const piter = response.piter;
   const followups = response.recommended_followups || response.next_questions || [];
   const investigationLines = parsePiterSection(piter?.investigation || response.answer);
@@ -91,6 +98,33 @@ export function PiterAnalysisPanel({
   const triageSteps = response.recommended_steps?.length
     ? response.recommended_steps
     : parsePiterSection(piter?.triage);
+
+  const alertService = response.alert?.service ? String(response.alert.service) : null;
+  const dep = (response.suspect_deployment || null) as Record<string, unknown> | null;
+  const recentDeployment = dep
+    ? [dep.version ? String(dep.version) : null, dep.deployed_at ? `(${String(dep.deployed_at)})` : null]
+        .filter(Boolean)
+        .join(" ") || null
+    : null;
+  const similarFirst =
+    Array.isArray(response.similar_incidents) && response.similar_incidents.length > 0
+      ? String(
+          (response.similar_incidents[0] as Record<string, unknown>).incident_id ||
+            (response.similar_incidents[0] as Record<string, unknown>).id ||
+            "",
+        ) || null
+      : null;
+  const incidentId = response.alert?.incident_candidate_id
+    ? String(response.alert.incident_candidate_id)
+    : response.alert?.alert_id
+      ? `INC-${String(response.alert.alert_id)}`
+      : "INC-001";
+
+  const updateStatus = (status: "in_process" | "resolved") => {
+    setIncidentStatus(status);
+    // Persist operator action server-side.
+    void postIncidentStatus(incidentId, status).catch(() => {});
+  };
 
   return (
     <div className="grid-stack piter-response" id="piter-analysis-panel">
@@ -120,6 +154,21 @@ export function PiterAnalysisPanel({
       <SafetyGuardrail previewOnly={response.escalation_policy?.safe_preview_only === true} />
 
       <AgentEnrichmentPipeline response={response} />
+
+      <Card variant="elevated">
+        <CardContent>
+          <FieldGrid
+            fields={[
+              { label: "Affected service", value: alertService },
+              { label: "Recommended priority", value: piter?.priority || response.priority },
+              { label: "Recent deployment", value: recentDeployment },
+              { label: "Similar past incident", value: similarFirst },
+              { label: "Matched runbook", value: response.matched_runbook },
+              { label: "Confidence", value: response.confidence },
+            ]}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader title="Priority" />
@@ -252,6 +301,44 @@ export function PiterAnalysisPanel({
             <ToolResultPanel key={i} data={t.result} title={t.name} />
           ))}
         </section>
+      ) : null}
+
+      <div className="analysis-footer-actions">
+        {incidentStatus === "in_process" ? <span className="pill pill-warning">In process</span> : null}
+        {incidentStatus === "resolved" ? <span className="pill pill-success">Resolved</span> : null}
+        {incidentStatus === "open" ? (
+          <Button variant="secondary" onClick={() => updateStatus("in_process")}>
+            Mark In Process
+          </Button>
+        ) : null}
+        <Button variant="primary" onClick={() => setShowEscalation(true)}>
+          Escalate On-Call
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() =>
+            openWith({
+              message: "What should I check next for this P1 incident?",
+              sessionId: response.memory?.session_id || response.session_id,
+            })
+          }
+        >
+          Open Incident Chat
+        </Button>
+        {incidentStatus !== "resolved" ? (
+          <Button variant="secondary" onClick={() => updateStatus("resolved")}>
+            Mark Resolved
+          </Button>
+        ) : null}
+      </div>
+
+      {showEscalation ? (
+        <EscalationModal
+          incidentId={incidentId}
+          service={alertService || "service"}
+          severity={piter?.priority || response.priority || "P1"}
+          onClose={() => setShowEscalation(false)}
+        />
       ) : null}
     </div>
   );

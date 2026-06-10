@@ -24,9 +24,9 @@ export function DocumentUploadPanel({ compact = false }: { compact?: boolean }) 
       const result = await uploadDocument(file, syncKb);
       const syncNote = result.sync_started
         ? result.ingestion_job_id
-          ? `KB sync job ${result.ingestion_job_id}`
-          : "KB sync started"
-        : "Stored in S3 (KB sync skipped)";
+          ? `Synced to Bedrock Knowledge Base (job ${result.ingestion_job_id})`
+          : "Synced to Bedrock Knowledge Base"
+        : "Uploaded to local project knowledge base — Bedrock sync required";
       setStatus(`${result.filename} uploaded · ${syncNote}`);
       if (result.sync_warning) {
         setStatus(`${result.filename} uploaded · ${result.sync_warning}`);

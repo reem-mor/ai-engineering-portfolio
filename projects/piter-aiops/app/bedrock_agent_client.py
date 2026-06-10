@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 # Deployed agent instructions live in infra/bedrock_agent_instructions.txt (AWS console).
 # This constant is documentation-only; invoke_agent does not send it at runtime.
-AGENT_INSTRUCTION = """You are PITER AiOps, an enterprise Site Reliability Engineering assistant for regulated betting platforms.
+AGENT_INSTRUCTION = """You are PITER Ops, an enterprise Site Reliability Engineering assistant for regulated betting platforms.
 
 Mandatory workflow (always in this order):
 1. Priority — classify P1–P4 using severity policy and business impact evidence.

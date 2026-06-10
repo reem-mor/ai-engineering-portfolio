@@ -1,65 +1,114 @@
-# PITER AiOps
+<div align="center">
 
-**AI-powered incident response for regulated betting and enterprise production operations.**
+# 🛰️ PITER AiOps
+
+### AI-powered incident response for regulated betting & enterprise production operations
+
+**P**riority · **I**nvestigation · **T**riage · **E**scalation · **R**esolution
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.x-black?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=white)](frontend/)
-[![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-Agent-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/bedrock/)
+[![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)](frontend/)
+[![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-Agent_%2B_KB-FF9900?logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/bedrock/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![Tests](https://img.shields.io/badge/Tests-279_passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-279_passing-brightgreen?logo=pytest&logoColor=white)](tests/)
+[![License](https://img.shields.io/badge/Course-Amdocs_AI--Augmented_SE-purple)](#license-and-course-context)
 
-| | |
+<br>
+
+### 🔴 Live Demo (EC2 — public)
+
+| 🌐 Surface | Link |
 |---|---|
-| **Live demo** | http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/ |
-| **Live KB chat** | http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#live-kb |
-| **MVP triage flow** | http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#mvp |
-| **Local Docker** | http://localhost:8080/ (offline mode by default) |
+| **Ops Console (full demo)** | **[http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/](http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/)** |
+| **Live KB Chat** | [http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#live-kb](http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#live-kb) |
+| **MVP triage flow** | [http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#mvp](http://ec2-3-235-22-143.compute-1.amazonaws.com:8080/#mvp) |
+| Local Docker | http://localhost:8080/ (offline mode by default) |
+
+<br>
+
+<img src="docs/diagrams/piter_architecture.png" alt="PITER AiOps system architecture — React SPA → Flask API → Bedrock Agent + Knowledge Base + 4 Action Group Lambdas" width="900">
+
+*Full system architecture — [open the editable diagram in Eraser](https://app.eraser.io/workspace/k7BPJorv6ubjEktGOH3u)*
+
+</div>
 
 > [!IMPORTANT]
 > Escalation is **preview-only by default** — no auto-SMS or email unless `PITER_ENABLE_LIVE_DISPATCH=true` and notification channels are explicitly configured.
 
-### 2-hour quick start
+---
+
+## ⚡ 2-hour quick start
 
 ```powershell
 cd projects/piter-aiops
 py -3.12 -m pip install -r requirements-dev.txt
-py -3.12 -m pytest -q
+py -3.12 -m pytest -q                       # 279 passing
 cd frontend; npm ci; npm run build; cd ..
 docker compose up --build -d
 # http://localhost:8080/ → Start Alert Stream → P1 at ~20s → Analyze P1 Incident
-# cd frontend; npm run test:e2e   # Playwright demo path (server must be up)
+# cd frontend; npm run test:e2e             # Playwright demo path (server must be up)
 ```
 
-Demo walkthrough: [`docs/demo_script.md`](docs/demo_script.md) · Deploy: [`docs/deployment.md`](docs/deployment.md)
+📖 Demo walkthrough: [`docs/demo_script.md`](docs/demo_script.md) · 🚀 Deploy: [`docs/deployment.md`](docs/deployment.md)
 
 ---
 
-## Table of contents
+## 📑 Table of contents
 
-- [What is PITER AiOps?](#what-is-piter-aiops)
-- [Business value: MTTR, KPIs, and ROI](#business-value-mttr-kpis-and-roi)
-- [Problem and solution](#problem-and-solution)
-- [System architecture](#system-architecture)
-- [Agent instructions (system prompt)](#agent-instructions-system-prompt)
-- [Bedrock Knowledge Base](#bedrock-knowledge-base)
-- [Action Groups and Lambda functions](#action-groups-and-lambda-functions)
-- [boto3 integration](#boto3-integration)
-- [Use cases: input and output](#use-cases-input-and-output)
-- [Error handling and safety](#error-handling-and-safety)
-- [UI and UX](#ui-and-ux)
-- [Backend and API](#backend-and-api)
-- [MCP integrations](#mcp-integrations)
-- [Cursor skills used](#cursor-skills-used)
-- [Testing evidence](#testing-evidence)
-- [Challenges faced](#challenges-faced)
-- [Next steps and product vision](#next-steps-and-product-vision)
-- [Quick start](#quick-start)
-- [Documentation index](#documentation-index)
+- [🛰️ PITER AiOps](#️-piter-aiops)
+    - [AI-powered incident response for regulated betting \& enterprise production operations](#ai-powered-incident-response-for-regulated-betting--enterprise-production-operations)
+    - [🔴 Live Demo (EC2 — public)](#-live-demo-ec2--public)
+  - [⚡ 2-hour quick start](#-2-hour-quick-start)
+  - [📑 Table of contents](#-table-of-contents)
+  - [🎯 What is PITER AiOps?](#-what-is-piter-aiops)
+    - [What this project demonstrates](#what-this-project-demonstrates)
+  - [🖥️ Demo gallery](#️-demo-gallery)
+  - [📈 Business value: MTTR, KPIs, and ROI](#-business-value-mttr-kpis-and-roi)
+    - [Mean time to resolution (MTTR)](#mean-time-to-resolution-mttr)
+    - [Key performance indicators (KPIs)](#key-performance-indicators-kpis)
+    - [Return on investment (ROI)](#return-on-investment-roi)
+  - [🧩 Problem and solution](#-problem-and-solution)
+  - [🏗️ System architecture](#️-system-architecture)
+    - [High-level containers](#high-level-containers)
+    - [Request flow (sequence)](#request-flow-sequence)
+    - [Data split (single source of truth)](#data-split-single-source-of-truth)
+  - [🤖 Agent instructions (system prompt)](#-agent-instructions-system-prompt)
+    - [Session attributes](#session-attributes)
+  - [📚 Bedrock Knowledge Base](#-bedrock-knowledge-base)
+  - [⚡ Action Groups and Lambda functions](#-action-groups-and-lambda-functions)
+  - [🐍 boto3 integration](#-boto3-integration)
+  - [💬 Use cases: input and output](#-use-cases-input-and-output)
+    - [1. Knowledge Base Q\&A](#1-knowledge-base-qa)
+    - [2. Alert triage / incident analysis](#2-alert-triage--incident-analysis)
+    - [3. Follow-up with session memory](#3-follow-up-with-session-memory)
+  - [🛡️ Error handling and safety](#️-error-handling-and-safety)
+  - [🎨 UI and UX](#-ui-and-ux)
+  - [🔌 Backend and API](#-backend-and-api)
+    - [Endpoints](#endpoints)
+  - [🔗 MCP integrations](#-mcp-integrations)
+    - [A. Project-local MCP server](#a-project-local-mcp-server)
+    - [B. Cursor / course MCP servers (development)](#b-cursor--course-mcp-servers-development)
+  - [🧰 Cursor skills used](#-cursor-skills-used)
+  - [✅ Testing evidence](#-testing-evidence)
+  - [🧗 Challenges faced](#-challenges-faced)
+  - [🚀 Next steps and product vision](#-next-steps-and-product-vision)
+    - [Near-term (course → production pilot)](#near-term-course--production-pilot)
+    - [Vision — PITER Ops 1.0](#vision--piter-ops-10)
+  - [🏁 Quick start (full)](#-quick-start-full)
+    - [1. Install and test](#1-install-and-test)
+    - [2. Build frontend](#2-build-frontend)
+    - [3. Run with Docker (offline by default)](#3-run-with-docker-offline-by-default)
+    - [4. Enable Bedrock (optional)](#4-enable-bedrock-optional)
+    - [5. Sync Knowledge Base](#5-sync-knowledge-base)
+    - [6. Validate data](#6-validate-data)
+    - [7. Pre-demo checklist](#7-pre-demo-checklist)
+  - [📖 Documentation index](#-documentation-index)
+  - [License and course context](#license-and-course-context)
 
 ---
 
-## What is PITER AiOps?
+## 🎯 What is PITER AiOps?
 
 PITER AiOps is an AI incident-response assistant for **NOC, DevOps, SRE, and production operations** teams. It combines Amazon Bedrock Agent orchestration, Knowledge Base RAG, structured operational tools, and a React ops console so on-call engineers get **grounded, cited triage guidance in seconds** instead of hunting runbooks under alert pressure.
 
@@ -67,11 +116,11 @@ PITER AiOps is an AI incident-response assistant for **NOC, DevOps, SRE, and pro
 
 | Stage | Meaning |
 |-------|---------|
-| **P**riority | Classify P1–P4 using severity policy, alert context, and business impact evidence |
-| **I**nvestigation | Use KB citations and Action Group tool results only — never invent facts |
-| **T**riage | Ordered, reversible steps first; cite the runbook for each step |
-| **E**scalation | When P1–P3 or regulatory exposure; name the on-call path from policy |
-| **R**esolution | Validation checks, safe recovery path, and post-incident follow-up |
+| 🔢 **P**riority | Classify P1–P4 using severity policy, alert context, and business impact evidence |
+| 🔍 **I**nvestigation | Use KB citations and Action Group tool results only — never invent facts |
+| 🩺 **T**riage | Ordered, reversible steps first; cite the runbook for each step |
+| 📟 **E**scalation | When P1–P3 or regulatory exposure; name the on-call path from policy |
+| ✅ **R**esolution | Validation checks, safe recovery path, and post-incident follow-up |
 
 ### What this project demonstrates
 
@@ -87,7 +136,46 @@ PITER AiOps is an AI incident-response assistant for **NOC, DevOps, SRE, and pro
 
 ---
 
-## Business value: MTTR, KPIs, and ROI
+## 🖥️ Demo gallery
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/final/01_dashboard.png" alt="Dashboard with KPI tiles" width="420"><br><sub><b>Dashboard — KPI tiles</b></sub></td>
+    <td align="center"><img src="screenshots/final/03_alert_storm_running.png" alt="Live alert storm streaming" width="420"><br><sub><b>Alert storm — ~400 streaming alerts</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/final/04_p1_detected.png" alt="P1 incident detected" width="420"><br><sub><b>P1 detected — wallet-service</b></sub></td>
+    <td align="center"><img src="screenshots/final/05_investigation_detail_triage.png" alt="Triage card with PITER fields" width="420"><br><sub><b>Investigation — structured PITER triage</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/final/06_rag_citations.png" alt="RAG answer with KB citations" width="420"><br><sub><b>Grounded answer — KB citations</b></sub></td>
+    <td align="center"><img src="screenshots/final/09_escalation_preview.png" alt="Escalation preview modal" width="420"><br><sub><b>Escalation preview — no auto-send</b></sub></td>
+  </tr>
+</table>
+
+<details>
+<summary><strong>📸 All screenshots (click to expand)</strong></summary>
+
+| View | Screenshot |
+|------|------------|
+| Dashboard | [screenshots/final/01_dashboard.png](screenshots/final/01_dashboard.png) |
+| Alert storm | [screenshots/final/03_alert_storm_running.png](screenshots/final/03_alert_storm_running.png) |
+| P1 detected | [screenshots/final/04_p1_detected.png](screenshots/final/04_p1_detected.png) |
+| Investigation / triage | [screenshots/final/05_investigation_detail_triage.png](screenshots/final/05_investigation_detail_triage.png) |
+| RAG citations | [screenshots/final/06_rag_citations.png](screenshots/final/06_rag_citations.png) |
+| Lambda / MCP tools | [screenshots/final/07_lambda_mcp_tools.png](screenshots/final/07_lambda_mcp_tools.png) |
+| Memory / follow-up | [screenshots/final/08_memory_followup_context.png](screenshots/final/08_memory_followup_context.png) |
+| Escalation preview | [screenshots/final/09_escalation_preview.png](screenshots/final/09_escalation_preview.png) |
+| Knowledge base | [screenshots/final/11_knowledge_base.png](screenshots/final/11_knowledge_base.png) |
+| Architecture / settings | [screenshots/final/13_architecture_settings.png](screenshots/final/13_architecture_settings.png) |
+| Tests passing | [screenshots/final/14_tests_passing.png](screenshots/final/14_tests_passing.png) |
+| Live demo checks | [screenshots/final/14b_live_demo_checks.png](screenshots/final/14b_live_demo_checks.png) |
+
+</details>
+
+---
+
+## 📈 Business value: MTTR, KPIs, and ROI
 
 ### Mean time to resolution (MTTR)
 
@@ -122,62 +210,76 @@ Demo business-impact data ([`data/source/business_impact.json`](data/source/busi
 
 ---
 
-## Problem and solution
+## 🧩 Problem and solution
 
 | | |
 |---|---|
-| **The problem** | Alerts fire 24/7. Engineers spend critical minutes hunting runbooks, past tickets, and post-mortems — pure business impact while severity climbs. |
-| **The idea** | Feed runbooks, alert histories, and post-mortems into a Bedrock Knowledge Base. When an alert hits, ask a question and get a **grounded, cited answer in seconds**. |
-| **Why it matters** | Lower MTTR, less tribal knowledge, faster onboarding for new on-call. Same RAG pattern enterprises use for internal SRE assistants and support copilots. |
+| 🔥 **The problem** | Alerts fire 24/7. Engineers spend critical minutes hunting runbooks, past tickets, and post-mortems — pure business impact while severity climbs. |
+| 💡 **The idea** | Feed runbooks, alert histories, and post-mortems into a Bedrock Knowledge Base. When an alert hits, ask a question and get a **grounded, cited answer in seconds**. |
+| 🎯 **Why it matters** | Lower MTTR, less tribal knowledge, faster onboarding for new on-call. Same RAG pattern enterprises use for internal SRE assistants and support copilots. |
 
 **Solution stack:** Bedrock Agent + KB RAG + four enrichment Action Groups + safe escalation preview + React ops console + local fallback for offline demos.
 
 ---
 
-## System architecture
+## 🏗️ System architecture
+
+> 🖼️ **Hero diagram:** [`docs/diagrams/piter_architecture.png`](docs/diagrams/piter_architecture.png) (top of this README) · [Editable source in Eraser](https://app.eraser.io/workspace/k7BPJorv6ubjEktGOH3u) · Full doc: [`docs/architecture.md`](docs/architecture.md)
 
 ### High-level containers
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0b1220','primaryTextColor':'#e2e8f0','primaryBorderColor':'#22d3ee','lineColor':'#94a3b8','clusterBkg':'#0b1220','clusterBorder':'#334155','edgeLabelBackground':'#0b1220','tertiaryTextColor':'#e2e8f0'}}}%%
 flowchart LR
-  subgraph client [Operator]
-    SPA[React SPA]
+  subgraph client ["🧑‍💻 Operator"]
+    SPA["React SPA<br/><i>dark NOC console</i>"]
   end
-  subgraph app [PITER App EC2 or Docker]
-    Flask[Flask API]
-    LocalRAG[Local TF-IDF fallback]
-    Tools[Enrichment tools]
+  subgraph app ["🐳 PITER App — EC2 / Docker"]
+    Flask["Flask API<br/><i>Gunicorn</i>"]
+    LocalRAG["Local TF-IDF<br/>fallback"]
+    Tools["Enrichment tools<br/><i>shared Python logic</i>"]
   end
-  subgraph aws [AWS Bedrock]
-    Agent[Bedrock Agent]
-    KB[Knowledge Base]
-    Lambdas[Action Group Lambdas]
-    S3[S3 KB corpus]
+  subgraph aws ["☁️ AWS Bedrock — us-east-1"]
+    Agent["Bedrock Agent<br/><i>Nova Lite</i>"]
+    KB["Knowledge Base<br/><i>S3 Vectors RAG</i>"]
+    Lambdas["4× Action Group<br/>Lambdas"]
+    S3[("S3 KB corpus")]
   end
-  SPA --> Flask
-  Flask --> Agent
-  Flask --> LocalRAG
-  Agent --> KB
-  Agent --> Lambdas
-  KB --> S3
+  SPA -->|"REST"| Flask
+  Flask -->|"invoke_agent (boto3)"| Agent
+  Flask -.->|"offline mode"| LocalRAG
+  Agent -->|"retrieve + cite"| KB
+  Agent -->|"enrich"| Lambdas
+  KB --- S3
   Lambdas --> Tools
+
+  classDef clientStyle fill:#083344,stroke:#22d3ee,stroke-width:2px,color:#cffafe
+  classDef appStyle fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#ede9fe
+  classDef awsStyle fill:#431407,stroke:#fb923c,stroke-width:2px,color:#ffedd5
+  classDef dataStyle fill:#052e16,stroke:#4ade80,stroke-width:2px,color:#dcfce7
+  class SPA clientStyle
+  class Flask,LocalRAG,Tools appStyle
+  class Agent,KB,Lambdas awsStyle
+  class S3 dataStyle
 ```
 
 ### Request flow (sequence)
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#1e1b4b','primaryTextColor':'#ede9fe','primaryBorderColor':'#8b5cf6','actorBkg':'#0b1220','actorBorder':'#22d3ee','actorTextColor':'#e2e8f0','signalColor':'#94a3b8','signalTextColor':'#cbd5e1','sequenceNumberColor':'#0b1220','labelBoxBkgColor':'#083344','labelBoxBorderColor':'#22d3ee','labelTextColor':'#cffafe','loopTextColor':'#cffafe','noteBkgColor':'#431407','noteBorderColor':'#fb923c','noteTextColor':'#ffedd5'}}}%%
 sequenceDiagram
-  participant Op as Operator
+  autonumber
+  participant Op as 🧑‍💻 Operator
   participant UI as React SPA
   participant API as Flask API
-  participant BR as Bedrock Agent
-  participant KB as Knowledge Base
-  participant AG as Action Groups
-  participant Data as data/source
+  participant BR as 🤖 Bedrock Agent
+  participant KB as 📚 Knowledge Base
+  participant AG as ⚡ Action Groups
+  participant Data as 🗄️ data/source
 
   Op->>UI: Alert storm / chat / triage
   UI->>API: POST /api/triage or /api/chat
-  API->>API: Validate input and guardrails
+  API->>API: Validate input + guardrails
   alt PITER_USE_BEDROCK=true
     API->>BR: invoke_agent via boto3
     BR->>KB: Retrieve runbooks and guides
@@ -185,36 +287,45 @@ sequenceDiagram
     AG->>Data: deploys, owners, incidents, policies
     AG-->>BR: Structured JSON results
     KB-->>BR: Citations
-    BR-->>API: Streamed answer and trace
+    BR-->>API: Streamed answer + trace
   else Fallback enabled
     API->>API: Local TF-IDF over knowledge_base/
   end
   API->>API: Normalize PITER response
   API-->>UI: priority, triage, sources, tool_results, memory
-  UI-->>Op: Enrichment panels and citations
+  UI-->>Op: Enrichment panels + citations
+  Note over BR,AG: Every step grounded —<br/>no invented facts
 ```
 
 ### Data split (single source of truth)
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0b1220','primaryTextColor':'#e2e8f0','primaryBorderColor':'#22d3ee','lineColor':'#94a3b8','clusterBkg':'#0b1220','clusterBorder':'#334155'}}}%%
 flowchart TB
-  subgraph kb [Knowledge Base S3 and local corpus]
-    RB[runbooks JSON]
-    INC[incidents JSON]
-    SVC[services JSON]
-    PITER[piter guides JSON]
+  subgraph kb ["📚 Knowledge Base — S3 + local corpus (procedural text)"]
+    RB["runbooks<br/>JSON"]
+    INC["incidents<br/>JSON"]
+    SVC["services<br/>JSON"]
+    PITER["PITER guides<br/>JSON"]
   end
-  subgraph structured [Structured data Action Groups only]
-    DEP[deploys.csv]
-    OWN[service_owners.csv]
-    PAST[past_incidents.csv]
-    ESC[escalation_policies.json]
-    BI[business_impact.json]
+  subgraph structured ["🗄️ Structured data — Action Groups only (numeric/tabular)"]
+    DEP["deploys.csv"]
+    OWN["service_owners.csv"]
+    PAST["past_incidents.csv"]
+    ESC["escalation_policies.json"]
+    BI["business_impact.json"]
   end
-  Agent[Bedrock Agent] --> kb
-  Agent --> structured
-  Flask[Flask enrichment_tools] --> structured
-  MCP[MCP server] --> structured
+  Agent["🤖 Bedrock Agent"] -->|"RAG citations"| kb
+  Agent -->|"tool calls"| structured
+  Flask["Flask enrichment_tools"] --> structured
+  MCP["MCP server"] --> structured
+
+  classDef kbStyle fill:#083344,stroke:#22d3ee,stroke-width:2px,color:#cffafe
+  classDef structStyle fill:#052e16,stroke:#4ade80,stroke-width:2px,color:#dcfce7
+  classDef hubStyle fill:#431407,stroke:#fb923c,stroke-width:2px,color:#ffedd5
+  class RB,INC,SVC,PITER kbStyle
+  class DEP,OWN,PAST,ESC,BI structStyle
+  class Agent,Flask,MCP hubStyle
 ```
 
 | Layer | Location | Used for |
@@ -223,28 +334,9 @@ flowchart TB
 | Numeric / tabular ops data | [`data/source/`](data/source/) | Deploy correlation, owners, MTTR, escalation scores |
 | Index | [`knowledge_base/structured_data_index.json`](knowledge_base/structured_data_index.json) | Maps tools to datasets — no duplicate tables in KB |
 
-See also [`docs/architecture.md`](docs/architecture.md).
-
-### Screenshot gallery
-
-| View | Screenshot |
-|------|------------|
-| Dashboard | [screenshots/final/01_dashboard.png](screenshots/final/01_dashboard.png) |
-| Alert storm | [screenshots/final/03_alert_storm_running.png](screenshots/final/03_alert_storm_running.png) |
-| P1 detected | [screenshots/final/04_p1_detected.png](screenshots/final/04_p1_detected.png) |
-| Investigation / triage | [screenshots/final/05_investigation_detail_triage.png](screenshots/final/05_investigation_detail_triage.png) |
-| RAG citations | [screenshots/final/06_rag_citations.png](screenshots/final/06_rag_citations.png) |
-| Lambda / MCP tools | [screenshots/final/07_lambda_mcp_tools.png](screenshots/final/07_lambda_mcp_tools.png) |
-| Memory / follow-up | [screenshots/final/08_memory_followup_context.png](screenshots/final/08_memory_followup_context.png) |
-| Escalation preview | [screenshots/final/09_escalation_preview.png](screenshots/final/09_escalation_preview.png) |
-| Knowledge base | [screenshots/final/11_knowledge_base.png](screenshots/final/11_knowledge_base.png) |
-| Architecture / settings | [screenshots/final/13_architecture_settings.png](screenshots/final/13_architecture_settings.png) |
-| Tests passing | [screenshots/final/14_tests_passing.png](screenshots/final/14_tests_passing.png) |
-| Live demo checks | [screenshots/final/14b_live_demo_checks.png](screenshots/final/14b_live_demo_checks.png) |
-
 ---
 
-## Agent instructions (system prompt)
+## 🤖 Agent instructions (system prompt)
 
 The Bedrock Agent system prompt lives in [`infra/bedrock_agent_instructions.txt`](infra/bedrock_agent_instructions.txt) (console) and is mirrored at runtime in [`app/bedrock_agent_client.py`](app/bedrock_agent_client.py) (`AGENT_INSTRUCTION`).
 
@@ -305,7 +397,7 @@ Built by [`build_session_attributes()`](app/bedrock_agent_client.py) and passed 
 
 ---
 
-## Bedrock Knowledge Base
+## 📚 Bedrock Knowledge Base
 
 | Topic | Detail |
 |-------|--------|
@@ -333,9 +425,29 @@ python scripts/kb_smoke_test.py
 
 ---
 
-## Action Groups and Lambda functions
+## ⚡ Action Groups and Lambda functions
 
 Four Bedrock Action Groups call Lambda handlers that **reuse the same Python logic** as Flask enrichment and the local MCP server ([`app/enrichment_tools.py`](app/enrichment_tools.py)) — no duplicate business rules.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0b1220','primaryTextColor':'#e2e8f0','primaryBorderColor':'#22d3ee','lineColor':'#94a3b8','clusterBkg':'#0b1220','clusterBorder':'#334155'}}}%%
+flowchart LR
+  Agent["🤖 Bedrock Agent"] --> D & C & S & E
+  D["⚡ piter-recent-deployments"] -->|reads| D1[("deploys.csv")]
+  C["⚡ piter-service-context"] -->|reads| C1[("service_owners.csv<br/>business_impact.json")]
+  S["⚡ piter-similar-incidents"] -->|reads| S1[("past_incidents.csv")]
+  E["⚡ piter-escalation"] -->|reads| E1[("escalation_policies.json<br/>priority_matrix.json")]
+  E -.->|"preview only"| SNS["📨 SNS / SES"]
+
+  classDef agentStyle fill:#431407,stroke:#fb923c,stroke-width:2px,color:#ffedd5
+  classDef lambdaStyle fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#ede9fe
+  classDef dataStyle fill:#052e16,stroke:#4ade80,stroke-width:2px,color:#dcfce7
+  classDef notifyStyle fill:#3f1d2b,stroke:#f43f5e,stroke-width:2px,color:#ffe4e6
+  class Agent agentStyle
+  class D,C,S,E lambdaStyle
+  class D1,C1,S1,E1 dataStyle
+  class SNS notifyStyle
+```
 
 | Action group | Lambda | Data source | Purpose |
 |--------------|--------|-------------|---------|
@@ -355,7 +467,7 @@ Each group has an OpenAPI schema under its action group folder. Deploy with:
 
 ---
 
-## boto3 integration
+## 🐍 boto3 integration
 
 | Client | Service | Used in | Calls |
 |--------|---------|---------|-------|
@@ -374,14 +486,14 @@ Each group has an OpenAPI schema under its action group folder. Deploy with:
 
 | Mode | Config | Behavior |
 |------|--------|----------|
-| Bedrock Agent | `PITER_USE_BEDROCK=true`, `RAG_BACKEND=agent` | Full agent + tools + KB |
-| Direct KB RAG | `RAG_BACKEND=retrieve_and_generate` | KB-only retrieve-and-generate |
-| Local demo | `PITER_USE_BEDROCK=false` | TF-IDF over local corpus |
-| Docker default | `PITER_DOCKER_USE_BEDROCK=false` | Offline unless opted in |
+| 🟢 Bedrock Agent | `PITER_USE_BEDROCK=true`, `RAG_BACKEND=agent` | Full agent + tools + KB |
+| 🔵 Direct KB RAG | `RAG_BACKEND=retrieve_and_generate` | KB-only retrieve-and-generate |
+| 🟡 Local demo | `PITER_USE_BEDROCK=false` | TF-IDF over local corpus |
+| ⚪ Docker default | `PITER_DOCKER_USE_BEDROCK=false` | Offline unless opted in |
 
 ---
 
-## Use cases: input and output
+## 💬 Use cases: input and output
 
 Acceptable answers must satisfy [`evaluation/expected_answer_checklist.md`](evaluation/expected_answer_checklist.md): structured `piter` object, business impact, next action, sources, tool results when applicable, memory, no raw stack traces.
 
@@ -483,7 +595,7 @@ Presenter flow: [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
 
-## Error handling and safety
+## 🛡️ Error handling and safety
 
 | Layer | Mechanism | Location |
 |-------|-----------|----------|
@@ -501,7 +613,7 @@ Presenter flow: [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
 
-## UI and UX
+## 🎨 UI and UX
 
 **Stack:** React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui ([`frontend/`](frontend/))
 
@@ -509,15 +621,15 @@ Presenter flow: [`docs/demo_script.md`](docs/demo_script.md)
 
 | Nav | Purpose |
 |-----|---------|
-| Alert Storm | Live alert stream, P1 candidate detection, one-click triage |
-| Dashboard | Session KPI tiles (MTTR reduced, incidents triaged — demo metrics) |
-| Investigations | Incident queue and triage cards |
-| Live KB Chat | Free-form RAG Q&A with citations |
-| Memory | Session context and follow-up flow visualization |
-| Knowledge Base | KB manifest browser and document upload |
-| Tools / MCP | Enrichment pipeline and tool call status |
-| Architecture | System diagram and AWS status |
-| Settings | Runtime mode, AWS connectivity, notification mode |
+| 🌩️ Alert Storm | Live alert stream, P1 candidate detection, one-click triage |
+| 📊 Dashboard | Session KPI tiles (MTTR reduced, incidents triaged — demo metrics) |
+| 🔍 Investigations | Incident queue and triage cards |
+| 💬 Live KB Chat | Free-form RAG Q&A with citations |
+| 🧠 Memory | Session context and follow-up flow visualization |
+| 📚 Knowledge Base | KB manifest browser and document upload |
+| 🛠️ Tools / MCP | Enrichment pipeline and tool call status |
+| 🏗️ Architecture | System diagram and AWS status |
+| ⚙️ Settings | Runtime mode, AWS connectivity, notification mode |
 
 **UX patterns:**
 
@@ -534,7 +646,7 @@ Legacy Flask templates remain for `/console` and HTMX workflow paths.
 
 ---
 
-## Backend and API
+## 🔌 Backend and API
 
 **Stack:** Flask blueprint [`app/routes.py`](app/routes.py) · services layer · Gunicorn in Docker [`Dockerfile`](Dockerfile) · [`docker-compose.yml`](docker-compose.yml)
 
@@ -573,7 +685,7 @@ Full contract: [`docs/api_contract.md`](docs/api_contract.md)
 
 ---
 
-## MCP integrations
+## 🔗 MCP integrations
 
 ### A. Project-local MCP server
 
@@ -607,7 +719,7 @@ Same contracts as Bedrock Action Groups — single source of truth in [`app/enri
 
 ---
 
-## Cursor skills used
+## 🧰 Cursor skills used
 
 Skills invoked via Cursor Agent during this project:
 
@@ -621,16 +733,20 @@ Skills invoked via Cursor Agent during this project:
 
 ---
 
-## Testing evidence
+## ✅ Testing evidence
 
 | Suite | Result | Scope |
 |-------|--------|-------|
-| `py -3.12 -m pytest -q` | **279 passed** | Routes, agent client, lambdas, MCP, guardrails, RAG |
-| `scripts/agent_smoke_test.py` | **6/6 PASS** | Live Bedrock grounding ([`evaluation/agent_smoke_results.md`](evaluation/agent_smoke_results.md)) |
-| `scripts/verify_credentials.py` | OK | AWS auth |
-| `scripts/verify_live_demo.py` | PASS on EC2 | End-to-end public demo |
-| `frontend npm run build` + lint | Build OK | SPA production bundle |
-| Manual scorecard | Presenter checklist | [`evaluation/manual_demo_scorecard.md`](evaluation/manual_demo_scorecard.md) |
+| `py -3.12 -m pytest -q` | 🟢 **279 passed** | Routes, agent client, lambdas, MCP, guardrails, RAG |
+| `scripts/agent_smoke_test.py` | 🟢 **6/6 PASS** | Live Bedrock grounding ([`evaluation/agent_smoke_results.md`](evaluation/agent_smoke_results.md)) |
+| `scripts/verify_credentials.py` | 🟢 OK | AWS auth |
+| `scripts/verify_live_demo.py` | 🟢 PASS on EC2 | End-to-end public demo |
+| `frontend npm run build` + lint | 🟢 Build OK | SPA production bundle |
+| Manual scorecard | 📋 Presenter checklist | [`evaluation/manual_demo_scorecard.md`](evaluation/manual_demo_scorecard.md) |
+
+<div align="center">
+<img src="screenshots/final/14_tests_passing.png" alt="279 pytest tests passing" width="700">
+</div>
 
 <details>
 <summary><strong>Key test modules</strong></summary>
@@ -649,7 +765,7 @@ Validation report: [`screenshots/deployment_validation.md`](screenshots/deployme
 
 ---
 
-## Challenges faced
+## 🧗 Challenges faced
 
 | Challenge | Resolution |
 |-----------|------------|
@@ -668,7 +784,7 @@ Details: [`docs/troubleshooting.md`](docs/troubleshooting.md) · [`docs/readines
 
 ---
 
-## Next steps and product vision
+## 🚀 Next steps and product vision
 
 ### Near-term (course → production pilot)
 
@@ -685,30 +801,38 @@ Details: [`docs/troubleshooting.md`](docs/troubleshooting.md) · [`docs/readines
 - **Executive dashboard:** MTTR trend, cost-of-incident, grounding quality score, agent tool hit rate
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0b1220','primaryTextColor':'#e2e8f0','primaryBorderColor':'#22d3ee','lineColor':'#94a3b8','clusterBkg':'#0b1220','clusterBorder':'#334155'}}}%%
 flowchart LR
-  subgraph now [Now]
-    A1[Bedrock Agent plus KB]
-    A2[Four Action Groups]
-    A3[React ops console]
-    A4[EC2 demo deploy]
+  subgraph now ["🟢 Now"]
+    A1["Bedrock Agent + KB"]
+    A2["4 Action Groups"]
+    A3["React ops console"]
+    A4["EC2 demo deploy"]
   end
-  subgraph next [Next]
-    B1[Guardrails plus CI alias]
-    B2[Playwright E2E]
-    B3[PagerDuty webhooks]
+  subgraph next ["🟡 Next"]
+    B1["Guardrails + CI alias"]
+    B2["Playwright E2E"]
+    B3["PagerDuty webhooks"]
   end
-  subgraph vision [Vision PITER Ops 1.0]
-    C1[Closed-loop incident lifecycle]
-    C2[Multi-tenant KB]
-    C3[Observability correlation]
-    C4[Executive MTTR dashboard]
+  subgraph vision ["🔮 Vision — PITER Ops 1.0"]
+    C1["Closed-loop incident lifecycle"]
+    C2["Multi-tenant KB"]
+    C3["Observability correlation"]
+    C4["Executive MTTR dashboard"]
   end
-  now --> next --> vision
+  now ==> next ==> vision
+
+  classDef nowStyle fill:#052e16,stroke:#4ade80,stroke-width:2px,color:#dcfce7
+  classDef nextStyle fill:#422006,stroke:#facc15,stroke-width:2px,color:#fef9c3
+  classDef visionStyle fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#ede9fe
+  class A1,A2,A3,A4 nowStyle
+  class B1,B2,B3 nextStyle
+  class C1,C2,C3,C4 visionStyle
 ```
 
 ---
 
-## Quick start
+## 🏁 Quick start (full)
 
 > Daily development (Vite + local Flask/Docker, EC2 deploy-only): [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md)
 
@@ -789,7 +913,7 @@ Presenter script: [`docs/demo_script.md`](docs/demo_script.md)
 
 ---
 
-## Documentation index
+## 📖 Documentation index
 
 | Document | Description |
 |----------|-------------|
@@ -814,3 +938,7 @@ Presenter script: [`docs/demo_script.md`](docs/demo_script.md)
 ## License and course context
 
 Built for the **Amdocs AI-Augmented Software Engineering** course — demonstrating Flask, RAG, MCP-style tools, Bedrock Agent, Docker, and production-minded incident-response UX.
+
+<div align="center">
+<sub>PITER AiOps · Priority → Investigation → Triage → Escalation → Resolution · Built with Amazon Bedrock</sub>
+</div>

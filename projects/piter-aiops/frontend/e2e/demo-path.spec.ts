@@ -1,14 +1,14 @@
 import { test, expect, type Page } from "@playwright/test";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
+const UI_VERSION = "demo-polish-v3";
 
 async function requireDemoPolishUi(page: Page): Promise<void> {
-  const marker = page.locator('.app-shell[data-ui-version="demo-polish-v1"]');
+  const marker = page.locator(`.app-shell[data-ui-version="${UI_VERSION}"]`);
   const hasMarker = await marker.isVisible().catch(() => false);
   test.skip(
     !hasMarker,
-    "Built demo-polish SPA not served — run: cd frontend && npm run build, then restart Flask on " +
-      baseURL,
+    `Built ${UI_VERSION} SPA not served — run: cd frontend && npm run build, then restart Flask on ${baseURL}`,
   );
 }
 
@@ -20,7 +20,7 @@ async function clickStartAlertStream(page: Page): Promise<void> {
   await startBtn.click();
 }
 
-test.describe("PITER demo path", () => {
+test.describe("PITER Ops demo path", () => {
   test.beforeEach(async ({ request }) => {
     try {
       const res = await request.get(`${baseURL}/api/health`);
@@ -30,20 +30,26 @@ test.describe("PITER demo path", () => {
     }
   });
 
-  test("SPA shell loads", async ({ page }) => {
+  test("SPA shell loads with PITER Ops branding", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") errors.push(msg.text());
+    });
     await page.goto("/");
     await expect(page.locator(".app-shell")).toBeVisible();
     await expect(page.getByText("Operations Dashboard")).toBeVisible();
     await requireDemoPolishUi(page);
+    await expect(page.locator(".top-bar-title", { hasText: "PITER Ops" })).toBeVisible();
     await expect(page.locator(".top-bar-actions button.btn-primary")).toBeVisible();
+    expect(errors).toEqual([]);
   });
 
-  test("alert stream increments and P1 moment appears", async ({ page }) => {
+  test("alert stream increments and P1 critical mode", async ({ page }) => {
     await page.goto("/");
     await requireDemoPolishUi(page);
     await clickStartAlertStream(page);
     await expect(page.locator(".stream-counter")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator(".stream-counter")).not.toHaveText("Alerts: 0", { timeout: 8000 });
+    await expect(page.locator(".stream-counter")).not.toHaveText(/0 alerts/, { timeout: 8000 });
     const p1Moment = page
       .locator(".app-shell.critical-mode, .p1-modal, .alert-banner-critical")
       .first();
@@ -58,14 +64,27 @@ test.describe("PITER demo path", () => {
     await expect(analyzeBtn.first()).toBeVisible({ timeout: 30_000 });
   });
 
-  test("chat dock opens without horizontal overflow", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
+  test("greeting returns capability reply not KB miss", async ({ page }) => {
     await page.goto("/");
     await requireDemoPolishUi(page);
-    const shell = page.locator(".app-shell");
-    await expect(shell).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-    expect(overflow).toBe(false);
-    await expect(page.locator(".chat-dock, .chat-dock-collapsed")).toBeVisible();
+    const response = await page.request.post(`${baseURL}/api/chat`, {
+      data: { message: "hey", session_id: "demo-default" },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(String(body.answer)).toMatch(/PITER Ops/i);
+    expect(String(body.answer)).not.toMatch(/escalation required due to missing/i);
+  });
+
+  test("chat dock — no horizontal overflow at laptop widths", async ({ page }) => {
+    for (const width of [1280, 1024, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/");
+      await requireDemoPolishUi(page);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+      expect(overflow).toBe(false);
+      await expect(page.locator(".chat-dock, .chat-dock-collapsed")).toBeVisible();
+    }
   });
 });

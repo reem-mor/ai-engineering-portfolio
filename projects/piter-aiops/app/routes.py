@@ -31,6 +31,7 @@ from app.services.notification_dispatch import (
 )
 from app.services.triage_service import get_demo_alert, run_follow_up, run_triage
 from app.services import session_memory
+from app.services.chat_intent import small_talk_reply
 from app.services.chat_history import append_turn, clear_history, get_messages
 from app.services.response_format import normalize_api_response
 from app.services.tools_status import build_tools_status
@@ -42,6 +43,7 @@ from app.services.metrics_service import (
     similar_incidents_metrics,
 )
 from app.services.investigations import build_investigations
+from app.services.incident_status import all_statuses, set_status
 
 log = logging.getLogger(__name__)
 bp = Blueprint("main", __name__)
@@ -436,7 +438,23 @@ def api_investigations():
     except (TypeError, ValueError):
         cap = 12
     payload = build_investigations(limit=cap)
+    overrides = all_statuses()
+    if overrides:
+        for card in payload.get("investigations", []):
+            override = overrides.get(str(card.get("id")))
+            if override:
+                card["operator_status"] = override
     return jsonify(ok=True, **payload), 200
+
+
+@bp.post("/api/incidents/<incident_id>/status")
+def api_incident_status(incident_id: str):
+    """Persist an operator status change (open / in_process / resolved / escalated)."""
+    body = request.get_json(silent=True) or {}
+    result = set_status(incident_id, str(body.get("status") or ""))
+    if result.get("error"):
+        return jsonify(ok=False, error=result["error"]), 400
+    return jsonify(ok=True, **result), 200
 
 
 @bp.get("/api/metrics/recent-deployments")
@@ -527,6 +545,34 @@ def api_chat():
     session_id = str(body.get("session_id") or "").strip() or None
     if not question:
         return jsonify(ok=False, reason="empty_question", message="Please enter a message."), 400
+
+    canned = small_talk_reply(question)
+    if canned:
+        memory_session = session_id or "demo-default"
+        normalized = normalize_api_response(
+            {
+                "answer": canned,
+                "mode": "local",
+                "fallback_used": False,
+                "grounded": False,
+                "citations": [],
+                "session_id": memory_session,
+                "recommended_followups": [
+                    "What should I check first for this incident?",
+                    "Who owns auth-service in production?",
+                    "What is the escalation policy for P1?",
+                ],
+            }
+        )
+        append_turn(
+            session_id=session_id,
+            question=question,
+            answer=normalized.get("answer", ""),
+            mode=normalized.get("mode"),
+        )
+        payload = dict(normalized)
+        payload["memory"] = {"last_question": question, "session_id": memory_session}
+        return jsonify(ok=True, **payload), 200
 
     try:
         if session_id:
@@ -696,6 +742,26 @@ def api_incident_history_detail(session_id: str):
             message="That incident session was not found. Run triage first.",
         ), 404
     return jsonify(ok=True, **detail), 200
+
+
+@bp.post("/api/incidents/history/<session_id>/post-mortem")
+def api_incident_post_mortem(session_id: str):
+    """Persist a post-mortem draft for an incident session."""
+    body = request.get_json(silent=True) or {}
+    draft = str(body.get("draft") or body.get("post_mortem_draft") or "").strip()
+    if not draft:
+        return jsonify(
+            ok=False,
+            reason="empty_draft",
+            message="Post-mortem draft text is required.",
+        ), 400
+    if not session_memory.save_post_mortem_draft(session_id, draft):
+        return jsonify(
+            ok=False,
+            reason="unknown_session",
+            message="That incident session was not found. Run triage first.",
+        ), 404
+    return jsonify(ok=True, session_id=session_id, post_mortem_draft=draft), 200
 
 
 @bp.get("/api/sessions/<session_id>/history")

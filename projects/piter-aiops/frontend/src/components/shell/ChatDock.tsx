@@ -7,15 +7,18 @@ import {
   MessageSquare,
   Minimize2,
   Plus,
+  RotateCcw,
   Trash2,
   X,
 } from "lucide-react";
 import { COPILOT_COMMON_QUESTIONS } from "@/lib/common-questions";
+import { AGENT_ACTIVITY_LABELS } from "@/lib/analyze-steps";
 import { DocumentUploadPanel } from "@/components/shell/DocumentUploadPanel";
+import { ChatMarkdown } from "@/components/shell/ChatMarkdown";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
 import { useDemo } from "@/context/demo";
-import { formatChatText, investigationSnippet } from "@/lib/chat-format";
+import { investigationSnippet } from "@/lib/chat-format";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { Button } from "@/components/ui/Button";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
@@ -37,23 +40,39 @@ export function ChatDock() {
     clearChat,
     newSession,
     clearIncidentContext,
+    resetMemory,
     contextAlert,
     incidentSessionId,
     registerSession,
+    lastQuestion,
   } = useChatDock();
   const { setSessionId } = useSession();
-  const { p1Row, triageResult } = useDemo();
+  const { triageResult } = useDemo();
   const [draft, setDraft] = useState("");
+  const [memoryOpen, setMemoryOpen] = useState(true);
+  const [activityIndex, setActivityIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Rotate the "what is the agent doing" label while a reply is pending.
+  useEffect(() => {
+    if (!pending) {
+      setActivityIndex(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setActivityIndex((i) => (i + 1) % AGENT_ACTIVITY_LABELS.length);
+    }, 1600);
+    return () => window.clearInterval(timer);
+  }, [pending]);
 
   useEffect(() => {
     const sid = triageResult?.memory?.session_id || triageResult?.session_id;
     if (!sid) return;
-    registerSession(sid, `${p1Row?.service || "Investigation"} P1`, {
+    registerSession(sid, `${triageResult?.piter?.service || "Investigation"} P1`, {
       incident: true,
       activate: !incidentSessionId,
     });
-  }, [triageResult, p1Row?.service, registerSession, incidentSessionId]);
+  }, [triageResult, registerSession, incidentSessionId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,8 +95,8 @@ export function ChatDock() {
     void send(text);
   };
 
-  const alert = contextAlert || p1Row;
   const followups = lastResponse?.recommended_followups || lastResponse?.next_questions || [];
+  const lastAnswer = messages.filter((m) => m.role === "assistant").at(-1)?.content;
 
   const scrollToAnalysis = () => {
     document.getElementById("piter-analysis-panel")?.scrollIntoView({ behavior: "smooth" });
@@ -90,7 +109,7 @@ export function ChatDock() {
           <Bot size={18} className="chat-dock-title-icon" aria-hidden />
           <div>
             <span className="chat-dock-title-text">Agent Copilot</span>
-            <span className="chat-dock-title-sub">PITER incident assistant</span>
+            <span className="chat-dock-title-sub">PITER Ops incident assistant</span>
           </div>
         </div>
         <div className="chat-dock-tools">
@@ -119,14 +138,14 @@ export function ChatDock() {
         </div>
       </header>
 
-      {alert ? (
+      {contextAlert ? (
         <div className="chat-context-chip">
           <span className="chat-context-label">
-            Current context: {(alert.severity as string) || "P1"} {alert.service} incident
+            Current context: {(contextAlert.severity as string) || "P1"} {contextAlert.service} incident
           </span>
-          <PriorityBadge priority={(alert.severity as Priority) || "P4"} />
-          <span>
-            {alert.service} · {alert.environment} · {alert.alert_id}
+          <PriorityBadge priority={(contextAlert.severity as Priority) || "P4"} />
+          <span className="mono chat-context-meta">
+            {contextAlert.service} · {contextAlert.environment} · {contextAlert.alert_id}
           </span>
           <button
             type="button"
@@ -138,6 +157,42 @@ export function ChatDock() {
             <X size={14} />
           </button>
         </div>
+      ) : null}
+
+      {mode === "fullscreen" || contextAlert ? (
+        <details className="chat-memory-panel" open={memoryOpen} onToggle={(e) => setMemoryOpen(e.currentTarget.open)}>
+          <summary>
+            Memory Active
+            <span className="chat-memory-on" aria-label="memory on">
+              ● ON
+            </span>
+          </summary>
+          <dl className="chat-memory-dl">
+            <div>
+              <dt>Current incident</dt>
+              <dd>
+                {contextAlert
+                  ? `${contextAlert.title || contextAlert.service} · ${contextAlert.service}`
+                  : "None selected"}
+              </dd>
+            </div>
+            <div>
+              <dt>Last question</dt>
+              <dd>{lastQuestion || "—"}</dd>
+            </div>
+            <div>
+              <dt>Last assistant answer</dt>
+              <dd className="chat-memory-answer">{lastAnswer ? `${lastAnswer.slice(0, 160)}…` : "—"}</dd>
+            </div>
+          </dl>
+          <p className="chat-memory-rule">
+            <strong>Memory rule:</strong> Use previous question only for follow-up questions in the active
+            incident.
+          </p>
+          <button type="button" className="btn btn-sm" onClick={() => void resetMemory()}>
+            <RotateCcw size={14} /> Reset Memory
+          </button>
+        </details>
       ) : null}
 
       <div className="chat-common-questions">
@@ -170,13 +225,18 @@ export function ChatDock() {
             </option>
           ))}
         </select>
+        {contextAlert ? (
+          <button type="button" className="btn btn-sm chat-clear-context-btn" onClick={clearIncidentContext}>
+            Clear Incident Context
+          </button>
+        ) : null}
       </div>
 
       <div className="chat-messages">
         {messages.length === 0 && !pending ? (
           <p className="chat-empty">
-            Ask about the selected incident, prior alerts, runbooks, or escalation paths. Follow-ups use session
-            memory when available.
+            Ask about the selected incident, prior alerts, runbooks, or escalation paths. Follow-ups use session memory
+            when an incident session is active.
           </p>
         ) : null}
         {messages.map((m, i) => (
@@ -189,13 +249,15 @@ export function ChatDock() {
                 </span>
               ) : null}
             </div>
-            <div className="chat-text">{formatChatText(m.content)}</div>
+            <div className="chat-text">
+              {m.role === "assistant" ? <ChatMarkdown text={m.content} /> : m.content}
+            </div>
           </div>
         ))}
         {pending ? (
           <div className="chat-bubble chat-assistant chat-thinking" role="status" aria-live="polite">
             <Loader2 size={14} className="chat-thinking-spinner" aria-hidden />
-            Agent investigating…
+            <span className="chat-thinking-label">{AGENT_ACTIVITY_LABELS[activityIndex]}</span>
           </div>
         ) : null}
         {error ? <div className="chat-error">{error}</div> : null}

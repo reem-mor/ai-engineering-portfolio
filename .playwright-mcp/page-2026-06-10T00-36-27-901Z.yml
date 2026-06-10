@@ -1,0 +1,132 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - region "Notifications alt+T"
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - generic [ref=e6]:
+          - img [ref=e8]
+          - generic [ref=e10]:
+            - generic [ref=e11]: IncidentIQ
+            - generic [ref=e12]: Live Ops
+        - navigation [ref=e13]:
+          - link "Live Demo" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Live Demo
+          - link "Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e19]
+            - generic [ref=e24]: Dashboard
+          - link "Incidents" [ref=e25] [cursor=pointer]:
+            - /url: /incidents
+            - img [ref=e26]
+            - generic [ref=e28]: Incidents
+          - link "Agent Analytics" [ref=e29] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e30]
+            - generic [ref=e32]: Agent Analytics
+          - link "Knowledge / RAG" [ref=e33] [cursor=pointer]:
+            - /url: /knowledge
+            - img [ref=e34]
+            - generic [ref=e36]: Knowledge / RAG
+          - link "MCP Tools" [ref=e37] [cursor=pointer]:
+            - /url: /mcp
+            - img [ref=e38]
+            - generic [ref=e40]: MCP Tools
+          - link "Chat" [ref=e41] [cursor=pointer]:
+            - /url: /chat
+            - img [ref=e42]
+            - generic [ref=e44]: Chat
+          - link "History" [ref=e45] [cursor=pointer]:
+            - /url: /history
+            - img [ref=e46]
+            - generic [ref=e50]: History
+          - link "Architecture" [ref=e51] [cursor=pointer]:
+            - /url: /architecture
+            - img [ref=e52]
+            - generic [ref=e57]: Architecture
+          - link "Settings" [ref=e58] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e59]
+            - generic [ref=e62]: Settings
+        - generic [ref=e63]: v0.9.0 · Demo Build · AWS Mock
+      - generic [ref=e64]:
+        - banner [ref=e65]:
+          - heading "IncidentIQ — AI Incident Operations Center" [level=1] [ref=e68]
+          - generic [ref=e69]:
+            - generic [ref=e70]: Demo Mode · AWS Mock Connected
+            - generic [ref=e72]: "Agent: Ready"
+            - button "Start 5-Min Alert Storm" [ref=e75] [cursor=pointer]:
+              - img
+              - text: Start 5-Min Alert Storm
+            - button "Pause" [ref=e76] [cursor=pointer]:
+              - img
+              - text: Pause
+            - button "Continue Live" [ref=e77] [cursor=pointer]:
+              - img
+              - text: Continue Live
+            - button "Reset" [ref=e78] [cursor=pointer]:
+              - img
+              - text: Reset
+        - main [ref=e79]:
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - img [ref=e83]
+                - generic [ref=e85]:
+                  - heading "Incident Chat — INC-001" [level=3] [ref=e86]
+                  - generic [ref=e87]: "Active: Login failure after deployment · auth-service"
+              - generic [ref=e88]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: user
+                  - generic [ref=e92]: Many users cannot log in after the latest production deployment.
+                - generic [ref=e94]:
+                  - generic [ref=e95]: assistant
+                  - generic [ref=e96]:
+                    - text: I found a likely
+                    - strong [ref=e97]: auth-service
+                    - text: issue after a recent deployment. Recommended triage steps include checking the latest deployment, validating service health, reviewing authentication logs, and escalating to the
+                    - strong [ref=e98]: Identity Platform Team
+                    - text: if impact continues.
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - button "What should I check first?" [ref=e101] [cursor=pointer]
+                  - button "Who should I escalate this to?" [ref=e102] [cursor=pointer]
+                  - button "What changed recently?" [ref=e103] [cursor=pointer]
+                  - button "Show similar past incidents" [ref=e104] [cursor=pointer]
+                  - button "What is the business impact?" [ref=e105] [cursor=pointer]
+                  - button "Which runbook should I follow?" [ref=e106] [cursor=pointer]
+                  - button "Can I mark this as resolved?" [ref=e107] [cursor=pointer]
+                - generic [ref=e108]:
+                  - textbox "Ask about this incident..." [ref=e109]
+                  - button "Send" [ref=e110] [cursor=pointer]:
+                    - img
+                    - text: Send
+            - complementary [ref=e111]:
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - heading "Memory Active" [level=3] [ref=e123]
+                - generic [ref=e124]: ● ON
+              - generic [ref=e125]:
+                - generic [ref=e126]:
+                  - generic [ref=e127]: Current incident
+                  - generic [ref=e128]: Login failure after deployment · auth-service
+                - generic [ref=e129]:
+                  - generic [ref=e130]: Last question
+                  - generic [ref=e131]: Many users cannot log in after the latest production deployment.
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Last assistant answer
+                  - generic [ref=e134]: Likely auth-service issue after recent deployment; suggested triage steps.
+                - generic [ref=e135]:
+                  - strong [ref=e136]: "Memory rule:"
+                  - text: Use previous question only for follow-up questions in the active incident.
+              - button "Reset Memory" [ref=e137] [cursor=pointer]
+  - complementary "Edit with Lovable" [ref=e138]:
+    - link "Edit with Lovable" [ref=e139] [cursor=pointer]:
+      - /url: https://lovable.dev/projects/91bdfbb5-7899-45cf-b372-18fc7eb58f79?utm_source=lovable-badge
+      - generic [ref=e140]: Edit with
+      - img [ref=e141]
+    - button "Dismiss" [ref=e146] [cursor=pointer]:
+      - img [ref=e147]

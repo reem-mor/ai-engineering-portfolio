@@ -1,0 +1,176 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - region "Notifications alt+T"
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - generic [ref=e6]:
+          - img [ref=e8]
+          - generic [ref=e10]:
+            - generic [ref=e11]: IncidentIQ
+            - generic [ref=e12]: Live Ops
+        - navigation [ref=e13]:
+          - link "Live Demo" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Live Demo
+          - link "Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e19]
+            - generic [ref=e24]: Dashboard
+          - link "Incidents" [ref=e25] [cursor=pointer]:
+            - /url: /incidents
+            - img [ref=e26]
+            - generic [ref=e28]: Incidents
+          - link "Agent Analytics" [ref=e29] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e30]
+            - generic [ref=e32]: Agent Analytics
+          - link "Knowledge / RAG" [ref=e33] [cursor=pointer]:
+            - /url: /knowledge
+            - img [ref=e34]
+            - generic [ref=e36]: Knowledge / RAG
+          - link "MCP Tools" [ref=e37] [cursor=pointer]:
+            - /url: /mcp
+            - img [ref=e38]
+            - generic [ref=e40]: MCP Tools
+          - link "Chat" [ref=e41] [cursor=pointer]:
+            - /url: /chat
+            - img [ref=e42]
+            - generic [ref=e44]: Chat
+          - link "History" [ref=e45] [cursor=pointer]:
+            - /url: /history
+            - img [ref=e46]
+            - generic [ref=e50]: History
+          - link "Architecture" [ref=e51] [cursor=pointer]:
+            - /url: /architecture
+            - img [ref=e52]
+            - generic [ref=e57]: Architecture
+          - link "Settings" [ref=e58] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e59]
+            - generic [ref=e62]: Settings
+        - generic [ref=e63]: v0.9.0 · Demo Build · AWS Mock
+      - generic [ref=e64]:
+        - banner [ref=e65]:
+          - heading "IncidentIQ — AI Incident Operations Center" [level=1] [ref=e68]
+          - generic [ref=e69]:
+            - generic [ref=e70]: Demo Mode · AWS Mock Connected
+            - generic [ref=e72]: "Agent: Ready"
+            - button "Start 5-Min Alert Storm" [ref=e75] [cursor=pointer]:
+              - img
+              - text: Start 5-Min Alert Storm
+            - button "Pause" [ref=e76] [cursor=pointer]:
+              - img
+              - text: Pause
+            - button "Continue Live" [ref=e77] [cursor=pointer]:
+              - img
+              - text: Continue Live
+            - button "Reset" [ref=e78] [cursor=pointer]:
+              - img
+              - text: Reset
+        - main [ref=e79]:
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - generic [ref=e84]: Alerts received
+                  - img [ref=e85]
+                - generic [ref=e88]: 0 / 500
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: Noise suppressed
+                  - img [ref=e92]
+                - generic [ref=e94]: "0"
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - generic [ref=e97]: Active incidents
+                  - img [ref=e98]
+                - generic [ref=e100]: "0"
+              - generic [ref=e101]:
+                - generic [ref=e102]:
+                  - generic [ref=e103]: P1 / P2 / P3
+                  - img [ref=e104]
+                - generic [ref=e106]: 0 / 0 / 0
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - generic [ref=e109]: Escalations
+                  - img [ref=e110]
+                - generic [ref=e112]: "0"
+              - generic [ref=e113]:
+                - generic [ref=e114]:
+                  - generic [ref=e115]: MTTR reduced
+                  - img [ref=e116]
+                - generic [ref=e119]: 0 min
+                - generic [ref=e120]: vs baseline
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]: Cost avoided
+                  - img [ref=e124]
+                - generic [ref=e126]: $0
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - generic [ref=e129]:
+                  - generic [ref=e130]:
+                    - img [ref=e131]
+                    - heading "Alert Stream" [level=3] [ref=e133]
+                  - generic [ref=e134]: 0 visible · 0 total
+                - table [ref=e136]:
+                  - rowgroup [ref=e137]:
+                    - row "Time Service Alert Sev Status" [ref=e138]:
+                      - columnheader "Time" [ref=e139]
+                      - columnheader "Service" [ref=e140]
+                      - columnheader "Alert" [ref=e141]
+                      - columnheader "Sev" [ref=e142]
+                      - columnheader "Status" [ref=e143]
+                  - rowgroup [ref=e144]:
+                    - row "No alerts yet. Press Start 5-Min Alert Storm." [ref=e145]:
+                      - cell "No alerts yet. Press Start 5-Min Alert Storm." [ref=e146]
+              - generic [ref=e147]:
+                - generic [ref=e149]:
+                  - img [ref=e150]
+                  - heading "Agent Decisions" [level=3] [ref=e153]
+                - list [ref=e154]:
+                  - listitem [ref=e155]: Agent idle
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - generic [ref=e158]:
+                  - img [ref=e159]
+                  - heading "Noise Detection" [level=3] [ref=e161]
+                - paragraph [ref=e162]: Waiting for sufficient alert volume to detect patterns...
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - generic [ref=e165]:
+                    - img [ref=e166]
+                    - heading "Incident Queue" [level=3] [ref=e168]
+                  - generic [ref=e169]: 0 active
+                - generic [ref=e171]: No incidents yet — agent is monitoring.
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - img [ref=e175]
+                  - heading "MCP / Lambda Tool Calls" [level=3] [ref=e177]
+                - generic [ref=e178]: No tools called yet — start the demo and trigger Analyze.
+              - generic [ref=e179]:
+                - generic [ref=e180]:
+                  - img [ref=e181]
+                  - heading "Business Impact" [level=3] [ref=e184]
+                - generic [ref=e185]:
+                  - generic [ref=e186]:
+                    - generic [ref=e187]: 0m
+                    - generic [ref=e188]: MTTR reduced
+                  - generic [ref=e189]:
+                    - generic [ref=e190]: $0
+                    - generic [ref=e191]: Cost avoided
+                  - generic [ref=e192]:
+                    - generic [ref=e193]: 0%
+                    - generic [ref=e194]: Noise suppression
+                - paragraph [ref=e195]: By grouping noise, enriching with RAG and AWS Lambda tools, and prioritizing the P1, IncidentIQ protects revenue, customer trust, SLA commitments, and brand reputation.
+  - complementary "Edit with Lovable" [ref=e196]:
+    - link "Edit with Lovable" [ref=e197] [cursor=pointer]:
+      - /url: https://lovable.dev/projects/91bdfbb5-7899-45cf-b372-18fc7eb58f79?utm_source=lovable-badge
+      - generic [ref=e198]: Edit with
+      - img [ref=e199]
+    - button "Dismiss" [ref=e204] [cursor=pointer]:
+      - img [ref=e205]

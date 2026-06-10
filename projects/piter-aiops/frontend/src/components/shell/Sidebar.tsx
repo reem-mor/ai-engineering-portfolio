@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   LineChart,
   Server,
-  Sparkles,
+  Shield,
 } from "lucide-react";
 import type { PageKey } from "@/types/api";
 import { SidebarMetrics } from "./SidebarMetrics";
@@ -17,7 +17,7 @@ import { SidebarMetrics } from "./SidebarMetrics";
 type NavItem = { key: PageKey | "chat"; label: string; icon: typeof LayoutDashboard };
 
 const OPS: NavItem[] = [
-  { key: "home", label: "Operations", icon: LayoutDashboard },
+  { key: "home", label: "Live Demo", icon: LayoutDashboard },
   { key: "analyzer", label: "Analyzer", icon: Activity },
   { key: "chat", label: "Agent Chat", icon: Bot },
 ];
@@ -80,8 +80,11 @@ export function Sidebar({
   return (
     <aside className="app-sidebar">
       <button type="button" className="nav-brand nav-brand-btn" onClick={onHome}>
-        <Sparkles className="nav-item-icon" aria-hidden />
-        <span className="nav-brand-text">PITER AiOps</span>
+        <Shield className="nav-item-icon nav-brand-icon" aria-hidden />
+        <span className="nav-brand-stack">
+          <span className="nav-brand-text">PITER Ops</span>
+          <span className="nav-brand-tagline">Priority · Investigation · Triage · Escalation · Resolution</span>
+        </span>
       </button>
 
       <SidebarMetrics />
@@ -105,6 +108,8 @@ export function Sidebar({
           <NavButton key={item.key} item={item} active={page === item.key} onNavigate={handleNav} />
         ))}
       </nav>
+
+      <footer className="sidebar-footer mono">PITER Ops · Demo Build</footer>
     </aside>
   );
 }

@@ -108,6 +108,7 @@ export type Investigation = {
   status: string;
   priority: Priority;
   impact: string;
+  operator_status?: "open" | "in_process" | "resolved" | "escalated";
 };
 
 export type InvestigationsResponse = {

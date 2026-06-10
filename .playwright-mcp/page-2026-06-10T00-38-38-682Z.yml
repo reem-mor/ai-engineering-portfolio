@@ -1,0 +1,117 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - button "PITER NOC" [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+      - text: PITER NOC
+    - navigation [ref=e9]:
+      - generic [ref=e10]: Operations
+      - button "Operations" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+        - generic [ref=e17]: Operations
+      - button "Analyzer" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e21]: Analyzer
+      - generic [ref=e22]: Intelligence
+      - button "Agent Analytics" [ref=e23] [cursor=pointer]:
+        - img [ref=e24]
+        - generic [ref=e27]: Agent Analytics
+      - button "History" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+        - generic [ref=e32]: History
+      - generic [ref=e33]: Platform
+      - button "System & KB" [ref=e34] [cursor=pointer]:
+        - img [ref=e35]
+        - generic [ref=e38]: System & KB
+      - button "Demo Guide" [ref=e39] [cursor=pointer]:
+        - img [ref=e40]
+        - generic [ref=e42]: Demo Guide
+  - generic [ref=e43]:
+    - banner [ref=e44]:
+      - button "PITER AiOps" [ref=e45] [cursor=pointer]:
+        - generic [ref=e46]: ◆
+        - generic [ref=e47]: PITER
+        - generic [ref=e48]: AiOps
+      - generic [ref=e49]:
+        - generic [ref=e50]: NOTIFY PREVIEW
+        - generic [ref=e51]: ENV production
+        - generic [ref=e52]: UTC 00:38:38
+        - 'generic "Infrastructure: unknown" [ref=e53]': Infra
+      - generic [ref=e55]:
+        - button "Start Alert Stream" [ref=e56] [cursor=pointer]
+        - generic "Operator" [ref=e57]: OP
+    - generic [ref=e58]:
+      - main [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e62]:
+            - heading "Operations Dashboard" [level=1] [ref=e63]
+            - paragraph [ref=e64]: Live production operations state — alert stream, incident queue, and AI copilot
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: Alerts received
+              - generic [ref=e68]: "0"
+            - generic [ref=e69]:
+              - generic [ref=e70]: Noise suppressed
+              - generic [ref=e71]: "0"
+            - generic [ref=e72]:
+              - generic [ref=e73]: Active incidents
+              - generic [ref=e74]: "0"
+            - generic [ref=e75]:
+              - generic [ref=e76]: P1 / P2 / P3
+              - generic [ref=e77]: 0 / 0 / 0
+            - generic [ref=e78]:
+              - generic [ref=e79]: Escalations
+              - generic [ref=e80]: "0"
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - heading "Alert stream" [level=2] [ref=e84]
+              - paragraph [ref=e86]:
+                - text: Idle — use
+                - strong [ref=e87]: Start Alert Stream
+                - text: in the top bar to begin demo playback.
+              - table [ref=e89]:
+                - rowgroup [ref=e90]:
+                  - row "Time Service Env Sev Title" [ref=e91]:
+                    - columnheader "Time" [ref=e92]
+                    - columnheader "Service" [ref=e93]
+                    - columnheader "Env" [ref=e94]
+                    - columnheader "Sev" [ref=e95]
+                    - columnheader "Title" [ref=e96]
+                    - columnheader [ref=e97]
+                - rowgroup [ref=e98]:
+                  - row "No alerts in view" [ref=e99]:
+                    - cell "No alerts in view" [ref=e100]
+            - generic [ref=e101]:
+              - heading "Agent decisions" [level=2] [ref=e102]
+              - list [ref=e103]:
+                - listitem [ref=e104]: Awaiting stream…
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - heading "Noise patterns" [level=2] [ref=e107]
+              - paragraph [ref=e108]: "Suppressed candidates: 0"
+            - heading "Incident queue" [level=2] [ref=e110]
+      - complementary [ref=e115]:
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - img [ref=e118]
+            - generic [ref=e121]:
+              - generic [ref=e122]: Agent Copilot
+              - generic [ref=e123]: PITER incident assistant
+          - generic [ref=e124]:
+            - button "New Session" [ref=e125] [cursor=pointer]:
+              - img [ref=e126]
+              - text: New Session
+            - button "Clear Chat" [ref=e127] [cursor=pointer]:
+              - img [ref=e128]
+              - text: Clear Chat
+            - button "Expand full panel" [ref=e131] [cursor=pointer]:
+              - img [ref=e132]
+            - button "Collapse" [ref=e137] [cursor=pointer]:
+              - img [ref=e138]
+        - generic [ref=e140]:
+          - generic [ref=e141]: Session
+          - combobox "Session" [ref=e142]:
+            - option "New / unsaved session" [selected]
+        - paragraph [ref=e144]: Ask about the selected incident, prior alerts, runbooks, or escalation paths. Follow-ups use session memory when available.
+        - generic [ref=e145]:
+          - textbox "Ask the copilot about this incident…" [ref=e146]
+          - button "Send" [ref=e147] [cursor=pointer]

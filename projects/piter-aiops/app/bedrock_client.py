@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 MIN_QUESTION_LEN = 3
 
 # Override Bedrock default prompt (which can nudge models toward tool-style output).
-RAG_GENERATION_PROMPT = """You are PITER AiOps, an enterprise incident-response assistant. Answer ONLY using the search results below.
+RAG_GENERATION_PROMPT = """You are PITER Ops, an enterprise incident-response assistant. Answer ONLY using the search results below.
 Write plain English. Do NOT emit tool calls, JSON, or lines starting with "Action:".
 
 Use exactly this structure:

@@ -11,17 +11,8 @@ import { formatCurrencyUsd, formatNumber } from "@/lib/piter-format";
 import { EscalationModal } from "./EscalationModal";
 
 export function CriticalIncidentBanner() {
-  const {
-    demoMode,
-    p1Row,
-    p1Shown,
-    triageResult,
-    showP1Modal,
-    pauseStorm,
-    setTriageResult,
-    demoImpact,
-    bootstrap,
-  } = useDemo();
+  const { demoMode, p1Row, p1Shown, triageResult, showP1Modal, pauseStorm, resumeStorm, setTriageResult, demoImpact } =
+    useDemo();
   const { openWith, registerSession } = useChatDock();
   const { setSessionId } = useSession();
   const navigate = useNavigate();
@@ -67,17 +58,18 @@ export function CriticalIncidentBanner() {
 
   return (
     <>
-      <AlertBanner title="P1 Critical Incident Detected">
-        <p>
-          <strong>{p1Row.service}</strong> · {p1Row.environment} — {p1Row.title}
+      <AlertBanner title="P1 INCIDENT CANDIDATE DETECTED" variant="critical">
+        <p className="banner-headline">
+          {p1Row.title} — {p1Row.service}
         </p>
         {triageResult?.business_impact ? (
           <p style={{ marginTop: 8 }}>{triageResult.business_impact}</p>
-        ) : bootstrap?.alert_stream?.p1_trigger ? (
-          <p style={{ marginTop: 8, color: "var(--text-muted)" }}>
-            Trigger alert in stream — analyze for full PITER assessment.
+        ) : (
+          <p style={{ marginTop: 8, color: "var(--text-secondary)" }}>
+            <strong>Business risk:</strong> Revenue, customer trust, SLA, and reputation impact. Alert
+            storm paused for human review.
           </p>
-        ) : null}
+        )}
         {(users || revenue) && (
           <p className="mono" style={{ marginTop: 8, fontSize: "0.8125rem" }}>
             {users ? `Users affected: ~${users}` : null}
@@ -88,7 +80,7 @@ export function CriticalIncidentBanner() {
         <div className="alert-banner-actions">
           {!triageResult ? (
             <Button variant="primary" loading={analyzing} onClick={() => void analyze()}>
-              Analyze P1 Incident
+              Analyze Incident
             </Button>
           ) : null}
           <Button
@@ -98,7 +90,19 @@ export function CriticalIncidentBanner() {
               setShowEscalation(true);
             }}
           >
-            Escalate to On-Call
+            Escalate On-Call
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              openWith({
+                message: "What should I check next for this P1 incident?",
+                sessionId: triageResult?.memory?.session_id || triageResult?.session_id,
+                alert: p1Row,
+              })
+            }
+          >
+            Open Chat
           </Button>
           <Button
             variant="secondary"
@@ -109,17 +113,8 @@ export function CriticalIncidentBanner() {
           >
             Notify via Email
           </Button>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              openWith({
-                message: "What should I check next for this P1 incident?",
-                sessionId: triageResult?.memory?.session_id || triageResult?.session_id,
-                alert: p1Row,
-              })
-            }
-          >
-            Ask Agent
+          <Button variant="ghost" onClick={() => resumeStorm()}>
+            Continue Live
           </Button>
         </div>
       </AlertBanner>

@@ -110,7 +110,7 @@ def format_escalation_messages(
         f"Please join {war_room} on Slack immediately — NOC is coordinating bridge access.",
         f"Your team channel: {slack_team}",
         "",
-        "— PITER AiOps (automated escalation)",
+        "— PITER Ops (automated escalation)",
     ]
     text_body = "\n".join(body_parts)
 
@@ -241,5 +241,5 @@ def _render_html(
     <strong>Action required:</strong> Join <strong>{escape(war_room)}</strong> on Slack now.
     Team channel: {escape(slack_team)}.
   </div>
-  <p style="font-size:12px;color:#94a3b8">— PITER AiOps (automated escalation)</p>
+  <p style="font-size:12px;color:#94a3b8">— PITER Ops (automated escalation)</p>
 </body></html>"""

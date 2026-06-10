@@ -15,8 +15,8 @@ import {
   fetchHistory,
   fetchIncidentsHistory,
   postChat,
+  postFollowUp,
 } from "@/lib/api-contract";
-import { formatChatText } from "@/lib/chat-format";
 import { useSession } from "@/context/session";
 
 export type DockMode = "collapsed" | "open" | "fullscreen";
@@ -46,7 +46,9 @@ type ChatDockContextValue = {
   newSession: () => Promise<void>;
   hydrateSessions: () => Promise<void>;
   clearIncidentContext: () => void;
+  resetMemory: () => Promise<void>;
   contextAlert: Partial<AlertRow> | null;
+  lastQuestion: string | null;
 };
 
 const ChatDockContext = createContext<ChatDockContextValue | null>(null);
@@ -54,24 +56,35 @@ const ChatDockContext = createContext<ChatDockContextValue | null>(null);
 const CHAT_DEFAULT_ID = "demo-default";
 
 function assistantBubbleText(data: ChatResponse): string {
-  if (data.answer?.trim()) return formatChatText(data.answer, 1200);
+  if (data.answer?.trim()) return data.answer.trim();
   const inv = data.piter?.investigation?.trim();
-  if (inv) return formatChatText(inv, 1200);
+  if (inv) return inv;
   return "Analysis ready — see the workspace panel for full PITER output.";
+}
+
+function resolveOutboundSessionId(
+  incidentSid: string | null,
+  activeSessionId: string | null,
+  globalSessionId: string | null,
+): string {
+  return incidentSid || activeSessionId || globalSessionId || CHAT_DEFAULT_ID;
 }
 
 export function ChatDockProvider({ children }: { children: ReactNode }) {
   const { sessionId: globalSessionId, setSessionId: setGlobalSessionId } = useSession();
   const incidentIdsRef = useRef(new Set<string>());
   const [mode, setMode] = useState<DockMode>("open");
-  const [sessions, setSessions] = useState<SessionEntry[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionEntry[]>([
+    { id: CHAT_DEFAULT_ID, label: "General chat", count: 0, incident: false },
+  ]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(CHAT_DEFAULT_ID);
   const [incidentSessionId, setIncidentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
   const [pending, setPending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
   const [contextAlert, setContextAlert] = useState<Partial<AlertRow> | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
 
   const isIncidentSession = useCallback((id: string | null | undefined) => {
     return Boolean(id && incidentIdsRef.current.has(id));
@@ -139,16 +152,24 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       if (!trimmed || pending) return;
       setPending(true);
       setError(null);
+      setLastQuestion(trimmed);
       setMessages((m) => [...m, { role: "user", content: trimmed, ts: Date.now() / 1000 }]);
       try {
         const incidentSid = routingSessionId();
-        const data = await postChat(trimmed, incidentSid);
+        const outboundSid = resolveOutboundSessionId(incidentSid, activeSessionId, globalSessionId);
+        const data =
+          incidentSid && isIncidentSession(incidentSid)
+            ? await postFollowUp(incidentSid, trimmed)
+            : await postChat(trimmed, outboundSid);
         setLastResponse(data);
-        const nextSid = data.memory?.session_id || data.session_id;
+        const nextSid = data.memory?.session_id || data.session_id || outboundSid;
         if (nextSid && isIncidentSession(nextSid)) {
           setIncidentSessionId(nextSid);
           setActiveSessionId(nextSid);
           registerSession(nextSid, undefined, { incident: true, activate: false });
+        } else if (nextSid) {
+          setActiveSessionId(nextSid);
+          registerSession(nextSid, "General chat", { incident: false, activate: false });
         }
         const answer = assistantBubbleText(data);
         setMessages((m) => [
@@ -160,13 +181,25 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
             mode: data.fallback_used ? "local_fallback" : data.mode,
           },
         ]);
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === (nextSid || outboundSid) ? { ...s, count: s.count + 2 } : s,
+          ),
+        );
       } catch (e) {
         setError(e instanceof ApiError ? e.message : "Chat failed");
       } finally {
         setPending(false);
       }
     },
-    [pending, registerSession, routingSessionId, isIncidentSession],
+    [
+      pending,
+      registerSession,
+      routingSessionId,
+      isIncidentSession,
+      activeSessionId,
+      globalSessionId,
+    ],
   );
 
   const clearChat = useCallback(async () => {
@@ -176,10 +209,17 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       await clearHistory(sid);
       setMessages([]);
       setLastResponse(null);
+      setLastQuestion(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to clear chat");
     }
   }, [activeSessionId, globalSessionId]);
+
+  const resetMemory = useCallback(async () => {
+    await clearChat();
+    setContextAlert(null);
+    setIncidentSessionId(null);
+  }, [clearChat]);
 
   const hydrateSessions = useCallback(async () => {
     try {
@@ -208,16 +248,17 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
 
   const newSession = useCallback(async () => {
     setError(null);
-    setActiveSessionId(null);
+    setActiveSessionId(CHAT_DEFAULT_ID);
     setIncidentSessionId(null);
-    setGlobalSessionId(null);
+    setGlobalSessionId(CHAT_DEFAULT_ID);
     setMessages([]);
     setLastResponse(null);
+    setLastQuestion(null);
     setContextAlert(null);
     try {
-      await clearHistory();
+      await clearHistory(CHAT_DEFAULT_ID);
     } catch {
-      /* fresh session — ignore if no prior history */
+      /* fresh session */
     }
   }, [setGlobalSessionId]);
 
@@ -254,6 +295,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
         setIncidentSessionId(null);
         setMessages([]);
         setLastResponse(null);
+        setLastQuestion(null);
         return;
       }
       void loadSession(id);
@@ -263,8 +305,11 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void hydrateSessions();
-    void fetchHistory().then((h) => {
-      if (h.messages?.length) setMessages(h.messages);
+    void fetchHistory(CHAT_DEFAULT_ID).then((h) => {
+      if (h.messages?.length) {
+        setMessages(h.messages);
+        setActiveSessionId(h.session_id);
+      }
     });
   }, [hydrateSessions]);
 
@@ -290,7 +335,9 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       newSession,
       hydrateSessions,
       clearIncidentContext,
+      resetMemory,
       contextAlert,
+      lastQuestion,
     }),
     [
       mode,
@@ -311,7 +358,9 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       newSession,
       hydrateSessions,
       clearIncidentContext,
+      resetMemory,
       contextAlert,
+      lastQuestion,
     ],
   );
 
