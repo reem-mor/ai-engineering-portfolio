@@ -9,6 +9,7 @@ import { PriorityBadge } from "./PriorityBadge";
 import { SafetyGuardrail } from "./SafetyGuardrail";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
+import { AgentEnrichmentPipeline } from "./AgentEnrichmentPipeline";
 
 function BulletList({ items }: { items: string[] }) {
   if (!items.length) return null;
@@ -100,7 +101,15 @@ export function PiterAnalysisPanel({
       ) : null}
 
       <div className="piter-response-header">
-        <h2 className="piter-analysis-title">PITER Incident Analysis</h2>
+        <div>
+          <h2 className="piter-analysis-title">P1 Incident Analysis</h2>
+          {response.alert?.service ? (
+            <p className="piter-analysis-subtitle">
+              {String(response.alert.service)} · {String(response.alert.environment || "prod")} ·{" "}
+              {String(response.alert.title || response.alert.alert_id || "")}
+            </p>
+          ) : null}
+        </div>
         <div className="piter-response-badges">
           {piter?.priority ? <PriorityBadge priority={piter.priority as "P1"} /> : null}
           <ConfidenceIndicator level={response.confidence} />
@@ -109,6 +118,8 @@ export function PiterAnalysisPanel({
       </div>
 
       <SafetyGuardrail previewOnly={response.escalation_policy?.safe_preview_only === true} />
+
+      <AgentEnrichmentPipeline response={response} />
 
       <Card>
         <CardHeader title="Priority" />
@@ -137,6 +148,17 @@ export function PiterAnalysisPanel({
         <CardHeader title="Investigation" />
         <CardContent>
           <BulletList items={investigationLines} />
+          <FieldGrid
+            fields={[
+              { label: "Knowledge base runbook", value: response.matched_runbook || null },
+              {
+                label: "Alert evidence",
+                value: response.alert
+                  ? `${String(response.alert.service || "—")} · ${String(response.alert.environment || "—")}`
+                  : null,
+              },
+            ]}
+          />
           {renderDeployment(response.suspect_deployment)}
           {renderSimilarIncidents(response.similar_incidents)}
         </CardContent>
@@ -167,6 +189,18 @@ export function PiterAnalysisPanel({
                       ? "Yes"
                       : "No"
                     : null,
+              },
+              {
+                label: "Escalation policy",
+                value: response.escalation_policy?.summary
+                  ? String(response.escalation_policy.summary)
+                  : response.escalation_policy?.notify
+                    ? `Notify: ${(response.escalation_policy.notify as string[]).join(" → ")}`
+                    : null,
+              },
+              {
+                label: "Safe preview",
+                value: response.escalation_policy?.safe_preview_only ? "Preview only — human approval required" : null,
               },
             ]}
           />

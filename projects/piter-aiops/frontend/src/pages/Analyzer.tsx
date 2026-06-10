@@ -5,7 +5,11 @@ import { useChatDock } from "@/context/chat-dock";
 import type { ChatResponse, PiterStages } from "@/types/api";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { PipelineProgress } from "@/components/noc/PipelineProgress";
+import { MTTRPanel } from "@/components/noc/MTTRPanel";
 import { ErrorState } from "@/components/noc/ErrorState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { useDemo } from "@/context/demo";
 
 const DEFAULTS = {
   service: "auth-service",
@@ -25,7 +29,8 @@ const STAGE_KEYS: (keyof PiterStages)[] = [
 
 export function AnalyzerPage() {
   const { sessionId } = useSession();
-  const { registerSession } = useChatDock();
+  const { registerSession, send } = useChatDock();
+  const { demoImpact } = useDemo();
   const [form, setForm] = useState(DEFAULTS);
   const [pending, setPending] = useState(false);
   const [response, setResponse] = useState<ChatResponse | null>(null);
@@ -70,7 +75,10 @@ export function AnalyzerPage() {
 
   return (
     <div className="grid-stack">
-      <h1 style={{ margin: 0, fontSize: "1.125rem" }}>Incident Analyzer</h1>
+      <PageHeader
+        title="Incident Analyzer"
+        subtitle="Run a structured PITER investigation against Bedrock Agent or local fallback knowledge"
+      />
 
       <div className="panel">
         <div className="form-grid">
@@ -110,20 +118,19 @@ export function AnalyzerPage() {
           </label>
           <textarea id="symptom" className="textarea" value={form.symptom} onChange={set("symptom")} rows={3} />
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ marginTop: "16px" }}
-          onClick={() => void analyze()}
-          disabled={pending}
-        >
+        <Button variant="primary" style={{ marginTop: "16px" }} onClick={() => void analyze()} disabled={pending} loading={pending}>
           {pending ? "Running pipeline…" : "Run analysis"}
-        </button>
+        </Button>
       </div>
 
       <PipelineProgress active={pending} stages={stages as PiterStages} />
       {error ? <ErrorState message={error} onRetry={analyze} /> : null}
-      {response && !pending ? <PiterResponseView response={response} /> : null}
+      {response && !pending ? (
+        <>
+          <MTTRPanel demoImpact={demoImpact} triageResult={response} noiseSuppressed={0} />
+          <PiterResponseView response={response} onFollowUp={(q) => void send(q)} />
+        </>
+      ) : null}
     </div>
   );
 }

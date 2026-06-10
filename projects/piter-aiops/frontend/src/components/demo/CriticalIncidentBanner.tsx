@@ -27,6 +27,7 @@ export function CriticalIncidentBanner() {
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
   const [showEscalation, setShowEscalation] = useState(false);
+  const [escalationMode, setEscalationMode] = useState<"escalate" | "email">("escalate");
 
   if (!demoMode || !p1Row || showP1Modal) return null;
   if (!p1Shown && !triageResult) return null;
@@ -90,8 +91,23 @@ export function CriticalIncidentBanner() {
               Analyze P1 Incident
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={() => setShowEscalation(true)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEscalationMode("escalate");
+              setShowEscalation(true);
+            }}
+          >
             Escalate to On-Call
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEscalationMode("email");
+              setShowEscalation(true);
+            }}
+          >
+            Notify via Email
           </Button>
           <Button
             variant="ghost"
@@ -112,6 +128,7 @@ export function CriticalIncidentBanner() {
           incidentId={incidentId}
           service={p1Row.service}
           severity={p1Row.severity}
+          mode={escalationMode}
           onClose={() => setShowEscalation(false)}
         />
       ) : null}

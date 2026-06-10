@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Bot,
   ChevronRight,
+  Loader2,
   Maximize2,
   MessageSquare,
   Minimize2,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
+import { COPILOT_COMMON_QUESTIONS } from "@/lib/common-questions";
+import { DocumentUploadPanel } from "@/components/shell/DocumentUploadPanel";
 import { useChatDock } from "@/context/chat-dock";
 import { useSession } from "@/context/session";
 import { useDemo } from "@/context/demo";
@@ -33,6 +38,8 @@ export function ChatDock() {
     loadSession,
     clearChat,
     newSession,
+    hydrateSessions,
+    clearIncidentContext,
     contextAlert,
   } = useChatDock();
   const { setSessionId } = useSession();
@@ -41,13 +48,14 @@ export function ChatDock() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    void hydrateSessions();
     void fetchHistory().then((h) => {
       if (h.session_id) {
         setActiveSessionId(h.session_id);
         void loadSession(h.session_id);
       }
     });
-  }, [loadSession, setActiveSessionId]);
+  }, [hydrateSessions, loadSession, setActiveSessionId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -56,7 +64,7 @@ export function ChatDock() {
   if (mode === "collapsed") {
     return (
       <aside className="chat-dock chat-dock-collapsed">
-        <button type="button" className="dock-rail-btn" onClick={toggleCollapsed} title="Open agent chat">
+        <button type="button" className="dock-rail-btn" onClick={toggleCollapsed} title="Open Agent Copilot">
           <MessageSquare size={18} />
         </button>
       </aside>
@@ -80,18 +88,24 @@ export function ChatDock() {
   return (
     <aside className={`chat-dock${mode === "fullscreen" ? " chat-dock-full" : ""}`}>
       <header className="chat-dock-header">
-        <span>Agent Chat</span>
+        <div className="chat-dock-title">
+          <Bot size={18} className="chat-dock-title-icon" aria-hidden />
+          <div>
+            <span className="chat-dock-title-text">Agent Copilot</span>
+            <span className="chat-dock-title-sub">PITER incident assistant</span>
+          </div>
+        </div>
         <div className="chat-dock-tools">
           <button type="button" className="btn btn-sm" onClick={() => void newSession()} title="New session">
-            <Plus size={14} /> New
+            <Plus size={14} /> New Session
           </button>
           <button
             type="button"
             className="btn btn-sm"
             onClick={() => void clearChat()}
-            title="Clear chat history"
+            title="Clear active session messages"
           >
-            <Trash2 size={14} />
+            <Trash2 size={14} /> Clear Chat
           </button>
           <button
             type="button"
@@ -109,42 +123,67 @@ export function ChatDock() {
 
       {alert ? (
         <div className="chat-context-chip">
+          <span className="chat-context-label">Incident context</span>
           <PriorityBadge priority={(alert.severity as Priority) || "P4"} />
-          {alert.service} · {alert.environment} · {alert.alert_id}
+          <span>
+            {alert.service} · {alert.environment} · {alert.alert_id}
+          </span>
+          <button
+            type="button"
+            className="chat-context-clear"
+            onClick={clearIncidentContext}
+            title="Clear incident context"
+            aria-label="Clear incident context"
+          >
+            <X size={14} />
+          </button>
         </div>
       ) : null}
 
-      {sessions.length > 0 ? (
-        <div className="chat-sessions">
-          <label className="label">Sessions</label>
-          <select
-            className="select"
-            value={activeSessionId || ""}
-            onChange={(e) => {
-              const id = e.target.value;
-              setActiveSessionId(id || null);
-              setSessionId(id || null);
-              if (id) void loadSession(id);
-            }}
-          >
-            <option value="">—</option>
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label} ({s.count})
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
+      <div className="chat-common-questions">
+        {COPILOT_COMMON_QUESTIONS.map((q) => (
+          <button key={q} type="button" className="follow-up-chip" onClick={() => void send(q)} disabled={pending}>
+            {q}
+          </button>
+        ))}
+      </div>
+
+      <div className="chat-sessions">
+        <label className="label" htmlFor="chat-session-select">
+          Session
+        </label>
+        <select
+          id="chat-session-select"
+          className="select"
+          value={activeSessionId || ""}
+          onChange={(e) => {
+            const id = e.target.value;
+            setActiveSessionId(id || null);
+            setSessionId(id || null);
+            if (id) void loadSession(id);
+          }}
+        >
+          <option value="">New / unsaved session</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+              {s.count > 0 ? ` (${s.count} msgs)` : ""}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="chat-messages">
         {messages.length === 0 && !pending ? (
-          <p className="chat-empty">Ask about alerts, incidents, or runbooks.</p>
+          <p className="chat-empty">
+            Ask about the selected incident, prior alerts, runbooks, or escalation paths. Follow-ups use session
+            memory when available.
+          </p>
         ) : null}
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble chat-${m.role}`}>
             <div className="chat-role">
-              {m.role === "user" ? "You" : "PITER"}
+              {m.role === "user" ? "You" : "PITER Agent"}
               {m.role === "assistant" && m.mode ? (
                 <span style={{ marginLeft: 8 }}>
                   <SourceBadge mode={m.mode} />
@@ -154,7 +193,12 @@ export function ChatDock() {
             <div className="chat-text">{formatChatText(m.content)}</div>
           </div>
         ))}
-        {pending ? <div className="chat-bubble chat-assistant chat-thinking">Agent thinking…</div> : null}
+        {pending ? (
+          <div className="chat-bubble chat-assistant chat-thinking" role="status" aria-live="polite">
+            <Loader2 size={14} className="chat-thinking-spinner" aria-hidden />
+            Agent investigating…
+          </div>
+        ) : null}
         {error ? <div className="chat-error">{error}</div> : null}
         <div ref={bottomRef} />
       </div>
@@ -186,12 +230,14 @@ export function ChatDock() {
         </div>
       ) : null}
 
+      <DocumentUploadPanel compact />
+
       <footer className="chat-compose">
         <textarea
           className="textarea chat-input"
           rows={2}
           value={draft}
-          placeholder="Message agent…"
+          placeholder="Ask the copilot about this incident…"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {

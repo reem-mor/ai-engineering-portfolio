@@ -7,7 +7,14 @@ import {
   type ReactNode,
 } from "react";
 import type { AlertRow, ChatDockPrefill, ChatResponse, HistoryMessage } from "@/types/api";
-import { ApiError, clearHistory, fetchHistory, postChat, postFollowUp } from "@/lib/api-contract";
+import {
+  ApiError,
+  clearHistory,
+  fetchHistory,
+  fetchIncidentsHistory,
+  postChat,
+  postFollowUp,
+} from "@/lib/api-contract";
 import { useSession } from "@/context/session";
 
 export type DockMode = "collapsed" | "open" | "fullscreen";
@@ -31,6 +38,8 @@ type ChatDockContextValue = {
   loadSession: (sessionId: string) => Promise<void>;
   clearChat: () => Promise<void>;
   newSession: () => Promise<void>;
+  hydrateSessions: () => Promise<void>;
+  clearIncidentContext: () => void;
   contextAlert: Partial<AlertRow> | null;
 };
 
@@ -122,6 +131,27 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
     }
   }, [activeSessionId, globalSessionId]);
 
+  const hydrateSessions = useCallback(async () => {
+    try {
+      const hist = await fetchIncidentsHistory(50);
+      const entries: SessionEntry[] = (hist.investigations || []).map((p) => ({
+        id: p.session_id,
+        label: `${p.service || "Investigation"} · ${p.severity || "—"}`,
+        count: 0,
+      }));
+      setSessions((prev) => {
+        const seen = new Set(prev.map((s) => s.id));
+        const merged = [...prev];
+        for (const e of entries) {
+          if (!seen.has(e.id)) merged.push(e);
+        }
+        return merged;
+      });
+    } catch {
+      /* history optional for demo */
+    }
+  }, []);
+
   const newSession = useCallback(async () => {
     setError(null);
     setActiveSessionId(null);
@@ -140,6 +170,7 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
     (prefill: ChatDockPrefill) => {
       setMode("open");
       if (prefill.alert) setContextAlert(prefill.alert);
+      if (prefill.triageResponse) setLastResponse(prefill.triageResponse);
       if (prefill.sessionId) {
         setActiveSessionId(prefill.sessionId);
         setGlobalSessionId(prefill.sessionId);
@@ -155,6 +186,10 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
 
   const toggleCollapsed = useCallback(() => {
     setMode((m) => (m === "collapsed" ? "open" : "collapsed"));
+  }, []);
+
+  const clearIncidentContext = useCallback(() => {
+    setContextAlert(null);
   }, []);
 
   const value = useMemo(
@@ -175,6 +210,8 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       loadSession,
       clearChat,
       newSession,
+      hydrateSessions,
+      clearIncidentContext,
       contextAlert,
     }),
     [
@@ -192,6 +229,8 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
       toggleCollapsed,
       clearChat,
       newSession,
+      hydrateSessions,
+      clearIncidentContext,
       contextAlert,
     ],
   );

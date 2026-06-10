@@ -1,29 +1,38 @@
 import {
   Activity,
   BookOpen,
+  Bot,
   ClipboardList,
+  Cloud,
+  FileText,
+  HelpCircle,
   LayoutDashboard,
   LineChart,
   Server,
   Sparkles,
 } from "lucide-react";
 import type { PageKey } from "@/types/api";
+import { SidebarMetrics } from "./SidebarMetrics";
 
-type NavItem = { key: PageKey; label: string; icon: typeof LayoutDashboard };
+type NavItem = { key: PageKey | "chat"; label: string; icon: typeof LayoutDashboard };
 
 const OPS: NavItem[] = [
   { key: "home", label: "Operations", icon: LayoutDashboard },
   { key: "analyzer", label: "Analyzer", icon: Activity },
+  { key: "chat", label: "Agent Chat", icon: Bot },
 ];
 
 const INTEL: NavItem[] = [
+  { key: "history", label: "Incident History", icon: ClipboardList },
+  { key: "postmortems", label: "Post-Mortems", icon: FileText },
   { key: "analytics", label: "Agent Analytics", icon: LineChart },
-  { key: "history", label: "History", icon: ClipboardList },
 ];
 
 const PLATFORM: NavItem[] = [
-  { key: "system", label: "System & KB", icon: Server },
-  { key: "guide", label: "Demo Guide", icon: BookOpen },
+  { key: "knowledge", label: "Knowledge Base", icon: BookOpen },
+  { key: "bedrock", label: "AWS / Bedrock", icon: Cloud },
+  { key: "system", label: "System", icon: Server },
+  { key: "guide", label: "Demo Guide", icon: HelpCircle },
 ];
 
 function NavButton({
@@ -33,7 +42,7 @@ function NavButton({
 }: {
   item: NavItem;
   active: boolean;
-  onNavigate: (key: PageKey) => void;
+  onNavigate: (key: PageKey | "chat") => void;
 }) {
   const Icon = item.icon;
   return (
@@ -53,29 +62,47 @@ export function Sidebar({
   page,
   onNavigate,
   onHome,
+  onOpenChat,
 }: {
   page: PageKey;
   onNavigate: (key: PageKey) => void;
   onHome: () => void;
+  onOpenChat: () => void;
 }) {
+  const handleNav = (key: PageKey | "chat") => {
+    if (key === "chat") {
+      onOpenChat();
+      return;
+    }
+    onNavigate(key);
+  };
+
   return (
     <aside className="app-sidebar">
       <button type="button" className="nav-brand nav-brand-btn" onClick={onHome}>
         <Sparkles className="nav-item-icon" aria-hidden />
-        <span>PITER NOC</span>
+        <span className="nav-brand-text">PITER AiOps</span>
       </button>
-      <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+
+      <SidebarMetrics />
+
+      <nav className="sidebar-nav">
         <div className="nav-section-label">Operations</div>
         {OPS.map((item) => (
-          <NavButton key={item.key} item={item} active={page === item.key} onNavigate={onNavigate} />
+          <NavButton
+            key={item.key}
+            item={item}
+            active={item.key !== "chat" && page === item.key}
+            onNavigate={handleNav}
+          />
         ))}
         <div className="nav-section-label">Intelligence</div>
         {INTEL.map((item) => (
-          <NavButton key={item.key} item={item} active={page === item.key} onNavigate={onNavigate} />
+          <NavButton key={item.key} item={item} active={page === item.key} onNavigate={handleNav} />
         ))}
         <div className="nav-section-label">Platform</div>
         {PLATFORM.map((item) => (
-          <NavButton key={item.key} item={item} active={page === item.key} onNavigate={onNavigate} />
+          <NavButton key={item.key} item={item} active={page === item.key} onNavigate={handleNav} />
         ))}
       </nav>
     </aside>

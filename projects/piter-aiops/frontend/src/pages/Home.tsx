@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchInvestigations } from "@/lib/api-contract";
 import { useDemo } from "@/context/demo";
 import { useChatDock } from "@/context/chat-dock";
@@ -10,6 +10,7 @@ import { LoadingSkeleton } from "@/components/noc/LoadingSkeleton";
 import { CriticalIncidentBanner } from "@/components/demo/CriticalIncidentBanner";
 import { MTTRPanel } from "@/components/noc/MTTRPanel";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 function noiseCount(rows: AlertRow[]): number {
   return rows.filter((r) => r.is_noise_candidate === "true").length;
@@ -30,6 +31,7 @@ export function HomePage() {
   } = useDemo();
   const { openWith, send } = useChatDock();
   const [inv, setInv] = useState<InvestigationsResponse | null>(null);
+  const seenAlerts = useRef<Set<string>>(new Set());
 
   const loadInv = useCallback(async () => {
     try {
@@ -71,7 +73,10 @@ export function HomePage() {
 
   return (
     <div className="grid-stack home-page">
-      <h1 style={{ margin: 0, fontSize: "1.125rem" }}>Operations Dashboard</h1>
+      <PageHeader
+        title="Operations Dashboard"
+        subtitle="Live production operations state — alert stream, incident queue, and AI copilot"
+      />
 
       <CriticalIncidentBanner />
 
@@ -105,7 +110,7 @@ export function HomePage() {
               Alert stream
             </h2>
             {demoMode ? (
-              <span className="stream-counter">Alerts: {alertRows.length}</span>
+              <span className="stream-counter stream-live-pulse">Live · {alertRows.length} alerts</span>
             ) : null}
           </div>
           {!demoMode ? (
@@ -143,19 +148,19 @@ export function HomePage() {
                     .slice()
                     .reverse()
                     .slice(0, 40)
-                    .map((r) => (
-                      <tr
-                        key={r.alert_id}
-                        className={
-                          p1Row && r.alert_id === p1Row.alert_id
-                            ? "alert-row-p1"
-                            : r.is_noise_candidate === "true"
-                              ? "alert-row-noise"
-                              : r.is_trigger === "true"
-                                ? "alert-row-trigger"
-                                : undefined
-                        }
-                      >
+                    .map((r) => {
+                      const isNew = !seenAlerts.current.has(r.alert_id);
+                      if (isNew) seenAlerts.current.add(r.alert_id);
+                      const rowClass = [
+                        isNew ? "alert-row-enter" : "",
+                        p1Row && r.alert_id === p1Row.alert_id ? "alert-row-p1" : "",
+                        r.is_noise_candidate === "true" ? "alert-row-noise" : "",
+                        r.is_trigger === "true" ? "alert-row-trigger" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                      return (
+                      <tr key={r.alert_id} className={rowClass || undefined}>
                         <td className="mono">{r.timestamp.slice(11, 19)}</td>
                         <td>{r.service}</td>
                         <td>{r.environment}</td>
@@ -169,7 +174,8 @@ export function HomePage() {
                           </button>
                         </td>
                       </tr>
-                    ))
+                    );
+                    })
                 )}
               </tbody>
             </table>

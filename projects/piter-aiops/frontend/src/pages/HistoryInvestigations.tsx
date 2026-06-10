@@ -6,10 +6,15 @@ import {
   fetchInvestigations,
 } from "@/lib/api-contract";
 import { useChatDock } from "@/context/chat-dock";
-import type { AlertRow, Investigation, PersistedInvestigation } from "@/types/api";
+import { useDemo } from "@/context/demo";
+import { useNavigate } from "@/context/navigation";
+import { alertFromDetail, detailToChatResponse } from "@/lib/incident-detail";
+import type { AlertRow, ChatResponse, Investigation, PersistedInvestigation } from "@/types/api";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
+import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { ErrorState } from "@/components/noc/ErrorState";
 import { LoadingSkeleton } from "@/components/noc/LoadingSkeleton";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type View = "alerts" | "incidents" | "past";
 
@@ -30,9 +35,12 @@ export function HistoryInvestigationsPage() {
   const [sev, setSev] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { openWith } = useChatDock();
+  const { openWith, send } = useChatDock();
+  const { setTriageResult } = useDemo();
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
+  const [restoredAnalysis, setRestoredAnalysis] = useState<ChatResponse | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -83,11 +91,20 @@ export function HistoryInvestigationsPage() {
     });
   }, [past, q, sev]);
 
-  const openPastSession = async (sessionId: string) => {
+  const openPastSession = async (sessionId: string, row?: PersistedInvestigation) => {
     setDetailLoading(sessionId);
+    setError(null);
     try {
-      await fetchIncidentDetail(sessionId);
-      openWith({ sessionId });
+      const detail = await fetchIncidentDetail(sessionId);
+      const response = detailToChatResponse(detail);
+      setRestoredAnalysis(response);
+      setTriageResult(response);
+      openWith({
+        sessionId,
+        alert: alertFromDetail(detail, row),
+        triageResponse: response,
+      });
+      navigate("home");
     } catch {
       setError("Failed to load investigation session");
     } finally {
@@ -98,7 +115,7 @@ export function HistoryInvestigationsPage() {
   if (loading) {
     return (
       <div className="grid-stack">
-        <h1 style={{ margin: 0, fontSize: "1.125rem" }}>History & Investigations</h1>
+        <PageHeader title="History & Investigations" subtitle="Alerts, incidents, and persisted AI sessions" />
         <LoadingSkeleton lines={6} />
       </div>
     );
@@ -110,15 +127,25 @@ export function HistoryInvestigationsPage() {
 
   return (
     <div className="grid-stack">
-      <h1 style={{ margin: 0, fontSize: "1.125rem" }}>History & Investigations</h1>
+      <PageHeader
+        title="History & Investigations"
+        subtitle="Open past investigations to restore PITER analysis and continue in Agent Copilot"
+      />
 
       <section className="history-section panel">
         <h2 className="history-section-title">Conversation history</h2>
         <p className="mono" style={{ fontSize: "0.8125rem", margin: 0, color: "var(--text-muted)" }}>
-          {filteredPast.length} persisted session{filteredPast.length === 1 ? "" : "s"} — open in Agent Chat
-          for follow-ups.
+          {filteredPast.length} persisted session{filteredPast.length === 1 ? "" : "s"} — restore analysis and
+          continue in Agent Copilot.
         </p>
       </section>
+
+      {restoredAnalysis ? (
+        <section className="history-section">
+          <h2 className="history-section-title">Restored PITER analysis</h2>
+          <PiterResponseView response={restoredAnalysis} onFollowUp={(q) => void send(q)} />
+        </section>
+      ) : null}
 
       {selectedPast ? (
         <section className="history-section panel">
@@ -311,7 +338,7 @@ export function HistoryInvestigationsPage() {
                         disabled={detailLoading === p.session_id}
                         onClick={() => {
                           setExpanded(p.session_id);
-                          void openPastSession(p.session_id);
+                          void openPastSession(p.session_id, p);
                         }}
                       >
                         {detailLoading === p.session_id ? "Loading…" : "Open in chat"}

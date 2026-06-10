@@ -159,6 +159,39 @@ export async function clearHistory(sessionId?: string | null): Promise<{ ok: boo
   return parseJson(response);
 }
 
+export type UploadDocumentResult = {
+  ok: boolean;
+  filename: string;
+  s3_key: string;
+  s3_uri: string;
+  size_bytes: number;
+  sync_started: boolean;
+  ingestion_job_id?: string | null;
+  sync_warning?: string;
+  message?: string;
+};
+
+export async function uploadDocument(file: File, syncKb: boolean): Promise<UploadDocumentResult> {
+  const form = new FormData();
+  form.append("document", file);
+  if (syncKb) form.append("sync_kb", "true");
+
+  const response = await fetch("/documents/upload?format=json", {
+    method: "POST",
+    credentials: "same-origin",
+    body: form,
+  });
+  const data = (await response.json()) as UploadDocumentResult & { message?: string; reason?: string };
+  if (!response.ok || !data.ok) {
+    throw new ApiError(
+      data.message || data.reason || `Upload failed (${response.status})`,
+      response.status,
+      data.reason,
+    );
+  }
+  return data;
+}
+
 export async function postEscalationNotify(
   payload: EscalationNotifyPayload,
 ): Promise<EscalationNotifyResponse> {

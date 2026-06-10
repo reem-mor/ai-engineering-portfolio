@@ -12,16 +12,18 @@ export function EscalationModal({
   incidentId,
   service,
   severity,
+  mode = "escalate",
   onClose,
 }: {
   incidentId: string;
   service: string;
   severity: string;
+  mode?: "escalate" | "email";
   onClose: () => void;
 }) {
   const { bootstrap, markEscalated, pauseStorm } = useDemo();
   const { push } = useToast();
-  const [channel, setChannel] = useState<"email" | "sms">("email");
+  const [channel, setChannel] = useState<"email" | "sms">(mode === "email" ? "email" : "email");
   const [preview, setPreview] = useState<MetricsResult | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmationToken, setConfirmationToken] = useState("");
@@ -31,9 +33,10 @@ export function EscalationModal({
   const previewOnly = preview?.safe_preview_only !== false || !liveReady;
 
   useEffect(() => {
+    setChannel(mode === "email" ? "email" : "email");
     void fetchEscalationPreview({ service, severity }).then(setPreview);
     pauseStorm();
-  }, [service, severity, pauseStorm]);
+  }, [service, severity, pauseStorm, mode]);
 
   const recipient =
     channel === "email"
@@ -84,7 +87,7 @@ export function EscalationModal({
     <div className="modal-backdrop modal-backdrop-top" role="presentation">
       <div className="modal" role="dialog" aria-labelledby="esc-title">
         <h2 id="esc-title" className="panel-title" style={{ fontSize: "1rem" }}>
-          Escalation preview
+          {mode === "email" ? "Email notification preview" : "Escalation preview"}
         </h2>
 
         <AlertBanner title="Preview only — human approval required" variant="warning">
@@ -158,7 +161,11 @@ export function EscalationModal({
             Close preview
           </Button>
           <Button variant="primary" onClick={() => void confirm()} disabled={pending || previewOnly} loading={pending}>
-            {pending ? "Dispatching…" : "Confirm dispatch"}
+            {pending
+              ? "Dispatching…"
+              : mode === "email"
+                ? "Preview email send"
+                : "Confirm dispatch"}
           </Button>
         </div>
         {previewOnly ? (

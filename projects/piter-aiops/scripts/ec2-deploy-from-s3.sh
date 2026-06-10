@@ -69,6 +69,7 @@ docker stop piter-aiops 2>/dev/null || true
 docker rm piter-aiops 2>/dev/null || true
 docker run -d --name piter-aiops --restart unless-stopped -p 8080:8080 \
   --env-file "${ENV_FILE}" \
+  -e FORCE_LEGACY_UI=false \
   -e PITER_USE_BEDROCK=true \
   piter-aiops:latest
 

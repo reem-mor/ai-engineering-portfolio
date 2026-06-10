@@ -8,15 +8,8 @@ import { alertToTriagePayload } from "@/lib/storm-engine";
 import { postTriage } from "@/lib/api-contract";
 import { Button } from "@/components/ui/Button";
 import { EscalationModal } from "./EscalationModal";
-
-const ANALYZE_STEPS = [
-  "Reading alert context",
-  "Checking deployments",
-  "Querying knowledge base",
-  "Similar incidents",
-  "Escalation recommendation",
-  "Generating PITER response",
-];
+import { P1_ANALYZE_STEPS } from "@/lib/analyze-steps";
+import { AgentEnrichmentPipeline } from "@/components/noc/AgentEnrichmentPipeline";
 
 export function P1Modal() {
   const {
@@ -42,8 +35,8 @@ export function P1Modal() {
       return;
     }
     setStepIndex(0);
-    const timers = ANALYZE_STEPS.map((_, i) =>
-      window.setTimeout(() => setStepIndex(i), i * 450),
+    const timers = P1_ANALYZE_STEPS.map((_, i) =>
+      window.setTimeout(() => setStepIndex(i), i * 400),
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [analyzing]);
@@ -66,7 +59,7 @@ export function P1Modal() {
         registerSession(sid, `${p1Row.service} P1`);
         setSessionId(sid);
       }
-      setStepIndex(ANALYZE_STEPS.length);
+      setStepIndex(P1_ANALYZE_STEPS.length);
       setDone(true);
       navigate("home");
       window.setTimeout(() => dismissP1(), 600);
@@ -103,8 +96,10 @@ export function P1Modal() {
           ) : null}
 
           {analyzing || done ? (
+            <>
+            <AgentEnrichmentPipeline analyzing={analyzing && !done} stepIndex={stepIndex} response={triageResult} />
             <ul className="analyze-steps" aria-live="polite">
-              {ANALYZE_STEPS.map((label, i) => {
+              {P1_ANALYZE_STEPS.map((label, i) => {
                 const isDone = stepIndex > i || done;
                 const isActive = analyzing && stepIndex === i;
                 return (
@@ -124,6 +119,7 @@ export function P1Modal() {
                 );
               })}
             </ul>
+            </>
           ) : null}
 
           <div className="p1-modal-actions">

@@ -15,6 +15,10 @@ import { HistoryInvestigationsPage } from "@/pages/HistoryInvestigations";
 import { AnalyzerPage } from "@/pages/Analyzer";
 import { SystemPage } from "@/pages/System";
 import { DemoGuidePage } from "@/pages/DemoGuide";
+import { KnowledgeBasePage } from "@/pages/KnowledgeBasePage";
+import { BedrockStatusPage } from "@/pages/BedrockStatusPage";
+import { PostMortemsPage } from "@/pages/PostMortemsPage";
+import { useChatDock } from "@/context/chat-dock";
 
 function PageView({ page }: { page: PageKey }) {
   switch (page) {
@@ -26,6 +30,12 @@ function PageView({ page }: { page: PageKey }) {
       return <HistoryInvestigationsPage />;
     case "analyzer":
       return <AnalyzerPage />;
+    case "knowledge":
+      return <KnowledgeBasePage />;
+    case "bedrock":
+      return <BedrockStatusPage />;
+    case "postmortems":
+      return <PostMortemsPage />;
     case "system":
       return <SystemPage />;
     case "guide":
@@ -35,19 +45,20 @@ function PageView({ page }: { page: PageKey }) {
   }
 }
 
-function ShellInner() {
+function ShellLayout() {
   const [page, setPage] = useState<PageKey>("home");
   const { criticalMode } = useDemo();
+  const { setMode } = useChatDock();
   const goHome = () => setPage("home");
+  const openChat = () => setMode("open");
 
   return (
-    <ChatDockProvider>
-      <NavigationProvider navigate={setPage}>
-        <div
-          className={`app-shell${criticalMode ? " critical-mode" : ""}`}
-          data-ui-version="demo-polish-v1"
-        >
-          <Sidebar page={page} onNavigate={setPage} onHome={goHome} />
+    <NavigationProvider navigate={setPage}>
+      <div
+        className={`app-shell${criticalMode ? " critical-mode" : ""}`}
+        data-ui-version="demo-polish-v2"
+      >
+        <Sidebar page={page} onNavigate={setPage} onHome={goHome} onOpenChat={openChat} />
           <div className="app-body">
             <TopBar />
             <div className="app-workspace">
@@ -57,9 +68,16 @@ function ShellInner() {
               <ChatDock />
             </div>
           </div>
-          <P1Modal />
-        </div>
-      </NavigationProvider>
+        <P1Modal />
+      </div>
+    </NavigationProvider>
+  );
+}
+
+function ShellInner() {
+  return (
+    <ChatDockProvider>
+      <ShellLayout />
     </ChatDockProvider>
   );
 }

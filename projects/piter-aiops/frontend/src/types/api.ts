@@ -1,6 +1,15 @@
 export type Priority = "P1" | "P2" | "P3" | "P4";
 
-export type PageKey = "home" | "analytics" | "history" | "analyzer" | "system" | "guide";
+export type PageKey =
+  | "home"
+  | "analytics"
+  | "history"
+  | "analyzer"
+  | "knowledge"
+  | "bedrock"
+  | "postmortems"
+  | "system"
+  | "guide";
 
 export type TriageOwner = {
   owner_team?: string;
@@ -65,6 +74,12 @@ export type BootstrapResponse = {
   kb_id?: string;
   s3_bucket?: string;
   s3_prefix?: string;
+  max_upload_mb?: number;
+  allowed_types?: string[];
+  sync_kb_default?: boolean;
+  use_bedrock?: boolean;
+  model_label?: string;
+  rag_backend?: string;
   execution_mode_hint?: string;
   notification?: {
     mode?: string;
@@ -161,6 +176,7 @@ export type TriageResponse = {
   requires_escalation?: boolean;
   recommended_followups?: string[];
   next_questions?: string[];
+  matched_runbook?: string;
 };
 
 export type ChatResponse = TriageResponse;
@@ -232,6 +248,7 @@ export type ChatDockPrefill = {
   message?: string;
   sessionId?: string | null;
   alert?: Partial<AlertRow>;
+  triageResponse?: ChatResponse | null;
 };
 
 export type PersistedInvestigation = {
