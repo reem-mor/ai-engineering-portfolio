@@ -37,6 +37,7 @@ type DemoContextValue = {
   stormComplete: boolean;
   escalatedIds: Set<string>;
   triageResult: TriageResponse | null;
+  triageAnalyzing: boolean;
   demoImpact: MetricsResult | null;
   bootstrap: BootstrapResponse | null;
   startStorm: () => void;
@@ -45,6 +46,7 @@ type DemoContextValue = {
   resumeStorm: () => void;
   dismissP1: () => void;
   setTriageResult: (r: TriageResponse | null) => void;
+  setTriageAnalyzing: (v: boolean) => void;
   markEscalated: (incidentId: string) => void;
 };
 
@@ -62,6 +64,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [stormComplete, setStormComplete] = useState(false);
   const [escalatedIds, setEscalatedIds] = useState<Set<string>>(new Set());
   const [triageResult, setTriageResult] = useState<TriageResponse | null>(null);
+  const [triageAnalyzing, setTriageAnalyzing] = useState(false);
   const [demoImpact, setDemoImpact] = useState<MetricsResult | null>(null);
   const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
   const prevVisibleRef = useRef<AlertRow[]>([]);
@@ -134,6 +137,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setStormComplete(false);
     setEscalatedIds(new Set());
     setTriageResult(null);
+    setTriageAnalyzing(false);
     setDemoImpact(null);
     prevVisibleRef.current = [];
   }, []);
@@ -150,11 +154,12 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setStormComplete(false);
     setEscalatedIds(new Set());
     setTriageResult(null);
+    setTriageAnalyzing(false);
     setDemoImpact(null);
     prevVisibleRef.current = [];
   }, []);
 
-  const criticalMode = showP1Modal || p1Shown || Boolean(triageResult);
+  const criticalMode = showP1Modal || p1Shown || Boolean(triageResult) || triageAnalyzing;
 
   const value = useMemo(
     () => ({
@@ -171,6 +176,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       stormComplete,
       escalatedIds,
       triageResult,
+      triageAnalyzing,
       demoImpact,
       bootstrap,
       startStorm,
@@ -182,6 +188,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         setPaused(false);
       },
       setTriageResult,
+      setTriageAnalyzing,
       markEscalated: (id: string) => setEscalatedIds((s) => new Set(s).add(id)),
     }),
     [
@@ -198,6 +205,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       stormComplete,
       escalatedIds,
       triageResult,
+      triageAnalyzing,
       demoImpact,
       bootstrap,
       startStorm,

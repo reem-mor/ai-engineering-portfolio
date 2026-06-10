@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -370,6 +371,34 @@ def check_sms_account_ready(*, region: str | None = None, phone: str | None = No
             ),
             "console_url": SMS_CONSOLE_URL,
         }
+
+
+_SMS_READINESS_CACHE: dict[str, object] | None = None
+_SMS_READINESS_CACHE_AT: float = 0.0
+_SMS_READINESS_TTL_SEC = 300.0
+
+
+def check_sms_account_ready_cached(
+    *,
+    region: str | None = None,
+    phone: str | None = None,
+    ttl_sec: float = _SMS_READINESS_TTL_SEC,
+) -> dict:
+    """TTL-cached wrapper so /api/bootstrap does not probe SNS on every request."""
+    global _SMS_READINESS_CACHE, _SMS_READINESS_CACHE_AT
+    cache_key = f"{region or ''}:{phone or ''}"
+    now = time.monotonic()
+    cached = _SMS_READINESS_CACHE
+    if (
+        isinstance(cached, dict)
+        and cached.get("_cache_key") == cache_key
+        and now - _SMS_READINESS_CACHE_AT < ttl_sec
+    ):
+        return {k: v for k, v in cached.items() if k != "_cache_key"}
+    result = check_sms_account_ready(region=region, phone=phone)
+    _SMS_READINESS_CACHE = {"_cache_key": cache_key, **result}
+    _SMS_READINESS_CACHE_AT = now
+    return result
 
 
 def _http_json(

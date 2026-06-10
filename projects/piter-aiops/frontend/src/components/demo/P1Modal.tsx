@@ -18,6 +18,7 @@ export function P1Modal() {
     pauseStorm,
     resumeStorm,
     setTriageResult,
+    setTriageAnalyzing,
     triageResult,
     escalatedIds,
   } = useDemo();
@@ -52,6 +53,7 @@ export function P1Modal() {
     if (analyzing) return;
     pauseStorm();
     setAnalyzing(true);
+    setTriageAnalyzing(true);
     setDone(false);
     try {
       const data = await postTriage(alertToTriagePayload(p1Row));
@@ -67,6 +69,7 @@ export function P1Modal() {
       window.setTimeout(() => dismissP1(), 600);
     } finally {
       setAnalyzing(false);
+      setTriageAnalyzing(false);
     }
   };
 
@@ -83,7 +86,7 @@ export function P1Modal() {
   return (
     <>
       <div className="modal-backdrop" role="presentation">
-        <div className="modal p1-modal" role="dialog" aria-labelledby="p1-title">
+        <div className="modal p1-modal p1-modal-pop" role="dialog" aria-labelledby="p1-title">
           <h2 id="p1-title" className="p1-modal-title">
             P1 critical incident
           </h2>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { fetchEscalationPreview, postEscalationNotify } from "@/lib/api-contract";
 import { useDemo } from "@/context/demo";
@@ -31,19 +31,28 @@ export function EscalationModal({
   const modeLabel = notificationModeLabel(notification);
   const previewOnly = preview?.safe_preview_only !== false || !liveReady;
 
+  const emailRecipients = useMemo(() => {
+    const fromBootstrap = notification?.email_recipients;
+    if (Array.isArray(fromBootstrap) && fromBootstrap.length) {
+      return fromBootstrap.map(String);
+    }
+    const fromPreview = preview?.email_recipients;
+    if (Array.isArray(fromPreview) && fromPreview.length) {
+      return fromPreview.map(String);
+    }
+    const single = preview?.recipient || preview?.on_call_email;
+    return single ? [String(single)] : [];
+  }, [notification?.email_recipients, preview]);
+
   useEffect(() => {
     setChannel(mode === "email" ? "email" : "email");
     void fetchEscalationPreview({ service, severity }).then(setPreview);
     pauseStorm();
   }, [service, severity, pauseStorm, mode]);
 
-  const emailRecipients = Array.isArray(notification?.email_recipients)
-    ? (notification.email_recipients as string[])
-    : [];
   const recipient =
     channel === "email"
-      ? emailRecipients.join(", ") ||
-        String(preview?.recipient || preview?.on_call_email || "on-call@ops")
+      ? String(preview?.recipient || preview?.on_call_email || emailRecipients[0] || "on-call@ops")
       : String(preview?.sms_recipient || preview?.on_call_phone || "+1-555-0100");
   const team = String(preview?.team || preview?.escalation_team || "Platform On-Call");
   const rootCause = String(preview?.root_cause || preview?.summary || `P1 ${service} degradation`);
@@ -61,14 +70,19 @@ export function EscalationModal({
         severity,
         message: `P1 ${service}: escalation requested via ${channel}`,
       });
-      const mode = result.mode || (result.sent ? "live" : "mock");
-      const total = Number(result.recipients_total ?? 0);
-      const okCount = Number(result.recipients_sent ?? (result.sent ? 1 : 0));
-      const fanout = total > 1 ? ` · delivered ${okCount}/${total}` : "";
-      push(
-        `Dispatch receipt · ${channel} · mode=${mode} · sent=${String(result.sent ?? false)}${fanout}`,
-        okCount > 0 || result.sent ? "success" : "error",
-      );
+      const dispatchMode = result.mode || (result.sent ? "live" : "mock");
+      const deliveries = result.deliveries || [];
+      if (deliveries.length) {
+        const summary = deliveries
+          .map((d) => `${d.recipient}: ${d.sent ? "sent" : "failed"}${d.message_id ? ` (${d.message_id})` : ""}`)
+          .join(" · ");
+        push(`Dispatch receipt · ${channel} · ${summary}`, result.sent ? "success" : "error");
+      } else {
+        push(
+          `Dispatch receipt · ${channel} · mode=${dispatchMode} · sent=${String(result.sent ?? false)}`,
+          result.sent ? "success" : "error",
+        );
+      }
       markEscalated(incidentId);
       onClose();
     } catch (err) {
@@ -117,14 +131,23 @@ export function EscalationModal({
             <span className="escalation-preview-label">Owner team</span>
             <span>{team}</span>
           </div>
-          <div className="escalation-preview-row">
-            <span className="escalation-preview-label">
-              {channel === "email" && emailRecipients.length > 1
-                ? `Recipients (${emailRecipients.length})`
-                : "Recipient"}
-            </span>
-            <span className="mono">{recipient}</span>
-          </div>
+          {channel === "email" && emailRecipients.length > 0 ? (
+            <div className="escalation-preview-row escalation-recipients-row">
+              <span className="escalation-preview-label">Recipients ({emailRecipients.length})</span>
+              <ul className="escalation-recipient-list">
+                {emailRecipients.map((email) => (
+                  <li key={email} className="mono">
+                    {email}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="escalation-preview-row">
+              <span className="escalation-preview-label">Recipient</span>
+              <span className="mono">{recipient}</span>
+            </div>
+          )}
           <div className="escalation-preview-row">
             <span className="escalation-preview-label">Immediate checks</span>
             <ul className="piter-bullet-list" style={{ margin: 0 }}>
@@ -148,11 +171,7 @@ export function EscalationModal({
             Close preview
           </Button>
           <Button variant="primary" onClick={() => void confirm()} disabled={pending || previewOnly} loading={pending}>
-            {pending
-              ? "Dispatching…"
-              : mode === "email"
-                ? "Preview email send"
-                : "Confirm dispatch"}
+            {pending ? "Dispatching…" : "Confirm dispatch"}
           </Button>
         </div>
         {previewOnly ? (

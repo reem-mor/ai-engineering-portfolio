@@ -79,6 +79,8 @@ def escalation_preview_metrics(
     severity: str | None = None,
     business_impact: str | None = None,
 ) -> dict[str, Any]:
+    from app.services.escalation_service import resolve_demo_recipients
+
     if not service:
         return {"error": "service is required"}
     priority = (severity or "P2").strip().upper()
@@ -86,6 +88,8 @@ def escalation_preview_metrics(
     if owner.get("error"):
         return {**owner, "sends_notifications": False}
     impact = (business_impact or "").strip()
+    recipients = resolve_demo_recipients("email")
+    primary = recipients[0] if recipients else owner.get("primary_on_call")
     return {
         "service": owner.get("service", service),
         "priority": priority,
@@ -94,8 +98,13 @@ def escalation_preview_metrics(
         "secondary_escalation": owner.get("secondary_escalation"),
         "channel": owner.get("slack_channel"),
         "on_call_channel": owner.get("slack_channel", ""),
+        "recipient": primary,
+        "on_call_email": primary,
+        "email_recipients": recipients,
         "safe_preview_only": True,
         "sends_notifications": False,
+        "team": owner.get("owner_team") or owner.get("team") or "Platform On-Call",
+        "escalation_team": owner.get("owner_team") or owner.get("team") or "Platform On-Call",
         "message": (
             f"{priority} {service} incident. Impact: "
             f"{impact or 'impact not yet quantified'}. "

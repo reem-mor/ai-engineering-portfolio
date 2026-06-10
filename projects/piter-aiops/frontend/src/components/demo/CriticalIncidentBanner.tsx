@@ -11,12 +11,23 @@ import { formatCurrencyUsd, formatNumber } from "@/lib/piter-format";
 import { EscalationModal } from "./EscalationModal";
 
 export function CriticalIncidentBanner() {
-  const { demoMode, p1Row, p1Shown, triageResult, showP1Modal, pauseStorm, resumeStorm, setTriageResult, demoImpact } =
-    useDemo();
+  const {
+    demoMode,
+    p1Row,
+    p1Shown,
+    triageResult,
+    triageAnalyzing,
+    showP1Modal,
+    pauseStorm,
+    resumeStorm,
+    setTriageResult,
+    setTriageAnalyzing,
+    demoImpact,
+  } = useDemo();
   const { openWith, registerSession } = useChatDock();
   const { setSessionId } = useSession();
   const navigate = useNavigate();
-  const [analyzing, setAnalyzing] = useState(false);
+  const analyzing = triageAnalyzing;
   const [showEscalation, setShowEscalation] = useState(false);
   const [escalationMode, setEscalationMode] = useState<"escalate" | "email">("escalate");
 
@@ -41,7 +52,7 @@ export function CriticalIncidentBanner() {
   const analyze = async () => {
     if (analyzing || triageResult) return;
     pauseStorm();
-    setAnalyzing(true);
+    setTriageAnalyzing(true);
     try {
       const data = await postTriage(alertToTriagePayload(p1Row));
       setTriageResult(data);
@@ -52,7 +63,7 @@ export function CriticalIncidentBanner() {
       }
       navigate("home");
     } finally {
-      setAnalyzing(false);
+      setTriageAnalyzing(false);
     }
   };
 

@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
-const UI_VERSION = "demo-polish-v5";
+const UI_VERSION = "demo-polish-v6";
 const screenshotDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../screenshots/final",
@@ -81,7 +81,23 @@ test.describe("Full application sweep", () => {
     expect(errors).toEqual([]);
   });
 
-  test("analyzer — structured panel v5 layout", async ({ page }) => {
+  test("demo — analysis waiting animation", async ({ page }) => {
+    await page.goto("/");
+    await requireDemoPolishUi(page);
+    await page.getByRole("button", { name: /start.*alert stream/i }).click();
+    await expect(page.locator(".p1-modal, .alert-banner-critical").first()).toBeVisible({
+      timeout: 45_000,
+    });
+    const analyzeBtn = page.getByRole("button", { name: /analyze.*incident/i }).first();
+    if (await analyzeBtn.isVisible()) {
+      await analyzeBtn.click();
+      await expect(page.locator(".analysis-in-progress-card, .enrichment-pipeline").first()).toBeVisible({
+        timeout: 10_000,
+      });
+    }
+  });
+
+  test("analyzer — structured panel v6 layout", async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await page.goto("/");
     await requireDemoPolishUi(page);
@@ -101,6 +117,7 @@ test.describe("Full application sweep", () => {
 
     const panelText = await panel.innerText();
     expect(panelText).not.toMatch(/\*\*[^*]+\*\*/);
+    expect(panelText).not.toContain("Source: Bedrock Agent");
 
     await panel.screenshot({
       path: path.join(screenshotDir, "16_structured_analysis_panel.png"),

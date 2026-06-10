@@ -1,6 +1,7 @@
 """Report readiness of the four required enrichment tools."""
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from app.services.triage_service import get_demo_alert
@@ -70,8 +71,22 @@ def _demo_arguments(tool_name: str) -> dict[str, Any]:
     return {}
 
 
+_TOOLS_STATUS_CACHE: tuple[float, dict[str, Any]] | None = None
+_TOOLS_STATUS_TTL_SEC = 30.0
+
+
 def build_tools_status() -> dict[str, Any]:
     """Probe each required tool with the demo alert and return structured status."""
+    global _TOOLS_STATUS_CACHE
+    now = time.monotonic()
+    if _TOOLS_STATUS_CACHE and now - _TOOLS_STATUS_CACHE[0] < _TOOLS_STATUS_TTL_SEC:
+        return _TOOLS_STATUS_CACHE[1]
+    payload = _probe_tools_status()
+    _TOOLS_STATUS_CACHE = (now, payload)
+    return payload
+
+
+def _probe_tools_status() -> dict[str, Any]:
     tools: list[dict[str, Any]] = []
     all_ready = True
 

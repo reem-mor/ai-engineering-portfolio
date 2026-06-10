@@ -16,6 +16,7 @@ import { countSeverities } from "@/lib/storm-engine";
 import type { AlertRow, Investigation, InvestigationsResponse, Priority } from "@/types/api";
 import { AlertStreamRow } from "@/components/noc/AlertStreamRow";
 import { PriorityBadge } from "@/components/noc/PriorityBadge";
+import { AnalysisInProgressCard } from "@/components/noc/AnalysisInProgressCard";
 import { PiterResponseView } from "@/components/noc/PiterResponseView";
 import { CriticalIncidentBanner } from "@/components/demo/CriticalIncidentBanner";
 const AnalyticsCharts = lazy(() =>
@@ -37,6 +38,7 @@ export function HomePage() {
     stormComplete,
     demoImpact,
     triageResult,
+    triageAnalyzing,
     escalatedIds,
     p1Row,
     wallSec,
@@ -353,6 +355,8 @@ export function HomePage() {
           )}
         </section>
       </div>
+
+      {triageAnalyzing && !triageResult ? <AnalysisInProgressCard /> : null}
 
       {triageResult ? (
         <section>

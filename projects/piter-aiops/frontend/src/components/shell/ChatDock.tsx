@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import {
   Bot,
   ChevronRight,
+  Database,
   Loader2,
   Maximize2,
   MessageSquare,
   Minimize2,
   Plus,
   RotateCcw,
+  Search,
   Trash2,
+  Wrench,
   X,
 } from "lucide-react";
 import { COPILOT_COMMON_QUESTIONS } from "@/lib/common-questions";
@@ -265,9 +268,19 @@ export function ChatDock() {
           </div>
         ))}
         {pending ? (
-          <div className="chat-bubble chat-assistant chat-thinking" role="status" aria-live="polite">
+          <div className="chat-bubble chat-assistant chat-thinking chat-thinking-live" role="status" aria-live="polite">
             <div className="chat-thinking-head">
-              <Loader2 size={14} className="chat-thinking-spinner" aria-hidden />
+              <span className="chat-thinking-icon" aria-hidden>
+                {activityIndex % 4 === 0 ? (
+                  <Search size={14} />
+                ) : activityIndex % 4 === 1 ? (
+                  <Database size={14} />
+                ) : activityIndex % 4 === 2 ? (
+                  <Wrench size={14} />
+                ) : (
+                  <Loader2 size={14} className="chat-thinking-spinner" />
+                )}
+              </span>
               <span className="chat-thinking-label">{AGENT_ACTIVITY_LABELS[activityIndex]}</span>
               <span className="chat-thinking-clock mono">{elapsedSec}s</span>
             </div>
@@ -278,11 +291,15 @@ export function ChatDock() {
                   className={`chat-thinking-dot${
                     i < activityIndex ? " done" : i === activityIndex ? " active" : ""
                   }`}
+                  title={label}
                 />
               ))}
             </div>
             <div className="chat-thinking-bar" aria-hidden>
-              <span className="chat-thinking-bar-fill" />
+              <span
+                className="chat-thinking-bar-fill"
+                style={{ width: `${Math.min(100, ((activityIndex + 1) / AGENT_ACTIVITY_LABELS.length) * 100)}%` }}
+              />
             </div>
           </div>
         ) : null}

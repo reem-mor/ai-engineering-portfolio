@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { PageKey } from "@/types/api";
 import { useDemo } from "@/context/demo";
 
-const UI_VERSION = "demo-polish-v5";
+const UI_VERSION = "demo-polish-v6";
 
 export function AppFooter({ onNavigate }: { onNavigate: (page: PageKey) => void }) {
   const { bootstrap } = useDemo();

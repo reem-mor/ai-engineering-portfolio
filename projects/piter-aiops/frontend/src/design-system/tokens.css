@@ -55,7 +55,7 @@
   --topbar-height: 52px;
   --dock-width: 420px;
   --dock-rail-width: 44px;
-  --content-max-width: 1400px;
+  --content-max-width: 1600px;
   --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
 }
 

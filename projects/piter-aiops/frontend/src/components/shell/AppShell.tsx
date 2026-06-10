@@ -65,7 +65,7 @@ function ShellLayout() {
     <NavigationProvider navigate={setPage}>
       <div
         className={`app-shell${criticalMode ? " critical-mode" : ""}`}
-        data-ui-version="demo-polish-v5"
+        data-ui-version="demo-polish-v6"
       >
         <Sidebar page={page} onNavigate={setPage} onHome={goHome} onOpenChat={openChat} />
         <div className="app-body app-body-with-footer">

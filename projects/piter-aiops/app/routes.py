@@ -21,9 +21,10 @@ from app.validators import MAX_QUESTION_LEN, validate_question
 from app.services.alert_stream import load_active_alerts, load_alert_stream, p1_demo_alert, summarize_alert_stream
 from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.escalation_service import notify_demo_channel
+from app.services.escalation_service import resolve_demo_recipients
 from app.services.notification_dispatch import (
     allowlist_count,
-    check_sms_account_ready,
+    check_sms_account_ready_cached,
     email_configured,
     live_dispatch_enabled,
     sms_configured,
@@ -124,40 +125,17 @@ def _execution_mode_hint(mode: str | None = None) -> str:
     return "Bedrock Agent"
 
 
-_SMS_READY_CACHE: dict = {"at": 0.0, "value": None}
-_SMS_READY_TTL_SECONDS = 300.0
-
-
-def _sms_account_status_cached() -> dict:
-    """SMS readiness probe hits several AWS APIs; cache it so /api/bootstrap stays fast."""
-    import os
-    import time
-
-    now = time.monotonic()
-    if _SMS_READY_CACHE["value"] is not None and now - _SMS_READY_CACHE["at"] < _SMS_READY_TTL_SECONDS:
-        return _SMS_READY_CACHE["value"]
-    try:
-        status = check_sms_account_ready(
-            phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
-        )
-    except Exception as exc:  # network timeout must never block bootstrap
-        log.warning("sms_ready_probe_failed: %s", exc)
-        status = {"ready": False, "message": "SMS readiness probe unavailable"}
-    _SMS_READY_CACHE["value"] = status
-    _SMS_READY_CACHE["at"] = now
-    return status
-
-
 def _notification_settings() -> dict:
     import os
 
-    from app.services.escalation_service import mask_recipient, resolve_demo_recipients
-
-    sms_status = _sms_account_status_cached()
+    sms_status = check_sms_account_ready_cached(
+        phone=os.environ.get("PITER_DEMO_SMS_RECIPIENT", "").strip() or None,
+    )
     mode = os.environ.get("PITER_NOTIFICATION_MODE", "preview").strip().lower()
     live = live_dispatch_enabled()
     email_ready = email_configured()
     allowlist = allowlist_count()
+    email_recipients = resolve_demo_recipients("email")
     return {
         "mode": mode,
         "require_confirmation": os.environ.get("PITER_NOTIFICATION_REQUIRE_CONFIRMATION", "true").lower()
@@ -176,7 +154,8 @@ def _notification_settings() -> dict:
         "demo_whatsapp_configured": whatsapp_configured(),
         "whatsapp_configured": whatsapp_configured(),
         "demo_email_configured": bool(os.environ.get("PITER_DEMO_EMAIL_RECIPIENT", "").strip()),
-        "email_recipients": [mask_recipient(item) for item in resolve_demo_recipients("email")],
+        "email_recipients": email_recipients,
+        "email_recipients_count": len(email_recipients),
     }
 
 

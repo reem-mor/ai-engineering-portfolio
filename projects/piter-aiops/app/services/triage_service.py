@@ -7,7 +7,10 @@ JSON contract.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
+
+from flask import has_app_context
 
 from app.bedrock_client import RagAnswer
 from app.services import session_memory
@@ -163,12 +166,30 @@ def run_triage(
     """Run full triage: structured analysis, RAG, compose one triage card."""
     sid = session_memory.create_session(alert, session_id=session_id)
     question = build_triage_question(alert)
-    try:
-        rag = ask_fn(question, session_id=sid)
-    except TypeError:
-        rag = ask_fn(question)
 
-    analysis = analyze_incident(alert)
+    app_ctx = None
+    if has_app_context():
+        from flask import current_app
+
+        app_ctx = current_app._get_current_object()
+
+    def _invoke_rag() -> RagAnswer:
+        def _call() -> RagAnswer:
+            try:
+                return ask_fn(question, session_id=sid)
+            except TypeError:
+                return ask_fn(question)
+
+        if app_ctx is not None:
+            with app_ctx.app_context():
+                return _call()
+        return _call()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        rag_future = pool.submit(_invoke_rag)
+        analysis_future = pool.submit(analyze_incident, alert)
+        rag = rag_future.result()
+        analysis = analysis_future.result()
     analysis_ok = not analysis.get("error")
 
     if analysis_ok:
