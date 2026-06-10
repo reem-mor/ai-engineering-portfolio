@@ -1,23 +1,19 @@
-﻿
-
-# PITER AiOps
+﻿# PITER AiOps
 
 **AI-powered incident response for NOC, DevOps, and SRE teams**
 
 **P**riority · **I**nvestigation · **T**riage · **E**scalation · **R**esolution
 
-[Python 3.12](https://www.python.org/)
-[Flask](https://flask.palletsprojects.com/)
-[React](frontend/)
-[Amazon Bedrock](https://aws.amazon.com/bedrock/)
-[Docker](docker-compose.yml)
-[Tests](tests/)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-API-000000?logo=flask&logoColor=white)
+![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-Agent_%2B_KB-FF9900?logo=amazonwebservices&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-279_passed-brightgreen?logo=pytest&logoColor=white)
 
-  
-
+![PITER AiOps — NOC dashboard](screenshots/final/01_dashboard.png)
 
 ### Submission links
-
 
 | Resource               | Link                                                                                                                                          |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,16 +24,6 @@
 | **Deploy guide**       | [`docs/ec2_deployment.md`](docs/ec2_deployment.md)                                                                                            |
 | **Sync audit (Jun 10)** | [`docs/PHASE1_SYNC_AUDIT.md`](docs/PHASE1_SYNC_AUDIT.md)                                                                                     |
 
-
-  
-
-
-
-
-*[Editable diagram in Eraser](https://app.eraser.io/workspace/k7BPJorv6ubjEktGOH3u)*
-
-
-
 > **Safety:** Escalation is preview-only by default. No auto-SMS or email unless `PITER_ENABLE_LIVE_DISPATCH=true` and notification channels are configured.
 
 ---
@@ -47,6 +33,7 @@
 - [Project goal](#project-goal)
 - [Requirements coverage](#requirements-coverage)
 - [Quick start](#quick-start)
+- [5-minute demo flow](#5-minute-demo-flow)
 - [System architecture](#system-architecture)
 - [Key components](#key-components)
 - [Use cases](#use-cases)
@@ -155,9 +142,27 @@ Daily dev loop: [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md) · Presenter flow: [`do
 
 ---
 
+## 5-minute demo flow
+
+The recommended walkthrough — each step maps to a screenshot in [Screenshots](#screenshots):
+
+| # | Step | What to show | Screenshot |
+|---|------|--------------|------------|
+| 1 | Open the **Dashboard** | KPI tiles, alert queue, Agent Copilot rail | [`01`](screenshots/final/01_dashboard.png) |
+| 2 | Click **Start Alert Stream** | Alerts flood in; noise suppression counters climb | [`03`](screenshots/final/03_alert_storm_running.png) |
+| 3 | Wait ~20s → **P1 candidate detected** | Storm pauses on the P1 wallet-service candidate | [`04`](screenshots/final/04_p1_detected.png) |
+| 4 | Click **Analyze P1 Incident** | Bedrock Agent triage: priority, correlation chain, action plan | [`05`](screenshots/final/05_investigation_detail_triage.png) · [`16`](screenshots/final/16_structured_analysis_panel.png) |
+| 5 | Review **Sources** | KB runbook citations grounding every step | [`06`](screenshots/final/06_rag_citations.png) |
+| 6 | Ask a **follow-up** in chat | Session memory reuses incident context — no re-triage | [`08`](screenshots/final/08_memory_followup_context.png) |
+| 7 | Open **Escalation preview** | On-call recipients + checks; nothing sent without confirm | [`09`](screenshots/final/09_escalation_preview.png) |
+
+Full presenter script with timings and talking points: [`docs/demo_script.md`](docs/demo_script.md)
+
+---
+
 ## System architecture
 
-Full doc: [`docs/architecture.md`](docs/architecture.md)
+Full doc: [`docs/architecture.md`](docs/architecture.md) · *[Editable diagram in Eraser](https://app.eraser.io/workspace/k7BPJorv6ubjEktGOH3u)*
 
 ### High-level containers
 
@@ -380,7 +385,7 @@ python mcp/server.py --selftest
 
 ### UI stack
 
-React 18 + Vite + TypeScript + Tailwind + shadcn/ui ([`frontend/`](frontend/)). Primary surfaces: Alert Storm, Dashboard, Investigations, Live KB Chat, Memory, Knowledge Base, Tools/MCP, Architecture, Settings.
+React 18 + Vite + TypeScript + Tailwind + shadcn/ui ([`frontend/`](frontend/)). Primary surfaces: **Live Demo** (alert storm + dashboard), **Analyzer**, **Agent Chat**, **Incident History**, **Post-Mortems**, **Agent Analytics**, **Knowledge Base**, **AWS / Bedrock status**, **System**, and **Demo Guide** — plus the persistent **Agent Copilot** chat rail.
 
 **API endpoints (summary)**
 
@@ -463,17 +468,32 @@ Reuses session attributes when `triage_complete=true`. Does not repeat full tria
 
 Curated captures from [`screenshots/final/`](screenshots/final/) — aligned with mid-course demo requirements (RAG, tools, live action). **Jun 10, 2026 refresh:** Playwright capture at 1920×1080 against the live EC2 stack (`PITER_BASE_URL=http://ec2-3-235-22-143.compute-1.amazonaws.com:8080`) via [`frontend/e2e/submission-screenshots.spec.ts`](frontend/e2e/submission-screenshots.spec.ts).
 
-| Caption | File |
-| ------- | ---- |
-| **Main NOC dashboard** — KPI tiles, alert queue, agent copilot | [`01_dashboard.png`](screenshots/final/01_dashboard.png) |
-| **Analyze alert** — Incident Analyzer input + structured PITER output | [`05_investigation_detail_triage.png`](screenshots/final/05_investigation_detail_triage.png) |
-| **Structured analysis panel** — correlation chain, business impact, action plan | [`16_structured_analysis_panel.png`](screenshots/final/16_structured_analysis_panel.png) |
-| **KB-grounded answer** — Sources section with runbook citations | [`06_rag_citations.png`](screenshots/final/06_rag_citations.png) |
-| **Chat memory** — login incident + “What should I check next?” follow-up | [`08_memory_followup_context.png`](screenshots/final/08_memory_followup_context.png) |
-| **Escalation flow** — on-call preview modal (confirm before dispatch) | [`09_escalation_preview.png`](screenshots/final/09_escalation_preview.png) |
-| **Demo correlation chain** — wallet-service deploy → replication lag → similar incident | [`demo-wallet-v4-12-3-correlation-chain.png`](screenshots/final/demo-wallet-v4-12-3-correlation-chain.png) |
+**Analyze alert** — Incident Analyzer input + structured PITER output
 
-**Full screenshot index**
+![Analyze alert — structured PITER triage](screenshots/final/05_investigation_detail_triage.png)
+
+**Structured analysis panel** — correlation chain, business impact, action plan
+
+![Structured analysis panel](screenshots/final/16_structured_analysis_panel.png)
+
+**KB-grounded answer** — Sources section with runbook citations
+
+![KB citations](screenshots/final/06_rag_citations.png)
+
+**Chat memory** — login incident + “What should I check next?” follow-up
+
+![Session memory follow-up](screenshots/final/08_memory_followup_context.png)
+
+**Escalation flow** — on-call preview modal, recipients masked, confirm before dispatch
+
+![Escalation preview modal](screenshots/final/09_escalation_preview.png)
+
+**Demo correlation chain** — wallet-service deploy → replication lag → similar incident
+
+![Wallet correlation chain](screenshots/final/demo-wallet-v4-12-3-correlation-chain.png)
+
+<details>
+<summary><strong>Full screenshot index (15 files)</strong></summary>
 
 | File | Shows | Updated |
 | ---- | ----- | ------- |
@@ -493,8 +513,7 @@ Curated captures from [`screenshots/final/`](screenshots/final/) — aligned wit
 | [`16_structured_analysis_panel.png`](screenshots/final/16_structured_analysis_panel.png) | Structured analysis — correlation chain | 2026-06-10 |
 | [`demo-wallet-v4-12-3-correlation-chain.png`](screenshots/final/demo-wallet-v4-12-3-correlation-chain.png) | Wallet deploy → replication lag chain | 2026-06-10 |
 
-
-
+</details>
 
 ---
 
