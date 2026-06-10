@@ -199,6 +199,7 @@ export type TriageResponse = {
   recommended_followups?: string[];
   next_questions?: string[];
   matched_runbook?: string;
+  structured_analysis?: StructuredAnalysis;
 };
 
 export type ChatResponse = TriageResponse;
@@ -236,12 +237,39 @@ export type MetricsResult = Record<string, unknown> & {
   sends_notifications?: boolean;
 };
 
+export type CorrelationChainStep = {
+  step: string;
+  label: string;
+  timestamp?: string;
+  detail?: string;
+};
+
+export type StructuredAnalysis = {
+  severity: string;
+  summary: string;
+  correlation_chain: CorrelationChainStep[];
+  evidence: string[];
+  similar_incidents: Array<{
+    incident_id?: string;
+    service?: string;
+    summary?: string;
+    mttr_minutes?: number;
+  }>;
+  recommended_actions: string[];
+  escalation_suggestion: {
+    owner_team?: string;
+    primary_oncall?: string;
+    escalation_path?: string;
+    requires_escalation?: boolean;
+    summary?: string;
+  };
+};
+
 export type EscalationNotifyPayload = {
   channel: "email" | "sms" | "whatsapp";
   incident_id: string;
   service: string;
   severity: string;
-  confirmation_token: string;
   message?: string;
   idempotency_key?: string;
   escalation_context?: Record<string, unknown>;

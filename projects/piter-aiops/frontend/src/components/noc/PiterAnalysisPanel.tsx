@@ -4,7 +4,8 @@ import { useChatDock } from "@/context/chat-dock";
 import { postIncidentStatus } from "@/lib/api-contract";
 import { Button } from "@/components/ui/Button";
 import { EscalationModal } from "@/components/demo/EscalationModal";
-import { parsePiterSection } from "@/lib/piter-format";
+import { normalizeStepList, parsePiterSection, stripMarkdown } from "@/lib/piter-format";
+import { CorrelationChainTimeline } from "./CorrelationChainTimeline";
 import { ConfidenceIndicator } from "./ConfidenceIndicator";
 import { IncidentTimeline } from "./IncidentTimeline";
 import { SourceChip } from "./SourceChip";
@@ -91,13 +92,27 @@ export function PiterAnalysisPanel({
   const [incidentStatus, setIncidentStatus] = useState<"open" | "in_process" | "resolved">("open");
   const [showEscalation, setShowEscalation] = useState(false);
   const piter = response.piter;
+  const structured = response.structured_analysis;
   const followups = response.recommended_followups || response.next_questions || [];
-  const investigationLines = parsePiterSection(piter?.investigation || response.answer);
-  const escalationLines = parsePiterSection(piter?.escalation);
+  const investigationLines =
+    structured?.evidence?.length
+      ? structured.evidence
+      : parsePiterSection(piter?.investigation || response.answer);
+  const escalationLines = structured?.escalation_suggestion?.summary
+    ? [structured.escalation_suggestion.summary]
+    : parsePiterSection(piter?.escalation);
   const resolutionLines = parsePiterSection(piter?.resolution);
-  const triageSteps = response.recommended_steps?.length
-    ? response.recommended_steps
-    : parsePiterSection(piter?.triage);
+  const triageSteps = structured?.recommended_actions?.length
+    ? structured.recommended_actions
+    : response.recommended_steps?.length
+      ? normalizeStepList(response.recommended_steps)
+      : parsePiterSection(piter?.triage);
+  const correlationChain = structured?.correlation_chain || [];
+  const similarRows = structured?.similar_incidents?.length
+    ? structured.similar_incidents
+    : Array.isArray(response.similar_incidents)
+      ? response.similar_incidents
+      : [];
 
   const alertService = response.alert?.service ? String(response.alert.service) : null;
   const dep = (response.suspect_deployment || null) as Record<string, unknown> | null;
@@ -107,10 +122,10 @@ export function PiterAnalysisPanel({
         .join(" ") || null
     : null;
   const similarFirst =
-    Array.isArray(response.similar_incidents) && response.similar_incidents.length > 0
+    similarRows.length > 0
       ? String(
-          (response.similar_incidents[0] as Record<string, unknown>).incident_id ||
-            (response.similar_incidents[0] as Record<string, unknown>).id ||
+          (similarRows[0] as Record<string, unknown>).incident_id ||
+            (similarRows[0] as Record<string, unknown>).id ||
             "",
         ) || null
       : null;
@@ -160,15 +175,29 @@ export function PiterAnalysisPanel({
           <FieldGrid
             fields={[
               { label: "Affected service", value: alertService },
-              { label: "Recommended priority", value: piter?.priority || response.priority },
+              { label: "Recommended priority", value: structured?.severity || piter?.priority || response.priority },
               { label: "Recent deployment", value: recentDeployment },
               { label: "Similar past incident", value: similarFirst },
               { label: "Matched runbook", value: response.matched_runbook },
               { label: "Confidence", value: response.confidence },
             ]}
           />
+          {structured?.summary ? (
+            <p style={{ marginTop: 12, fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+              {stripMarkdown(structured.summary)}
+            </p>
+          ) : null}
         </CardContent>
       </Card>
+
+      {correlationChain.length > 0 ? (
+        <Card>
+          <CardHeader title="Correlation chain" />
+          <CardContent>
+            <CorrelationChainTimeline chain={correlationChain} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader title="Priority" />
@@ -209,7 +238,7 @@ export function PiterAnalysisPanel({
             ]}
           />
           {renderDeployment(response.suspect_deployment)}
-          {renderSimilarIncidents(response.similar_incidents)}
+          {renderSimilarIncidents(similarRows)}
         </CardContent>
       </Card>
 
@@ -227,9 +256,18 @@ export function PiterAnalysisPanel({
           <BulletList items={escalationLines} />
           <FieldGrid
             fields={[
-              { label: "Owner team", value: response.owner?.owner_team },
-              { label: "Primary on-call", value: response.owner?.primary_oncall },
-              { label: "Escalation path", value: response.owner?.escalation_path },
+              {
+                label: "Owner team",
+                value: structured?.escalation_suggestion?.owner_team || response.owner?.owner_team,
+              },
+              {
+                label: "Primary on-call",
+                value: structured?.escalation_suggestion?.primary_oncall || response.owner?.primary_oncall,
+              },
+              {
+                label: "Escalation path",
+                value: structured?.escalation_suggestion?.escalation_path || response.owner?.escalation_path,
+              },
               {
                 label: "Requires escalation",
                 value:

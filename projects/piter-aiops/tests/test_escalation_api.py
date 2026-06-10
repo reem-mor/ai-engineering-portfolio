@@ -28,14 +28,15 @@ def test_escalation_notify_requires_channel(client):
     assert data["reason"] == "invalid_channel"
 
 
-def test_escalation_notify_requires_confirmation_token(client):
+def test_escalation_notify_requires_server_token(client, monkeypatch):
+    monkeypatch.delenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", raising=False)
     response = client.post(
         "/api/escalation/notify",
         json={"channel": "sms", "incident_id": "INC-1", "service": "bet-service", "severity": "P1"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 503
     data = response.get_json()
-    assert data["reason"] == "missing_confirmation"
+    assert data["reason"] == "server_token_unconfigured"
 
 
 def test_escalation_notify_unconfigured_recipient_returns_clean_error(client, monkeypatch):
@@ -44,6 +45,7 @@ def test_escalation_notify_unconfigured_recipient_returns_clean_error(client, mo
     monkeypatch.delenv("PITER_ENABLE_LIVE_DISPATCH", raising=False)
     monkeypatch.delenv("PITER_DEMO_EMAIL_RECIPIENT", raising=False)
 
+    monkeypatch.setenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "token-ok")
     response = client.post(
         "/api/escalation/notify",
         json={
@@ -51,7 +53,6 @@ def test_escalation_notify_unconfigured_recipient_returns_clean_error(client, mo
             "incident_id": "INC-API-ERR",
             "service": "bet-service",
             "severity": "P1",
-            "confirmation_token": "token-ok",
         },
     )
     assert response.status_code != 500
@@ -64,6 +65,7 @@ def test_escalation_notify_unconfigured_recipient_returns_clean_error(client, mo
 def test_escalation_notify_blocked_without_live_gates(client, monkeypatch):
     monkeypatch.setenv("PITER_DEMO_SMS_RECIPIENT", "+15551234567")
     monkeypatch.setenv("PITER_NOTIFICATION_MODE", "mock")
+    monkeypatch.setenv("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "token-ok")
     monkeypatch.delenv("PITER_ENABLE_LIVE_DISPATCH", raising=False)
 
     response = client.post(
@@ -73,7 +75,6 @@ def test_escalation_notify_blocked_without_live_gates(client, monkeypatch):
             "incident_id": "INC-API-1",
             "service": "bet-service",
             "severity": "P1",
-            "confirmation_token": "token-ok",
         },
     )
     assert response.status_code == 403
@@ -106,7 +107,6 @@ def test_escalation_notify_succeeds_with_mocked_dispatch(client, monkeypatch):
                 "incident_id": "INC-API-2",
                 "service": "bet-service",
                 "severity": "P1",
-                "confirmation_token": "token-ok",
             },
         )
 

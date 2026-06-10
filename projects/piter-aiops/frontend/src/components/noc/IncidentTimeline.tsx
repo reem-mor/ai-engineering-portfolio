@@ -1,7 +1,9 @@
+import { stripMarkdown } from "@/lib/piter-format";
+
 export function IncidentTimeline({ triage }: { triage: string }) {
   const steps = triage
     .split("\n")
-    .map((line) => line.trim())
+    .map((line) => stripMarkdown(line.trim()))
     .filter(Boolean);
 
   if (!steps.length) return null;

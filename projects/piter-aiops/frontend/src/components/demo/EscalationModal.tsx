@@ -26,7 +26,6 @@ export function EscalationModal({
   const [channel, setChannel] = useState<"email" | "sms">(mode === "email" ? "email" : "email");
   const [preview, setPreview] = useState<MetricsResult | null>(null);
   const [pending, setPending] = useState(false);
-  const [confirmationToken, setConfirmationToken] = useState("");
   const notification = bootstrap?.notification;
   const liveReady = isLiveDispatchReady(notification);
   const modeLabel = notificationModeLabel(notification);
@@ -49,11 +48,6 @@ export function EscalationModal({
     : ["Verify error rate spike", "Check recent deployment", "Confirm on-call availability"];
 
   const confirm = async () => {
-    const token = confirmationToken.trim();
-    if (notification?.require_confirmation !== false && !token) {
-      push("Enter the dispatch confirmation token configured on the server.", "error");
-      return;
-    }
     setPending(true);
     try {
       const result = await postEscalationNotify({
@@ -61,7 +55,6 @@ export function EscalationModal({
         incident_id: incidentId,
         service,
         severity,
-        confirmation_token: token,
         message: `P1 ${service}: escalation requested via ${channel}`,
       });
       const mode = result.mode || (result.sent ? "live" : "mock");
@@ -93,7 +86,7 @@ export function EscalationModal({
         <AlertBanner title="Preview only — human approval required" variant="warning">
           {previewOnly
             ? `No live notifications will be sent (${modeLabel}). Review the draft below before any dispatch.`
-            : "Live dispatch is enabled — confirmation token required before send."}
+            : "Live dispatch is enabled — review the draft and confirm to send via server-side SES."}
         </AlertBanner>
 
         <div className="escalation-preview-card panel" style={{ marginTop: 12 }}>
@@ -138,23 +131,6 @@ export function EscalationModal({
             <option value="sms">SMS</option>
           </select>
         </div>
-
-        {notification?.require_confirmation !== false ? (
-          <div className="form-row" style={{ marginTop: "12px" }}>
-            <label className="label" htmlFor="esc-confirm-token">
-              Confirmation token
-            </label>
-            <input
-              id="esc-confirm-token"
-              className="input"
-              type="password"
-              autoComplete="off"
-              placeholder="Server-configured dispatch token"
-              value={confirmationToken}
-              onChange={(e) => setConfirmationToken(e.target.value)}
-            />
-          </div>
-        ) : null}
 
         <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
           <Button variant="secondary" onClick={onClose}>

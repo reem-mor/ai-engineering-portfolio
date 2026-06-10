@@ -46,7 +46,7 @@
     "  set_kv PITER_NOTIFICATION_CONFIRMATION_TOKEN piter",
     "  set_kv PITER_NOTIFICATION_ALLOWLIST '+972526775754,fontex331@gmail.com,reem.mor3@gmail.com'",
     "  set_kv PITER_NOTIFICATION_ALLOWED_SEVERITIES P1,P2",
-    "  set_kv PITER_SES_SENDER_EMAIL fontex331@gmail.com",
+    "  set_kv PITER_SES_SENDER_EMAIL reem.mor3@gmail.com",
     "  set_kv PITER_SES_CONFIGURATION_SET piter-aiops-escalations",
     "  set_kv PITER_DEMO_EMAIL_RECIPIENT reem.mor3@gmail.com",
     "  set_kv PITER_DEMO_SMS_RECIPIENT +972526775754",

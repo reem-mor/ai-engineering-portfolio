@@ -508,6 +508,8 @@ Curated captures from `[screenshots/final/](screenshots/final/)` — aligned wit
 
 When Bedrock fails and fallback is disabled, the UI shows failure explicitly — never fake a grounded answer.
 
+**Tokenless escalation + structured analysis (Jun 2026):** Live email dispatch no longer accepts a confirmation token from the browser — `POST /api/escalation/notify` injects `PITER_NOTIFICATION_CONFIRMATION_TOKEN` server-side while the UI keeps preview + explicit confirm only (`EscalationModal.tsx`). Analyze Alert responses now include a `structured_analysis` contract (correlation chain, evidence, recommended actions, escalation suggestion) with markdown stripped before render; see `app/services/structured_analysis.py`, `PiterAnalysisPanel.tsx`, and `screenshots/final/16_structured_analysis_panel.png`. Live SES proof on EC2: message ID `0100019eb06b31ee-7bfe623d-98fe-4d94-98e9-451931918d4a-000000` to `reem.mor3@gmail.com` (sandbox).
+
 ---
 
 ## Testing evidence
@@ -519,6 +521,9 @@ When Bedrock fails and fallback is disabled, the UI shows failure explicitly —
 | `scripts/agent_smoke_test.py` | **6/6 PASS**   | Live Bedrock grounding                       |
 | `scripts/verify_live_demo.py` | PASS on EC2    | End-to-end public demo                       |
 | `frontend npm run build`      | Build OK       | SPA production bundle                        |
+| `frontend npm run test:e2e`   | **12 passed**  | EC2 demo path + output-hardening screenshots |
+| `tests/test_structured_analysis.py` | PASS   | wallet-service v4.12.3 correlation chain     |
+| Live SES escalation           | **sent**       | `0100019eb06b31ee-7bfe623d-98fe-4d94-98e9-451931918d4a-000000` |
 
 
 

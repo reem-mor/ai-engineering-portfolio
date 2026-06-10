@@ -629,16 +629,19 @@ def api_escalation_notify():
             message="channel must be sms, email, or whatsapp",
         ), 400
 
+    import os
+
     incident_id = str(body.get("incident_id") or "INC-DEMO-STORM").strip()
     service = str(body.get("service") or "bet-service").strip()
     severity = str(body.get("severity") or "P1").strip()
-    confirmation_token = str(body.get("confirmation_token") or "").strip()
+    # Token is server-side only — never accept credentials from the browser.
+    confirmation_token = os.environ.get("PITER_NOTIFICATION_CONFIRMATION_TOKEN", "").strip()
     if not confirmation_token:
         return jsonify(
             ok=False,
-            reason="missing_confirmation",
-            message="A confirmation token is required for live dispatch.",
-        ), 400
+            reason="server_token_unconfigured",
+            message="Live dispatch is not configured on the server (missing confirmation token).",
+        ), 503
 
     message = str(body.get("message") or "").strip() or None
     idempotency_key = str(body.get("idempotency_key") or "").strip() or None

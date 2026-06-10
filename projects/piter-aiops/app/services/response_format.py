@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.services.structured_analysis import build_structured_analysis, strip_markdown
 from app.text_utils import format_answer_sections
 
 
@@ -206,7 +207,8 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(impact, dict) and impact.get("business_explanation"):
             business_impact = impact["business_explanation"]
 
-    recommended = payload.get("recommended_steps") or []
+    recommended_raw = payload.get("recommended_steps") or []
+    recommended = [strip_markdown(str(step)) for step in recommended_raw if str(step).strip()]
     confidence = payload.get("confidence") or _confidence_from_sections(
         piter_sections if isinstance(piter_sections, dict) else None
     )
@@ -222,6 +224,7 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(payload)
     if isinstance(impact, dict):
         normalized["impact"] = impact
+    structured = build_structured_analysis({**payload, "piter": piter, "recommended_steps": recommended})
     normalized.update(
         {
             "answer": answer,
@@ -233,6 +236,8 @@ def normalize_api_response(payload: dict[str, Any]) -> dict[str, Any]:
             "sources": sources,
             "tool_results": tool_results or [],
             "fallback_used": bool(payload.get("fallback_used")),
+            "recommended_steps": recommended,
+            "structured_analysis": structured,
         }
     )
     memory = payload.get("memory")

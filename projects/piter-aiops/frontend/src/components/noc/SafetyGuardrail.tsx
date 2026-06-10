@@ -5,7 +5,7 @@ const BLOCKED = [
   "Execute production rollback without approval",
   "Trigger failover or traffic shift autonomously",
   "Restart production services without confirmation",
-  "Send live escalation notifications without token",
+  "Send live escalation notifications without explicit operator confirmation",
 ];
 
 export function SafetyGuardrail({ previewOnly }: { previewOnly?: boolean }) {

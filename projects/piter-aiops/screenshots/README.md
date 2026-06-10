@@ -25,6 +25,8 @@ screen, Knowledge Base view, tool results, and Docker/test proof.
 | `final/14_tests_passing.png` | Test proof |
 | `final/14b_live_demo_checks.png` | Live demo verification proof |
 | `final/15_docker_running.png` | Docker container proof |
+| `final/16_structured_analysis_panel.png` | Structured analysis — correlation chain, no raw markdown |
+| `final/17_tokenless_escalation_modal.png` | Escalation preview without browser token field |
 
 ## Legacy Captures
 
