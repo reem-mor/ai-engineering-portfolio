@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const baseURL = process.env.PITER_BASE_URL || "http://127.0.0.1:8080";
 const UI_VERSION = "demo-polish-v6";
+// Evidence shots only — keep out of screenshots/final (modal can show unmasked recipient emails).
 const screenshotDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../screenshots/final",
+  "../test-results/evidence",
 );
 
 async function requireDemoPolishUi(page: Page): Promise<void> {
