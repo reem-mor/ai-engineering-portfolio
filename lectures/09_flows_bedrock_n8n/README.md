@@ -97,10 +97,12 @@ Details: [`bedrock_flows/README.md`](bedrock_flows/README.md)
 
 ```powershell
 cd n8n
+copy .env.example .env
+# Edit .env: set N8N_ENCRYPTION_KEY (see n8n/README.md for the generator command)
 docker compose up -d
 ```
 
-Import workflows and configure AWS credentials: [`n8n/README.md`](n8n/README.md)
+Import workflows, configure AWS credentials, and set up MCP: [`n8n/README.md`](n8n/README.md)
 
 ---
 

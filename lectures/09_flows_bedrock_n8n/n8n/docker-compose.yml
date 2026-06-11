@@ -1,18 +1,42 @@
+# n8n - local workflow automation with persistent storage.
+# All configurable/sensitive values live in .env (see .env.example).
 services:
   n8n:
-    image: docker.n8n.io/n8nio/n8n:1.76.1
+    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-2.25.6}
+    container_name: n8n
     restart: unless-stopped
     ports:
-      - "5678:5678"
+      # Bind to localhost only - do not expose n8n to the LAN.
+      - "127.0.0.1:${N8N_PORT:-5678}:5678"
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://localhost:5678/
-      - GENERIC_TIMEZONE=UTC
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=${TZ:-Asia/Jerusalem}
+      - TZ=${TZ:-Asia/Jerusalem}
+      # Credentials encryption key - REQUIRED. Without a stable key,
+      # stored credentials become unreadable when the container is recreated.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env}
+      # Local HTTP development - allow cookies without HTTPS.
+      - N8N_SECURE_COOKIE=false
+      # Privacy / hygiene.
       - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_HIRING_BANNER_ENABLED=false
+      # Prune old executions so the SQLite DB stays small.
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
     volumes:
       - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   n8n_data:
+    # Explicit name keeps the volume stable regardless of the compose
+    # project name, so data survives folder renames and `down` / `up` cycles.
+    name: n8n_data

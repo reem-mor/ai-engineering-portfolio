@@ -1,0 +1,28 @@
+{
+  "//": "Template for the Cursor MCP config at <repo-root>/.cursor/mcp.json (gitignored).",
+  "//how": "1) Start n8n  2) n8n UI -> Settings -> n8n API -> Create API Key  3) Set it as a user env var N8N_API_KEY so ${N8N_API_KEY} resolves. NEVER paste real keys into this file or mcp.json.",
+  "mcpServers": {
+    "n8n-workflows": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "timeout": 120000,
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "http://localhost:5678",
+        "N8N_API_KEY": "${N8N_API_KEY}"
+      }
+    },
+    "n8n-manager": {
+      "command": "npx",
+      "args": ["-y", "n8n-manager-for-ai-agents"],
+      "timeout": 120000,
+      "env": {
+        "N8N_API_URL": "http://localhost:5678",
+        "N8N_API_KEY": "${N8N_API_KEY}",
+        "LOG_LEVEL": "error"
+      }
+    }
+  }
+}
