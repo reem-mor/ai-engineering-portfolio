@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeModel",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel"],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "QueryKnowledgeBase",
+      "Effect": "Allow",
+      "Action": ["bedrock:Retrieve"],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:329597159579:knowledge-base/KCYCNC0OSD"
+      ]
+    },
+    {
+      "Sid": "RetrieveAndGenerate",
+      "Effect": "Allow",
+      "Action": ["bedrock:RetrieveAndGenerate"],
+      "Resource": ["*"]
+    }
+  ]
+}

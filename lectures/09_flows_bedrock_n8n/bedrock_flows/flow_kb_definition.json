@@ -1,0 +1,260 @@
+{
+  "description": "Input -> Classify -> Condition -> KB or Generic LLM -> Output. Used by create_kb_flow.py and update_kb_flow.py.",
+  "nodes": [
+    {
+      "type": "Input",
+      "name": "FlowInput",
+      "outputs": [
+        {
+          "name": "document",
+          "type": "Object"
+        }
+      ]
+    },
+    {
+      "type": "Prompt",
+      "name": "ClassifyTopic",
+      "configuration": {
+        "prompt": {
+          "sourceConfiguration": {
+            "inline": {
+              "modelId": "amazon.nova-lite-v1:0",
+              "templateType": "TEXT",
+              "inferenceConfiguration": {
+                "text": {
+                  "temperature": 0,
+                  "maxTokens": 16
+                }
+              },
+              "templateConfiguration": {
+                "text": {
+                  "text": "Classify user input into:\n\"OCTANK\" - for octank company specific queries.\n\"GENERIC\"- for general questions.\nOnly respond with category.\nIf the question mentions orders, customers, products, shipping, order status, or company data, respond OCTANK.\nReply with exactly one word: OCTANK or GENERIC. No quotes. No punctuation.\nUser input:{{topic}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "topic",
+          "type": "String",
+          "expression": "$.data.text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "modelCompletion",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "type": "Condition",
+      "name": "RouteByCategory",
+      "configuration": {
+        "condition": {
+          "conditions": [
+            {
+              "name": "isGeneric",
+              "expression": "category == \"GENERIC\""
+            },
+            {
+              "name": "default"
+            }
+          ]
+        }
+      },
+      "inputs": [
+        {
+          "name": "category",
+          "type": "String",
+          "expression": "$.data"
+        }
+      ]
+    },
+    {
+      "type": "KnowledgeBase",
+      "name": "OrdersKnowledgeBase",
+      "configuration": {
+        "knowledgeBase": {
+          "knowledgeBaseId": "KCYCNC0OSD",
+          "modelId": "amazon.nova-lite-v1:0",
+          "numberOfResults": 5,
+          "promptTemplate": {
+            "textPromptTemplate": "You are an order lookup assistant. Answer the user's question using ONLY the retrieved order data below. If the answer is not in the context, say you could not find it in the orders knowledge base.\n\nRetrieved context:\n$search_results$\n\nUser question: $query$\n\nAnswer:"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "retrievalQuery",
+          "type": "String",
+          "expression": "$.data.text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "outputText",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "type": "Prompt",
+      "name": "GenericAnswer",
+      "configuration": {
+        "prompt": {
+          "sourceConfiguration": {
+            "inline": {
+              "modelId": "amazon.nova-lite-v1:0",
+              "templateType": "TEXT",
+              "inferenceConfiguration": {
+                "text": {
+                  "temperature": 0.3,
+                  "maxTokens": 512
+                }
+              },
+              "templateConfiguration": {
+                "text": {
+                  "text": "Answer the following question concisely.\n\nQuestion:\n{{question}}\n\nAnswer:"
+                }
+              }
+            }
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "question",
+          "type": "String",
+          "expression": "$.data.text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "modelCompletion",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "type": "Output",
+      "name": "KBOutput",
+      "inputs": [
+        {
+          "name": "document",
+          "type": "String",
+          "expression": "$.data"
+        }
+      ]
+    },
+    {
+      "type": "Output",
+      "name": "GenericOutput",
+      "inputs": [
+        {
+          "name": "document",
+          "type": "String",
+          "expression": "$.data"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "name": "FlowInput_ClassifyTopic_topic",
+      "source": "FlowInput",
+      "target": "ClassifyTopic",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "document",
+          "targetInput": "topic"
+        }
+      }
+    },
+    {
+      "name": "ClassifyTopic_RouteByCategory_category",
+      "source": "ClassifyTopic",
+      "target": "RouteByCategory",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "modelCompletion",
+          "targetInput": "category"
+        }
+      }
+    },
+    {
+      "name": "FlowInput_OrdersKnowledgeBase_retrievalQuery",
+      "source": "FlowInput",
+      "target": "OrdersKnowledgeBase",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "document",
+          "targetInput": "retrievalQuery"
+        }
+      }
+    },
+    {
+      "name": "FlowInput_GenericAnswer_question",
+      "source": "FlowInput",
+      "target": "GenericAnswer",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "document",
+          "targetInput": "question"
+        }
+      }
+    },
+    {
+      "name": "RouteByCategory_GenericAnswer_isGeneric",
+      "source": "RouteByCategory",
+      "target": "GenericAnswer",
+      "type": "Conditional",
+      "configuration": {
+        "conditional": {
+          "condition": "isGeneric"
+        }
+      }
+    },
+    {
+      "name": "RouteByCategory_OrdersKnowledgeBase_default",
+      "source": "RouteByCategory",
+      "target": "OrdersKnowledgeBase",
+      "type": "Conditional",
+      "configuration": {
+        "conditional": {
+          "condition": "default"
+        }
+      }
+    },
+    {
+      "name": "OrdersKnowledgeBase_KBOutput",
+      "source": "OrdersKnowledgeBase",
+      "target": "KBOutput",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "outputText",
+          "targetInput": "document"
+        }
+      }
+    },
+    {
+      "name": "GenericAnswer_GenericOutput",
+      "source": "GenericAnswer",
+      "target": "GenericOutput",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "modelCompletion",
+          "targetInput": "document"
+        }
+      }
+    }
+  ]
+}
