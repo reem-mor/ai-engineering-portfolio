@@ -59,9 +59,11 @@ Thumbs.db
 # IDE/editor local state
 .idea/
 .vscode/
-.cursor/
 .claude/
 *.swp
+
+# Cursor: shared project config is committed; local plans stay ignored
+.cursor/plans/
 
 # Incident Assistant RAG - generated data
 projects/incident-assistant-rag/data/raw/*
