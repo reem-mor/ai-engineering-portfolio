@@ -22,18 +22,6 @@
       }
     },
 
-    "n8n-manager": {
-      "command": "npx",
-      "args": ["-y", "n8n-manager-for-ai-agents"],
-      "envFile": "${workspaceFolder}/.env",
-      "timeout": 120000,
-      "env": {
-        "N8N_API_URL": "https://reemmor.app.n8n.cloud",
-        "N8N_API_KEY": "${env:N8N_API_KEY}",
-        "LOG_LEVEL": "error"
-      }
-    },
-
     "aws-api": {
       "command": "uvx",
       "args": ["awslabs.aws-api-mcp-server@latest"],
