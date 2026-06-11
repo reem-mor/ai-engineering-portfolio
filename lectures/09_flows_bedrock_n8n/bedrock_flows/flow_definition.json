@@ -1,0 +1,90 @@
+{
+  "description": "Input -> Prompt (summarizer) -> Output. Used by create_flow.py.",
+  "nodes": [
+    {
+      "type": "Input",
+      "name": "FlowInput",
+      "outputs": [
+        {
+          "name": "document",
+          "type": "Object"
+        }
+      ]
+    },
+    {
+      "type": "Prompt",
+      "name": "SummarizeText",
+      "configuration": {
+        "prompt": {
+          "sourceConfiguration": {
+            "inline": {
+              "modelId": "amazon.nova-lite-v1:0",
+              "templateType": "TEXT",
+              "inferenceConfiguration": {
+                "text": {
+                  "temperature": 0.3,
+                  "maxTokens": 512
+                }
+              },
+              "templateConfiguration": {
+                "text": {
+                  "text": "Summarize the following text in 2-3 concise sentences. Return only the summary.\n\nText:\n{{text}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "text",
+          "type": "String",
+          "expression": "$.data.text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "modelCompletion",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "type": "Output",
+      "name": "FlowOutput",
+      "inputs": [
+        {
+          "name": "document",
+          "type": "String",
+          "expression": "$.data"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "name": "FlowInput_SummarizeText_text",
+      "source": "FlowInput",
+      "target": "SummarizeText",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "document",
+          "targetInput": "text"
+        }
+      }
+    },
+    {
+      "name": "SummarizeText_FlowOutput",
+      "source": "SummarizeText",
+      "target": "FlowOutput",
+      "type": "Data",
+      "configuration": {
+        "data": {
+          "sourceOutput": "modelCompletion",
+          "targetInput": "document"
+        }
+      }
+    }
+  ]
+}

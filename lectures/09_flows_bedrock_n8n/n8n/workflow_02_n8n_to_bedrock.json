@@ -1,0 +1,135 @@
+{
+  "name": "Course09 - n8n to Bedrock Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bedrock-flow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "course09-bedrock-flow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "flow-text",
+              "name": "text",
+              "value": "={{ $json.body.text ?? $json.text ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "flow-id",
+              "name": "flowId",
+              "value": "={{ $env.BEDROCK_FLOW_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "alias-id",
+              "name": "aliasId",
+              "value": "={{ $env.BEDROCK_FLOW_ALIAS_ID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Prepare Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://bedrock-agent-runtime.{{ $env.AWS_REGION ?? 'us-east-1' }}.amazonaws.com/flows/{{ $json.flowId }}/aliases/{{ $json.aliasId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "aws",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\": [\n    {\n      \"nodeName\": \"FlowInput\",\n      \"nodeOutputName\": \"document\",\n      \"content\": {\n        \"document\": {\n          \"text\": \"{{ $json.text }}\"\n        }\n      }\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "b1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Invoke Bedrock Flow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 300],
+      "credentials": {
+        "aws": {
+          "id": "CONFIGURE_AWS_CREDENTIAL",
+          "name": "AWS (course account)"
+        }
+      },
+      "notes": "Bedrock invoke_flow streams events. For production, parse the event stream or use workflow_01 for direct model calls. This node demonstrates the HTTP bridge pattern."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"raw\": $json.data ?? $json, \"note\": \"Parse flowOutputEvent from stream in exercise\" } }}",
+        "options": {}
+      },
+      "id": "b1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Payload": {
+      "main": [
+        [
+          {
+            "node": "Invoke Bedrock Flow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoke Bedrock Flow": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
