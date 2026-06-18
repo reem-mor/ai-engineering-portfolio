@@ -28,9 +28,12 @@ class Base(DeclarativeBase):
 
 
 def _resolve_url(settings: Settings) -> str:
-    """Prefer the Supabase Postgres URL, else the local dev database URL."""
+    """Prefer the Supabase Postgres URL (if non-empty), else the dev database URL."""
     if settings.supabase_db_url is not None:
-        return settings.supabase_db_url.get_secret_value()
+        supabase = settings.supabase_db_url.get_secret_value().strip()
+        # Guard against blank/garbage values (e.g. a stray dotenv inline comment).
+        if "://" in supabase:
+            return supabase
     return settings.database_url
 
 

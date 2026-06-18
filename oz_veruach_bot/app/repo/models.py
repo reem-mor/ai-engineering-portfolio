@@ -68,6 +68,16 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class Admin(Base):
+    """A dynamically-added admin (layered over the env allowlist)."""
+
+    __tablename__ = "admins"
+
+    telegram_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    added_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class MaterialChunk(Base):
     """An embedded chunk of course material for RAG retrieval (feature 6.3).
 

@@ -15,7 +15,7 @@ approval before the next begins.
 | 4 | Homework submission flow | Complete |
 | 5 | Notifications + admin upload | Complete |
 | 6 | Recommendations + RAG | Complete |
-| 7 | Hardening, optimization, deploy | Pending |
+| 7 | Hardening, optimization, deploy | Complete |
 
 ## Phase 0 — Scaffold & Config
 
@@ -155,6 +155,26 @@ Feature 6.3 + the RAG index, plus a Google OAuth token helper.
 - [x] Tests: catalog lookup, vector store ranking/clear, indexer+chunking, recommendation
       combine/format, router materials/submit intents, materials flow. 208 pass; ruff +
       mypy clean.
+
+## Phase 7 — Hardening, optimization, deploy (Complete)
+
+Finishes the spec and runs as one process.
+
+- [x] Single-process default: scheduler runs in the bot's event loop
+      (`RUN_SCHEDULER_IN_BOT`); split mode still available via `oz-worker`.
+- [x] Scheduler hosts Drive watcher + weekly schedule re-scrape + nightly precompute.
+- [x] Playwright schedule scraper (lazy/optional) + diff + `/refresh_schedule`; parser
+      tested offline against a captured fixture (DOM captured via Playwright MCP).
+- [x] Nightly precompute warms the shared summary cache.
+- [x] Admin commands: `/announce` (preview->send), `/schedule_update` (manual override),
+      `/refresh_schedule`, `/admin add|remove|list` (DB-backed), `/help`.
+- [x] Per-user cooldown on heavy ops + "working on it" UX; in-process metrics + `/metrics`.
+- [x] Alembic async migrations + baseline (verified `upgrade head`); `create_all` for dev.
+- [x] Full README + EC2 single-process deploy (systemd/compose) + runbook.
+- [x] Tests: scraper/diff, admin commands, rate-limit/metrics, scheduler wiring. 224 pass;
+      ruff + mypy clean; coverage ~74%.
+- [x] Bug fixed: dotenv inline-comment-as-value on blank vars (cleaned `.env`/`.env.example`
+      + a DB-URL guard) which had been silently misconfiguring Drive/LLM/email/DB.
 
 ## Operating Rules (all phases)
 

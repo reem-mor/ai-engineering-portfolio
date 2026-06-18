@@ -82,6 +82,13 @@ class Settings(BaseSettings):
     # --- Notifications / worker ----------------------------------------------
     broadcast_rate_per_sec: float = 25.0
     drive_poll_minutes: int = 15
+    # Single-process mode (default): run the scheduler jobs inside the bot's event loop.
+    run_scheduler_in_bot: bool = True
+    course_website_url: str = "https://oz-ve-ruach-journey.lovable.app/"
+    schedule_refresh_hours: int = 168
+    precompute_hour: int = 3
+    # Per-user cooldown (seconds) for heavy ops (deep summary, transcription, web search).
+    heavy_op_cooldown_sec: float = 30.0
 
     # --- Homework email routing ----------------------------------------------
     hw_to_email: str | None = None

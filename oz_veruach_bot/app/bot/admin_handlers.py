@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from telegram import Update
     from telegram.ext import ContextTypes
 
+    from app.repo.repositories import AdminRepo
+
 _log = get_logger("bot.admin")
 
 
@@ -35,9 +37,30 @@ def is_owner(update: Update) -> bool:
 
 
 def is_admin(update: Update) -> bool:
-    """True if the update's user is an admin (owners are implicitly admins)."""
+    """True if the update's user is an env-listed admin (owners are implicitly admins)."""
     user = update.effective_user
     return user is not None and get_settings().is_admin(user.id)
+
+
+def _admin_repo() -> AdminRepo:
+    from app.repo.db import get_sessionmaker
+    from app.repo.repositories import AdminRepo
+
+    return AdminRepo(get_sessionmaker())
+
+
+async def has_admin_access(update: Update) -> bool:
+    """True if the user is an env admin/owner OR a DB-managed admin."""
+    user = update.effective_user
+    if user is None:
+        return False
+    if get_settings().is_admin(user.id):
+        return True
+    try:
+        return await _admin_repo().contains(user.id)
+    except Exception:  # DB unavailable -> fall back to env allowlist only
+        _log.exception("admin_db_check_failed", user_id=user.id)
+        return False
 
 
 def _format_map(language: Language) -> str:
@@ -139,3 +162,64 @@ async def map_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await message.reply_text(_handle_link(args[1:], language))
     else:
         await message.reply_text(t("map_usage", language))
+
+
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Owner-only ``/admin add|remove|list`` for DB-managed admins."""
+    message = update.effective_message
+    user = update.effective_user
+    if message is None or user is None:
+        return
+    language = detect_language(message.text)
+    if not is_owner(update):
+        await message.reply_text(t("owner_refused", language))
+        return
+    args: list[str] = list(getattr(context, "args", None) or [])
+    repo = _admin_repo()
+    if len(args) >= 2 and args[0].lower() == "add" and args[1].isdigit():
+        await repo.add(int(args[1]), added_by=user.id)
+        await message.reply_text(t("admin_added", language).format(id=args[1]))
+    elif len(args) >= 2 and args[0].lower() == "remove" and args[1].isdigit():
+        await repo.remove(int(args[1]))
+        await message.reply_text(t("admin_removed", language).format(id=args[1]))
+    elif args and args[0].lower() == "list":
+        ids = await repo.list_ids()
+        await message.reply_text(
+            t("admin_list", language).format(ids=", ".join(map(str, ids)) or "-")
+        )
+    else:
+        await message.reply_text(t("admin_usage", language))
+
+
+async def help_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Role-aware ``/help`` listing available commands."""
+    message = update.effective_message
+    if message is None:
+        return
+    language = detect_language(message.text)
+    parts = [t("help_header", language), "", t("help_everyone", language)]
+    if await has_admin_access(update):
+        parts += ["", t("help_admin", language)]
+    if is_owner(update):
+        parts += ["", t("help_owner", language)]
+    await message.reply_text("\n".join(parts))
+
+
+async def refresh_schedule_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    """Owner-only ``/refresh_schedule``: force a website re-scrape and report the diff."""
+    message = update.effective_message
+    if message is None:
+        return
+    language = detect_language(message.text)
+    if not is_owner(update):
+        await message.reply_text(t("owner_refused", language))
+        return
+    from app.services.schedule import get_schedule_service
+    from app.workers.schedule_refresh import ScheduleRefresher, format_diff
+
+    await message.reply_text(t("refresh_running", language))
+    refresher = ScheduleRefresher(get_schedule_service(), context.bot, get_settings())
+    diff = await refresher.run_once()
+    await message.reply_text(format_diff(diff))

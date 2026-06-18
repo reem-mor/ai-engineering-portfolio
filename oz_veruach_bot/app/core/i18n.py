@@ -39,6 +39,10 @@ _CATALOG: dict[str, dict[Language, str]] = {
         "he": "לא קיבלתי טקסט לטיפול.",
         "en": "I didn't receive any text to handle.",
     },
+    "rate_limited": {
+        "he": "רק רגע — בקשה כבדה כבר בעיבוד. נסו שוב עוד מספר שניות.",
+        "en": "Easy there — a heavy request is already running. Try again in a few seconds.",
+    },
     "myid": {
         "he": "מזהה ה-Telegram המספרי שלך הוא: {id}\nתפקיד: {role}",
         "en": "Your numeric Telegram ID is: {id}\nRole: {role}",
@@ -301,6 +305,69 @@ _CATALOG: dict[str, dict[Language, str]] = {
     "rec_ask_topic": {
         "he": "על איזה נושא להמליץ? לדוגמה: RAG, Docker, LangChain.",
         "en": "Which topic should I recommend for? e.g. RAG, Docker, LangChain.",
+    },
+    # --- Admin commands (Phase 7) ---------------------------------------------
+    "admin_added": {"he": "נוסף מנהל: {id}", "en": "Admin added: {id}"},
+    "admin_removed": {"he": "הוסר מנהל: {id}", "en": "Admin removed: {id}"},
+    "admin_list": {"he": "מנהלים (DB): {ids}", "en": "Admins (DB): {ids}"},
+    "admin_usage": {
+        "he": "שימוש: /admin add <id> | /admin remove <id> | /admin list",
+        "en": "Usage: /admin add <id> | /admin remove <id> | /admin list",
+    },
+    "refresh_running": {
+        "he": "מרענן את לוח הזמנים מהאתר…",
+        "en": "Refreshing the schedule from the website…",
+    },
+    "announce_usage": {
+        "he": "שימוש: /announce <טקסט ההודעה>",
+        "en": "Usage: /announce <message text>",
+    },
+    "announce_preview": {
+        "he": "תצוגה מקדימה של ההודעה לכל הנרשמים:\n\n{text}",
+        "en": "Preview of the announcement to all subscribers:\n\n{text}",
+    },
+    "announce_btn_send": {"he": "שלח לכולם ✅", "en": "Send to all ✅"},
+    "announce_btn_cancel": {"he": "ביטול ❌", "en": "Cancel ❌"},
+    "announce_sent": {
+        "he": "ההודעה נשלחה: {sent} נשלחו, {failed} נכשלו.",
+        "en": "Announcement sent: {sent} delivered, {failed} failed.",
+    },
+    "announce_cancelled": {"he": "ההודעה בוטלה.", "en": "Announcement cancelled."},
+    "sched_update_usage": {
+        "he": (
+            "שימוש: /schedule_update <YYYY-MM-DD> title=<..> time=<HH:MM-HH:MM> "
+            "instructor=<..> type=<technical|workshop|milestone|holiday>\n"
+            "או: /schedule_update <YYYY-MM-DD> cancel"
+        ),
+        "en": (
+            "Usage: /schedule_update <YYYY-MM-DD> title=<..> time=<HH:MM-HH:MM> "
+            "instructor=<..> type=<technical|workshop|milestone|holiday>\n"
+            "or: /schedule_update <YYYY-MM-DD> cancel"
+        ),
+    },
+    "sched_update_done": {
+        "he": "לוח הזמנים עודכן ({action}) עבור {date}.",
+        "en": "Schedule {action} for {date}.",
+    },
+    "help_header": {"he": "הפקודות הזמינות:", "en": "Available commands:"},
+    "help_everyone": {
+        "he": (
+            "לכולם:\n/start /stop /menu /help /myid\n"
+            "שאלות חופשיות: השיעור הבא, לוז, סכם שיעור, הקלטה, שיעורי בית, חומרים מומלצים"
+        ),
+        "en": (
+            "Everyone:\n/start /stop /menu /help /myid\n"
+            "Free text: next lesson, schedule, summarize lesson, recording, homework, "
+            "recommended materials"
+        ),
+    },
+    "help_admin": {
+        "he": "מנהלים:\n/announce /schedule_update + העלאת קובץ לשידור",
+        "en": "Admins:\n/announce /schedule_update + upload a file to broadcast",
+    },
+    "help_owner": {
+        "he": "בעלים:\n/map /reindex /refresh_schedule /admin",
+        "en": "Owner:\n/map /reindex /refresh_schedule /admin",
     },
 }
 

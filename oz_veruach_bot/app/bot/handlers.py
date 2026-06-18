@@ -10,10 +10,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from app.bot.dispatch import dispatch_intent
-from app.bot.router import route
+from app.bot.router import Intent, IntentName, route
 from app.core.errors import user_fallback_message
 from app.core.i18n import detect_language, t
 from app.core.logging import get_logger
+from app.core.metrics import METRICS
+from app.core.ratelimit import CooldownLimiter
 from app.core.settings import get_settings
 from app.graph.router_node import classify as llm_classify
 from app.services.submission import looks_like_solve_request, scaffold_disclaimer
@@ -26,6 +28,16 @@ _log = get_logger("bot.handlers")
 
 # Telegram hard-limits messages to 4096 chars; echo is truncated well below that.
 _MAX_ECHO_LEN = 3500
+
+# Per-user cooldown for heavy ops (deep summaries, web-augmented recommendations).
+_HEAVY_LIMITER = CooldownLimiter(get_settings().heavy_op_cooldown_sec)
+
+
+def _is_heavy(intent: Intent) -> bool:
+    """True for operations worth rate-limiting + a 'working on it' hint."""
+    if intent.name is IntentName.SUMMARIZE and intent.deep:
+        return True
+    return intent.name is IntentName.MATERIALS
 
 
 async def start_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -88,6 +100,14 @@ async def text_message(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
         # it doesn't match (and only if a provider is configured).
         intent = route(text) or await llm_classify(text)
         if intent is not None:
+            METRICS.inc(f"intent_{intent.name}_total")
+            # Rate-limit heavy ops and show a "working on it" hint while they run.
+            if _is_heavy(intent):
+                user_id = getattr(update.effective_user, "id", 0)
+                if not _HEAVY_LIMITER.allow(user_id, intent.name):
+                    await message.reply_text(t("rate_limited", language))
+                    return
+                await message.reply_text(t("sum_working", language))
             reply = await dispatch_intent(intent, language)
             if reply is not None:
                 _log.info("intent_handled", intent=intent.name, scope=intent.scope)

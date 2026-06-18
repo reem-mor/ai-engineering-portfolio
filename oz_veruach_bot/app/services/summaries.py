@@ -7,6 +7,7 @@ by (lesson_key, source hash) so repeats and nightly precompute are instant.
 
 from __future__ import annotations
 
+from collections.abc import MutableMapping
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -32,6 +33,10 @@ _log = get_logger("summaries")
 
 _MAX_SOURCE_CHARS = 12000
 _SUMMARY_MAX_TOKENS = 1200
+
+# Module-level cache shared across SummaryService instances so the nightly precompute job
+# warms the same cache the chat handlers read.
+_SHARED_SUMMARY_CACHE = make_ttl_cache()
 
 
 class SummaryStatus(StrEnum):
@@ -61,12 +66,13 @@ class SummaryService:
         registry: ModelRegistry | None,
         *,
         transcription: TranscriptionService | None = None,
+        cache: MutableMapping[str, str] | None = None,
     ) -> None:
         self._drive = drive
         self._map = lesson_map
         self._registry = registry
         self._transcription = transcription
-        self._cache = make_ttl_cache()
+        self._cache = cache if cache is not None else _SHARED_SUMMARY_CACHE
 
     async def _presentation_folder_for(self, lesson_ref: str | None) -> dict[str, object] | None:
         children = await self._drive.list_children(self._map.roots.presentations_folder)

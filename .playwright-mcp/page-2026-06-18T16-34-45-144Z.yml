@@ -1,0 +1,963 @@
+- generic [active] [ref=e1]:
+  - complementary "Edit with Lovable" [ref=e2]:
+    - link "Edit with Lovable" [ref=e3] [cursor=pointer]:
+      - /url: https://lovable.dev/projects/a8f1e8ba-644c-4c62-ba36-f8bef58c22fa?utm_source=lovable-badge
+      - generic [ref=e4]: Edit with
+      - img [ref=e5]
+    - button "Dismiss" [ref=e10] [cursor=pointer]:
+      - img [ref=e11]
+  - generic [ref=e13]:
+    - banner [ref=e14]:
+      - generic [ref=e15]:
+        - link "עוז ורוח עוז ורוח · מחזור 1" [ref=e16] [cursor=pointer]:
+          - /url: "#top"
+          - img "עוז ורוח" [ref=e17]
+          - generic [ref=e18]: עוז ורוח · מחזור 1
+        - navigation [ref=e19]:
+          - link "דשבורד" [ref=e20] [cursor=pointer]:
+            - /url: "#dashboard"
+          - link "ציר זמן" [ref=e21] [cursor=pointer]:
+            - /url: "#timeline"
+          - link "אבני דרך" [ref=e22] [cursor=pointer]:
+            - /url: "#milestones"
+          - link "מה הספקנו" [ref=e23] [cursor=pointer]:
+            - /url: "#achievements"
+          - link "מה לפנינו" [ref=e24] [cursor=pointer]:
+            - /url: "#upcoming"
+        - button "החלף מצב תאורה" [ref=e25]:
+          - img [ref=e26]
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - img [ref=e36]
+          - text: המסע כבר התחיל · מחזור 1
+        - heading "עוז ורוח — מסע AI וטכנולוגיה" [level=1] [ref=e39]
+        - paragraph [ref=e40]: קורס מעשי, חדשני וקצבי שמוביל את המשתתפים מהיכרות עם Python ו־AI ועד בניית פרויקטים, סוכני AI, כלי אוטומציה והצגות סיום.
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]:
+              - img [ref=e44]
+              - text: התחלה · 25.04.2026
+            - generic [ref=e49]: 57%
+            - generic [ref=e50]: סיום · 29.07.2026
+          - generic [ref=e54]: היום · 18.6.2026
+      - img "עוז ורוח" [ref=e56]
+    - generic [ref=e57]:
+      - generic [ref=e59]:
+        - heading "דשבורד המסע" [level=2] [ref=e60]
+        - paragraph [ref=e61]: כל שבוע פותחים עוד יכולת ✨
+      - generic [ref=e62]:
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - img [ref=e68]
+            - text: סך שעות הקורס
+          - generic [ref=e71]: "182"
+          - generic [ref=e72]: 90 כבר נצברו
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - img [ref=e78]
+            - text: מפגשים שהושלמו
+          - generic [ref=e81]: "16"
+          - generic [ref=e82]: מתוך 35
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88]
+            - text: מפגשים קרובים
+          - generic [ref=e90]: "18"
+          - generic [ref=e91]: 3 השבוע
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - img [ref=e97]
+            - text: אבן הדרך הבאה
+          - generic [ref=e100]: Microsoft Copilot echo system, Final project introduction
+          - generic [ref=e101]: 15.07.2026
+      - generic [ref=e103]:
+        - heading "כמה מהמסע כבר עברנו?" [level=3] [ref=e104]
+        - generic [ref=e105]: 57%
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - heading "ציר הזמן של המסע" [level=2] [ref=e109]
+        - paragraph [ref=e110]: סוננו לפי שבוע — לחצו על הסינון כדי לחתוך אחרת.
+      - generic [ref=e112]:
+        - button "הכל" [ref=e113]
+        - button "בוצע" [ref=e114]
+        - button "השבוע" [ref=e115]
+        - button "בהמשך" [ref=e116]
+        - button "טכני" [ref=e117]
+        - button "סדנאות / רכות" [ref=e118]
+        - button "אבני דרך" [ref=e119]
+        - button "חגים" [ref=e120]
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]: "1"
+            - heading "שבוע 1 · 26.04 – 02.05" [level=3] [ref=e125]
+            - generic [ref=e127]: 3 מפגשים
+          - generic [ref=e128]:
+            - article [ref=e129]:
+              - generic [ref=e130]:
+                - generic [ref=e131]: בוצע
+                - generic [ref=e132]: אבן דרך
+              - heading "פתיחת קורס" [level=3] [ref=e133]
+              - generic [ref=e134]:
+                - generic [ref=e135]:
+                  - img [ref=e136]
+                  - text: ראשון · 26.04
+                - generic [ref=e138]:
+                  - img [ref=e139]
+                  - text: 09:00 – 15:00
+            - article [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: בוצע
+                - generic [ref=e145]: טכני
+                - generic [ref=e146]: 7 ש׳ אקדמיות
+              - heading "AI engineering introduction and Python basics" [level=3] [ref=e147]
+              - generic [ref=e148]:
+                - generic [ref=e149]:
+                  - img [ref=e150]
+                  - text: רביעי · 29.04
+                - generic [ref=e152]:
+                  - img [ref=e153]
+                  - text: 09:00 – 15:15
+                - generic [ref=e156]:
+                  - img [ref=e157]
+                  - text: Alex
+            - article [ref=e160]:
+              - generic [ref=e161]:
+                - generic [ref=e162]: בוצע
+                - generic [ref=e163]: טכני
+                - generic [ref=e164]: 7 ש׳ אקדמיות
+              - heading "Python basics, Git version control basics" [level=3] [ref=e165]
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - img [ref=e168]
+                  - text: חמישי · 30.04
+                - generic [ref=e170]:
+                  - img [ref=e171]
+                  - text: 09:00 – 15:15
+                - generic [ref=e174]:
+                  - img [ref=e175]
+                  - text: Alex
+        - generic [ref=e178]:
+          - generic [ref=e179]:
+            - generic [ref=e180]: "2"
+            - heading "שבוע 2 · 03.05 – 09.05" [level=3] [ref=e181]
+            - generic [ref=e183]: 2 מפגשים
+          - generic [ref=e184]:
+            - article [ref=e185]:
+              - generic [ref=e186]:
+                - generic [ref=e187]: בוצע
+                - generic [ref=e188]: טכני
+              - heading "Intro to AI" [level=3] [ref=e189]
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - img [ref=e192]
+                  - text: רביעי · 06.05
+                - generic [ref=e194]:
+                  - img [ref=e195]
+                  - text: 09:00 – 15:15
+                - generic [ref=e198]:
+                  - img [ref=e199]
+                  - text: Sagy
+            - article [ref=e202]:
+              - generic [ref=e203]:
+                - generic [ref=e204]: בוצע
+                - generic [ref=e205]: טכני
+                - generic [ref=e206]: 7 ש׳ אקדמיות
+              - heading "Python for data engineering" [level=3] [ref=e207]
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - img [ref=e210]
+                  - text: חמישי · 07.05
+                - generic [ref=e212]:
+                  - img [ref=e213]
+                  - text: 09:00 – 15:15
+                - generic [ref=e216]:
+                  - img [ref=e217]
+                  - text: Alex
+        - generic [ref=e220]:
+          - generic [ref=e221]:
+            - generic [ref=e222]: "3"
+            - heading "שבוע 3 · 10.05 – 16.05" [level=3] [ref=e223]
+            - generic [ref=e225]: 2 מפגשים
+          - generic [ref=e226]:
+            - article [ref=e227]:
+              - generic [ref=e228]:
+                - generic [ref=e229]: בוצע
+                - generic [ref=e230]: טכני
+                - generic [ref=e231]: 7 ש׳ אקדמיות
+              - heading "Python for data engineering" [level=3] [ref=e232]
+              - generic [ref=e233]:
+                - generic [ref=e234]:
+                  - img [ref=e235]
+                  - text: רביעי · 13.05
+                - generic [ref=e237]:
+                  - img [ref=e238]
+                  - text: 09:00 – 15:15
+                - generic [ref=e241]:
+                  - img [ref=e242]
+                  - text: Alex
+            - article [ref=e245]:
+              - generic [ref=e246]:
+                - generic [ref=e247]: בוצע
+                - generic [ref=e248]: טכני
+                - generic [ref=e249]: 7 ש׳ אקדמיות
+              - heading "Vibe coding - Open Claw" [level=3] [ref=e250]
+              - generic [ref=e251]:
+                - generic [ref=e252]:
+                  - img [ref=e253]
+                  - text: חמישי · 14.05
+                - generic [ref=e255]:
+                  - img [ref=e256]
+                  - text: 09:00 – 15:15
+                - generic [ref=e259]:
+                  - img [ref=e260]
+                  - text: Alex
+        - generic [ref=e263]:
+          - generic [ref=e264]:
+            - generic [ref=e265]: "4"
+            - heading "שבוע 4 · 17.05 – 23.05" [level=3] [ref=e266]
+            - generic [ref=e268]: 3 מפגשים
+          - generic [ref=e269]:
+            - article [ref=e270]:
+              - generic [ref=e271]:
+                - generic [ref=e272]: בוצע
+                - generic [ref=e273]: טכני
+                - generic [ref=e274]: 6 ש׳ אקדמיות
+              - heading "Vibe Coding - Cursor" [level=3] [ref=e275]
+              - generic [ref=e276]:
+                - generic [ref=e277]:
+                  - img [ref=e278]
+                  - text: ראשון · 17.05
+                - generic [ref=e280]:
+                  - img [ref=e281]
+                  - text: 10:00 – 15:00
+                - generic [ref=e284]:
+                  - img [ref=e285]
+                  - text: Alex
+            - article [ref=e288]:
+              - generic [ref=e289]:
+                - generic [ref=e290]: בוצע
+                - generic [ref=e291]: טכני
+                - generic [ref=e292]: 7 ש׳ אקדמיות
+              - heading "RAG architecture, Web framework introduction" [level=3] [ref=e293]
+              - generic [ref=e294]:
+                - generic [ref=e295]:
+                  - img [ref=e296]
+                  - text: רביעי · 20.05
+                - generic [ref=e298]:
+                  - img [ref=e299]
+                  - text: 09:00 – 15:15
+                - generic [ref=e302]:
+                  - img [ref=e303]
+                  - text: Alex
+            - article [ref=e306]:
+              - generic [ref=e307]:
+                - generic [ref=e308]: חופש / חג
+                - generic [ref=e309]: חג
+              - heading "ערב שבועות" [level=3] [ref=e310]
+              - generic [ref=e311]:
+                - generic [ref=e312]:
+                  - img [ref=e313]
+                  - text: חמישי · 21.05
+                - generic [ref=e315]:
+                  - img [ref=e316]
+                  - text: 09:00 – 15:15
+        - generic [ref=e319]:
+          - generic [ref=e320]:
+            - generic [ref=e321]: "5"
+            - heading "שבוע 5 · 24.05 – 30.05" [level=3] [ref=e322]
+            - generic [ref=e324]: 2 מפגשים
+          - generic [ref=e325]:
+            - article [ref=e326]:
+              - generic [ref=e327]:
+                - generic [ref=e328]: בוצע
+                - generic [ref=e329]: טכני
+                - generic [ref=e330]: 7 ש׳ אקדמיות
+              - heading "AWS, Docker and deployment process introduction" [level=3] [ref=e331]
+              - generic [ref=e332]:
+                - generic [ref=e333]:
+                  - img [ref=e334]
+                  - text: רביעי · 27.05
+                - generic [ref=e336]:
+                  - img [ref=e337]
+                  - text: 09:00 – 15:15
+                - generic [ref=e340]:
+                  - img [ref=e341]
+                  - text: Alex
+            - article [ref=e344]:
+              - generic [ref=e345]:
+                - generic [ref=e346]: בוצע
+                - generic [ref=e347]: טכני
+                - generic [ref=e348]: 7 ש׳ אקדמיות
+              - heading "MCP protocol" [level=3] [ref=e349]
+              - generic [ref=e350]:
+                - generic [ref=e351]:
+                  - img [ref=e352]
+                  - text: חמישי · 28.05
+                - generic [ref=e354]:
+                  - img [ref=e355]
+                  - text: 09:00 – 15:15
+                - generic [ref=e358]:
+                  - img [ref=e359]
+                  - text: Alex
+        - generic [ref=e362]:
+          - generic [ref=e363]:
+            - generic [ref=e364]: "6"
+            - heading "שבוע 6 · 31.05 – 06.06" [level=3] [ref=e365]
+            - generic [ref=e367]: 2 מפגשים
+          - generic [ref=e368]:
+            - article [ref=e369]:
+              - generic [ref=e370]:
+                - generic [ref=e371]: בוצע
+                - generic [ref=e372]: טכני
+                - generic [ref=e373]: 7 ש׳ אקדמיות
+              - heading "AWS bedrock, and AI services" [level=3] [ref=e374]
+              - generic [ref=e375]:
+                - generic [ref=e376]:
+                  - img [ref=e377]
+                  - text: רביעי · 03.06
+                - generic [ref=e379]:
+                  - img [ref=e380]
+                  - text: 09:00 – 15:15
+                - generic [ref=e383]:
+                  - img [ref=e384]
+                  - text: Alex
+            - article [ref=e387]:
+              - generic [ref=e388]:
+                - generic [ref=e389]: בוצע
+                - generic [ref=e390]: טכני
+                - generic [ref=e391]: 7 ש׳ אקדמיות
+              - heading "Agents security Guardrails etc, Agentic flow introduction" [level=3] [ref=e392]
+              - generic [ref=e393]:
+                - generic [ref=e394]:
+                  - img [ref=e395]
+                  - text: חמישי · 04.06
+                - generic [ref=e397]:
+                  - img [ref=e398]
+                  - text: 09:00 – 15:15
+                - generic [ref=e401]:
+                  - img [ref=e402]
+                  - text: Alex
+        - generic [ref=e405]:
+          - generic [ref=e406]:
+            - generic [ref=e407]: "7"
+            - heading "שבוע 7 · 07.06 – 13.06" [level=3] [ref=e408]
+            - generic [ref=e410]: 3 מפגשים
+          - generic [ref=e411]:
+            - article [ref=e412]:
+              - generic [ref=e413]:
+                - generic [ref=e414]: בוצע
+                - generic [ref=e415]: סדנה / רכות
+              - heading "ניהול זמן, אנרגיה והרגלים בתקופת הכשרה והכנה למצגות" [level=3] [ref=e416]
+              - generic [ref=e417]:
+                - generic [ref=e418]:
+                  - img [ref=e419]
+                  - text: ראשון · 07.06
+                - generic [ref=e421]:
+                  - img [ref=e422]
+                  - text: 09:00 – 15:00
+                - generic [ref=e425]:
+                  - img [ref=e426]
+                  - text: בר
+            - article [ref=e429]:
+              - generic [ref=e430]:
+                - generic [ref=e431]: בוצע
+                - generic [ref=e432]: אבן דרך
+                - generic [ref=e433]: 7 ש׳ אקדמיות
+              - heading "Mid project presentation" [level=3] [ref=e434]
+              - generic [ref=e435]:
+                - generic [ref=e436]:
+                  - img [ref=e437]
+                  - text: רביעי · 10.06
+                - generic [ref=e439]:
+                  - img [ref=e440]
+                  - text: 09:00 – 15:15
+                - generic [ref=e443]:
+                  - img [ref=e444]
+                  - text: Alex
+            - article [ref=e447]:
+              - generic [ref=e448]:
+                - generic [ref=e449]: בוצע
+                - generic [ref=e450]: טכני
+                - generic [ref=e451]: 7 ש׳ אקדמיות
+              - heading "N8N introduction" [level=3] [ref=e452]
+              - generic [ref=e453]:
+                - generic [ref=e454]:
+                  - img [ref=e455]
+                  - text: חמישי · 11.06
+                - generic [ref=e457]:
+                  - img [ref=e458]
+                  - text: 09:00 – 15:15
+                - generic [ref=e461]:
+                  - img [ref=e462]
+                  - text: Alex
+        - generic [ref=e465]:
+          - generic [ref=e466]:
+            - generic [ref=e467]: "8"
+            - heading "שבוע 8 · 14.06 – 20.06" [level=3] [ref=e468]
+            - generic [ref=e470]: 3 מפגשים
+          - generic [ref=e471]:
+            - article [ref=e472]:
+              - generic [ref=e473]:
+                - img [ref=e474]
+                - text: עכשיו במסע
+              - generic [ref=e477]:
+                - generic [ref=e478]: השבוע
+                - generic [ref=e479]: סדנה / רכות
+              - heading "Alon Arbiv - HiBob + ALex from 9-11:30 + סדנת ראינות טכנים" [level=3] [ref=e480]
+              - generic [ref=e481]:
+                - generic [ref=e482]:
+                  - img [ref=e483]
+                  - text: ראשון · 14.06
+                - generic [ref=e485]:
+                  - img [ref=e486]
+                  - text: 09:00 – 15:00
+            - article [ref=e489]:
+              - generic [ref=e490]:
+                - img [ref=e491]
+                - text: עכשיו במסע
+              - generic [ref=e494]:
+                - generic [ref=e495]: השבוע
+                - generic [ref=e496]: טכני
+                - generic [ref=e497]: 7 ש׳ אקדמיות
+              - heading "N8N deep dive" [level=3] [ref=e498]
+              - generic [ref=e499]:
+                - generic [ref=e500]:
+                  - img [ref=e501]
+                  - text: רביעי · 17.06
+                - generic [ref=e503]:
+                  - img [ref=e504]
+                  - text: 09:00 – 15:15
+                - generic [ref=e507]:
+                  - img [ref=e508]
+                  - text: Alex
+            - article [ref=e511]:
+              - generic [ref=e512]:
+                - img [ref=e513]
+                - text: עכשיו במסע
+              - generic [ref=e516]:
+                - generic [ref=e517]: השבוע
+                - generic [ref=e518]: טכני
+                - generic [ref=e519]: 7 ש׳ אקדמיות
+              - heading "Multi Agents, LangChain intro" [level=3] [ref=e520]
+              - generic [ref=e521]:
+                - generic [ref=e522]:
+                  - img [ref=e523]
+                  - text: חמישי · 18.06
+                - generic [ref=e525]:
+                  - img [ref=e526]
+                  - text: 09:00 – 15:15
+                - generic [ref=e529]:
+                  - img [ref=e530]
+                  - text: Alex
+        - generic [ref=e533]:
+          - generic [ref=e534]:
+            - generic [ref=e535]: "9"
+            - heading "שבוע 9 · 21.06 – 27.06" [level=3] [ref=e536]
+            - generic [ref=e538]: 2 מפגשים
+          - generic [ref=e539]:
+            - article [ref=e540]:
+              - generic [ref=e541]:
+                - generic [ref=e542]: בהמשך
+                - generic [ref=e543]: טכני
+                - generic [ref=e544]: 7 ש׳ אקדמיות
+              - heading "LangChain and Langraph deep dive" [level=3] [ref=e545]
+              - generic [ref=e546]:
+                - generic [ref=e547]:
+                  - img [ref=e548]
+                  - text: רביעי · 24.06
+                - generic [ref=e550]:
+                  - img [ref=e551]
+                  - text: 09:00 – 15:15
+                - generic [ref=e554]:
+                  - img [ref=e555]
+                  - text: Alex
+            - article [ref=e558]:
+              - generic [ref=e559]:
+                - generic [ref=e560]: בהמשך
+                - generic [ref=e561]: טכני
+                - generic [ref=e562]: 7 ש׳ אקדמיות
+              - heading "LangChain and Langraph deep dive" [level=3] [ref=e563]
+              - generic [ref=e564]:
+                - generic [ref=e565]:
+                  - img [ref=e566]
+                  - text: חמישי · 25.06
+                - generic [ref=e568]:
+                  - img [ref=e569]
+                  - text: 09:00 – 15:15
+                - generic [ref=e572]:
+                  - img [ref=e573]
+                  - text: Alex
+        - generic [ref=e576]:
+          - generic [ref=e577]:
+            - generic [ref=e578]: "10"
+            - heading "שבוע 10 · 28.06 – 04.07" [level=3] [ref=e579]
+            - generic [ref=e581]: 3 מפגשים
+          - generic [ref=e582]:
+            - article [ref=e583]:
+              - generic [ref=e584]:
+                - generic [ref=e585]: בהמשך
+                - generic [ref=e586]: טכני
+                - generic [ref=e587]: 7 ש׳ אקדמיות
+              - heading "Machine learning" [level=3] [ref=e588]
+              - generic [ref=e589]:
+                - generic [ref=e590]:
+                  - img [ref=e591]
+                  - text: ראשון · 28.06
+                - generic [ref=e593]:
+                  - img [ref=e594]
+                  - text: 09:00 – 15:00
+                - generic [ref=e597]:
+                  - img [ref=e598]
+                  - text: Alex
+            - article [ref=e601]:
+              - generic [ref=e602]:
+                - generic [ref=e603]: בהמשך
+                - generic [ref=e604]: סדנה / רכות
+                - generic [ref=e605]: 7 ש׳ אקדמיות
+              - heading "Deep learining" [level=3] [ref=e606]
+              - generic [ref=e607]:
+                - generic [ref=e608]:
+                  - img [ref=e609]
+                  - text: רביעי · 01.07
+                - generic [ref=e611]:
+                  - img [ref=e612]
+                  - text: 09:00 – 15:15
+                - generic [ref=e615]:
+                  - img [ref=e616]
+                  - text: Alex
+            - article [ref=e619]:
+              - generic [ref=e620]:
+                - generic [ref=e621]: בהמשך
+                - generic [ref=e622]: סדנה / רכות
+                - generic [ref=e623]: 7 ש׳ אקדמיות
+              - heading "Microsoft Copilot echo system" [level=3] [ref=e624]
+              - generic [ref=e625]:
+                - generic [ref=e626]:
+                  - img [ref=e627]
+                  - text: חמישי · 02.07
+                - generic [ref=e629]:
+                  - img [ref=e630]
+                  - text: 09:00 – 15:15
+                - generic [ref=e633]:
+                  - img [ref=e634]
+                  - text: Alex
+        - generic [ref=e637]:
+          - generic [ref=e638]:
+            - generic [ref=e639]: "11"
+            - heading "שבוע 11 · 05.07 – 11.07" [level=3] [ref=e640]
+            - generic [ref=e642]: 2 מפגשים
+          - generic [ref=e643]:
+            - article [ref=e644]:
+              - generic [ref=e645]:
+                - generic [ref=e646]: בהמשך
+                - generic [ref=e647]: סדנה / רכות
+              - heading "סדנת הכנה לראיונות עבודה" [level=3] [ref=e648]
+              - generic [ref=e649]:
+                - generic [ref=e650]:
+                  - img [ref=e651]
+                  - text: ראשון · 05.07
+                - generic [ref=e653]:
+                  - img [ref=e654]
+                  - text: 09:00 – 15:00
+                - generic [ref=e657]:
+                  - img [ref=e658]
+                  - text: בר וצוות HR של LIVEU
+            - article [ref=e661]:
+              - generic [ref=e662]:
+                - generic [ref=e663]: בהמשך
+                - generic [ref=e664]: טכני
+                - generic [ref=e665]: 7 ש׳ אקדמיות
+              - heading "Local models handling, WebUI introduction" [level=3] [ref=e666]
+              - generic [ref=e667]:
+                - generic [ref=e668]:
+                  - img [ref=e669]
+                  - text: שני · 06.07
+                - generic [ref=e671]:
+                  - img [ref=e672]
+                  - text: 09:00 – 15:00
+        - generic [ref=e675]:
+          - generic [ref=e676]:
+            - generic [ref=e677]: "12"
+            - heading "שבוע 12 · 12.07 – 18.07" [level=3] [ref=e678]
+            - generic [ref=e680]: 3 מפגשים
+          - generic [ref=e681]:
+            - article [ref=e682]:
+              - generic [ref=e683]:
+                - generic [ref=e684]: בהמשך
+                - generic [ref=e685]: סדנה / רכות
+              - heading "מפגש סיכום עם בר" [level=3] [ref=e686]
+              - generic [ref=e687]:
+                - generic [ref=e688]:
+                  - img [ref=e689]
+                  - text: ראשון · 12.07
+                - generic [ref=e691]:
+                  - img [ref=e692]
+                  - text: 09:00 – 15:00
+                - generic [ref=e695]:
+                  - img [ref=e696]
+                  - text: בר
+            - article [ref=e699]:
+              - generic [ref=e700]:
+                - generic [ref=e701]: בהמשך
+                - generic [ref=e702]: אבן דרך
+                - generic [ref=e703]: 7 ש׳ אקדמיות
+              - heading "Microsoft Copilot echo system, Final project introduction" [level=3] [ref=e704]
+              - generic [ref=e705]:
+                - generic [ref=e706]:
+                  - img [ref=e707]
+                  - text: רביעי · 15.07
+                - generic [ref=e709]:
+                  - img [ref=e710]
+                  - text: 09:00 – 15:15
+                - generic [ref=e713]:
+                  - img [ref=e714]
+                  - text: Alex
+            - article [ref=e717]:
+              - generic [ref=e718]:
+                - generic [ref=e719]: בהמשך
+                - generic [ref=e720]: סדנה / רכות
+                - generic [ref=e721]: 7 ש׳ אקדמיות
+              - heading "Resource management, monitoring" [level=3] [ref=e722]
+              - generic [ref=e723]:
+                - generic [ref=e724]:
+                  - img [ref=e725]
+                  - text: חמישי · 16.07
+                - generic [ref=e727]:
+                  - img [ref=e728]
+                  - text: 09:00 – 15:15
+                - generic [ref=e731]:
+                  - img [ref=e732]
+                  - text: Alex
+        - generic [ref=e735]:
+          - generic [ref=e736]:
+            - generic [ref=e737]: "13"
+            - heading "שבוע 13 · 19.07 – 25.07" [level=3] [ref=e738]
+            - generic [ref=e740]: 3 מפגשים
+          - generic [ref=e741]:
+            - article [ref=e742]:
+              - generic [ref=e743]:
+                - generic [ref=e744]: בהמשך
+                - generic [ref=e745]: סדנה / רכות
+              - heading "סדנת סיכום עם בר" [level=3] [ref=e746]
+              - generic [ref=e747]:
+                - generic [ref=e748]:
+                  - img [ref=e749]
+                  - text: ראשון · 19.07
+                - generic [ref=e751]:
+                  - img [ref=e752]
+                  - text: 09:00 – 15:00
+                - generic [ref=e755]:
+                  - img [ref=e756]
+                  - text: בר
+            - article [ref=e759]:
+              - generic [ref=e760]:
+                - generic [ref=e761]: בהמשך
+                - generic [ref=e762]: אבן דרך
+                - generic [ref=e763]: 7 ש׳ אקדמיות
+              - heading "Connecting the dots, retrospective and final project completion" [level=3] [ref=e764]
+              - generic [ref=e765]:
+                - generic [ref=e766]:
+                  - img [ref=e767]
+                  - text: רביעי · 22.07
+                - generic [ref=e769]:
+                  - img [ref=e770]
+                  - text: 09:00 – 15:15
+                - generic [ref=e773]:
+                  - img [ref=e774]
+                  - text: Alex
+            - article [ref=e777]:
+              - generic [ref=e778]:
+                - generic [ref=e779]: בהמשך
+                - generic [ref=e780]: אבן דרך
+                - generic [ref=e781]: 7 ש׳ אקדמיות
+              - heading "Connecting the dots, retrospective and final project completion" [level=3] [ref=e782]
+              - generic [ref=e783]:
+                - generic [ref=e784]:
+                  - img [ref=e785]
+                  - text: חמישי · 23.07
+                - generic [ref=e787]:
+                  - img [ref=e788]
+                  - text: 09:00 – 15:15
+                - generic [ref=e791]:
+                  - img [ref=e792]
+                  - text: Alex
+        - generic [ref=e795]:
+          - generic [ref=e796]:
+            - generic [ref=e797]: "14"
+            - heading "שבוע 14 · 26.07 – 01.08" [level=3] [ref=e798]
+            - generic [ref=e800]: 2 מפגשים
+          - generic [ref=e801]:
+            - article [ref=e802]:
+              - generic [ref=e803]:
+                - generic [ref=e804]: בהמשך
+                - generic [ref=e805]: אבן דרך
+                - generic [ref=e806]: 4 ש׳ אקדמיות
+              - heading "הכנה להצגות סיום" [level=3] [ref=e807]
+              - generic [ref=e808]:
+                - generic [ref=e809]:
+                  - img [ref=e810]
+                  - text: ראשון · 26.07
+                - generic [ref=e812]:
+                  - img [ref=e813]
+                  - text: 09:00 – 12 :00
+                - generic [ref=e816]:
+                  - img [ref=e817]
+                  - text: Alex
+            - article [ref=e820]:
+              - generic [ref=e821]:
+                - generic [ref=e822]: בהמשך
+                - generic [ref=e823]: אבן דרך
+                - generic [ref=e824]: 4 ש׳ אקדמיות
+              - heading "הצגות סיום" [level=3] [ref=e825]
+              - generic [ref=e826]:
+                - generic [ref=e827]:
+                  - img [ref=e828]
+                  - text: חמישי · 30.07
+                - generic [ref=e830]:
+                  - img [ref=e831]
+                  - text: 09:00 – 12:00
+                - generic [ref=e834]:
+                  - img [ref=e835]
+                  - text: Alex
+    - generic [ref=e838]:
+      - generic [ref=e839]:
+        - heading "אבני הדרך של המסע" [level=2] [ref=e840]
+        - paragraph [ref=e841]: הרגעים הגדולים — מההצגות ועד הסיום.
+      - generic [ref=e842]:
+        - article [ref=e843]:
+          - generic [ref=e845]:
+            - img [ref=e847]
+            - generic [ref=e849]: בוצע
+          - heading "פתיחת קורס" [level=3] [ref=e850]
+          - generic [ref=e851]: 26.04.2026
+        - article [ref=e852]:
+          - generic [ref=e854]:
+            - img [ref=e856]
+            - generic [ref=e858]: בוצע
+          - heading "Mid project presentation" [level=3] [ref=e859]
+          - generic [ref=e860]: 10.06.2026
+        - article [ref=e861]:
+          - generic [ref=e863]:
+            - img [ref=e865]
+            - generic [ref=e867]: בהמשך
+          - heading "Microsoft Copilot echo system, Final project introduction" [level=3] [ref=e868]
+          - generic [ref=e869]: 15.07.2026
+        - article [ref=e870]:
+          - generic [ref=e872]:
+            - img [ref=e874]
+            - generic [ref=e876]: בהמשך
+          - heading "Connecting the dots, retrospective and final project completion" [level=3] [ref=e877]
+          - generic [ref=e878]: 22.07.2026
+        - article [ref=e879]:
+          - generic [ref=e881]:
+            - img [ref=e883]
+            - generic [ref=e885]: בהמשך
+          - heading "Connecting the dots, retrospective and final project completion" [level=3] [ref=e886]
+          - generic [ref=e887]: 23.07.2026
+        - article [ref=e888]:
+          - generic [ref=e890]:
+            - img [ref=e892]
+            - generic [ref=e894]: בהמשך
+          - heading "הכנה להצגות סיום" [level=3] [ref=e895]
+          - generic [ref=e896]: 26.07.2026
+        - article [ref=e897]:
+          - generic [ref=e899]:
+            - img [ref=e901]
+            - generic [ref=e903]: בהמשך
+          - heading "הצגות סיום" [level=3] [ref=e904]
+          - generic [ref=e905]: 30.07.2026
+    - generic [ref=e907]:
+      - generic [ref=e908]:
+        - img [ref=e910]
+        - generic [ref=e916]:
+          - heading "מה כבר הספקנו?" [level=2] [ref=e917]
+          - paragraph [ref=e918]: הישגים שכבר בכיס — כל אחד מהם בנה את היכולת הבאה.
+      - generic [ref=e919]:
+        - generic [ref=e920]:
+          - generic [ref=e921]: ראשון · 26.04
+          - generic [ref=e922]: פתיחת קורס
+          - generic [ref=e923]: ✓ הושלם
+        - generic [ref=e924]:
+          - generic [ref=e925]: רביעי · 29.04
+          - generic [ref=e926]: AI engineering introduction and Python basics
+          - generic [ref=e927]: Alex
+          - generic [ref=e928]: ✓ הושלם
+        - generic [ref=e929]:
+          - generic [ref=e930]: חמישי · 30.04
+          - generic [ref=e931]: Python basics, Git version control basics
+          - generic [ref=e932]: Alex
+          - generic [ref=e933]: ✓ הושלם
+        - generic [ref=e934]:
+          - generic [ref=e935]: רביעי · 06.05
+          - generic [ref=e936]: Intro to AI
+          - generic [ref=e937]: Sagy
+          - generic [ref=e938]: ✓ הושלם
+        - generic [ref=e939]:
+          - generic [ref=e940]: חמישי · 07.05
+          - generic [ref=e941]: Python for data engineering
+          - generic [ref=e942]: Alex
+          - generic [ref=e943]: ✓ הושלם
+        - generic [ref=e944]:
+          - generic [ref=e945]: רביעי · 13.05
+          - generic [ref=e946]: Python for data engineering
+          - generic [ref=e947]: Alex
+          - generic [ref=e948]: ✓ הושלם
+        - generic [ref=e949]:
+          - generic [ref=e950]: חמישי · 14.05
+          - generic [ref=e951]: Vibe coding - Open Claw
+          - generic [ref=e952]: Alex
+          - generic [ref=e953]: ✓ הושלם
+        - generic [ref=e954]:
+          - generic [ref=e955]: ראשון · 17.05
+          - generic [ref=e956]: Vibe Coding - Cursor
+          - generic [ref=e957]: Alex
+          - generic [ref=e958]: ✓ הושלם
+        - generic [ref=e959]:
+          - generic [ref=e960]: רביעי · 20.05
+          - generic [ref=e961]: RAG architecture, Web framework introduction
+          - generic [ref=e962]: Alex
+          - generic [ref=e963]: ✓ הושלם
+        - generic [ref=e964]:
+          - generic [ref=e965]: רביעי · 27.05
+          - generic [ref=e966]: AWS, Docker and deployment process introduction
+          - generic [ref=e967]: Alex
+          - generic [ref=e968]: ✓ הושלם
+        - generic [ref=e969]:
+          - generic [ref=e970]: חמישי · 28.05
+          - generic [ref=e971]: MCP protocol
+          - generic [ref=e972]: Alex
+          - generic [ref=e973]: ✓ הושלם
+        - generic [ref=e974]:
+          - generic [ref=e975]: רביעי · 03.06
+          - generic [ref=e976]: AWS bedrock, and AI services
+          - generic [ref=e977]: Alex
+          - generic [ref=e978]: ✓ הושלם
+        - generic [ref=e979]:
+          - generic [ref=e980]: חמישי · 04.06
+          - generic [ref=e981]: Agents security Guardrails etc, Agentic flow introduction
+          - generic [ref=e982]: Alex
+          - generic [ref=e983]: ✓ הושלם
+        - generic [ref=e984]:
+          - generic [ref=e985]: ראשון · 07.06
+          - generic [ref=e986]: ניהול זמן, אנרגיה והרגלים בתקופת הכשרה והכנה למצגות
+          - generic [ref=e987]: בר
+          - generic [ref=e988]: ✓ הושלם
+        - generic [ref=e989]:
+          - generic [ref=e990]: רביעי · 10.06
+          - generic [ref=e991]: Mid project presentation
+          - generic [ref=e992]: Alex
+          - generic [ref=e993]: ✓ הושלם
+        - generic [ref=e994]:
+          - generic [ref=e995]: חמישי · 11.06
+          - generic [ref=e996]: N8N introduction
+          - generic [ref=e997]: Alex
+          - generic [ref=e998]: ✓ הושלם
+    - generic [ref=e1000]:
+      - generic [ref=e1001]:
+        - img [ref=e1003]
+        - generic [ref=e1007]:
+          - heading "מה עוד מחכה לנו?" [level=2] [ref=e1008]
+          - paragraph [ref=e1009]: המשימות הבאות במסע — הדרך להצגות הסיום.
+      - generic [ref=e1010]:
+        - generic [ref=e1011]:
+          - generic [ref=e1012]: חמישי · 21.05
+          - generic [ref=e1013]: ערב שבועות
+          - generic [ref=e1014]: משימה הבאה
+        - generic [ref=e1015]:
+          - generic [ref=e1016]: ראשון · 14.06
+          - generic [ref=e1017]: Alon Arbiv - HiBob + ALex from 9-11:30 + סדנת ראינות טכנים
+          - generic [ref=e1018]: משימה הבאה
+        - generic [ref=e1019]:
+          - generic [ref=e1020]: רביעי · 17.06
+          - generic [ref=e1021]: N8N deep dive
+          - generic [ref=e1022]: Alex
+          - generic [ref=e1023]: משימה הבאה
+        - generic [ref=e1024]:
+          - generic [ref=e1025]: חמישי · 18.06
+          - generic [ref=e1026]: Multi Agents, LangChain intro
+          - generic [ref=e1027]: Alex
+          - generic [ref=e1028]: משימה הבאה
+        - generic [ref=e1029]:
+          - generic [ref=e1030]: רביעי · 24.06
+          - generic [ref=e1031]: LangChain and Langraph deep dive
+          - generic [ref=e1032]: Alex
+          - generic [ref=e1033]: משימה הבאה
+        - generic [ref=e1034]:
+          - generic [ref=e1035]: חמישי · 25.06
+          - generic [ref=e1036]: LangChain and Langraph deep dive
+          - generic [ref=e1037]: Alex
+          - generic [ref=e1038]: משימה הבאה
+        - generic [ref=e1039]:
+          - generic [ref=e1040]: ראשון · 28.06
+          - generic [ref=e1041]: Machine learning
+          - generic [ref=e1042]: Alex
+          - generic [ref=e1043]: משימה הבאה
+        - generic [ref=e1044]:
+          - generic [ref=e1045]: רביעי · 01.07
+          - generic [ref=e1046]: Deep learining
+          - generic [ref=e1047]: Alex
+          - generic [ref=e1048]: משימה הבאה
+        - generic [ref=e1049]:
+          - generic [ref=e1050]: חמישי · 02.07
+          - generic [ref=e1051]: Microsoft Copilot echo system
+          - generic [ref=e1052]: Alex
+          - generic [ref=e1053]: משימה הבאה
+        - generic [ref=e1054]:
+          - generic [ref=e1055]: ראשון · 05.07
+          - generic [ref=e1056]: סדנת הכנה לראיונות עבודה
+          - generic [ref=e1057]: בר וצוות HR של LIVEU
+          - generic [ref=e1058]: משימה הבאה
+        - generic [ref=e1059]:
+          - generic [ref=e1060]: שני · 06.07
+          - generic [ref=e1061]: Local models handling, WebUI introduction
+          - generic [ref=e1062]: משימה הבאה
+        - generic [ref=e1063]:
+          - generic [ref=e1064]: ראשון · 12.07
+          - generic [ref=e1065]: מפגש סיכום עם בר
+          - generic [ref=e1066]: בר
+          - generic [ref=e1067]: משימה הבאה
+        - generic [ref=e1068]:
+          - generic [ref=e1069]: רביעי · 15.07
+          - generic [ref=e1070]: Microsoft Copilot echo system, Final project introduction
+          - generic [ref=e1071]: Alex
+          - generic [ref=e1072]: משימה הבאה
+        - generic [ref=e1073]:
+          - generic [ref=e1074]: חמישי · 16.07
+          - generic [ref=e1075]: Resource management, monitoring
+          - generic [ref=e1076]: Alex
+          - generic [ref=e1077]: משימה הבאה
+        - generic [ref=e1078]:
+          - generic [ref=e1079]: ראשון · 19.07
+          - generic [ref=e1080]: סדנת סיכום עם בר
+          - generic [ref=e1081]: בר
+          - generic [ref=e1082]: משימה הבאה
+        - generic [ref=e1083]:
+          - generic [ref=e1084]: רביעי · 22.07
+          - generic [ref=e1085]: Connecting the dots, retrospective and final project completion
+          - generic [ref=e1086]: Alex
+          - generic [ref=e1087]: משימה הבאה
+        - generic [ref=e1088]:
+          - generic [ref=e1089]: חמישי · 23.07
+          - generic [ref=e1090]: Connecting the dots, retrospective and final project completion
+          - generic [ref=e1091]: Alex
+          - generic [ref=e1092]: משימה הבאה
+        - generic [ref=e1093]:
+          - generic [ref=e1094]: ראשון · 26.07
+          - generic [ref=e1095]: הכנה להצגות סיום
+          - generic [ref=e1096]: Alex
+          - generic [ref=e1097]: משימה הבאה
+        - generic [ref=e1098]:
+          - generic [ref=e1099]: חמישי · 30.07
+          - generic [ref=e1100]: הצגות סיום
+          - generic [ref=e1101]: Alex
+          - generic [ref=e1102]: משימה הבאה
+    - contentinfo [ref=e1103]:
+      - generic [ref=e1104]:
+        - generic [ref=e1105]:
+          - img "עוז ורוח" [ref=e1106]
+          - generic [ref=e1107]:
+            - generic [ref=e1108]: עוז ורוח · מחזור 1
+            - generic [ref=e1109]: מסע AI וטכנולוגיה · גבורה שממשיכה קדימה
+        - generic [ref=e1110]: המסע ממשיך — כל שבוע פותחים עוד יכולת ✨

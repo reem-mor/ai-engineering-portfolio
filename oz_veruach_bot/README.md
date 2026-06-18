@@ -9,10 +9,24 @@ Production-grade, fully async Python 3.12 bot. Two long-running processes:
 - `worker` — scheduled jobs (Drive watcher, schedule refresh, nightly precompute). Idle
   in Phase 0; jobs land in Phase 5.
 
-> **Status: Phase 0 (scaffold).** This phase ships a runnable `/start` + `/myid` + echo
-> bot, typed config with two-tier roles, structured logging, a health endpoint, Docker
-> delivery, empty service interfaces, and a passing test suite. Course features arrive in
-> later phases. See [PLAN.md](PLAN.md) for the phase gates.
+> **Status: feature-complete (Phases 0-7).** Schedule, recordings, homework + submission
+> emails, lesson summaries, recommendations/RAG, Drive watcher + broadcasts, admin
+> upload/announce/schedule-overrides, and a single-process deployment with scheduled jobs.
+> See [PLAN.md](PLAN.md) for the per-phase breakdown.
+
+## Single process by default
+
+For a small always-on box, the bot and its scheduled jobs (Drive watcher, weekly schedule
+re-scrape, nightly precompute) run in **one process / one event loop** — less to run and
+monitor. `RUN_SCHEDULER_IN_BOT=true` (default) enables this; set it to `false` and run
+`oz-worker` separately only if you later want to scale the two apart.
+
+## Commands
+
+- Everyone: `/start`, `/stop`, `/menu`, `/help`, `/myid`, plus free-text (he/en) for
+  schedule, recordings, summaries, homework, and recommended materials.
+- Admins (Alex, Sagy): `/announce`, `/schedule_update`, and uploading a file to broadcast.
+- Owner (Re'em): `/map`, `/reindex`, `/refresh_schedule`, `/admin add|remove|list`.
 
 ## Requirements
 
@@ -140,7 +154,65 @@ oz_veruach_bot/
     core/         # settings, logging, errors, health, i18n
     main_bot.py   # bot entry point
     main_worker.py# worker entry point
-  data/           # schedule.yaml / lesson_map.yaml / resources.yaml (later), local DB
+  data/           # schedule.yaml / lesson_map.yaml / resources.yaml, local DB
+  migrations/     # Alembic (prod schema migrations)
+  scripts/        # get_google_token.py (one-time OAuth helper)
   tests/          # unit + integration (mocked)
   .env.example  Dockerfile  docker-compose.yml  pyproject.toml  README.md  PLAN.md
 ```
+
+## Database schema
+
+- Dev: `init_db()` runs `create_all` on startup (zero-config SQLite).
+- Prod (Supabase Postgres): apply migrations once with `uv run alembic upgrade head`
+  (the URL is resolved from `SUPABASE_DB_URL`/`DATABASE_URL`).
+
+## Deploy on EC2 (single process)
+
+```bash
+# On the box (Ubuntu): install uv + ffmpeg, clone, configure
+sudo apt-get update && sudo apt-get install -y ffmpeg
+curl -LsSf https://astral.sh/uv/install.sh | sh
+cd oz_veruach_bot && cp .env.example .env   # fill in secrets
+uv sync --extra auth                         # + --extra scrape for schedule re-scrape
+uv run alembic upgrade head                  # if using Supabase Postgres
+```
+
+Run it as a systemd service (long-polling; no public URL needed):
+
+```ini
+# /etc/systemd/system/oz-bot.service
+[Unit]
+Description=Oz VeRuach Course Assistant
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/ubuntu/oz_veruach_bot
+ExecStart=/home/ubuntu/.local/bin/uv run oz-bot
+Restart=always
+RestartSec=5
+EnvironmentFile=/home/ubuntu/oz_veruach_bot/.env
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now oz-bot
+sudo systemctl status oz-bot      # health: curl http://localhost:8080/healthz
+```
+
+For production webhook mode instead of polling, set `RUN_MODE=webhook` + `WEBHOOK_URL`
+(a public HTTPS endpoint) and open the port. Docker: `docker compose up --build -d`.
+
+## Runbook
+
+- **Add an admin:** owner sends `/admin add <telegram_id>` (get IDs via `/myid`). Remove
+  with `/admin remove <id>`; persistent admins live in the DB, owners in `.env`.
+- **Re-map a lesson:** owner `/map suggest` then `/map link <YYYY-MM-DD> rec=<n> pres=<n>`.
+- **Force a schedule refresh:** owner `/refresh_schedule` (re-scrapes the site, reports a
+  diff; apply changes with `/schedule_update <date> title=... time=... type=...`).
+- **Rebuild the RAG index:** owner `/reindex`.
+- **Rotate keys:** edit `.env`, then `sudo systemctl restart oz-bot`. For Google, re-run
+  `scripts/get_google_token.py` to mint a fresh refresh token.
+- **Observability:** structured JSON logs (`journalctl -u oz-bot`), `/healthz`, `/metrics`.

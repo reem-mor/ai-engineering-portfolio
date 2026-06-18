@@ -38,8 +38,14 @@ def build_health_app(*, component: str) -> web.Application:
         # Phase 0 has no downstream dependencies to gate readiness on.
         return web.json_response({"status": "ready", "component": component})
 
+    async def metrics(_request: web.Request) -> web.Response:
+        from app.core.metrics import METRICS
+
+        return web.Response(text=METRICS.render_prometheus(), content_type="text/plain")
+
     app.router.add_get("/healthz", healthz)
     app.router.add_get("/readyz", readyz)
+    app.router.add_get("/metrics", metrics)
     return app
 
 

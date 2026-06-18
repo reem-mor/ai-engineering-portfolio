@@ -9,7 +9,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.repo.models import AuditLog, BroadcastLog, DriveState, Subscriber
+from app.repo.models import Admin, AuditLog, BroadcastLog, DriveState, Subscriber
 
 Sessionmaker = async_sessionmaker[AsyncSession]
 
@@ -136,6 +136,33 @@ class BroadcastLogRepo:
                 session.add(
                     BroadcastLog(idempotency_key=idempotency_key, sent=sent, failed=failed)
                 )
+
+
+class AdminRepo:
+    """Dynamically-managed admins, layered over the env allowlist."""
+
+    def __init__(self, sessionmaker: Sessionmaker) -> None:
+        self._sm = sessionmaker
+
+    async def add(self, telegram_id: int, *, added_by: int | None) -> None:
+        async with self._sm() as session, session.begin():
+            if await session.get(Admin, telegram_id) is None:
+                session.add(Admin(telegram_id=telegram_id, added_by=added_by))
+
+    async def remove(self, telegram_id: int) -> None:
+        async with self._sm() as session, session.begin():
+            existing = await session.get(Admin, telegram_id)
+            if existing is not None:
+                await session.delete(existing)
+
+    async def list_ids(self) -> list[int]:
+        async with self._sm() as session:
+            result = await session.execute(select(Admin.telegram_id))
+            return [row[0] for row in result.all()]
+
+    async def contains(self, telegram_id: int) -> bool:
+        async with self._sm() as session:
+            return await session.get(Admin, telegram_id) is not None
 
 
 class AuditLogRepo:

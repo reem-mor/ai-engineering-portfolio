@@ -23,10 +23,12 @@ def _isolate_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterat
     """
     from app.repo.db import reset_engine
     from app.services.llm import get_model_registry
+    from app.services.summaries import _SHARED_SUMMARY_CACHE
 
     get_settings.cache_clear()
     get_model_registry.cache_clear()
     reset_engine()
+    _SHARED_SUMMARY_CACHE.clear()
     for var in ("TELEGRAM_BOT_TOKEN", "OWNER_TELEGRAM_IDS", "ADMIN_TELEGRAM_IDS"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)
