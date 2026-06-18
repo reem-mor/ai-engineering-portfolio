@@ -14,7 +14,7 @@ approval before the next begins.
 | 3 | LLM orchestrator + summaries | Complete |
 | 4 | Homework submission flow | Complete |
 | 5 | Notifications + admin upload | Complete |
-| 6 | Recommendations + RAG | Pending |
+| 6 | Recommendations + RAG | Complete |
 | 7 | Hardening, optimization, deploy | Pending |
 
 ## Phase 0 — Scaffold & Config
@@ -136,6 +136,25 @@ Features 6.7, 6.8, 6.9 + the datastore.
 - [x] Tests with in-memory SQLite + mocked Telegram/Drive: repos, notifier
       idempotency/partial-failure/RetryAfter, watcher first-run/no-double-notify/re-change,
       admin gating, subscriptions. 189 pass; ruff + mypy clean.
+
+## Phase 6 — Recommendations + RAG (Complete)
+
+Feature 6.3 + the RAG index, plus a Google OAuth token helper.
+
+- [x] `scripts/get_google_token.py` (one-time refresh-token helper, `--extra auth`) +
+      README setup section.
+- [x] `materials_index` table; DB-backed `DbVectorStore` (JSON embeddings + cosine, runs on
+      SQLite + Supabase; pgvector accel noted for Phase 7) + `OpenAIEmbedder` behind the
+      `Embedder`/`VectorStore` interfaces.
+- [x] `data/resources.yaml` curated topic->links + `ResourcesCatalog` (key/alias match).
+- [x] `MaterialsIndexer` (walk -> extract -> chunk -> embed -> upsert) + owner `/reindex`.
+- [x] `CourseRecommendationService` (curated + RAG internal + optional web search behind a
+      disabled-by-default interface) + `materials` intent + handler grouped "From our
+      course" / "Recommended reading".
+- [x] `init_db()` now also runs on bot startup (subscribers + RAG tables).
+- [x] Tests: catalog lookup, vector store ranking/clear, indexer+chunking, recommendation
+      combine/format, router materials/submit intents, materials flow. 208 pass; ruff +
+      mypy clean.
 
 ## Operating Rules (all phases)
 

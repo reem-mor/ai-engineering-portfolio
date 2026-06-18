@@ -26,6 +26,8 @@ _INTENT_MAP: dict[str, IntentName] = {
     "summarize": IntentName.SUMMARIZE,
     "recording": IntentName.RECORDING,
     "homework_latest": IntentName.HOMEWORK_LATEST,
+    "homework_submit": IntentName.HOMEWORK_SUBMIT,
+    "materials": IntentName.MATERIALS,
 }
 _SCOPE_MAP: dict[str, Scope] = {s.value: s for s in Scope}
 

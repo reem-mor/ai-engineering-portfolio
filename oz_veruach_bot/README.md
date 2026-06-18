@@ -110,6 +110,22 @@ Use `/myid` to collect numeric Telegram IDs: each person messages the bot once a
 back the number it reports. Add owners to `OWNER_TELEGRAM_IDS` and Alex/Sagy to
 `ADMIN_TELEGRAM_IDS`. (Most role-gated commands land in later phases; `/myid` works now.)
 
+### Generating a Google OAuth refresh token
+
+Drive reads, Gmail send, and the optional admin Drive-write all use one OAuth refresh
+token. Create a **Desktop** OAuth client in Google Cloud Console (set the app to
+**Internal / In-production** so the refresh token doesn't expire), download its
+`client_secret.json`, then run the one-time helper:
+
+```bash
+uv sync --extra auth
+uv run python scripts/get_google_token.py --client-secrets /path/to/client_secret.json
+```
+
+It opens a browser for consent (Drive read + `drive.file` + `gmail.send` scopes) and prints
+`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REFRESH_TOKEN` for
+you to paste into `.env`. Nothing is written to disk by the helper.
+
 ## Project layout
 
 ```

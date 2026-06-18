@@ -22,6 +22,7 @@ class IntentName(StrEnum):
     HOMEWORK_LATEST = "homework_latest"
     HOMEWORK_SUBMIT = "homework_submit"
     SUMMARIZE = "summarize"
+    MATERIALS = "materials"
 
 
 class Scope(StrEnum):
@@ -43,6 +44,7 @@ class Intent:
     scope: Scope | None = None
     lesson_ref: str | None = None
     deep: bool = False
+    query: str | None = None
 
 
 _SCHEDULE_KEYWORDS: tuple[tuple[Scope, tuple[str, ...]], ...] = (
@@ -125,6 +127,14 @@ _DEEP_KEYWORDS: tuple[str, ...] = (
     "מהקלטה",
     "מתוך ההקלטה",
 )
+_MATERIALS_KEYWORDS: tuple[str, ...] = (
+    "חומרים מומלצים",
+    "מה כדאי ללמוד",
+    "מקורות",
+    "recommended materials",
+    "resources",
+    "what should i study",
+)
 
 _LESSON_REF_RE = re.compile(r"(?:lesson|שיעור)\s*#?\s*(\d+)", re.IGNORECASE)
 
@@ -172,6 +182,12 @@ def _match_summarize(normalized: str) -> Intent | None:
     )
 
 
+def _match_materials(normalized: str) -> Intent | None:
+    if any(kw in normalized for kw in _MATERIALS_KEYWORDS):
+        return Intent(name=IntentName.MATERIALS, query=normalized)
+    return None
+
+
 def _match_homework_submit(normalized: str) -> Intent | None:
     if any(kw in normalized for kw in _HOMEWORK_SUBMIT_KEYWORDS):
         return Intent(name=IntentName.HOMEWORK_SUBMIT)
@@ -192,6 +208,7 @@ def route(text: str | None) -> Intent | None:
     return (
         _match_schedule(normalized)
         or _match_summarize(normalized)
+        or _match_materials(normalized)
         or _match_recording(normalized)
         or _match_homework_submit(normalized)
         or _match_homework(normalized)

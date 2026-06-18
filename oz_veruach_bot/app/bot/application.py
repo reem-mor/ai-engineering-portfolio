@@ -14,7 +14,7 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot.admin_handlers import map_command
+from app.bot.admin_handlers import map_command, reindex_command
 from app.bot.admin_upload import handle_admin_upload
 from app.bot.handlers import error_handler, myid_command, text_message
 from app.bot.schedule_handlers import schedule_command
@@ -42,6 +42,7 @@ def build_application(settings: Settings) -> Application:  # type: ignore[type-a
     application.add_handler(CommandHandler("myid", myid_command))
     application.add_handler(CommandHandler("schedule", schedule_command))
     application.add_handler(CommandHandler("map", map_command))
+    application.add_handler(CommandHandler("reindex", reindex_command))
     application.add_handler(CallbackQueryHandler(menu_callback, pattern="^menu:"))
     # The submission conversation must be registered before the generic text/upload
     # handlers so its entry keywords and active-conversation states take precedence.

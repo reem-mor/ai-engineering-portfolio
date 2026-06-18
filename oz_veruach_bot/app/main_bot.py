@@ -32,6 +32,9 @@ def main() -> None:
     health = _build_health_server(settings)
 
     async def _post_init(_app: Application) -> None:  # type: ignore[type-arg]
+        from app.repo.db import init_db
+
+        await init_db()
         await health.start()
 
     async def _post_shutdown(_app: Application) -> None:  # type: ignore[type-arg]

@@ -42,6 +42,10 @@ dev = [
     "types-PyYAML>=6.0,<7",
     "types-cachetools>=5.5,<6",
 ]
+# Operator tooling: the one-time Google OAuth refresh-token helper.
+auth = [
+    "google-auth-oauthlib>=1.2,<2",
+]
 
 [project.scripts]
 oz-bot = "app.main_bot:main"

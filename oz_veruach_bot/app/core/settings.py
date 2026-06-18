@@ -103,6 +103,11 @@ class Settings(BaseSettings):
     model_recommendations: str | None = None
     asr_model: str = "gpt-4o-mini-transcribe"
 
+    # --- RAG / recommendations (Phase 6) -------------------------------------
+    embeddings_model: str = "text-embedding-3-small"
+    web_search_enabled: bool = False
+    rag_top_k: int = 4
+
     def has_any_llm_provider(self) -> bool:
         """True if at least one chat-LLM provider key is configured."""
         return any(

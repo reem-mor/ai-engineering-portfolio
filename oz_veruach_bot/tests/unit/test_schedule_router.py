@@ -60,3 +60,22 @@ def test_summarize_hebrew() -> None:
     intent = route("סכם שיעור")
     assert intent is not None
     assert intent.name is IntentName.SUMMARIZE
+
+
+def test_materials_intent() -> None:
+    intent = route("recommended materials for docker")
+    assert intent is not None
+    assert intent.name is IntentName.MATERIALS
+    assert intent.query is not None and "docker" in intent.query
+
+
+def test_materials_hebrew() -> None:
+    intent = route("חומרים מומלצים")
+    assert intent is not None
+    assert intent.name is IntentName.MATERIALS
+
+
+def test_homework_submit_intent() -> None:
+    intent = route("draft submission")
+    assert intent is not None
+    assert intent.name is IntentName.HOMEWORK_SUBMIT

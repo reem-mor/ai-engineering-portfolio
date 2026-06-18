@@ -93,6 +93,31 @@ def _handle_link(args: list[str], language: Language) -> str:
     return t("map_link_saved", language).format(date=session_date, rec=rec, pres=pres)
 
 
+async def reindex_command(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Owner-only ``/reindex``: rebuild the RAG materials index."""
+    message = update.effective_message
+    if message is None:
+        return
+    language = detect_language(message.text)
+    if not is_owner(update):
+        await message.reply_text(t("owner_refused", language))
+        return
+    from app.services.drive import try_get_drive_service
+    from app.services.embeddings import get_embedder
+    from app.services.indexer import MaterialsIndexer
+    from app.services.vectorstore_db import get_vector_store
+
+    drive = try_get_drive_service()
+    embedder = get_embedder()
+    if drive is None or embedder is None:
+        await message.reply_text(t("reindex_unavailable", language))
+        return
+    await message.reply_text(t("reindex_started", language))
+    indexer = MaterialsIndexer(drive, _store().load(), embedder, get_vector_store())
+    count = await indexer.reindex()
+    await message.reply_text(t("reindex_done", language).format(count=count))
+
+
 async def map_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Owner-only ``/map``: view, suggest, or link lesson_map entries."""
     message = update.effective_message

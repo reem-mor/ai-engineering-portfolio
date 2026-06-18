@@ -279,6 +279,29 @@ _CATALOG: dict[str, dict[Language, str]] = {
         "he": "כתיבה ל-Drive מושבתת — בוצע שידור בלבד.",
         "en": "Drive write is disabled — broadcast only.",
     },
+    # --- Recommendations + RAG (Phase 6) --------------------------------------
+    "reindex_started": {
+        "he": "מאנדקס מחדש את חומרי הקורס…",
+        "en": "Reindexing course materials…",
+    },
+    "reindex_done": {
+        "he": "האינדוקס הושלם: {count} קטעים.",
+        "en": "Reindex complete: {count} chunks.",
+    },
+    "reindex_unavailable": {
+        "he": "אינדוקס אינו זמין (חסר Drive או מפתח OpenAI להטמעות).",
+        "en": "Indexing isn't available (Drive or the OpenAI embeddings key is missing).",
+    },
+    "rec_header_course": {"he": "מהקורס שלנו:", "en": "From our course:"},
+    "rec_header_external": {"he": "קריאה מומלצת:", "en": "Recommended reading:"},
+    "rec_none": {
+        "he": "לא מצאתי חומרים מומלצים לנושא הזה עדיין.",
+        "en": "I couldn't find recommended materials for that topic yet.",
+    },
+    "rec_ask_topic": {
+        "he": "על איזה נושא להמליץ? לדוגמה: RAG, Docker, LangChain.",
+        "en": "Which topic should I recommend for? e.g. RAG, Docker, LangChain.",
+    },
 }
 
 

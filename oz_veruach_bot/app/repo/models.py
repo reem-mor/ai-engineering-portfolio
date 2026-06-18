@@ -66,3 +66,23 @@ class AuditLog(Base):
     actor_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class MaterialChunk(Base):
+    """An embedded chunk of course material for RAG retrieval (feature 6.3).
+
+    The embedding is stored as a JSON array so the same schema works on SQLite and
+    Postgres; pgvector-accelerated search is a Phase 7 optimization behind the same
+    VectorStore interface.
+    """
+
+    __tablename__ = "materials_index"
+
+    chunk_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    drive_file_id: Mapped[str] = mapped_column(String(128))
+    lesson_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    name: Mapped[str] = mapped_column(String(512))
+    view_url: Mapped[str] = mapped_column(String(512))
+    text: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[str] = mapped_column(Text)  # JSON-encoded list[float]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
