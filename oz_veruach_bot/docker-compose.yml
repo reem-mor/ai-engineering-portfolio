@@ -1,0 +1,38 @@
+# Two long-running processes share one image: the Telegram bot and the worker.
+# Postgres/Supabase is external and is not provisioned here.
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oz-veruach-bot:latest
+    command: ["python", "-m", "app.main_bot"]
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"   # /healthz
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8080/healthz').status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    image: oz-veruach-bot:latest
+    command: ["python", "-m", "app.main_worker"]
+    env_file:
+      - .env
+    depends_on:
+      - bot
+    ports:
+      - "8081:8081"   # worker /healthz (HEALTH_PORT + 1)
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8081/healthz').status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,116 @@
+"""Admin handlers: the owner-gated ``/map`` command (view / suggest / link).
+
+`/map` is owner-only (brief 6.11). It shows the lesson_map, surfaces auto-suggested links
+(never auto-applied), and lets the owner confirm a link, persisted to the YAML store.
+A reusable role gate politely refuses non-owners/non-admins.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from app.core.i18n import Language, detect_language, t
+from app.core.logging import get_logger
+from app.core.settings import get_settings
+from app.services.lesson_map_store import YamlLessonMapStore
+from app.services.schedule import get_schedule_service
+from app.services.suggester import suggest_recording_links
+
+if TYPE_CHECKING:
+    from telegram import Update
+    from telegram.ext import ContextTypes
+
+_log = get_logger("bot.admin")
+
+
+def _store() -> YamlLessonMapStore:
+    """Factory for the lesson_map store (patched in tests)."""
+    return YamlLessonMapStore()
+
+
+def is_owner(update: Update) -> bool:
+    """True if the update's user is on the owner allowlist."""
+    user = update.effective_user
+    return user is not None and get_settings().is_owner(user.id)
+
+
+def is_admin(update: Update) -> bool:
+    """True if the update's user is an admin (owners are implicitly admins)."""
+    user = update.effective_user
+    return user is not None and get_settings().is_admin(user.id)
+
+
+def _format_map(language: Language) -> str:
+    lesson_map = _store().load()
+    lines = [t("map_header", language), "", t("map_recordings_label", language)]
+    for label, folder_id in sorted(lesson_map.recordings_by_alex_label.items()):
+        lines.append(f"  Lesson {label}: {folder_id}")
+    lines.append("")
+    lines.append(t("map_links_label", language))
+    if not lesson_map.session_links:
+        lines.append(f"  {t('map_no_links', language)}")
+    else:
+        for date, link in sorted(lesson_map.session_links.items()):
+            lines.append(
+                f"  {date}: rec={link.recording_alex_label} pres={link.presentation_alex_label}"
+            )
+    return "\n".join(lines)
+
+
+def _format_suggestions(language: Language) -> str:
+    suggestions = suggest_recording_links(get_schedule_service(), _store().load())
+    if not suggestions:
+        return t("map_suggest_none", language)
+    lines = [t("map_suggest_header", language)]
+    for s in suggestions:
+        lines.append(
+            f"  {s.session_date} → rec={s.recording_alex_label}  ({s.session_title})"
+        )
+    return "\n".join(lines)
+
+
+def _parse_label(token: str, prefix: str) -> int | None:
+    """Parse a ``prefix=<int>`` token, returning the int or None."""
+    if token.startswith(f"{prefix}="):
+        value = token.split("=", 1)[1]
+        return int(value) if value.isdigit() else None
+    return None
+
+
+def _handle_link(args: list[str], language: Language) -> str:
+    """Apply a `/map link <date> rec=<n> pres=<n>` command, persisting the link."""
+    if not args:
+        return t("map_usage", language)
+    session_date = args[0]
+    rec: int | None = None
+    pres: int | None = None
+    for token in args[1:]:
+        rec = _parse_label(token, "rec") if rec is None else rec
+        pres = _parse_label(token, "pres") if pres is None else pres
+    _store().set_link(
+        session_date, recording_alex_label=rec, presentation_alex_label=pres
+    )
+    return t("map_link_saved", language).format(date=session_date, rec=rec, pres=pres)
+
+
+async def map_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Owner-only ``/map``: view, suggest, or link lesson_map entries."""
+    message = update.effective_message
+    if message is None:
+        return
+    language = detect_language(message.text)
+    if not is_owner(update):
+        _log.warning("map_denied", user_id=getattr(update.effective_user, "id", None))
+        await message.reply_text(t("owner_refused", language))
+        return
+    args: list[str] = list(getattr(context, "args", None) or [])
+    if not args:
+        await message.reply_text(_format_map(language))
+        return
+    sub = args[0].lower()
+    if sub == "suggest":
+        await message.reply_text(_format_suggestions(language))
+    elif sub == "link":
+        await message.reply_text(_handle_link(args[1:], language))
+    else:
+        await message.reply_text(t("map_usage", language))
