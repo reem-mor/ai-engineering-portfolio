@@ -1,0 +1,267 @@
+{
+  "name": "TL Multi-Expert (SOC/SRE/DevOps)",
+  "nodes": [
+    {
+      "id": "node-chat-trigger",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [-1040, -192],
+      "parameters": { "options": { "responseMode": "lastNode" } }
+    },
+    {
+      "id": "node-tl",
+      "name": "TL",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-64, -112],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the TL Agent, the team lead and router for a technical expert team.\n\nYour job is to understand the user request, decide which expert agent should handle it, send the request to the correct expert, and return a clear final answer to the user.\n\nYou manage the following expert agents:\n\n1. AWS_EXPERT\nUse this agent for:\n- AWS services\n- Amazon Bedrock\n- EC2, S3, RDS, Lambda, IAM, VPC, CloudFront, Route 53\n- AWS architecture\n- AWS security configuration\n- AWS cost, monitoring, deployment, and troubleshooting\n- Cloud infrastructure questions\n\n2. CYBER_EXPERT\nUse this agent for:\n- Cybersecurity questions\n- CVEs and vulnerabilities\n- Real-time CVE checks\n- Threat analysis\n- Incident response\n- Security hardening\n- Malware, phishing, ransomware, attack techniques\n- Risk, compliance, SOC, SIEM, vulnerability management\n\n3. ON_PREM_EXPERT\nUse this agent for:\n- On-premise infrastructure\n- Networking\n- Firewalls, routers, switches\n- DNS, DHCP, Active Directory\n- VPN, VLANs, LAN/WAN\n- Physical servers\n- Data center infrastructure\n- Hybrid connectivity between on-prem and cloud\n\nTools available to you:\n- Knowledge_Base: internal company docs, runbooks, SOPs, architecture notes.\n\nRouting rules:\n- If the question is clearly about one domain, call only the relevant expert.\n- If the question touches multiple domains, call all relevant experts and combine their answers.\n- If the user asks about AWS security, usually call both AWS_EXPERT and CYBER_EXPERT.\n- If the user asks about hybrid cloud, VPN, Direct Connect, site-to-site connectivity, or routing between AWS and on-prem, call both AWS_EXPERT and ON_PREM_EXPERT.\n- If the user asks about CVEs, vulnerabilities, active exploitation, or security advisories, always involve CYBER_EXPERT.\n- For CVE-specific requests, instruct CYBER_EXPERT to use CVE_real_time first, and Perplexity_Search for recency/active exploitation context.\n- For org-specific procedures, standards, internal architecture, or policy questions, call Knowledge_Base before finalizing the answer.\n- If the request is vague, ask one short clarification question before routing.\n- Do not answer deeply by yourself when an expert or tool should be used.\n- Do not invent technical facts, commands, URLs, CVEs, cloud limits, or configuration values.\n- If information is missing, say what is missing clearly.\n\nCVE handling policy:\n- Prefer authoritative sources first (CVE_real_time / NVD).\n- If active exploitation status is requested or useful, use Perplexity_Search to get latest context.\n- If real-time status is uncertain, state uncertainty explicitly and recommend validating against vendor advisories / CISA KEV / NVD updates."
+        }
+      }
+    },
+    {
+      "id": "node-lm-tl",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [-64, 224],
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-4o-mini" },
+        "options": { "temperature": 0.2 },
+        "responsesApiEnabled": false
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": { "openAiApi": { "id": "hKXdTIExXwfdKuib", "name": "OpenAI n8n course May26" } }
+    },
+    {
+      "id": "node-mem-tl",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [128, 224],
+      "parameters": { "contextWindowLength": 10 }
+    },
+    {
+      "id": "node-aws",
+      "name": "AWS_EXPERT",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [384, -128],
+      "parameters": {
+        "toolDescription": "Senior AWS cloud engineer. Use for AWS account architecture, IAM, EC2, VPC, S3, Lambda, Bedrock, CloudWatch, SNS, SES, ECR, ECS, Docker on EC2, billing/cost, networking, and deployment troubleshooting.",
+        "text": "={{ $fromAI('userRequest', 'The specific AWS sub-task or question for this specialist', 'string') }}"
+      }
+    },
+    {
+      "id": "node-lm-aws",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [304, 128],
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-4o-mini" },
+        "options": { "temperature": 0.2 },
+        "responsesApiEnabled": false
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": { "openAiApi": { "id": "hKXdTIExXwfdKuib", "name": "OpenAI n8n course May26" } }
+    },
+    {
+      "id": "node-mem-aws",
+      "name": "Simple Memory1",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [464, 128],
+      "parameters": { "sessionIdType": "customKey", "sessionKey": "tl-aws", "contextWindowLength": 10 }
+    },
+    {
+      "id": "node-onprem",
+      "name": "ON_PREM_EXPERT",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [704, -128],
+      "parameters": {
+        "toolDescription": "Senior on-prem infrastructure and operations engineer. Use for Linux and Windows servers, VMware, physical servers, firewalls, DNS, DHCP, storage, backups, databases, logs, networking, monitoring, and data center operations.",
+        "text": "={{ $fromAI('userRequest', 'The specific on-prem sub-task or question for this specialist', 'string') }}"
+      }
+    },
+    {
+      "id": "node-lm-onprem",
+      "name": "OpenAI Chat Model3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [624, 128],
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-4o-mini" },
+        "options": { "temperature": 0.2 },
+        "responsesApiEnabled": false
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": { "openAiApi": { "id": "hKXdTIExXwfdKuib", "name": "OpenAI n8n course May26" } }
+    },
+    {
+      "id": "node-mem-onprem",
+      "name": "Memory3",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [784, 128],
+      "parameters": { "sessionIdType": "customKey", "sessionKey": "tl-onprem", "contextWindowLength": 10 }
+    },
+    {
+      "id": "node-cyber",
+      "name": "CYBER_EXPERT",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [1024, -128],
+      "parameters": {
+        "toolDescription": "Senior cybersecurity and incident response expert for CVEs, vulnerabilities, threat analysis, incident response, SIEM/SOC, and hardening. Uses real-time tools for current intel.",
+        "text": "={{ $fromAI('userRequest', 'The specific security sub-task or question for this specialist', 'string') }}"
+      }
+    },
+    {
+      "id": "node-lm-cyber",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [944, 128],
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-4o-mini" },
+        "options": { "temperature": 0.2 },
+        "responsesApiEnabled": false
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": { "openAiApi": { "id": "hKXdTIExXwfdKuib", "name": "OpenAI n8n course May26" } }
+    },
+    {
+      "id": "node-mem-cyber",
+      "name": "Simple Memory2",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [1104, 128],
+      "parameters": { "sessionIdType": "customKey", "sessionKey": "tl-cyber", "contextWindowLength": 10 }
+    },
+    {
+      "id": "node-cve",
+      "name": "CVE_real_time",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1376, 128],
+      "parameters": {
+        "toolDescription": "Real-time NVD CVE API lookup. Use for CVE IDs, product/vendor vulnerability checks, CVSS, affected configurations, and references.",
+        "url": "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch={keyword}",
+        "placeholderDefinitions": { "values": [{ "name": "keyword", "description": "CVE ID, vendor, product, or vulnerability keyword to query NVD", "type": "string" }] },
+        "optimizeResponse": true
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-perplexity-cyber",
+      "name": "Perplexity_Search",
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 2,
+      "position": [1648, 128],
+      "parameters": {
+        "resource": "search",
+        "query": "={{ $fromAI('query', 'Search query for latest CVE, vulnerability, exploit, or threat intelligence', 'string') }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": { "perplexityApi": { "id": "uI8Op91FHSP0FRAn", "name": "Perplexity account" } },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-input-guardrails",
+      "name": "Input Guardrails",
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 2,
+      "position": [-736, -128],
+      "parameters": {
+        "text": "={{ $json.chatInput }}",
+        "guardrails": { "jailbreak": { "value": { "threshold": 0.7 } }, "nsfw": { "value": { "threshold": 0.7 } } }
+      }
+    },
+    {
+      "id": "node-guardrail-block",
+      "name": "Guardrail Block",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [80, -336],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "guardrail-blocked", "name": "output", "value": "I cannot help with that request. Please rephrase with a legitimate defensive or operational objective.", "type": "string" },
+            { "id": "guardrail-reason", "name": "guardrail_blocked", "value": "={{ true }}", "type": "boolean" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-kb-retriever",
+      "name": "Knowledge_Base_Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [-320, 528],
+      "parameters": { "memoryKey": { "__rl": true, "mode": "id", "value": "company_kb" } }
+    },
+    {
+      "id": "node-kb-embeddings",
+      "name": "KB Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [-736, 544],
+      "parameters": { "options": {} },
+      "credentials": { "openAiApi": { "id": "hKXdTIExXwfdKuib", "name": "OpenAI n8n course May26" } },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "node-kb-tool",
+      "name": "Knowledge_Base",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [-16, 384],
+      "parameters": { "description": "internal company docs, runbooks, SOPs, architecture notes" }
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "TL", "type": "ai_languageModel", "index": 0 }, { "node": "Input Guardrails", "type": "ai_languageModel", "index": 0 }]] },
+    "Simple Memory": { "ai_memory": [[{ "node": "TL", "type": "ai_memory", "index": 0 }]] },
+    "AWS_EXPERT": { "ai_tool": [[{ "node": "TL", "type": "ai_tool", "index": 0 }]] },
+    "ON_PREM_EXPERT": { "ai_tool": [[{ "node": "TL", "type": "ai_tool", "index": 0 }]] },
+    "CYBER_EXPERT": { "ai_tool": [[{ "node": "TL", "type": "ai_tool", "index": 0 }]] },
+    "OpenAI Chat Model1": { "ai_languageModel": [[{ "node": "AWS_EXPERT", "type": "ai_languageModel", "index": 0 }]] },
+    "Simple Memory1": { "ai_memory": [[{ "node": "AWS_EXPERT", "type": "ai_memory", "index": 0 }]] },
+    "OpenAI Chat Model3": { "ai_languageModel": [[{ "node": "ON_PREM_EXPERT", "type": "ai_languageModel", "index": 0 }]] },
+    "Memory3": { "ai_memory": [[{ "node": "ON_PREM_EXPERT", "type": "ai_memory", "index": 0 }]] },
+    "OpenAI Chat Model2": { "ai_languageModel": [[{ "node": "CYBER_EXPERT", "type": "ai_languageModel", "index": 0 }]] },
+    "Simple Memory2": { "ai_memory": [[{ "node": "CYBER_EXPERT", "type": "ai_memory", "index": 0 }]] },
+    "CVE_real_time": { "ai_tool": [[{ "node": "CYBER_EXPERT", "type": "ai_tool", "index": 0 }]] },
+    "When chat message received": { "main": [[{ "node": "Input Guardrails", "type": "main", "index": 0 }]] },
+    "Input Guardrails": { "main": [[{ "node": "TL", "type": "main", "index": 0 }], [{ "node": "Guardrail Block", "type": "main", "index": 0 }]] },
+    "Perplexity_Search": { "ai_tool": [[{ "node": "CYBER_EXPERT", "type": "ai_tool", "index": 0 }]] },
+    "Knowledge_Base_Store": { "ai_vectorStore": [[{ "node": "Knowledge_Base", "type": "ai_vectorStore", "index": 0 }]] },
+    "KB Embeddings": { "ai_embedding": [[{ "node": "Knowledge_Base_Store", "type": "ai_embedding", "index": 0 }]] },
+    "Knowledge_Base": { "ai_tool": [[{ "node": "TL", "type": "ai_tool", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}

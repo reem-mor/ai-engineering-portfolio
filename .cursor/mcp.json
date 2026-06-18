@@ -64,6 +64,30 @@
         "PYTHONUNBUFFERED": "1",
         "FASTMCP_LOG_LEVEL": "ERROR"
       }
+    },
+
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "timeout": 120000,
+      "env": {
+        "CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
+      }
+    },
+
+    "perplexity": {
+      "command": "npx",
+      "args": ["-yq", "@perplexity-ai/mcp-server"],
+      "timeout": 120000,
+      "env": {
+        "PERPLEXITY_API_KEY": "${env:PERPLEXITY_API_KEY}"
+      }
+    },
+
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "timeout": 120000
     }
   }
 }
