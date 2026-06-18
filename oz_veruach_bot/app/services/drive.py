@@ -20,6 +20,8 @@ from app.core.settings import Settings, get_settings
 _log = get_logger("drive")
 
 DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
+# Scoped write access for the admin-upload feature only (create files the bot owns).
+DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 _LIST_FIELDS = "files(id,name,mimeType,size,modifiedTime,createdTime),nextPageToken"
 
 
@@ -148,6 +150,82 @@ class GoogleDriveService:
         )
         data = await self._execute(request)
         return data if isinstance(data, bytes) else bytes(data)
+
+
+class GoogleDriveUploader:
+    """The single Drive write path (admin upload). Create-only; never deletes/overwrites."""
+
+    def __init__(self, client: Any = None, *, settings: Settings | None = None) -> None:
+        self._client = client
+        self._settings = settings
+
+    def _ensure_client(self) -> Any:
+        if self._client is None:
+            if self._settings is None:
+                raise ConfigurationError("Drive uploader not configured")
+            self._client = _build_write_client(self._settings)
+        return self._client
+
+    async def upload_file(
+        self,
+        *,
+        parent_folder_id: str,
+        filename: str,
+        content: bytes,
+        mime_type: str,
+    ) -> str:
+        """Create a new file under ``parent_folder_id`` and return its Drive id."""
+        from googleapiclient.http import MediaInMemoryUpload
+
+        client = self._ensure_client()
+
+        def _create() -> Any:
+            media = MediaInMemoryUpload(content, mimetype=mime_type, resumable=False)
+            return (
+                client.files()
+                .create(
+                    body={"name": filename, "parents": [parent_folder_id]},
+                    media_body=media,
+                    fields="id",
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+
+        try:
+            result = await asyncio.to_thread(_create)
+        except Exception as exc:
+            raise ExternalServiceError(str(exc), service="drive_upload") from exc
+        return str(result.get("id", ""))
+
+
+def _build_write_client(settings: Settings) -> Any:
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+
+    if not (settings.google_oauth_refresh_token and settings.google_oauth_client_id):
+        raise ConfigurationError("Drive write requires Google OAuth credentials.")
+    creds = Credentials(  # type: ignore[no-untyped-call]
+        token=None,
+        refresh_token=settings.google_oauth_refresh_token.get_secret_value(),
+        client_id=settings.google_oauth_client_id,
+        client_secret=settings.google_oauth_client_secret.get_secret_value()
+        if settings.google_oauth_client_secret
+        else None,
+        token_uri="https://oauth2.googleapis.com/token",
+        scopes=[DRIVE_FILE_SCOPE],
+    )
+    return build("drive", "v3", credentials=creds, cache_discovery=False)
+
+
+def build_drive_uploader(settings: Settings) -> GoogleDriveUploader | None:
+    """Return a create-only uploader if Drive write is enabled and configured, else None."""
+    if not settings.drive_write_enabled:
+        return None
+    if not (settings.google_oauth_refresh_token and settings.google_oauth_client_id):
+        _log.info("drive_write_unconfigured")
+        return None
+    return GoogleDriveUploader(settings=settings)
 
 
 @lru_cache(maxsize=1)

@@ -6,7 +6,7 @@ calls ever happen. Fixtures here provide settings and mocked Telegram update obj
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -21,16 +21,19 @@ def _isolate_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterat
     Runs each test from a clean temp CWD (so the project ``.env`` isn't picked up) with
     the relevant allowlist/token env vars cleared, and a fresh Settings cache.
     """
+    from app.repo.db import reset_engine
     from app.services.llm import get_model_registry
 
     get_settings.cache_clear()
     get_model_registry.cache_clear()
+    reset_engine()
     for var in ("TELEGRAM_BOT_TOKEN", "OWNER_TELEGRAM_IDS", "ADMIN_TELEGRAM_IDS"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)
     yield
     get_settings.cache_clear()
     get_model_registry.cache_clear()
+    reset_engine()
 
 
 @pytest.fixture
@@ -40,6 +43,21 @@ def settings() -> Settings:
         telegram_bot_token="test-token",  # type: ignore[arg-type]
         admin_telegram_ids=(111, 222),  # type: ignore[arg-type]
     )
+
+
+@pytest.fixture
+async def db_sessionmaker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[object]:
+    """Provide an initialized, isolated SQLite datastore for repository tests."""
+    from app.repo.db import get_engine, get_sessionmaker, init_db, reset_engine
+
+    db_path = tmp_path / "test.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{db_path.as_posix()}")
+    get_settings.cache_clear()
+    reset_engine()
+    await init_db()
+    yield get_sessionmaker()
+    await get_engine().dispose()  # close aiosqlite threads before the loop ends
+    reset_engine()
 
 
 @pytest.fixture

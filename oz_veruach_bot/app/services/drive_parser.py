@@ -121,6 +121,31 @@ def parse_recording_parts(files: list[dict[str, Any]]) -> list[RecordingPart]:
     return sorted(parts, key=lambda p: (p.part_index is None, p.part_index or 0, p.name))
 
 
+async def walk_all_files(
+    service: DriveService, folder_id: str
+) -> list[dict[str, Any]]:
+    """Recursively enumerate every non-folder file under a tree (for the Drive watcher).
+
+    Returns normalized dicts with id, name, mimeType, modifiedTime, and parent folder id.
+    """
+    found: list[dict[str, Any]] = []
+    children = await service.list_children(folder_id)
+    for child in children:
+        if is_folder(child):
+            found.extend(await walk_all_files(service, file_id(child)))
+            continue
+        found.append(
+            {
+                "id": file_id(child),
+                "name": file_name(child),
+                "mimeType": file_mime(child),
+                "modifiedTime": file_modified(child),
+                "parent": folder_id,
+            }
+        )
+    return found
+
+
 async def walk_materials(
     service: DriveService, folder_id: str, *, parent_kind: MaterialKind | None = None
 ) -> list[MaterialFile]:

@@ -13,7 +13,7 @@ approval before the next begins.
 | 2 | Drive read + lesson_map | Complete |
 | 3 | LLM orchestrator + summaries | Complete |
 | 4 | Homework submission flow | Complete |
-| 5 | Notifications + admin upload | Pending |
+| 5 | Notifications + admin upload | Complete |
 | 6 | Recommendations + RAG | Pending |
 | 7 | Hardening, optimization, deploy | Pending |
 
@@ -117,6 +117,25 @@ Feature 6.5 + 4.3 + C8.
 - [x] Tests: subject/body byte-for-byte, state machine, finalize/send (To/Cc/attachments,
       double-send, failure), backend selection, C8, conversation step handlers. 172 pass;
       ruff + mypy clean.
+
+## Phase 5 — Notifications + admin upload (Complete)
+
+Features 6.7, 6.8, 6.9 + the datastore.
+
+- [x] SQLAlchemy 2.x async datastore (subscribers, drive_state, broadcast_log, audit_log)
+      via `create_all`; Supabase Postgres prod / SQLite dev; repositories per table.
+      (Alembic migrations deferred to Phase 7.)
+- [x] `TelegramNotifier`: token-bucket throttling, `RetryAfter`/429 backoff, single retry,
+      partial-failure counts, `broadcast_log` idempotency (no double-send).
+- [x] APScheduler worker hosting the `DriveWatcher`: recursive enumerate -> diff vs
+      `drive_state` -> classify -> resolve lesson -> broadcast; first run seeds silently;
+      `(file_id, modifiedTime)` keys prevent re-notify.
+- [x] `GoogleDriveUploader` (create-only, scoped, `DRIVE_WRITE_ENABLED`-gated) + admin
+      upload->broadcast handler (caption parse, optional Drive filing, non-admin refuse).
+- [x] Subscriptions: `/start` registers + language, `/stop`, `/menu` inline keyboard.
+- [x] Tests with in-memory SQLite + mocked Telegram/Drive: repos, notifier
+      idempotency/partial-failure/RetryAfter, watcher first-run/no-double-notify/re-change,
+      admin gating, subscriptions. 189 pass; ruff + mypy clean.
 
 ## Operating Rules (all phases)
 

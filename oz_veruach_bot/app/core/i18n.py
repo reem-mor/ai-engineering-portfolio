@@ -238,6 +238,47 @@ _CATALOG: dict[str, dict[Language, str]] = {
         "he": "כדי להכין הגשה שלחו /submit ואלווה אתכם בתהליך.",
         "en": "To prepare a submission, send /submit and I'll guide you through it.",
     },
+    # --- Notifications + subscriptions + admin upload (Phase 5) ----------------
+    "notify_new_material": {
+        "he": "התווסף חומר חדש ({kind}){lesson}: {name}\n{link}",
+        "en": "New material added ({kind}){lesson}: {name}\n{link}",
+    },
+    "notify_lesson_suffix": {"he": " לשיעור {lesson}", "en": " for {lesson}"},
+    "kind_recording": {"he": "הקלטה", "en": "recording"},
+    "kind_slides": {"he": "מצגת", "en": "slides"},
+    "kind_homework": {"he": "מטלה", "en": "homework"},
+    "kind_code": {"he": "קוד", "en": "code"},
+    "kind_other": {"he": "קובץ", "en": "file"},
+    "subscribed": {
+        "he": "נרשמתם לעדכונים. שלחו /stop כדי לבטל, /menu לתפריט.",
+        "en": "You're subscribed to updates. Send /stop to opt out, /menu for the menu.",
+    },
+    "unsubscribed": {
+        "he": "ביטלתם את ההרשמה לעדכונים. עדיין תוכלו להשתמש בבוט לפי דרישה.",
+        "en": "You've unsubscribed from broadcasts. You can still use the bot on demand.",
+    },
+    "menu_header": {"he": "מה תרצו לעשות?", "en": "What would you like to do?"},
+    "menu_schedule": {"he": "לוח זמנים", "en": "Schedule"},
+    "menu_recording": {"he": "הקלטות", "en": "Recordings"},
+    "menu_homework": {"he": "שיעורי בית", "en": "Homework"},
+    "menu_summary": {"he": "סיכום שיעור", "en": "Lesson summary"},
+    "menu_submit": {"he": "הגשת מטלה", "en": "Submit homework"},
+    "upload_ack": {
+        "he": "קיבלתי את הקובץ. משדר לכל הנרשמים…",
+        "en": "Got your file. Broadcasting to subscribers…",
+    },
+    "upload_broadcasted": {
+        "he": "השידור הושלם: {sent} נשלחו, {failed} נכשלו.",
+        "en": "Broadcast complete: {sent} sent, {failed} failed.",
+    },
+    "upload_drive_filed": {
+        "he": "הקובץ גם תויק ב-Drive (מזהה: {file_id}).",
+        "en": "The file was also filed to Drive (id: {file_id}).",
+    },
+    "upload_drive_disabled": {
+        "he": "כתיבה ל-Drive מושבתת — בוצע שידור בלבד.",
+        "en": "Drive write is disabled — broadcast only.",
+    },
 }
 
 

@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     google_oauth_refresh_token: SecretStr | None = None
     google_api_key: SecretStr | None = None
     course_drive_folder_id: str | None = None
+    # The single Drive write path (admin upload filing) is off unless explicitly enabled.
+    drive_write_enabled: bool = False
+
+    # --- Notifications / worker ----------------------------------------------
+    broadcast_rate_per_sec: float = 25.0
+    drive_poll_minutes: int = 15
 
     # --- Homework email routing ----------------------------------------------
     hw_to_email: str | None = None
