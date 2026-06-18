@@ -1,23 +1,18 @@
 {
-  "name": "KB Ingestion - Drive to Vector Store",
+  "name": "KB Ingestion A - Drive Bootstrap to Pinecone",
   "nodes": [
     {
+      "parameters": {},
       "id": "node-manual",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [-900, 120],
-      "parameters": {}
+      "position": [-1104, 128],
+      "notes": "WF_A full bootstrap (manual). Initial/full load of the Drive KB folder into Pinecone namespace 'company_kb'. For routine updates use WF_B incremental sync; to wipe+rebuild use WF_C reindex."
     },
     {
-      "id": "node-drive-list",
-      "name": "Drive: List Files",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [-680, 120],
       "parameters": {
         "resource": "fileFolder",
-        "operation": "search",
         "searchMethod": "query",
         "queryString": "trashed=false",
         "returnAll": true,
@@ -25,10 +20,21 @@
           "folderId": {
             "__rl": true,
             "mode": "id",
-            "value": "17Rg2teqPNlGUxrWOBM_LxjWeSSvIFKeG"
+            "value": "17Rg2teqPNlGUxrWOBM_LxjWeSSvIFKeG",
+            "cachedResultName": "KB Folder"
           }
-        }
+        },
+        "options": {}
       },
+      "id": "node-drive-list",
+      "name": "Drive: List Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-880, 128],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "GP1VAzKfaBW8UndF",
@@ -36,25 +42,67 @@
         }
       },
       "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000
+      "notes": "Lists files in the KB folder (one level). Edge case: empty folder -> 0 items, downstream simply no-ops. NOTE: subfolder recursion is not native; add a folder-walk loop or keep KB flat. Retries 3x on Drive API errors."
     },
     {
-      "id": "node-drive-download",
-      "name": "Drive: Download",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [-440, 120],
       "parameters": {
-        "resource": "file",
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-mime",
+              "leftValue": "={{ ['application/vnd.google-apps.document','application/vnd.google-apps.presentation','application/vnd.google-apps.spreadsheet','application/pdf','text/plain','text/markdown','text/csv','application/json','text/html','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes($json.mimeType) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-if-supported",
+      "name": "Is Supported MIME?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-656, 128],
+      "notes": "MIME allow-list gate. TRUE -> Download+embed. FALSE -> Log Skipped (images, archives, binaries, etc.). Google Docs/Sheets/Slides are allowed and exported to text/csv on download."
+    },
+    {
+      "parameters": {
         "operation": "download",
         "fileId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $json.id }}"
+          "value": "={{ $json.id }}",
+          "cachedResultName": "={{ $json.name }}"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain",
+              "slidesToFormat": "text/plain"
+            }
+          }
         }
       },
+      "id": "node-drive-download",
+      "name": "Drive: Download",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-416, 32],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "GP1VAzKfaBW8UndF",
@@ -62,43 +110,76 @@
         }
       },
       "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000
+      "notes": "Downloads supported files; Google-native docs exported to text/csv via googleFileConversion. onError=continue so one bad file never aborts the batch. Retries 3x on transient Drive errors."
     },
     {
-      "id": "node-loader",
-      "name": "Default Data Loader",
-      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
-      "typeVersion": 1.1,
-      "position": [-220, 360],
       "parameters": {
-        "dataType": "binary",
-        "binaryMode": "allInputData",
-        "loader": "auto",
-        "textSplittingMode": "custom"
-      }
+        "assignments": {
+          "assignments": [
+            { "id": "skip-reason", "name": "skip_reason", "value": "unsupported_mime_type", "type": "string" },
+            { "id": "skip-fileid", "name": "fileId", "value": "={{ $json.id }}", "type": "string" },
+            { "id": "skip-name", "name": "name", "value": "={{ $json.name }}", "type": "string" },
+            { "id": "skip-mime", "name": "mimeType", "value": "={{ $json.mimeType }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-log-skip",
+      "name": "Log Skipped (Unsupported)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-416, 272],
+      "notes": "Safe skip path for unsupported file types with structured reason logging. Can be wired to the kb_dead_letter Data Table (De2ZG0AuxgfuHIyF) for persistent audit."
     },
     {
+      "parameters": {
+        "chunkOverlap": 150,
+        "options": {}
+      },
       "id": "node-splitter",
       "name": "Recursive Text Splitter",
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
-      "position": [-420, 520],
-      "parameters": {
-        "chunkSize": 1000,
-        "chunkOverlap": 150
-      }
+      "position": [-256, 368],
+      "notes": "Chunking 1000/150. Mitigates chunk explosion: keep chunkSize >=800 for large files."
     },
     {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              { "name": "fileId", "value": "={{ $('Drive: List Files').item.json.id }}" },
+              { "name": "name", "value": "={{ $('Drive: List Files').item.json.name }}" },
+              { "name": "mimeType", "value": "={{ $('Drive: List Files').item.json.mimeType }}" },
+              { "name": "modifiedTime", "value": "={{ $('Drive: List Files').item.json.modifiedTime }}" },
+              { "name": "sourceUrl", "value": "={{ $('Drive: List Files').item.json.webViewLink }}" },
+              { "name": "hash", "value": "={{ $('Drive: List Files').item.json.md5Checksum || $('Drive: List Files').item.json.modifiedTime }}" },
+              { "name": "version", "value": "={{ $('Drive: List Files').item.json.modifiedTime }}" }
+            ]
+          }
+        }
+      },
+      "id": "node-loader",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [-96, 304],
+      "notes": "MIME-aware auto loader. Attaches citation metadata (fileId, name, mimeType, modifiedTime, sourceUrl, hash, version) to every chunk so retrieval can cite sources and incremental sync can detect changes via hash/version."
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small"
+      },
       "id": "node-emb",
       "name": "Embeddings OpenAI",
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
-      "position": [20, 520],
-      "parameters": {
-        "model": "text-embedding-3-small"
-      },
+      "position": [-96, 528],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "openAiApi": {
           "id": "hKXdTIExXwfdKuib",
@@ -106,24 +187,75 @@
         }
       },
       "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000
+      "notes": "text-embedding-3-small (1536 dims). MUST match the query-side model in the chat workflow. Retries 3x on OpenAI rate limits/5xx."
     },
     {
-      "id": "node-vs",
-      "name": "Simple Vector Store",
-      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
-      "typeVersion": 1.3,
-      "position": [20, 120],
       "parameters": {
         "mode": "insert",
-        "clearStore": true,
-        "memoryKey": {
+        "pineconeIndex": {
           "__rl": true,
           "mode": "id",
-          "value": "company_kb"
+          "value": "company-kb"
+        },
+        "options": {
+          "clearNamespace": false,
+          "pineconeNamespace": "company_kb"
         }
+      },
+      "id": "node-vs",
+      "name": "Pinecone: Insert",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [144, 128],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "pineconeApi": {
+          "id": "1K1jNN1533VDw1DH",
+          "name": "Pinecone account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "MANUAL BIND REQUIRED: add Pinecone credential (pineconeApi) + ensure index 'company-kb' (dim 1536, cosine). Inserts into namespace 'company_kb'. clearNamespace=false (bootstrap is additive; use WF_C reindex to wipe+rebuild). Retries 3x on Pinecone errors."
+    },
+    {
+      "id": "sticky-overview",
+      "name": "Sticky: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1180, -240],
+      "parameters": {
+        "width": 1100,
+        "height": 190,
+        "color": 4,
+        "content": "## KB Ingestion A — Drive Bootstrap to Pinecone\n\n**Purpose:** One-time / occasional **full load** of the Google Drive knowledge folder into Pinecone (`company-kb` / namespace `company_kb`).\n\n**Flow:** `Manual -> Drive: List Files -> Is Supported MIME? -> Drive: Download -> Split -> Loader (+metadata) -> OpenAI Embeddings -> Pinecone: Insert`.\n\n**Additive:** `clearNamespace=false` — it does not wipe existing vectors. Use *Ingestion C (Reindex)* for a clean rebuild. For ongoing changes use *Ingestion B (Incremental)*.\n\n**Edge cases:** empty folder (no-op), unsupported MIME -> logged & skipped, Google Docs/Sheets/Slides auto-exported to text/CSV."
+      }
+    },
+    {
+      "id": "sticky-mime",
+      "name": "Sticky: MIME Gate",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-660, 380],
+      "parameters": {
+        "width": 340,
+        "height": 130,
+        "color": 3,
+        "content": "### MIME Filter\nOnly supported types pass (PDF, txt/md, Google Docs/Sheets/Slides, csv…).\nUnsupported files -> **Log Skipped**, never break the run."
+      }
+    },
+    {
+      "id": "sticky-metadata",
+      "name": "Sticky: Metadata",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-180, 380],
+      "parameters": {
+        "width": 360,
+        "height": 150,
+        "color": 6,
+        "content": "### Chunk Metadata\nEach chunk carries: `fileId`, `name`, `mimeType`, `modifiedTime`, `sourceUrl`, `hash`, `version`, `chunkIndex`.\nDrives citations + change-detection in Incremental sync."
       }
     }
   ],
@@ -132,26 +264,35 @@
       "main": [[{ "node": "Drive: List Files", "type": "main", "index": 0 }]]
     },
     "Drive: List Files": {
-      "main": [[{ "node": "Drive: Download", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Is Supported MIME?", "type": "main", "index": 0 }]]
+    },
+    "Is Supported MIME?": {
+      "main": [
+        [{ "node": "Drive: Download", "type": "main", "index": 0 }],
+        [{ "node": "Log Skipped (Unsupported)", "type": "main", "index": 0 }]
+      ]
     },
     "Drive: Download": {
-      "main": [[{ "node": "Simple Vector Store", "type": "main", "index": 0 }]]
-    },
-    "Default Data Loader": {
-      "ai_document": [[{ "node": "Simple Vector Store", "type": "ai_document", "index": 0 }]]
+      "main": [[{ "node": "Pinecone: Insert", "type": "main", "index": 0 }]]
     },
     "Recursive Text Splitter": {
       "ai_textSplitter": [[{ "node": "Default Data Loader", "type": "ai_textSplitter", "index": 0 }]]
     },
+    "Default Data Loader": {
+      "ai_document": [[{ "node": "Pinecone: Insert", "type": "ai_document", "index": 0 }]]
+    },
     "Embeddings OpenAI": {
-      "ai_embedding": [[{ "node": "Simple Vector Store", "type": "ai_embedding", "index": 0 }]]
+      "ai_embedding": [[{ "node": "Pinecone: Insert", "type": "ai_embedding", "index": 0 }]]
     }
   },
-  "pinData": {},
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "GJdw1TPD3HlzdaWA"
   },
   "meta": {
-    "templateCredsSetupCompleted": false
-  }
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
 }

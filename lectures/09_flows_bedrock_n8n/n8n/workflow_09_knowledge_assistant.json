@@ -1,0 +1,168 @@
+{
+  "name": "Internal Knowledge Assistant (Pinecone KB)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "id": "node-chat",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [-640, 0],
+      "notes": "Entry point. User question flows straight to the Knowledge Assistant agent."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are an internal knowledge assistant.\n\nYou have access to a tool called prompting_information that searches the company knowledge base.\n\nThe knowledge base contains internal information such as:\n- reports\n- document ownership\n- internal files\n- project documentation\n- internal procedures\n- prompting instructions\n- company assets and inventory information\n- organization-specific knowledge\n\nYour responsibility is to answer questions using this knowledge base whenever possible.\n\nRules:\n- If the user asks about internal documents, reports, files, owners, projects, assets, or company knowledge, you must first use the prompting_information tool.\n- When using the tool: send the user's question as the search query and retrieve the relevant information from the knowledge base.\n- If the tool returns relevant information: answer the user only using the information returned from the tool. Do not add assumptions or external knowledge.\n- If the tool returns no relevant information: respond with exactly: \"I couldn't find relevant information in the internal knowledge base.\"\n- If the user's request is not related to internal knowledge, answer normally using your general knowledge.\n- If the user's request is ambiguous but might relate to internal information, use the prompting_information tool first.\n\nResponse style:\n- Be clear and concise.\n- Prefer bullet points when presenting structured information.\n- Quote relevant details from the knowledge base when appropriate.\n- Do not mention the internal tool or system behavior unless necessary."
+        }
+      },
+      "id": "node-agent",
+      "name": "Knowledge Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-320, 0],
+      "notes": "Knowledge assistant agent. Must call prompting_information first for any internal-knowledge question; falls back to the exact refusal string when the KB has no relevant match."
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.2
+        },
+        "responsesApiEnabled": false
+      },
+      "id": "node-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [-400, 224],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "id": "hKXdTIExXwfdKuib",
+          "name": "OpenAI n8n course May26"
+        }
+      },
+      "notes": "Shared model for the agent and the prompting_information QA tool."
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "node-mem",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [-232, 224]
+    },
+    {
+      "parameters": {
+        "description": "Searches the internal company knowledge base: reports, document ownership, internal files, project documentation, internal procedures, prompting instructions, company assets/inventory, and organization-specific knowledge. Pass the user's question as the search query.",
+        "topK": 6
+      },
+      "id": "node-tool",
+      "name": "prompting_information",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [-40, 0],
+      "notes": "Vector Store QA tool exposed to the agent under the name 'prompting_information'. Backed by the Pinecone retriever."
+    },
+    {
+      "parameters": {
+        "mode": "retrieve",
+        "pineconeIndex": {
+          "__rl": true,
+          "mode": "id",
+          "value": "company-kb"
+        },
+        "options": {
+          "pineconeNamespace": "company_kb"
+        }
+      },
+      "id": "node-retriever",
+      "name": "Company KB (Pinecone)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [120, 224],
+      "credentials": {
+        "pineconeApi": {
+          "id": "1K1jNN1533VDw1DH",
+          "name": "Pinecone account"
+        }
+      },
+      "notes": "Pinecone retrieve mode, index 'company-kb', namespace 'company_kb'. Feeds prompting_information via ai_vectorStore."
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small"
+      },
+      "id": "node-emb",
+      "name": "KB Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [120, 432],
+      "credentials": {
+        "openAiApi": {
+          "id": "hKXdTIExXwfdKuib",
+          "name": "OpenAI n8n course May26"
+        }
+      },
+      "notes": "Query-side embeddings. MUST match the ingestion model (text-embedding-3-small / 1536 dims)."
+    },
+    {
+      "parameters": {
+        "content": "## Internal Knowledge Assistant (Pinecone KB)\n\n**Purpose:** Answers internal questions (reports, owners, files, projects, procedures, assets, org knowledge) strictly from the company knowledge base.\n\n**Flow:** `Chat -> Knowledge Assistant -> prompting_information (tool)`. The tool is a Vector Store QA tool backed by `Company KB (Pinecone)` (retrieve, index `company-kb`, namespace `company_kb`) + `KB Embeddings` (text-embedding-3-small, 1536d).\n\n**Behavior:** internal-knowledge questions => call `prompting_information` first; answer only from tool output. No relevant hit => reply exactly `I couldn't find relevant information in the internal knowledge base.` Non-internal questions => answer from general knowledge.\n\n**Note:** returns real answers only if `company-kb` has vectors (run a KB ingestion workflow first).",
+        "width": 760,
+        "height": 230,
+        "color": 4
+      },
+      "id": "sticky-overview",
+      "name": "Sticky: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-700, -300]
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [[{ "node": "Knowledge Assistant", "type": "main", "index": 0 }]]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          { "node": "Knowledge Assistant", "type": "ai_languageModel", "index": 0 },
+          { "node": "prompting_information", "type": "ai_languageModel", "index": 0 }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [[{ "node": "Knowledge Assistant", "type": "ai_memory", "index": 0 }]]
+    },
+    "prompting_information": {
+      "ai_tool": [[{ "node": "Knowledge Assistant", "type": "ai_tool", "index": 0 }]]
+    },
+    "Company KB (Pinecone)": {
+      "ai_vectorStore": [[{ "node": "prompting_information", "type": "ai_vectorStore", "index": 0 }]]
+    },
+    "KB Embeddings": {
+      "ai_embedding": [[{ "node": "Company KB (Pinecone)", "type": "ai_embedding", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "GJdw1TPD3HlzdaWA"
+  },
+  "pinData": {}
+}

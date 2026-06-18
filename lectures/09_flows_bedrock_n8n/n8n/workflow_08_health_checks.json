@@ -1,0 +1,336 @@
+{
+  "name": "KB Ops - Health Checks (OpenAI/Pinecone/Drive/Perplexity)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-manual",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1200, 208],
+      "notes": "Run on demand (or attach a Schedule) to verify connectivity to every external dependency before/after ingestion."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/models",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-chk-openai",
+      "name": "OpenAI Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-960, -48],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "hKXdTIExXwfdKuib",
+          "name": "OpenAI n8n course May26"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Lists OpenAI models (cheap, no token spend). Success -> OpenAI Up, failure -> OpenAI Down."
+    },
+    {
+      "parameters": {
+        "url": "https://api.pinecone.io/indexes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pineconeApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Pinecone-API-Version", "value": "2025-01" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-chk-pinecone",
+      "name": "Pinecone Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-960, 128],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "pineconeApi": {
+          "id": "1K1jNN1533VDw1DH",
+          "name": "Pinecone account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "MANUAL BIND REQUIRED: attach a Pinecone (pineconeApi) credential. Lists indexes to confirm Pinecone connectivity + that 'company-kb' exists."
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "trashed=false",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "17Rg2teqPNlGUxrWOBM_LxjWeSSvIFKeG",
+            "cachedResultName": "KB Folder"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-chk-drive",
+      "name": "Drive Check",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-960, 288],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GP1VAzKfaBW8UndF",
+          "name": "Amdocs course"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Reads 1 file from the KB folder to confirm Drive auth + folder access."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "perplexityApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'sonar', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "node-chk-perplexity",
+      "name": "Perplexity Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-960, 448],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "perplexityApi": {
+          "id": "uI8Op91FHSP0FRAn",
+          "name": "Perplexity account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Minimal 1-token completion to verify Perplexity auth/connectivity (tiny cost)."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "u1", "name": "service", "value": "openai", "type": "string" },
+            { "id": "u2", "name": "status", "value": "up", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-up-openai",
+      "name": "OpenAI Up",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, -128]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "d1", "name": "service", "value": "openai", "type": "string" },
+            { "id": "d2", "name": "status", "value": "down", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-down-openai",
+      "name": "OpenAI Down",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "u1", "name": "service", "value": "pinecone", "type": "string" },
+            { "id": "u2", "name": "status", "value": "up", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-up-pinecone",
+      "name": "Pinecone Up",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 80]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "d1", "name": "service", "value": "pinecone", "type": "string" },
+            { "id": "d2", "name": "status", "value": "down", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-down-pinecone",
+      "name": "Pinecone Down",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 160]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "u1", "name": "service", "value": "google_drive", "type": "string" },
+            { "id": "u2", "name": "status", "value": "up", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-up-drive",
+      "name": "Drive Up",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 240]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "d1", "name": "service", "value": "google_drive", "type": "string" },
+            { "id": "d2", "name": "status", "value": "down", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-down-drive",
+      "name": "Drive Down",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 320]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "u1", "name": "service", "value": "perplexity", "type": "string" },
+            { "id": "u2", "name": "status", "value": "up", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-up-perplexity",
+      "name": "Perplexity Up",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "d1", "name": "service", "value": "perplexity", "type": "string" },
+            { "id": "d2", "name": "status", "value": "down", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-down-perplexity",
+      "name": "Perplexity Down",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-688, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst services = {};\nfor (const it of items) {\n  if (it.json && it.json.service) services[it.json.service] = it.json.status;\n}\nconst statuses = Object.values(services);\nconst overall = statuses.length > 0 && statuses.every(s => s === 'up') ? 'healthy' : 'degraded';\nconst down = Object.keys(services).filter(k => services[k] !== 'up');\nreturn [{ json: { checkedAt: new Date().toISOString(), overall, services, down } }];"
+      },
+      "id": "node-report",
+      "name": "Health Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, 208],
+      "notes": "Aggregates all four checks into one report: overall=healthy only if every dependency is up; otherwise degraded with the list of down services."
+    },
+    {
+      "id": "sticky-overview",
+      "name": "Sticky: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1260, -200],
+      "parameters": {
+        "width": 1000,
+        "height": 180,
+        "color": 5,
+        "content": "## KB Ops — Health Checks\n\n**Purpose:** On-demand dependency probe for the KB stack. Run before a big ingestion or when debugging outages.\n\n**Flow:** `Manual -> [ OpenAI | Pinecone | Drive | Perplexity ] checks (parallel) -> Up/Down per service -> Health Report`.\n\n**Resilience:** each probe uses `continue-on-error`, so one dead dependency never aborts the others. Report aggregates to overall `healthy` / `degraded` with per-service status."
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          { "node": "OpenAI Check", "type": "main", "index": 0 },
+          { "node": "Pinecone Check", "type": "main", "index": 0 },
+          { "node": "Drive Check", "type": "main", "index": 0 },
+          { "node": "Perplexity Check", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "OpenAI Check": {
+      "main": [
+        [{ "node": "OpenAI Up", "type": "main", "index": 0 }],
+        [{ "node": "OpenAI Down", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pinecone Check": {
+      "main": [
+        [{ "node": "Pinecone Up", "type": "main", "index": 0 }],
+        [{ "node": "Pinecone Down", "type": "main", "index": 0 }]
+      ]
+    },
+    "Drive Check": {
+      "main": [
+        [{ "node": "Drive Up", "type": "main", "index": 0 }],
+        [{ "node": "Drive Down", "type": "main", "index": 0 }]
+      ]
+    },
+    "Perplexity Check": {
+      "main": [
+        [{ "node": "Perplexity Up", "type": "main", "index": 0 }],
+        [{ "node": "Perplexity Down", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI Up": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "OpenAI Down": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Pinecone Up": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Pinecone Down": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Drive Up": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Drive Down": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Perplexity Up": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] },
+    "Perplexity Down": { "main": [[{ "node": "Health Report", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "GJdw1TPD3HlzdaWA",
+    "binaryMode": "separate"
+  },
+  "pinData": {}
+}

@@ -1,0 +1,115 @@
+{
+  "name": "KB Ops - Observability & Dead Letter",
+  "nodes": [
+    {
+      "id": "node-error-trigger",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-820, 120],
+      "parameters": {},
+      "notes": "Central error sink. Set this workflow as the 'Error Workflow' on the chat + ingestion workflows so every failed execution lands here with full context."
+    },
+    {
+      "id": "node-build-record",
+      "name": "Build Failure Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-580, 120],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f-wf", "name": "workflowName", "value": "={{ ($json.workflow || {}).name || 'unknown' }}", "type": "string" },
+            { "id": "f-ref", "name": "itemRef", "value": "={{ ($json.execution || {}).id || '' }}", "type": "string" },
+            { "id": "f-stage", "name": "stage", "value": "={{ ($json.execution || {}).lastNodeExecuted || '' }}", "type": "string" },
+            { "id": "f-msg", "name": "errorMessage", "value": "={{ (($json.execution || {}).error || {}).message || ($json.error || {}).message || 'unknown error' }}", "type": "string" },
+            { "id": "f-ctx", "name": "context", "value": "={{ JSON.stringify(($json.execution || {}).error || $json).slice(0, 4000) }}", "type": "string" },
+            { "id": "f-at", "name": "occurredAt", "value": "={{ $now.toISO() }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Normalizes the Error Trigger payload into the dead-letter schema (workflowName, itemRef, stage, errorMessage, context, occurredAt). Context truncated to 4k chars to stay within column limits."
+    },
+    {
+      "id": "node-persist",
+      "name": "Persist to Dead Letter",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [-340, 120],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "De2ZG0AuxgfuHIyF",
+          "cachedResultName": "kb_dead_letter"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflowName": "={{ $json.workflowName }}",
+            "itemRef": "={{ $json.itemRef }}",
+            "stage": "={{ $json.stage }}",
+            "errorMessage": "={{ $json.errorMessage }}",
+            "context": "={{ $json.context }}",
+            "occurredAt": "={{ $json.occurredAt }}"
+          },
+          "schema": [
+            { "id": "workflowName", "displayName": "workflowName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "itemRef", "displayName": "itemRef", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "stage", "displayName": "stage", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false },
+            { "id": "errorMessage", "displayName": "errorMessage", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false },
+            { "id": "context", "displayName": "context", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false },
+            { "id": "occurredAt", "displayName": "occurredAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false }
+          ]
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "Persists each failure to the kb_dead_letter Data Table for durable audit and later reprocessing."
+    },
+    {
+      "id": "node-alert",
+      "name": "Alert Hook (optional)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-100, 120],
+      "parameters": {},
+      "disabled": true,
+      "notes": "DISABLED placeholder. Replace with Slack/Email/PagerDuty/Telegram to alert on-call. Kept disabled so the workflow validates without extra credentials."
+    },
+    {
+      "id": "sticky-overview",
+      "name": "Sticky: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-880, -220],
+      "parameters": {
+        "width": 900,
+        "height": 190,
+        "color": 4,
+        "content": "## KB Ops — Observability & Dead Letter\n\n**Purpose:** Central error sink. Every other workflow sets this as its `errorWorkflow`, so failures land here in a structured, queryable form.\n\n**Flow:** `On Workflow Error -> Build Failure Record -> Persist to Dead Letter (kb_dead_letter) -> Alert Hook (optional, disabled)`.\n\n**Record:** `workflowName`, `itemRef`, `stage`, `errorMessage`, `context`, `occurredAt`. Enable the Alert Hook to fan out to Slack/email.\n\n**Why central:** one place to triage partial API outages, rate limits, and bad inputs across the whole KB pipeline."
+      }
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [[{ "node": "Build Failure Record", "type": "main", "index": 0 }]]
+    },
+    "Build Failure Record": {
+      "main": [[{ "node": "Persist to Dead Letter", "type": "main", "index": 0 }]]
+    },
+    "Persist to Dead Letter": {
+      "main": [[{ "node": "Alert Hook (optional)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

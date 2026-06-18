@@ -1,0 +1,398 @@
+{
+  "name": "KB Ingestion B - Incremental Sync (Drive to Pinecone)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 6 }
+          ]
+        }
+      },
+      "id": "node-schedule",
+      "name": "Schedule (Every 6h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1136, 128],
+      "notes": "WF_B incremental sync. Runs every 6h. Only new/changed files (by content hash) are re-embedded. Safe to run frequently; unchanged files are skipped."
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "trashed=false",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "17Rg2teqPNlGUxrWOBM_LxjWeSSvIFKeG",
+            "cachedResultName": "KB Folder"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-drive-list",
+      "name": "Drive: List Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-928, 128],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GP1VAzKfaBW8UndF",
+          "name": "Amdocs course"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Lists current KB folder files with modifiedTime + md5Checksum used for change detection. Empty folder -> 0 items -> clean no-op."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-mime",
+              "leftValue": "={{ ['application/vnd.google-apps.document','application/vnd.google-apps.presentation','application/vnd.google-apps.spreadsheet','application/pdf','text/plain','text/markdown','text/csv','application/json','text/html','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes($json.mimeType) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-if-supported",
+      "name": "Is Supported MIME?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-704, 128],
+      "notes": "MIME allow-list. TRUE -> build keys + change detection. FALSE -> Log Skipped."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "k-fileid", "name": "fileId", "value": "={{ $json.id }}", "type": "string" },
+            { "id": "k-name", "name": "name", "value": "={{ $json.name }}", "type": "string" },
+            { "id": "k-mime", "name": "mimeType", "value": "={{ $json.mimeType }}", "type": "string" },
+            { "id": "k-modified", "name": "modifiedTime", "value": "={{ $json.modifiedTime }}", "type": "string" },
+            { "id": "k-url", "name": "sourceUrl", "value": "={{ $json.webViewLink }}", "type": "string" },
+            { "id": "k-hash", "name": "hash", "value": "={{ $json.md5Checksum || $json.modifiedTime }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-keys",
+      "name": "Build Keys",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-480, 32],
+      "notes": "Normalizes Drive metadata into stable keys (fileId, hash, version=modifiedTime) used by change detection and the state table."
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ezajcuWu1SsihA2A",
+          "cachedResultName": "kb_file_state"
+        },
+        "filters": {
+          "conditions": [
+            { "keyName": "fileId", "keyValue": "={{ $json.fileId }}" },
+            { "keyName": "hash", "keyValue": "={{ $json.hash }}" }
+          ]
+        }
+      },
+      "id": "node-detect",
+      "name": "Detect New/Changed",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [-256, 32],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Dedupe/change detection. Passes ONLY files whose (fileId, hash) pair is absent from kb_file_state = new or modified files. Unchanged files (same hash) are filtered out."
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.fileId }}",
+          "cachedResultName": "={{ $json.name }}"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain",
+              "slidesToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "id": "node-drive-download",
+      "name": "Drive: Download",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-48, 32],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GP1VAzKfaBW8UndF",
+          "name": "Amdocs course"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Downloads only changed/new files. Google-native docs exported to text/csv."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "skip-reason", "name": "skip_reason", "value": "unsupported_mime_type", "type": "string" },
+            { "id": "skip-fileid", "name": "fileId", "value": "={{ $json.id }}", "type": "string" },
+            { "id": "skip-name", "name": "name", "value": "={{ $json.name }}", "type": "string" },
+            { "id": "skip-mime", "name": "mimeType", "value": "={{ $json.mimeType }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-log-skip",
+      "name": "Log Skipped (Unsupported)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-480, 288],
+      "notes": "Safe skip path for unsupported types with reason logging."
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 150,
+        "options": {}
+      },
+      "id": "node-splitter",
+      "name": "Recursive Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [128, 320],
+      "notes": "Chunking 1000/150."
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              { "name": "fileId", "value": "={{ $('Build Keys').item.json.fileId }}" },
+              { "name": "name", "value": "={{ $('Build Keys').item.json.name }}" },
+              { "name": "mimeType", "value": "={{ $('Build Keys').item.json.mimeType }}" },
+              { "name": "modifiedTime", "value": "={{ $('Build Keys').item.json.modifiedTime }}" },
+              { "name": "sourceUrl", "value": "={{ $('Build Keys').item.json.sourceUrl }}" },
+              { "name": "hash", "value": "={{ $('Build Keys').item.json.hash }}" },
+              { "name": "version", "value": "={{ $('Build Keys').item.json.modifiedTime }}" }
+            ]
+          }
+        }
+      },
+      "id": "node-loader",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [288, 272],
+      "notes": "Re-attaches citation/change metadata to chunks for changed files."
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "node-emb",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [288, 480],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "id": "hKXdTIExXwfdKuib",
+          "name": "OpenAI n8n course May26"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "text-embedding-3-small (1536). Must match chat + bootstrap models."
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "mode": "id",
+          "value": "company-kb"
+        },
+        "options": {
+          "clearNamespace": false,
+          "pineconeNamespace": "company_kb"
+        }
+      },
+      "id": "node-vs",
+      "name": "Pinecone: Upsert",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [528, 128],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "pineconeApi": {
+          "id": "1K1jNN1533VDw1DH",
+          "name": "Pinecone account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "MANUAL BIND REQUIRED: Pinecone credential + index 'company-kb'. clearNamespace=false (incremental, additive). KNOWN LIMITATION: the n8n Pinecone node has no delete-by-metadata, so a changed file's OLD chunks remain until WF_C reindex; the chat retriever favors latest via version metadata. Run WF_C periodically to purge stale chunks."
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ezajcuWu1SsihA2A",
+          "cachedResultName": "kb_file_state"
+        },
+        "filters": {
+          "conditions": [
+            { "keyName": "fileId", "keyValue": "={{ $('Build Keys').item.json.fileId }}" }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fileId": "={{ $('Build Keys').item.json.fileId }}",
+            "name": "={{ $('Build Keys').item.json.name }}",
+            "mimeType": "={{ $('Build Keys').item.json.mimeType }}",
+            "modifiedTime": "={{ $('Build Keys').item.json.modifiedTime }}",
+            "hash": "={{ $('Build Keys').item.json.hash }}",
+            "chunkCount": "={{ 0 }}",
+            "lastIndexedAt": "={{ $now.toISO() }}",
+            "status": "indexed"
+          },
+          "schema": [
+            { "id": "fileId", "displayName": "fileId", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "name", "displayName": "name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "mimeType", "displayName": "mimeType", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "modifiedTime", "displayName": "modifiedTime", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "hash", "displayName": "hash", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "chunkCount", "displayName": "chunkCount", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": false },
+            { "id": "lastIndexedAt", "displayName": "lastIndexedAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false },
+            { "id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": false }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-record",
+      "name": "Record State",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [768, 128],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Idempotency state: upserts kb_file_state per fileId with the new hash/version so the next run treats this file as up-to-date."
+    },
+    {
+      "id": "sticky-overview",
+      "name": "Sticky: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1200, -260],
+      "parameters": {
+        "width": 1140,
+        "height": 200,
+        "color": 4,
+        "content": "## KB Ingestion B — Incremental Sync (Drive -> Pinecone)\n\n**Purpose:** Scheduled delta sync. Embeds **only new or changed** files so the KB stays fresh without re-processing everything.\n\n**Flow:** `Schedule -> Drive: List Files -> Is Supported MIME? -> Build Keys -> Detect New/Changed -> Download -> Split -> Loader -> Embeddings -> Pinecone: Upsert -> Record State`.\n\n**Change detection:** `kb_file_state` data table keyed by `fileId`+`hash`. Unchanged files are skipped (`rowNotExists` gate); processed files are recorded via `upsert`.\n\n**Note:** Upsert is additive (`clearNamespace=false`). Stale chunks from heavily edited docs persist until a full *Reindex (C)* — documented trade-off for cost/latency."
+      }
+    },
+    {
+      "id": "sticky-detect",
+      "name": "Sticky: Change Detection",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-300, -20],
+      "parameters": {
+        "width": 380,
+        "height": 150,
+        "color": 3,
+        "content": "### Detect New / Changed\n`Build Keys` computes a stable hash from `fileId`+`modifiedTime`.\n`Detect New/Changed` passes only rows **absent** from `kb_file_state` -> avoids duplicate embeds & API cost."
+      }
+    }
+  ],
+  "connections": {
+    "Schedule (Every 6h)": {
+      "main": [[{ "node": "Drive: List Files", "type": "main", "index": 0 }]]
+    },
+    "Drive: List Files": {
+      "main": [[{ "node": "Is Supported MIME?", "type": "main", "index": 0 }]]
+    },
+    "Is Supported MIME?": {
+      "main": [
+        [{ "node": "Build Keys", "type": "main", "index": 0 }],
+        [{ "node": "Log Skipped (Unsupported)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Keys": {
+      "main": [[{ "node": "Detect New/Changed", "type": "main", "index": 0 }]]
+    },
+    "Detect New/Changed": {
+      "main": [[{ "node": "Drive: Download", "type": "main", "index": 0 }]]
+    },
+    "Drive: Download": {
+      "main": [[{ "node": "Pinecone: Upsert", "type": "main", "index": 0 }]]
+    },
+    "Recursive Text Splitter": {
+      "ai_textSplitter": [[{ "node": "Default Data Loader", "type": "ai_textSplitter", "index": 0 }]]
+    },
+    "Default Data Loader": {
+      "ai_document": [[{ "node": "Pinecone: Upsert", "type": "ai_document", "index": 0 }]]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [[{ "node": "Pinecone: Upsert", "type": "ai_embedding", "index": 0 }]]
+    },
+    "Pinecone: Upsert": {
+      "main": [[{ "node": "Record State", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "GJdw1TPD3HlzdaWA"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}
