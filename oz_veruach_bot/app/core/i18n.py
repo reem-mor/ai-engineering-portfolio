@@ -171,6 +171,73 @@ _CATALOG: dict[str, dict[Language, str]] = {
         "he": "עובד על סיכום מההקלטה — זה עשוי לקחת רגע…",
         "en": "Working on a summary from the recording — this may take a moment…",
     },
+    # --- Homework submission flow (Phase 4) -----------------------------------
+    "sub_ask_name": {
+        "he": "בואו נכין את מייל ההגשה. מה השם המלא שלכם?",
+        "en": "Let's prepare your submission email. What's your full name?",
+    },
+    "sub_ask_topic": {
+        "he": "מה הנושא/המטלה? (לדוגמה: Python Basics)",
+        "en": "What's the topic/assignment? (e.g. Python Basics)",
+    },
+    "sub_ask_date": {
+        "he": "תאריך ההגשה? שלחו DD/MM/YYYY או 'היום'.",
+        "en": "Submission date? Send DD/MM/YYYY or 'today'.",
+    },
+    "sub_ask_work": {
+        "he": "תארו בקצרה מה מימשתם.",
+        "en": "Briefly describe what you implemented.",
+    },
+    "sub_ask_tech": {
+        "he": "אילו מושגים/טכנולוגיות מרכזיים השתמשתם בהם?",
+        "en": "Which key concepts/technologies did you use?",
+    },
+    "sub_ask_challenges": {
+        "he": "אתגרים שנתקלתם בהם וכיצד פתרתם? (שלחו '-' לדילוג)",
+        "en": "Any challenges and how you addressed them? (send '-' to skip)",
+    },
+    "sub_ask_attachments": {
+        "he": "צרפו קבצים (קוד/מסמכים) ו/או שלחו קישור GitHub. סיימתם? שלחו /done.",
+        "en": "Attach files (code/docs) and/or send a GitHub link. Done? send /done.",
+    },
+    "sub_attachment_added": {"he": "צורף: {name}", "en": "Attached: {name}"},
+    "sub_attachment_too_large": {
+        "he": "הקובץ גדול מדי לאימייל — צרפו קישור Drive/GitHub במקום.",
+        "en": "That file is too large for email — share a Drive/GitHub link instead.",
+    },
+    "sub_no_attachments_warn": {
+        "he": "אין קבצים מצורפים ואין קישור GitHub. לשלוח בכל זאת? לחצו שלח שוב לאישור.",
+        "en": "No attachments and no GitHub link. Send anyway? Press Send again to confirm.",
+    },
+    "sub_preview_header": {"he": "תצוגה מקדימה של ההגשה:", "en": "Submission preview:"},
+    "sub_label_to": {"he": "אל", "en": "To"},
+    "sub_label_cc": {"he": "עותק", "en": "Cc"},
+    "sub_label_subject": {"he": "נושא", "en": "Subject"},
+    "sub_label_attachments": {"he": "צרופות", "en": "Attachments"},
+    "sub_btn_send": {"he": "שלח ✅", "en": "Send ✅"},
+    "sub_btn_edit": {"he": "עריכה ✏️", "en": "Edit ✏️"},
+    "sub_btn_cancel": {"he": "ביטול ❌", "en": "Cancel ❌"},
+    "sub_sent": {
+        "he": "המייל נשלח בהצלחה. מזהה הודעה: {message_id}",
+        "en": "Your submission email was sent. Message id: {message_id}",
+    },
+    "sub_send_failed": {
+        "he": "שליחת המייל נכשלה: {error}. הטיוטה נשמרה — נסו שוב.",
+        "en": "Sending failed: {error}. Your draft is kept — try again.",
+    },
+    "sub_cancelled": {"he": "ההגשה בוטלה.", "en": "Submission cancelled."},
+    "sub_email_not_configured": {
+        "he": "שליחת אימייל אינה מוגדרת כרגע. פנו למפעיל הבוט.",
+        "en": "Email sending isn't configured yet. Contact the bot operator.",
+    },
+    "sub_edit_restart": {
+        "he": "בואו נעבור שוב על הפרטים.",
+        "en": "Let's go through the details again.",
+    },
+    "sub_hint_use_command": {
+        "he": "כדי להכין הגשה שלחו /submit ואלווה אתכם בתהליך.",
+        "en": "To prepare a submission, send /submit and I'll guide you through it.",
+    },
 }
 
 

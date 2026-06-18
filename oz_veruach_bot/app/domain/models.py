@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SessionType(StrEnum):
@@ -156,3 +156,81 @@ class HomeworkAssignment(BaseModel):
     lesson_key: str | None
     material: MaterialFile
     modified_time: str | None = None
+
+
+class DraftState(StrEnum):
+    """State machine for a homework submission draft (6.5)."""
+
+    DRAFTING = "drafting"
+    PREVIEW = "preview"
+    CONFIRMED = "confirmed"
+    SENT = "sent"
+    CANCELLED = "cancelled"
+
+
+class DraftAttachment(BaseModel):
+    """A file the student attached to their submission (domain-level)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    filename: str
+    content: bytes
+    mime_type: str
+
+
+# Fields that must be filled before a draft can move to preview.
+_REQUIRED_DRAFT_FIELDS: tuple[str, ...] = ("full_name", "topic", "date_ddmmyyyy", "work", "tech")
+
+
+class SubmissionDraft(BaseModel):
+    """A homework submission draft and its state machine.
+
+    Transitions: drafting -> preview -> confirmed -> sent, with cancel from any non-sent
+    state. Invalid transitions raise ``ValueError`` so the flow fails loudly in tests.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    full_name: str | None = None
+    topic: str | None = None
+    date_ddmmyyyy: str | None = None
+    work: str | None = None
+    tech: str | None = None
+    challenges: str | None = None
+    attachments: list[DraftAttachment] = Field(default_factory=list)
+    github_link: str | None = None
+    state: DraftState = DraftState.DRAFTING
+
+    def missing_fields(self) -> list[str]:
+        """Return the names of required fields not yet provided."""
+        return [f for f in _REQUIRED_DRAFT_FIELDS if not getattr(self, f)]
+
+    @property
+    def has_attachment_or_link(self) -> bool:
+        """True if at least one attachment or a GitHub link is present."""
+        return bool(self.attachments) or bool(self.github_link)
+
+    def mark_preview(self) -> None:
+        """Move drafting -> preview; requires all mandatory fields."""
+        missing = self.missing_fields()
+        if missing:
+            raise ValueError(f"cannot preview, missing: {', '.join(missing)}")
+        self.state = DraftState.PREVIEW
+
+    def confirm(self) -> None:
+        """Move preview -> confirmed."""
+        if self.state is not DraftState.PREVIEW:
+            raise ValueError(f"cannot confirm from state {self.state}")
+        self.state = DraftState.CONFIRMED
+
+    def mark_sent(self) -> None:
+        """Move confirmed -> sent."""
+        if self.state is not DraftState.CONFIRMED:
+            raise ValueError(f"cannot mark sent from state {self.state}")
+        self.state = DraftState.SENT
+
+    def cancel(self) -> None:
+        """Cancel the draft from any non-sent state."""
+        if self.state is DraftState.SENT:
+            raise ValueError("cannot cancel an already-sent draft")
+        self.state = DraftState.CANCELLED

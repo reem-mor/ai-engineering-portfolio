@@ -20,6 +20,7 @@ class IntentName(StrEnum):
     SCHEDULE = "schedule"
     RECORDING = "recording"
     HOMEWORK_LATEST = "homework_latest"
+    HOMEWORK_SUBMIT = "homework_submit"
     SUMMARIZE = "summarize"
 
 
@@ -88,6 +89,14 @@ _RECORDING_LAST: tuple[str, ...] = (
     "ההקלטה האחרונה",
     "השיעור האחרון",
     "הקלטה אחרונה",
+)
+_HOMEWORK_SUBMIT_KEYWORDS: tuple[str, ...] = (
+    "כתוב לי טיוטה",
+    "הגש שיעורי בית",
+    "שלח מייל הגשה",
+    "draft submission",
+    "submit homework",
+    "write submission email",
 )
 _HOMEWORK_KEYWORDS: tuple[str, ...] = (
     "שיעורי בית",
@@ -163,6 +172,12 @@ def _match_summarize(normalized: str) -> Intent | None:
     )
 
 
+def _match_homework_submit(normalized: str) -> Intent | None:
+    if any(kw in normalized for kw in _HOMEWORK_SUBMIT_KEYWORDS):
+        return Intent(name=IntentName.HOMEWORK_SUBMIT)
+    return None
+
+
 def _match_homework(normalized: str) -> Intent | None:
     if any(kw in normalized for kw in _HOMEWORK_KEYWORDS):
         return Intent(name=IntentName.HOMEWORK_LATEST)
@@ -178,5 +193,6 @@ def route(text: str | None) -> Intent | None:
         _match_schedule(normalized)
         or _match_summarize(normalized)
         or _match_recording(normalized)
+        or _match_homework_submit(normalized)
         or _match_homework(normalized)
     )

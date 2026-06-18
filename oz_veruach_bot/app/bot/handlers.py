@@ -16,6 +16,7 @@ from app.core.i18n import detect_language, t
 from app.core.logging import get_logger
 from app.core.settings import get_settings
 from app.graph.router_node import classify as llm_classify
+from app.services.submission import looks_like_solve_request, scaffold_disclaimer
 
 if TYPE_CHECKING:
     from telegram import Update
@@ -92,6 +93,11 @@ async def text_message(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> N
                 _log.info("intent_handled", intent=intent.name, scope=intent.scope)
                 await message.reply_text(reply)
                 return
+        # C8 guardrail: never produce a finished graded solution; offer a scaffold instead.
+        if looks_like_solve_request(text):
+            _log.info("c8_guardrail_triggered")
+            await message.reply_text(scaffold_disclaimer(language))
+            return
         truncated = text[:_MAX_ECHO_LEN]
         await message.reply_text(f"{t('echo_prefix', language)}: {truncated}")
     except Exception:  # convert any failure into a safe user reply

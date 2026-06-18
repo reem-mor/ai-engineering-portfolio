@@ -12,7 +12,7 @@ approval before the next begins.
 | 1 | Schedule | Complete |
 | 2 | Drive read + lesson_map | Complete |
 | 3 | LLM orchestrator + summaries | Complete |
-| 4 | Homework submission flow | Pending |
+| 4 | Homework submission flow | Complete |
 | 5 | Notifications + admin upload | Pending |
 | 6 | Recommendations + RAG | Pending |
 | 7 | Hardening, optimization, deploy | Pending |
@@ -98,6 +98,25 @@ LangGraph/LangChain - same seams, lighter deps, swappable later.
 - [x] Router extended with `summarize` (+deep) intent; dispatch + i18n wired.
 - [x] Tests: registry fallback, router JSON parsing, summaries + cache + deep, extraction
       dispatch, transcription cache - all external calls mocked. 141 pass; ruff + mypy clean.
+
+## Phase 4 — Homework submission flow (Complete)
+
+Feature 6.5 + 4.3 + C8.
+
+- [x] `SubmissionDraft` state machine (drafting->preview->confirmed->sent/cancelled) with
+      validation and `missing_fields`.
+- [x] Deterministic email composition: subject byte-for-byte per 4.3 (en dash), body per
+      the prescribed structure; recipients only from `HW_TO_EMAIL`/`HW_CC_EMAIL`
+      (comma-separated CC supported).
+- [x] `EmailService` backends: `GmailEmailService` (gmail.send, lazy client) +
+      `SmtpEmailService`; `build_email_service` selection; graceful "not configured".
+- [x] `ConversationHandler` draft->preview->send with attachments (size cap), GitHub link,
+      inline Send/Edit/Cancel, no-attachment warn, send-failure retry, double-send guard.
+- [x] C8 guardrail: `looks_like_solve_request` + labeled starter-scaffold disclaimer; wired
+      into the text handler; `homework_submit` intent + `/submit` entry.
+- [x] Tests: subject/body byte-for-byte, state machine, finalize/send (To/Cc/attachments,
+      double-send, failure), backend selection, C8, conversation step handlers. 172 pass;
+      ruff + mypy clean.
 
 ## Operating Rules (all phases)
 

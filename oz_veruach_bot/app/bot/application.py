@@ -16,6 +16,7 @@ from telegram.ext import (
 from app.bot.admin_handlers import map_command
 from app.bot.handlers import error_handler, myid_command, start_command, text_message
 from app.bot.schedule_handlers import schedule_command
+from app.bot.submission_flow import build_submission_conversation
 from app.core.settings import Settings
 
 
@@ -31,6 +32,9 @@ def build_application(settings: Settings) -> Application:  # type: ignore[type-a
     application.add_handler(CommandHandler("myid", myid_command))
     application.add_handler(CommandHandler("schedule", schedule_command))
     application.add_handler(CommandHandler("map", map_command))
+    # The submission conversation must be registered before the generic text handler so
+    # its entry keywords (and active-conversation states) take precedence.
+    application.add_handler(build_submission_conversation())
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, text_message)
     )
