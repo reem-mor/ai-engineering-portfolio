@@ -57,7 +57,8 @@ class Settings(BaseSettings):
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: SecretStr | None = None
     google_oauth_refresh_token: SecretStr | None = None
-    drive_root_folder_id: str | None = None
+    # Default to the real Oz VeRuach Cohort-1 course folder (a folder ID is not a secret).
+    drive_root_folder_id: str | None = "1GfQBI1btQSoyMLQ7z-_aE4xBnObsO2wO"
 
     # --- RAG / vector store (Phase 3) --------------------------------------
     vector_store: VectorStoreBackend = VectorStoreBackend.CHROMA

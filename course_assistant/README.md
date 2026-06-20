@@ -85,7 +85,7 @@ environment variable; nothing is hardcoded.
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 1 | Scaffold & config | ✅ |
-| 2 | Drive retrieval (`drive_lookup`) | ⏳ |
+| 2 | Drive retrieval (`drive_lookup`) | ✅ |
 | 3 | RAG pipeline (`search_course_materials`) | ⏳ |
 | 4 | Homework submission (explain + email send-after-approval) | ⏳ |
 | 5 | Agent graph (LangGraph) + Telegram interface | ⏳ |
