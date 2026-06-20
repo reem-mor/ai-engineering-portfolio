@@ -59,6 +59,11 @@ packages = ["src/course_assistant"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    # create_react_agent is deprecated in favor of the separate `langchain`
+    # package's create_agent; we stay on langgraph.prebuilt to avoid the dep.
+    "ignore:create_react_agent has been moved",
+]
 
 [tool.ruff]
 line-length = 100

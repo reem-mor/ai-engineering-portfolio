@@ -71,7 +71,15 @@ Ingestion is **idempotent** — it clears and rebuilds the local index each run,
 re-run it whenever new lessons or files are uploaded. It reads Drive **read-only**
 and never downloads recordings (videos).
 
-> Telegram entry point arrives in Phase 5.
+### Run the bot
+
+```bash
+uv run course-assistant-bot   # Telegram long-polling
+```
+
+Free-text questions go to the LangGraph agent (recordings/slides/homework/code by
+lesson, course-content Q&A, how to submit). `/submit` runs the guided homework
+flow, which previews the email and **sends only after you reply 'confirm'**.
 
 ## How to add new course materials
 
@@ -109,5 +117,5 @@ environment variable; nothing is hardcoded.
 | 2 | Drive retrieval (`drive_lookup`) | ✅ |
 | 3 | RAG pipeline (`search_course_materials`) | ✅ |
 | 4 | Homework submission (explain + email send-after-approval) | ✅ |
-| 5 | Agent graph (LangGraph) + Telegram interface | ⏳ |
+| 5 | Agent graph (LangGraph) + Telegram interface | ✅ |
 | 6 | Hardening (tests, Dockerfile, README + Mermaid) | ⏳ |
