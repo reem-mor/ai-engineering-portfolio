@@ -218,3 +218,30 @@ class GoogleDriveService(BaseDriveService):
             if not page_token:
                 break
         return entries
+
+    def download_file(self, file_id: str, mime_type: str) -> bytes:  # pragma: no cover
+        """Download a file's bytes (read-only). Google-native docs are exported.
+
+        Used by the RAG ingestion pipeline; never called for recordings (videos).
+        """
+        from googleapiclient.http import MediaIoBaseDownload
+
+        service = self._client()
+        if mime_type.startswith("application/vnd.google-apps"):
+            export_mime = (
+                "text/csv"
+                if mime_type.endswith("spreadsheet")
+                else "application/pdf"
+            )
+            request = service.files().export_media(fileId=file_id, mimeType=export_mime)
+        else:
+            request = service.files().get_media(fileId=file_id)
+
+        import io as _io
+
+        buffer = _io.BytesIO()
+        downloader = MediaIoBaseDownload(buffer, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        return buffer.getvalue()

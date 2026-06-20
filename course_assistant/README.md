@@ -61,7 +61,28 @@ uv venv && uv pip install -e ".[dev]"
 
 ## Run
 
-> Telegram entry point arrives in Phase 5; ingestion command in Phase 3.
+### Build / refresh the RAG index
+
+```bash
+uv run course-assistant-ingest   # walks the Drive materials → chunks → embeds → Chroma
+```
+
+Ingestion is **idempotent** — it clears and rebuilds the local index each run, so
+re-run it whenever new lessons or files are uploaded. It reads Drive **read-only**
+and never downloads recordings (videos).
+
+> Telegram entry point arrives in Phase 5.
+
+## How to add new course materials
+
+1. Upload the file to the course Drive under the right `Lesson N` folder
+   (`מצגות/Lesson N` for slides/homework/code, `הקלטות/Lesson N` for recordings).
+2. Re-run `uv run course-assistant-ingest` to re-index. New slides, homework, and
+   code files become searchable via `search_course_materials`; the new links are
+   served immediately by `drive_lookup` (no re-index needed for link lookups).
+
+Supported material types for RAG: PDF, Word (`.docx`), PowerPoint (`.pptx`), and
+plain-text/code files. Recordings are surfaced as links only (never ingested).
 
 ## Tests
 
@@ -86,7 +107,7 @@ environment variable; nothing is hardcoded.
 |-------|-------|--------|
 | 1 | Scaffold & config | ✅ |
 | 2 | Drive retrieval (`drive_lookup`) | ✅ |
-| 3 | RAG pipeline (`search_course_materials`) | ⏳ |
+| 3 | RAG pipeline (`search_course_materials`) | ✅ |
 | 4 | Homework submission (explain + email send-after-approval) | ⏳ |
 | 5 | Agent graph (LangGraph) + Telegram interface | ⏳ |
 | 6 | Hardening (tests, Dockerfile, README + Mermaid) | ⏳ |
