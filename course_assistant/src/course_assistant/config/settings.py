@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     # --- Homework submission (Phase 4) -------------------------------------
     hw_to_email: str | None = None
     hw_cc_email: str | None = None
+    hw_to_name: str = "Alex"  # greeting name in the email body ("Hello Alex,")
 
     # --- Misc --------------------------------------------------------------
     log_level: str = "INFO"

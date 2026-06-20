@@ -108,6 +108,6 @@ environment variable; nothing is hardcoded.
 | 1 | Scaffold & config | ✅ |
 | 2 | Drive retrieval (`drive_lookup`) | ✅ |
 | 3 | RAG pipeline (`search_course_materials`) | ✅ |
-| 4 | Homework submission (explain + email send-after-approval) | ⏳ |
+| 4 | Homework submission (explain + email send-after-approval) | ✅ |
 | 5 | Agent graph (LangGraph) + Telegram interface | ⏳ |
 | 6 | Hardening (tests, Dockerfile, README + Mermaid) | ⏳ |
