@@ -59,6 +59,21 @@ cp .env.example .env          # then fill in secrets
 uv venv && uv pip install -e ".[dev]"
 ```
 
+### Google OAuth (Drive + Gmail)
+
+Drive retrieval, RAG ingestion, and homework email need a Google OAuth refresh
+token. Create a **Desktop-app** OAuth client in Google Cloud, then run the helper
+once (on a machine with a browser):
+
+```bash
+export GOOGLE_OAUTH_CLIENT_ID=... GOOGLE_OAUTH_CLIENT_SECRET=...
+uv run course-assistant-get-token
+# or: uv run course-assistant-get-token --client-secrets client_secret.json
+```
+
+Paste the printed `GOOGLE_OAUTH_REFRESH_TOKEN` into your `.env`. The single token
+covers both Drive (read-only) and Gmail (send).
+
 ## Run
 
 ### Build / refresh the RAG index

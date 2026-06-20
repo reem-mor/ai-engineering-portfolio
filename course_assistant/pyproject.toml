@@ -47,6 +47,7 @@ dev = [
 [project.scripts]
 course-assistant-bot = "course_assistant.interface.telegram_app:main"
 course-assistant-ingest = "course_assistant.rag.ingest:main"
+course-assistant-get-token = "course_assistant.scripts.get_google_token:main"
 
 [build-system]
 requires = ["hatchling"]
