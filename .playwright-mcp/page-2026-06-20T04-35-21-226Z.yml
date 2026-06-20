@@ -1,0 +1,173 @@
+- generic [ref=e1]:
+  - iframe [ref=e2]:
+    
+  - generic [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - link "Skip to content" [ref=e14] [cursor=pointer]:
+          - /url: ""
+        - link "Using Gmail with screen readers" [ref=e15] [cursor=pointer]:
+          - /url: ""
+      - heading [level=1] [ref=e17]:
+        - banner [ref=e18]:
+          - generic [ref=e19]:
+            - generic [ref=e20]:
+              - button "Main menu" [expanded] [ref=e21] [cursor=pointer]:
+                - img [ref=e22]
+              - link "Gmail" [ref=e26] [cursor=pointer]:
+                - /url: "#inbox"
+                - img [ref=e27]
+            - generic [ref=e28]:
+              - search [ref=e30]:
+                - heading "Search" [level=2] [ref=e31]
+                - combobox "Search mail" [ref=e33]: Billing Support Request
+                - button "Advanced search options" [ref=e34] [cursor=pointer]:
+                  - img [ref=e35]
+                - button "Clear search" [ref=e37] [cursor=pointer]:
+                  - img [ref=e38]
+                - button "Search mail" [disabled] [ref=e41] [cursor=pointer]:
+                  - img [ref=e42]
+              - generic [ref=e45]:
+                - button [ref=e46] [cursor=pointer]:
+                  - img [ref=e47]
+                - button "Settings" [ref=e49] [cursor=pointer]:
+                  - img [ref=e50]
+                - generic [ref=e53]:
+                  - generic:
+                    - button "Ask Gemini" [ref=e60] [cursor=pointer]
+                    - tooltip [ref=e63]: Ask Gemini
+            - generic [ref=e65]:
+              - button "Google apps" [ref=e69] [cursor=pointer]:
+                - img [ref=e70]
+              - 'button "Google Account: Re''em Mor (reem.mor3@gmail.com)" [ref=e75] [cursor=pointer]':
+                - img [ref=e77]
+                - img [ref=e83]
+      - alert [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]: Enable desktop notifications for Gmail.
+          - generic [ref=e89]:
+            - link "OK" [ref=e90] [cursor=pointer]
+            - link "No, thanks" [ref=e91] [cursor=pointer]
+          - button "Close" [ref=e92] [cursor=pointer]
+    - generic [ref=e94]:
+      - navigation [ref=e95]:
+        - button "Compose" [ref=e98] [cursor=pointer]
+        - generic [ref=e104]:
+          - generic "Labels" [ref=e106]:
+            - heading "Labels" [level=2] [ref=e107]
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - generic [ref=e111]:
+                  - generic [ref=e116]:
+                    - link "Inbox 1019 unread" [ref=e118] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#inbox
+                      - text: Inbox
+                    - generic [ref=e119]: 1,019
+                  - link "Starred" [ref=e126] [cursor=pointer]:
+                    - /url: https://mail.google.com/mail/u/0/#starred
+                  - link "Snoozed" [ref=e133] [cursor=pointer]:
+                    - /url: https://mail.google.com/mail/u/0/#snoozed
+                  - link "Sent" [ref=e140] [cursor=pointer]:
+                    - /url: https://mail.google.com/mail/u/0/#sent
+                  - generic [ref=e145]:
+                    - link "Drafts 1 unread" [ref=e147] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#drafts
+                      - text: Drafts
+                    - generic [ref=e148]: "1"
+                  - link "Bin" [ref=e155] [cursor=pointer]:
+                    - /url: https://mail.google.com/mail/u/0/#trash
+                - generic [ref=e157]:
+                  - generic [ref=e162]:
+                    - link "Purchases 95 unread has menu" [ref=e164] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#category/purchases
+                      - text: Purchases
+                    - generic [ref=e165]: "95"
+                  - generic [ref=e170]:
+                    - link "Social 249 unread has menu" [ref=e172] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#category/social
+                      - text: Social
+                    - generic [ref=e173]: "249"
+                  - generic [ref=e178]:
+                    - link "Updates 1742 unread has menu" [ref=e180] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#category/updates
+                      - text: Updates
+                    - generic [ref=e181]: 1,742
+                  - generic [ref=e186]:
+                    - link "Forums 50 unread has menu" [ref=e188] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#category/forums
+                      - text: Forums
+                    - generic [ref=e189]: "50"
+                  - generic [ref=e194]:
+                    - link "Promotions 383 unread has menu" [ref=e196] [cursor=pointer]:
+                      - /url: https://mail.google.com/mail/u/0/#category/promotions
+                      - text: Promotions
+                    - generic [ref=e197]: "383"
+              - button "More labels" [ref=e199] [cursor=pointer]:
+                - generic [ref=e200]: More
+          - generic [ref=e203]:
+            - heading "Labels" [ref=e204]
+            - button "Create new label" [ref=e205] [cursor=pointer]
+          - generic "Labels" [ref=e207]:
+            - heading "Labels" [level=2] [ref=e208]
+            - generic [ref=e212]:
+              - link "Career/LinkedIn has menu" [ref=e219] [cursor=pointer]:
+                - /url: https://mail.google.com/mail/u/0/#label/Career/LinkedIn
+                - text: Career/LinkedIn
+              - generic [ref=e224]:
+                - link "Career/Newsletter 733 unread has menu" [ref=e226] [cursor=pointer]:
+                  - /url: https://mail.google.com/mail/u/0/#label/Career/Newsletter
+                  - text: Career/Newsletter
+                - generic [ref=e227]: "733"
+              - generic [ref=e232]:
+                - link "Finance/חשבונות 161 unread has menu" [ref=e234] [cursor=pointer]:
+                  - /url: https://mail.google.com/mail/u/0/#label/Finance/%D7%97%D7%A9%D7%91%D7%95%D7%A0%D7%95%D7%AA
+                  - text: Finance/חשבונות
+                - generic [ref=e235]: "161"
+              - generic [ref=e240]:
+                - link "Finance/קבלות 118 unread has menu" [ref=e242] [cursor=pointer]:
+                  - /url: https://mail.google.com/mail/u/0/#label/Finance/%D7%A7%D7%91%D7%9C%D7%95%D7%AA
+                  - text: Finance/קבלות
+                - generic [ref=e243]: "118"
+              - link "Newsletter has menu" [ref=e250] [cursor=pointer]:
+                - /url: https://mail.google.com/mail/u/0/#label/Newsletter
+                - text: Newsletter
+              - link "Other has menu" [ref=e257] [cursor=pointer]:
+                - /url: https://mail.google.com/mail/u/0/#label/Other
+                - text: Other
+              - generic [ref=e262]:
+                - link "Personal 1 unread has menu" [ref=e264] [cursor=pointer]:
+                  - /url: https://mail.google.com/mail/u/0/#label/Personal
+                  - text: Personal
+                - generic [ref=e265]: "1"
+              - link "Promotions has menu" [ref=e272] [cursor=pointer]:
+                - /url: https://mail.google.com/mail/u/0/#label/Promotions
+                - text: Promotions
+              - generic [ref=e277]:
+                - link "Social 💪🏽 893 unread has menu" [ref=e279] [cursor=pointer]:
+                  - /url: https://mail.google.com/mail/u/0/#label/Social+%F0%9F%92%AA%F0%9F%8F%BD
+                  - text: Social
+                  - img "💪🏽" [ref=e280]
+                - generic [ref=e281]: "893"
+      - generic [ref=e294]:
+        - generic [ref=e295]:
+          - generic: Loading indicator
+        - main [ref=e325]:
+          - generic [ref=e326]:
+            - toolbar "search refinement"
+            - generic [ref=e328]:
+              - button "Most recent" [ref=e331] [cursor=pointer]:
+                - generic [ref=e332]: Most recent
+              - generic [ref=e339]:
+                - button "Input tools on/off (Ctrl-Shift-K)" [ref=e340] [cursor=pointer]
+                - button "Select input tool" [ref=e342] [cursor=pointer]
+          - heading "Conversations" [level=2] [ref=e345]
+      - generic [ref=e349]:
+        - complementary "Side panel" [ref=e350]:
+          - tablist [ref=e352]:
+            - tab "Calendar"
+            - tab "Keep"
+            - tab "Tasks"
+            - tab "Contacts"
+        - generic:
+          - button "Hide side panel":
+            - img [ref=e358] [cursor=pointer]

@@ -1,0 +1,71 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - application [ref=e6]
+    - toolbar "History Navigation" [ref=e8]:
+      - generic [ref=e10]:
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - button "Back in history" [disabled] [ref=e15]:
+              - img [ref=e16]
+            - button "Forward in history" [disabled] [ref=e18]:
+              - img [ref=e19]
+          - button "Show history" [ref=e22] [cursor=pointer]:
+            - img [ref=e23]
+        - button "Search" [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: Search Re'em Mor Workspace
+        - generic [ref=e32]:
+          - button "Chat with Slackbot AI" [ref=e38] [cursor=pointer]:
+            - img [ref=e40]
+          - button "Help" [ref=e44] [cursor=pointer]:
+            - img [ref=e45]
+    - tabpanel "Re'em Mor Workspace" [ref=e48]:
+      - generic [ref=e49]:
+        - button "Switch workspaces… (Re&#39;em Mor Workspace)" [ref=e52] [cursor=pointer]:
+          - img [ref=e53]
+        - tablist "Re'em Mor Workspace" [ref=e56]:
+          - tab "Home" [selected] [ref=e58] [cursor=pointer]:
+            - generic [ref=e59]:
+              - img [ref=e63]
+              - generic [ref=e65]: Home
+              - generic: "1"
+          - tab "DMs" [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img [ref=e70]
+              - generic [ref=e72]: DMs
+              - generic: "2"
+          - tab "Activity" [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]:
+              - img [ref=e79]
+              - generic [ref=e81]: Activity
+              - generic: "3"
+          - tab "More…" [ref=e82] [cursor=pointer]:
+            - generic [ref=e83]:
+              - img [ref=e86]
+              - generic [ref=e88]: More
+              - generic: "0"
+          - separator [ref=e89]
+          - tab "Admin" [ref=e90] [cursor=pointer]:
+            - generic [ref=e91]:
+              - img [ref=e94]
+              - generic [ref=e96]: Admin
+      - generic [ref=e100]:
+        - tabpanel "Home" [ref=e101]
+        - toolbar "Control strip" [ref=e113]:
+          - button "Create new" [ref=e114] [cursor=pointer]:
+            - img [ref=e116]
+          - button "Turn on focus mode" [ref=e121] [cursor=pointer]:
+            - img [ref=e122]
+            - img [ref=e125]
+            - img [ref=e128]
+          - 'button "User: Re&#39;em Mor" [ref=e130] [cursor=pointer]':
+            - generic [ref=e132]:
+              - img [ref=e133]
+              - img [ref=e135]
+              - img "Away" [ref=e137]
+      - generic:
+        - generic:
+          - img
+  - generic [ref=e144]:
+    - alert [ref=e145]
+    - log [ref=e146]

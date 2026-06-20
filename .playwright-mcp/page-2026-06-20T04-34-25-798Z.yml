@@ -1,0 +1,299 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - application [ref=e6]
+    - toolbar "History Navigation" [ref=e8]:
+      - generic [ref=e10]:
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - button "Back in history" [disabled] [ref=e15]:
+              - img [ref=e16]
+            - button "Forward in history" [disabled] [ref=e18]:
+              - img [ref=e19]
+          - button "Show history" [ref=e22] [cursor=pointer]:
+            - img [ref=e23]
+        - button "Search" [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: Search Re'em Mor Workspace
+        - generic [ref=e32]:
+          - button "Chat with Slackbot AI" [ref=e38] [cursor=pointer]:
+            - img [ref=e40]
+          - button "Help" [ref=e44] [cursor=pointer]:
+            - img [ref=e45]
+    - tabpanel "Re'em Mor Workspace" [ref=e48]:
+      - generic [ref=e49]:
+        - button "Switch workspaces… (Re&#39;em Mor Workspace)" [ref=e52] [cursor=pointer]:
+          - img [ref=e53]
+        - tablist "Re'em Mor Workspace" [ref=e56]:
+          - tab "Home" [selected] [ref=e58] [cursor=pointer]:
+            - generic [ref=e59]:
+              - img [ref=e63]
+              - generic [ref=e65]: Home
+              - generic: "1"
+          - tab "DMs" [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]:
+              - img [ref=e70]
+              - generic [ref=e72]: DMs
+              - generic: "2"
+          - tab "Activity" [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]:
+              - img [ref=e79]
+              - generic [ref=e81]: Activity
+              - generic: "3"
+          - tab "More…" [ref=e82] [cursor=pointer]:
+            - generic [ref=e83]:
+              - img [ref=e86]
+              - generic [ref=e88]: More
+              - generic: "0"
+          - separator [ref=e89]
+          - tab "Admin" [ref=e90] [cursor=pointer]:
+            - generic [ref=e91]:
+              - img [ref=e94]
+              - generic [ref=e96]: Admin
+      - generic [ref=e100]:
+        - tabpanel "Home" [ref=e101]:
+          - generic [ref=e103]:
+            - group "Home" [ref=e104]:
+              - generic [ref=e106]:
+                - toolbar "Actions" [ref=e107]:
+                  - button "Re&#39;em Mor Workspace Actions" [ref=e110] [cursor=pointer]:
+                    - generic [ref=e111]: Re'em Mor Workspace
+                    - img "caret-down" [ref=e112]
+                  - generic [ref=e114]:
+                    - button "Manage my sidebar" [ref=e115] [cursor=pointer]:
+                      - img [ref=e116]
+                    - button "New message" [ref=e119] [cursor=pointer]:
+                      - img [ref=e120]
+                - link "Upgrade Plan" [ref=e123] [cursor=pointer]:
+                  - /url: https://reemmorworkspace.slack.com/plans?entry_point=upgrade-button
+                  - img [ref=e125]
+                  - generic [ref=e127]: Upgrade Plan
+                - generic [ref=e128]:
+                  - tree "Channels and direct messages" [ref=e130]:
+                    - treeitem "Huddles" [level=1] [ref=e131] [cursor=pointer]:
+                      - generic [ref=e134]:
+                        - generic [ref=e135]: 
+                        - generic [ref=e136]: Huddles
+                    - treeitem "Drafts & sent" [level=1] [ref=e137] [cursor=pointer]:
+                      - generic [ref=e139]:
+                        - img [ref=e141]
+                        - generic [ref=e143]: Drafts & sent
+                    - treeitem "Directories" [level=1] [ref=e144] [cursor=pointer]:
+                      - generic [ref=e145]:
+                        - img [ref=e147]
+                        - generic [ref=e150]: Directories
+                    - treeitem "Channels" [expanded] [level=1] [ref=e153]:
+                      - button [ref=e157] [cursor=pointer]:
+                        - generic [ref=e159]: Channels
+                      - group:
+                        - treeitem "all-re39emn-workspace" [level=2] [ref=e160] [cursor=pointer]:
+                          - generic [ref=e161]:
+                            - img [ref=e163]
+                            - generic [ref=e165]: all-re39emn-workspace
+                        - treeitem "new-channel" [level=2] [ref=e166] [cursor=pointer]:
+                          - generic [ref=e167]:
+                            - img [ref=e169]
+                            - generic [ref=e171]: new-channel
+                        - treeitem "oz-it-support" [level=2] [ref=e172] [cursor=pointer]:
+                          - generic [ref=e173]:
+                            - img [ref=e175]
+                            - generic [ref=e177]: oz-it-support
+                        - treeitem "piter-aiops" [level=2] [ref=e178] [cursor=pointer]:
+                          - generic [ref=e179]:
+                            - img [ref=e181]
+                            - generic [ref=e183]: piter-aiops
+                    - treeitem [expanded] [level=1] [ref=e184]:
+                      - button [ref=e188] [cursor=pointer]:
+                        - generic [ref=e190]: Direct messages
+                      - group
+                    - treeitem "Apps" [expanded] [level=1] [ref=e191]:
+                      - button [ref=e195] [cursor=pointer]:
+                        - generic [ref=e197]: Apps
+                      - group:
+                        - treeitem "Slackbot" [level=2] [ref=e198] [cursor=pointer]:
+                          - generic [ref=e199]:
+                            - img [ref=e203]
+                            - generic [ref=e204]: Slackbot
+                        - treeitem "oz-app" [level=2] [ref=e205] [cursor=pointer]:
+                          - generic [ref=e210]: oz-app
+                        - treeitem "Slack" [level=2] [ref=e211] [cursor=pointer]:
+                          - generic [ref=e212]:
+                            - generic [ref=e214]:
+                              - img [ref=e215]
+                              - img [ref=e217]
+                            - generic [ref=e218]: Slack
+                  - generic [ref=e221]:
+                    - generic [ref=e222]: Slack works better when you use it together.
+                    - button "Invite teammates" [ref=e223] [cursor=pointer]:
+                      - img [ref=e225]
+                      - text: Invite teammates
+            - slider "Sidebar width" [ref=e227]: "230"
+          - group "Channel all-re39emn-workspace" [ref=e231]:
+            - generic [ref=e232]:
+              - toolbar "Primary view actions" [ref=e233]:
+                - button "Star channel" [ref=e234] [cursor=pointer]:
+                  - img [ref=e235]
+                - 'button "Channel details for #all-re39emn-workspace" [ref=e238] [cursor=pointer]':
+                  - generic [ref=e239]:
+                    - img [ref=e241]
+                    - generic [ref=e243]: all-re39emn-workspace
+                - generic [ref=e244]:
+                  - button "Invite teammates" [ref=e246] [cursor=pointer]:
+                    - img [ref=e248]
+                    - text: Invite teammates
+                  - generic [ref=e252]:
+                    - img [ref=e253]
+                    - button "Start huddle in all-re39emn-workspace" [ref=e254] [cursor=pointer]:
+                      - img [ref=e255]
+                    - button "More Huddles options" [ref=e258] [cursor=pointer]:
+                      - img [ref=e259]
+                  - button "Edit notifications" [ref=e261] [cursor=pointer]:
+                    - img [ref=e263]
+                  - button "Search in channel" [ref=e267] [cursor=pointer]:
+                    - img [ref=e268]
+                  - button "More channel actions" [ref=e270] [cursor=pointer]:
+                    - img [ref=e271]
+              - tablist "all-re39emn-workspace views" [ref=e276]:
+                - tab "Messages" [selected] [ref=e277] [cursor=pointer]:
+                  - generic [ref=e280]:
+                    - img [ref=e282]
+                    - generic [ref=e284]: Messages
+                - tab "Add canvas" [ref=e288] [cursor=pointer]:
+                  - generic [ref=e291]:
+                    - img [ref=e293]
+                    - generic [ref=e295]: Add canvas
+                - button "Add and Edit Channel Tabs" [ref=e297] [cursor=pointer]:
+                  - img [ref=e301]
+              - generic [ref=e303]: Canvas
+              - generic [ref=e304]: List
+              - generic [ref=e305]: Folder
+              - generic [ref=e307]:
+                - generic [ref=e309]:
+                  - generic:
+                    - listitem [ref=e310]:
+                      - generic [ref=e313]:
+                        - generic [ref=e314]:
+                          - img [ref=e316]
+                          - generic [ref=e521]:
+                            - generic [ref=e522]:
+                              - text: Everyone’s all here in
+                              - generic [ref=e524]:
+                                - img [ref=e526]
+                                - generic [ref=e529]: all-re39emn-workspace
+                            - generic [ref=e530]: Share announcements and updates about company news, upcoming events, or teammates who deserve some kudos. ⭐
+                        - generic [ref=e531]:
+                          - button "Add company handbook Share helpful links, guidance, policies" [ref=e533] [cursor=pointer]:
+                            - img [ref=e535]
+                            - generic [ref=e537]:
+                              - generic [ref=e538]: Add company handbook
+                              - generic [ref=e539]: Share helpful links, guidance, policies
+                          - button "Personalize a welcome message Record a short video clip" [ref=e541] [cursor=pointer]:
+                            - img [ref=e543]
+                            - generic [ref=e545]:
+                              - generic [ref=e546]: Personalize a welcome message
+                              - generic [ref=e547]: Record a short video clip
+                    - listitem [ref=e548]:
+                      - button "Jump to date" [ref=e549] [cursor=pointer]:
+                        - text: Tuesday, April 14th
+                        - img [ref=e551]
+                    - listitem [ref=e553]
+                    - 'listitem "Re''em Mor: joined #all-re39emn-workspace. 10:52 AM." [ref=e556]':
+                      - document [ref=e557]:
+                        - generic [ref=e559]:
+                          - button [ref=e560] [cursor=pointer]:
+                            - img [ref=e562]
+                          - button "Re'em Mor" [ref=e564] [cursor=pointer]
+                          - link "Apr 14th at 10:52:13 AM" [ref=e565] [cursor=pointer]:
+                            - /url: https://reemmorworkspace.slack.com/archives/C0ASU8S9V36/p1776153133699929
+                            - text: 10:52 AM
+                          - text: "joined #all-re39emn-workspace."
+                    - list "all-re39emn-workspace (channel)" [ref=e566]
+                - generic [ref=e570]:
+                  - group "composer" [ref=e572]:
+                    - generic [ref=e574]:
+                      - toolbar "Formatting" [ref=e575]:
+                        - generic [ref=e576]:
+                          - generic:
+                            - generic:
+                              - button "Bold" [ref=e577] [cursor=pointer]:
+                                - img [ref=e578]
+                              - button "Italic" [ref=e580] [cursor=pointer]:
+                                - img [ref=e581]
+                              - button "Underline" [ref=e583] [cursor=pointer]:
+                                - img [ref=e584]
+                              - button "Strikethrough" [ref=e586] [cursor=pointer]:
+                                - img [ref=e587]
+                              - button "Link" [ref=e590] [cursor=pointer]:
+                                - img [ref=e591]
+                              - button "Ordered list" [ref=e593] [cursor=pointer]:
+                                - img [ref=e594]
+                              - button "Bulleted list" [ref=e596] [cursor=pointer]:
+                                - img [ref=e597]
+                              - button "Blockquote" [ref=e600] [cursor=pointer]:
+                                - img [ref=e601]
+                              - button "Code" [ref=e603] [cursor=pointer]:
+                                - img [ref=e604]
+                              - button "Code block" [ref=e606] [cursor=pointer]:
+                                - img [ref=e607]
+                      - generic [ref=e610]:
+                        - textbox "Message to all-re39emn-workspace" [active] [ref=e611]:
+                          - paragraph [ref=e612]
+                        - generic:
+                          - generic:
+                            - generic:
+                              - text: Message
+                              - generic:
+                                - generic: 
+                                - text: all-re39emn-workspace
+                      - toolbar "Composer actions" [ref=e613]:
+                        - generic [ref=e615]:
+                          - button "Attach" [ref=e616] [cursor=pointer]:
+                            - img [ref=e617]
+                          - button [ref=e619]
+                        - generic [ref=e621]:
+                          - button "Show formatting" [pressed] [ref=e622] [cursor=pointer]:
+                            - img [ref=e623]
+                          - button "Emoji" [ref=e625] [cursor=pointer]:
+                            - img [ref=e627]
+                          - button "Mention someone" [ref=e629] [cursor=pointer]:
+                            - img [ref=e630]
+                          - button "Record video clip" [ref=e633] [cursor=pointer]:
+                            - img [ref=e634]
+                          - button "Record audio clip" [ref=e636] [cursor=pointer]:
+                            - img [ref=e637]
+                          - button "Run shortcut" [ref=e640] [cursor=pointer]:
+                            - img [ref=e641]
+                        - generic [ref=e644]:
+                          - button "Send now" [disabled]:
+                            - img
+                          - button "Schedule for later" [disabled]:
+                            - img
+                  - generic [ref=e645]:
+                    - generic:
+                      - generic:
+                        - button: Shift + Enter to add a new line
+        - toolbar "Control strip" [ref=e651]:
+          - button "Create new" [ref=e652] [cursor=pointer]:
+            - img [ref=e654]
+          - button "Turn on focus mode" [ref=e659] [cursor=pointer]:
+            - img [ref=e660]
+            - img [ref=e663]
+            - img [ref=e666]
+          - 'button "User: Re&#39;em Mor" [ref=e668] [cursor=pointer]':
+            - generic [ref=e670]:
+              - img [ref=e671]
+              - img [ref=e673]
+              - img "Away" [ref=e675]
+      - dialog "Information" [ref=e682]:
+        - generic [ref=e684]:
+          - img "bell emoji" [ref=e686]
+          - generic [ref=e687]:
+            - text: Slack needs your permission to enable notifications.
+            - button "Enable notifications" [ref=e688] [cursor=pointer]
+        - button "Close" [ref=e689] [cursor=pointer]:
+          - img [ref=e690]
+      - generic:
+        - generic:
+          - img
+  - generic [ref=e695]:
+    - alert [ref=e696]
+    - log [ref=e697]
