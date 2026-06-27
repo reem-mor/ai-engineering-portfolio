@@ -16,7 +16,7 @@ Cursor is the **primary dev environment** for this project, but not the **only**
 | Push image | `Dockerfile` | `docker build` / `docker push` |
 | EC2 file transfer | `docs/ec2_deployment.md` | `scp` / `ssh` from integrated terminal |
 
-Recommended Cursor extensions (optional): see [`.vscode/extensions.json`](../.vscode/extensions.json).
+Recommended Cursor extensions (optional): configure a local `.vscode/extensions.json` (gitignored).
 
 ## Requires tools outside Cursor
 
