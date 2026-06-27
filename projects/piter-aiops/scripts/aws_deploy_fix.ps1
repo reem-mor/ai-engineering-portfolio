@@ -15,12 +15,12 @@
 param(
     [string]$AwsProfile = "reemmor",
     [string]$AwsRegion = "us-east-1",
-    [string]$Bucket = "reem-amdocs-ai-artifacts-3331",
-    [string]$KbId = "RBTJM6NIG9",
-    [string]$DataSourceId = "YICXAB6WOG",
-    [string]$AgentId = "HH4YGSLZUE",
-    [string]$AgentAliasId = "O2EM03R4R3",
-    [string]$AccountId = "329597159579",
+    [string]$Bucket = $env:PITER_ARTIFACTS_BUCKET,
+    [string]$KbId = $env:PITER_BEDROCK_KB_ID,
+    [string]$DataSourceId = $env:PITER_BEDROCK_DATA_SOURCE_ID,
+    [string]$AgentId = $env:PITER_BEDROCK_AGENT_ID,
+    [string]$AgentAliasId = $env:PITER_BEDROCK_AGENT_ALIAS_ID,
+    [string]$AccountId = $env:AWS_ACCOUNT_ID,
     [string]$LambdaRoleName = "incidentiq-lambda-role",
     [switch]$SkipAgentAlias
 )
