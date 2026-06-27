@@ -23,7 +23,7 @@ Runs `tsc --noEmit` then `vite build`. Backend CORS allows `http://localhost:517
 
 Copy [`.env.example`](.env.example) to `.env` only if your API base URL is not `http://localhost:8000/api`.
 
-**OpenAI keys and models stay in [`../backend/.env`](../backend/.env)** — the frontend never calls OpenAI directly.
+**OpenAI keys and models stay in the backend** (see [`../backend/.env.example`](../backend/.env.example)) — the frontend never calls OpenAI directly.
 
 ## Docker
 
