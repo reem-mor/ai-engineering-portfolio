@@ -1,6 +1,6 @@
 # Repository Architecture
 
-This document explains how [`amdocs-ai-course`](../) is organized and why. The layout prioritizes **reviewability** for lecturers and **portfolio clarity** for employers.
+This document explains how [`amdocs-ai-course`](../../) is organized and why. The layout prioritizes **reviewability** for lecturers and **portfolio clarity** for employers.
 
 ## Design principles
 
@@ -82,12 +82,12 @@ flowchart TB
 
 | Question | Read |
 |----------|------|
-| What is this repo? | [`README.md`](../README.md), [`course-summary.md`](../docs/course-summary.md) |
-| How do I run things? | [`docs/setup.md`](../docs/setup.md) |
-| Docker / AWS labs? | [`docs/docker-aws-notes.md`](../docs/docker-aws-notes.md) |
-| RAG progression? | [`docs/rag-notes.md`](../docs/rag-notes.md) |
-| Before submit? | [`docs/submission-checklist.md`](../docs/submission-checklist.md) |
-| Capstone architecture? | [`projects/incident-assistant-rag/docs/`](../projects/incident-assistant-rag/docs/) (in-project) |
+| What is this repo? | [`README.md`](../../README.md), [`course-summary.md`](../course-summary.md) |
+| How do I run things? | [`docs/setup.md`](../setup.md) |
+| Docker / AWS labs? | [`docs/docker-aws-notes.md`](../docker-aws-notes.md) |
+| RAG progression? | [`docs/rag-notes.md`](../rag-notes.md) |
+| Before submit? | [`docs/submission-checklist.md`](../submission-checklist.md) |
+| Capstone architecture? | [`projects/incident-assistant-rag/docs/`](../../projects/incident-assistant-rag/docs/) (in-project) |
 
 ## Screenshot locations
 
