@@ -56,6 +56,9 @@ Thumbs.db
 # Firecrawl CLI cache
 .firecrawl/
 
+# Playwright MCP session snapshots (generated browser a11y dumps)
+.playwright-mcp/
+
 # IDE/editor local state
 .idea/
 .vscode/
@@ -80,11 +83,6 @@ projects/incident-assistant-rag/data/faiss_index/*
 .aws/
 *.pem
 *.key
-# Large local archives
-*.tar
-*.tar.gz
-*.zip
-projects/piter-aiops/*.tar
 
 # Large local archives
 *.tar
