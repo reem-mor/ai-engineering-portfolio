@@ -7,7 +7,7 @@ Run: python scripts/generate_demo_data.py --output data/source
 import argparse
 import csv
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

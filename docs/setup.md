@@ -71,7 +71,7 @@ python app.py
 
 ### Homework 05 — EC2 / Docker / Nginx
 
-Follow [`homework/hw05/nginx-docker-lab/README.md`](../homework/hw05/nginx-docker-lab/README.md) and the handout [`resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx`](../resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx).
+Follow [`homework/hw05/nginx-docker-lab/README.md`](../homework/hw05/nginx-docker-lab/README.md) and the handout [`resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx`](../resources/MANIFEST.md).
 
 ### Lecture 08 — MCP
 

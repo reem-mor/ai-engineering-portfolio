@@ -1,6 +1,6 @@
 # Lecture 01 — Jupyter & Python Basics
 
-**Slides:** [`resources/lecture01.pdf`](../../resources/lecture01.pdf)
+**Slides:** [`resources/lecture01.pdf`](../../resources/MANIFEST.md)
 
 ---
 

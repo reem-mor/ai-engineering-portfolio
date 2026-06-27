@@ -1,6 +1,6 @@
 # Lecture 03 — Object-Oriented Programming & NumPy
 
-**Slides:** [`resources/lecture03.pdf`](../../resources/lecture03.pdf)
+**Slides:** [`resources/lecture03.pdf`](../../resources/MANIFEST.md)
 
 ---
 
