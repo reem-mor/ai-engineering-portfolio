@@ -1,8 +1,5 @@
 {
   "plugins": {
-    "firecrawl": {
-      "enabled": true
-    },
     "deploy-on-aws": {
       "enabled": true
     }
