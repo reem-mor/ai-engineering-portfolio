@@ -1,0 +1,37 @@
+# Root tooling config for the course/learning archive.
+# Per-project apps (oz_veruach_bot, projects/*) keep their own configs; this file
+# provides a baseline ruff lint config and the CI entry point for the kept areas.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+    ".cursor",
+    ".agents",
+    ".playwright-mcp",
+    "**/node_modules",
+    "**/.venv",
+    "**/dist",
+    "**/build",
+    "**/static",
+    "**/archive",
+    "**/legacy-htmx",
+    # PITER is the flagship and is extracted to its own repo (with its own CI);
+    # the archive does not lint it here.
+    "projects/piter-aiops",
+]
+
+[tool.ruff.lint]
+# Conservative, high-signal rule set: pyflakes (F) + a subset of pycodestyle
+# (E4/E7/E9). Catches real problems (undefined names, unused imports, syntax)
+# without forcing style churn across existing course code. Import ordering (I)
+# is intentionally left off so CI stays green on the archive without rewrites.
+select = ["F", "E4", "E7", "E9"]
+ignore = [
+    "E402",  # module-level import not at top (common in notebooks/demos)
+    "E741",  # ambiguous variable names (course exercises)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"**/tests/**" = ["F811", "F401"]
