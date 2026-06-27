@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 from app.services import data_access

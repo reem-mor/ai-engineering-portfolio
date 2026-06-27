@@ -7,7 +7,6 @@
         "CLIENT_ID": "${env:LOVABLE_CLIENT_ID}"
       }
     },
-
     "n8n-workflows": {
       "command": "npx",
       "args": ["-y", "n8n-mcp"],
@@ -21,7 +20,6 @@
         "N8N_API_KEY": "${env:N8N_API_KEY}"
       }
     },
-
     "aws-api": {
       "command": "uvx",
       "args": ["awslabs.aws-api-mcp-server@latest"],
@@ -32,7 +30,6 @@
         "FASTMCP_LOG_LEVEL": "ERROR"
       }
     },
-
     "bedrock-kb": {
       "command": "uvx",
       "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
@@ -44,12 +41,10 @@
         "BEDROCK_KB_RERANKING_ENABLED": "false"
       }
     },
-
     "aws-knowledge": {
       "type": "http",
       "url": "https://knowledge-mcp.global.api.aws"
     },
-
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"],

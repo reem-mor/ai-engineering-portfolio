@@ -18,7 +18,7 @@ from app.spa import _SPA_ROOT, spa_enabled
 from app.upload_service import DocumentUploadService
 from app.upload_validators import ALLOWED_UPLOAD_SUFFIXES
 from app.validators import MAX_QUESTION_LEN, validate_question
-from app.services.alert_stream import load_active_alerts, load_alert_stream, p1_demo_alert, summarize_alert_stream
+from app.services.alert_stream import load_active_alerts, load_alert_stream, summarize_alert_stream
 from app.services.kb_manifest import kb_sections, load_kb_manifest
 from app.services.escalation_service import notify_demo_channel
 from app.services.escalation_service import resolve_demo_recipients
