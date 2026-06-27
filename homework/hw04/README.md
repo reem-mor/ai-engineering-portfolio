@@ -6,7 +6,7 @@
 
 Build a complete Retrieval-Augmented Generation web application per the course handout:
 
-[`resources/handouts/rag-application-homework-guidelines.docx`](../../resources/handouts/rag-application-homework-guidelines.docx)
+[`resources/handouts/rag-application-homework-guidelines.docx`](../../resources/MANIFEST.md)
 
 ## Requirements summary
 

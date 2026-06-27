@@ -1,6 +1,6 @@
 # Lecture 05 - Flask Web Development
 
-**Slides:** [`resources/lecture04_flask_intro.pdf`](../../resources/lecture04_flask_intro.pdf)
+**Slides:** [`resources/lecture04_flask_intro.pdf`](../../resources/MANIFEST.md)
 
 ---
 

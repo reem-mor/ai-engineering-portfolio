@@ -12,9 +12,9 @@ This folder contains end-to-end AI engineering projects built during the Amdocs 
 
 | Document | Purpose |
 |----------|---------|
-| [`resources/handouts/project_guidelines.pptx`](../resources/handouts/project_guidelines.pptx) | Course project requirements |
-| [`resources/handouts/mid-course-project-guidelines.docx`](../resources/handouts/mid-course-project-guidelines.docx) | Mid-course project guidelines |
-| [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/handouts/rag-application-homework-guidelines.docx) | Full RAG homework specification |
+| [`resources/handouts/project_guidelines.pptx`](../resources/MANIFEST.md) | Course project requirements |
+| [`resources/handouts/mid-course-project-guidelines.docx`](../resources/MANIFEST.md) | Mid-course project guidelines |
+| [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/MANIFEST.md) | Full RAG homework specification |
 
 ## Capstone quick link
 

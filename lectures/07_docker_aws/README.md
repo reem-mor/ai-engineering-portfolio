@@ -1,6 +1,6 @@
 # Lecture 07 - Docker and AWS EC2 Deployment
 
-**Slides:** [`resources/lecture06_docker_aws.pdf`](../../resources/lecture06_docker_aws.pdf)
+**Slides:** [`resources/lecture06_docker_aws.pdf`](../../resources/MANIFEST.md)
 
 ---
 
