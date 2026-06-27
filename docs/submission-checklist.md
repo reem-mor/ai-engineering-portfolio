@@ -60,4 +60,4 @@ python -m pytest
 
 - Submission workflow: [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 - Setup: [`docs/setup.md`](setup.md)
-- Course handouts: [`resources/handouts/`](../resources/handouts/)
+- Course handouts: [`resources/handouts/`](../resources/MANIFEST.md)

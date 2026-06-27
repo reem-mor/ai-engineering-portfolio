@@ -33,7 +33,7 @@ flowchart LR
 
 **Folder:** [`homework/hw04/`](../homework/hw04/)
 
-**Handout:** [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/handouts/rag-application-homework-guidelines.docx)
+**Handout:** [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/MANIFEST.md)
 
 Requirements summary:
 
@@ -72,6 +72,6 @@ All capstone documentation lives inside that project folder — see its README a
 
 | Document | Topic |
 |----------|-------|
-| [`rag-application-homework-guidelines.docx`](../resources/handouts/rag-application-homework-guidelines.docx) | HW04 full RAG app |
-| [`mid-course-project-guidelines.docx`](../resources/handouts/mid-course-project-guidelines.docx) | Mid-course project scope |
-| [`bedrock-kb-flask-project-guideline.docx`](../resources/handouts/bedrock-kb-flask-project-guideline.docx) | Bedrock KB + Flask track |
+| [`rag-application-homework-guidelines.docx`](../resources/MANIFEST.md) | HW04 full RAG app |
+| [`mid-course-project-guidelines.docx`](../resources/MANIFEST.md) | Mid-course project scope |
+| [`bedrock-kb-flask-project-guideline.docx`](../resources/MANIFEST.md) | Bedrock KB + Flask track |

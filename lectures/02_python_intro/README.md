@@ -1,6 +1,6 @@
 # Lecture 02 — Python Introduction
 
-**Slides:** [`resources/lecture02.pdf`](../../resources/lecture02.pdf)
+**Slides:** [`resources/lecture02.pdf`](../../resources/MANIFEST.md)
 
 ---
 

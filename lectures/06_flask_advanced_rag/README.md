@@ -1,6 +1,6 @@
 # Lecture 06 - SQLite, Advanced Flask, and RAG Web App
 
-**Slides:** [`resources/lecture05_flask_advanced.pdf`](../../resources/lecture05_flask_advanced.pdf)
+**Slides:** [`resources/lecture05_flask_advanced.pdf`](../../resources/MANIFEST.md)
 
 ---
 

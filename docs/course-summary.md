@@ -29,7 +29,7 @@ This repository documents hands-on work from the **Amdocs AI-Augmented Software 
 Slides and handouts live under [`resources/`](../resources/):
 
 - PDF slides: `lecture01.pdf` … `lecture06_docker_aws.pdf`
-- Handouts: [`resources/handouts/`](../resources/handouts/) (project guidelines, homework specs, lab instructions)
+- Handouts: [`resources/handouts/`](../resources/MANIFEST.md) (project guidelines, homework specs, lab instructions)
 
 ## Featured deliverable
 
