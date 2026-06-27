@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Any
 
 from app.bedrock_client import Citation, RagAnswer, _dedupe_citations
 from app.config import Config

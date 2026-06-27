@@ -1,11 +1,11 @@
 # Build Docker image locally, upload to S3, deploy to EC2 via SSM (no SSH required).
 # See docs/LOCAL_DEV.md and frontend/EC2_DEPLOY.md.
 param(
-    [string]$InstanceId = "i-0c53b195878f0ea5f",
-    [string]$Bucket = "reem-amdocs-ai-artifacts-3331",
+    [string]$InstanceId = $env:PITER_EC2_INSTANCE_ID,
+    [string]$Bucket = $env:PITER_ARTIFACTS_BUCKET,
     [string]$Prefix = "projects/piter-aiops/deploy",
     [string]$ImageTag = "piter-aiops:latest",
-    [string]$PublicBaseUrl = "http://ec2-3-235-22-143.compute-1.amazonaws.com:8080",
+    [string]$PublicBaseUrl = $env:PITER_PUBLIC_BASE_URL,
     [switch]$SkipDockerBuild,
     [switch]$SkipS3Upload,
     [switch]$NotificationOnly,

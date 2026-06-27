@@ -129,7 +129,6 @@ class Config:
             "dev-local-" + secrets.token_hex(16)
         )
         max_upload = _env("MAX_UPLOAD_BYTES", default="5242880")
-        mock = _env_bool("MOCK_MODE", False)
         return cls(
             AWS_REGION=_env("AWS_REGION", legacy="AWS_REGION", default="us-east-1")
             or "us-east-1",

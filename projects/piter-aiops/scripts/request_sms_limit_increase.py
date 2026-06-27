@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Request SMS spending limit increase via AWS Support API."""
 import boto3
-import json
-from datetime import datetime
 
 def request_sms_limit_increase(target_limit_usd=10):
     """Create a support case to increase SMS spending limit."""
@@ -33,8 +31,8 @@ Thank you for your assistance.
         )
         case_id = response['caseId']
         print(f"✓ Support case created: {case_id}")
-        print(f"  Check status in AWS Console → Support Center")
-        print(f"  Typical response time: 12-24 hours")
+        print("  Check status in AWS Console → Support Center")
+        print("  Typical response time: 12-24 hours")
         return case_id
     except Exception as e:
         print(f"✗ Failed to create support case: {e}")
