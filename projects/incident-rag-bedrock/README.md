@@ -40,6 +40,15 @@
 
 ---
 
+> **📚 Learning iteration.** This is the Bedrock **Knowledge Base** (managed RAG)
+> stepping-stone in my incident-RAG progression. The agentic flagship that grew out of
+> it — adding a Bedrock **Agent**, Action-Group tools, session memory, and safe escalation —
+> is **[PITER AiOps](https://github.com/reem-mor/piter-aiops)**. For the OpenAI + local-FAISS
+> take on the same problem, see the capstone
+> **[IncidentIQ (incident-assistant-rag)](../incident-assistant-rag/)**.
+
+---
+
 ## 📑 Table of Contents
 
 <table>

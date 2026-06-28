@@ -41,7 +41,7 @@ Maps the course handout **bedrock_kb_flask_project_guideline.docx** (Bedrock KB 
 |-------------|----------|
 | Required AWS + app captures | Tier 1 (11 files) in [`screenshots/README.md`](../screenshots/README.md); Tier 2 optional |
 | Successful Q&A screenshot | `08_app_question_and_answer.png`, `08b_app_citations_expanded.png` |
-| Cleanup after demo | `screenshots/10_cleanup_console.png`, [`docs/cleanup_checklist.md`](cleanup_checklist.md), [`cleanup_log.md`](../cleanup_log.md) |
+| Cleanup after demo | `screenshots/10_cleanup_console.png`, [`docs/cleanup_checklist.md`](cleanup_checklist.md), [`cleanup_log.md`](cleanup_log.md) |
 
 ## README submission items
 

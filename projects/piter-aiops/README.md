@@ -1,4 +1,4 @@
-﻿# PITER AiOps
+# PITER AiOps
 
 **AI-powered incident response for NOC, DevOps, and SRE teams**
 
@@ -9,7 +9,9 @@
 ![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-Agent_%2B_KB-FF9900?logo=amazonwebservices&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+[![CI](https://github.com/reem-mor/piter-aiops/actions/workflows/ci.yml/badge.svg)](https://github.com/reem-mor/piter-aiops/actions/workflows/ci.yml)
 ![pytest](https://img.shields.io/badge/pytest-279_passed-brightgreen?logo=pytest&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ![PITER AiOps — NOC dashboard](screenshots/final/01_dashboard.png)
 

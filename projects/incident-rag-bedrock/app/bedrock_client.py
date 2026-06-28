@@ -10,14 +10,14 @@ import boto3
 from botocore.config import Config as BotoConfig
 
 from app.config import Config
-from app.errors import BedrockError, translate
+from app.errors import BedrockError, translate  # noqa: F401  (BedrockError re-exported for tests)
 from app.text_utils import (
     extract_reference_metadata,
     format_answer_sections,
     format_citation_label,
     format_citation_preview,
 )
-from app.validators import MAX_QUESTION_LEN, validate_question
+from app.validators import MAX_QUESTION_LEN, validate_question  # noqa: F401  (MAX_QUESTION_LEN re-exported)
 
 log = logging.getLogger(__name__)
 

@@ -79,5 +79,5 @@ Example subject: `Nginx Docker Lab — <Your Name>`
 
 ## Related material
 
-- Lecture notes: [`lectures/07_docker_aws/README.md`](../../lectures/07_docker_aws/README.md)
-- Slides: [`resources/lecture06_docker_aws.pdf`](../../resources/lecture06_docker_aws.pdf)
+- Lecture notes: [`lectures/07_docker_aws/README.md`](../../../lectures/07_docker_aws/README.md)
+- Slides: [`resources/lecture06_docker_aws.pdf`](../../../resources/MANIFEST.md)

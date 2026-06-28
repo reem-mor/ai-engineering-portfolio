@@ -17,7 +17,7 @@
         "MCP_MODE": "stdio",
         "LOG_LEVEL": "error",
         "DISABLE_CONSOLE_OUTPUT": "true",
-        "N8N_API_URL": "https://reemmor.app.n8n.cloud",
+        "N8N_API_URL": "${env:N8N_API_URL}",
         "N8N_API_KEY": "${env:N8N_API_KEY}"
       }
     },
@@ -27,8 +27,8 @@
       "args": ["awslabs.aws-api-mcp-server@latest"],
       "timeout": 120000,
       "env": {
-        "AWS_PROFILE": "reemmor",
-        "AWS_REGION": "us-east-1",
+        "AWS_PROFILE": "${env:AWS_PROFILE}",
+        "AWS_REGION": "${env:AWS_REGION}",
         "FASTMCP_LOG_LEVEL": "ERROR"
       }
     },
@@ -38,8 +38,8 @@
       "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
       "timeout": 120000,
       "env": {
-        "AWS_PROFILE": "reemmor",
-        "AWS_REGION": "us-east-1",
+        "AWS_PROFILE": "${env:AWS_PROFILE}",
+        "AWS_REGION": "${env:AWS_REGION}",
         "FASTMCP_LOG_LEVEL": "ERROR",
         "BEDROCK_KB_RERANKING_ENABLED": "false"
       }
@@ -53,40 +53,6 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"],
-      "timeout": 120000
-    },
-
-    "course-tools": {
-      "command": "${workspaceFolder}/lectures/08_mcp/.venv/Scripts/python.exe",
-      "args": ["${workspaceFolder}/lectures/08_mcp/server/tools_server.py"],
-      "timeout": 120000,
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
-
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "timeout": 120000,
-      "env": {
-        "CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
-      }
-    },
-
-    "perplexity": {
-      "command": "npx",
-      "args": ["-yq", "@perplexity-ai/mcp-server"],
-      "timeout": 120000,
-      "env": {
-        "PERPLEXITY_API_KEY": "${env:PERPLEXITY_API_KEY}"
-      }
-    },
-
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
       "timeout": 120000
     }
   }

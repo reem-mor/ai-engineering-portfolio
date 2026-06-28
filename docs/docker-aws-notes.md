@@ -13,7 +13,7 @@ Quick reference for container and cloud labs in this repository.
 
 ## Homework 05 — EC2 / Docker / Nginx lab
 
-**Handout:** [`resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx`](../resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx)
+**Handout:** [`resources/handouts/ubuntu-ec2-docker-nginx-student-exercise.docx`](../resources/MANIFEST.md)
 
 **Submission folder:** [`homework/hw05/nginx-docker-lab/`](../homework/hw05/nginx-docker-lab/)
 
@@ -47,11 +47,11 @@ Evidence lives in [`homework/hw05/nginx-docker-lab/screenshots/`](../homework/hw
 
 Lecture diagram: [`lectures/07_docker_aws/aws_architecture.mermaid`](../lectures/07_docker_aws/aws_architecture.mermaid)
 
-Slides: [`resources/lecture06_docker_aws.pdf`](../resources/lecture06_docker_aws.pdf)
+Slides: [`resources/lecture06_docker_aws.pdf`](../resources/MANIFEST.md)
 
 ## Bedrock + Flask project (course guideline)
 
-For the Amazon Bedrock Knowledge Base + Flask + EC2 track, see [`resources/handouts/bedrock-kb-flask-project-guideline.docx`](../resources/handouts/bedrock-kb-flask-project-guideline.docx).
+For the Amazon Bedrock Knowledge Base + Flask + EC2 track, see [`resources/handouts/bedrock-kb-flask-project-guideline.docx`](../resources/MANIFEST.md).
 
 ## Security reminders
 
