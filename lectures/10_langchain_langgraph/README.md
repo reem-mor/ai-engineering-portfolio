@@ -16,6 +16,7 @@ You will:
 6. Complete **Exercise 02**: Iris K-means clustering (pure sklearn, scatter plot).
 7. Complete **Exercise 03**: spam decision tree (pure sklearn, rule export).
 8. Complete **Exercise 04**: spam random forest (pure sklearn, feature importances).
+9. Complete **Exercise 05**: Titanic gradient boosting (XGBoost, LightGBM, CatBoost on shared hw03 dataset).
 
 ---
 
@@ -30,6 +31,7 @@ You will:
 - Wisconsin breast cancer dataset: feature selection, train/test split, CLI prediction
 - Iris dataset: two-feature K-means, centroid labeling by petal length, visualization
 - Toy spam tables: decision tree rules and random forest voting
+- Titanic survival: binary features + gradient boosting (XGBoost, LightGBM, CatBoost)
 
 ---
 
@@ -58,7 +60,7 @@ copy .env.example .env
 # Edit .env with your OPENAI_API_KEY
 ```
 
-ML demos (`demos/ml/01`–`03`) and exercises 01–04 do **not** require an API key.
+ML demos (`demos/ml/01`–`03`) and exercises 01–05 do **not** require an API key.
 
 ---
 
@@ -161,6 +163,21 @@ The script will:
 
 No API key required.
 
+### Exercise 05 — Titanic gradient boosting (offline)
+
+```powershell
+python exercises\exercise_05_titanic_gradient_boosting.py
+```
+
+The script will:
+
+1. Load the shared Titanic dataset from `homework/hw03/data/titanic.csv`
+2. Build three binary features: `is_female`, `is_child`, `is_first_class`
+3. Train XGBoost, LightGBM, and CatBoost with a stratified train/validation split
+4. Print validation accuracy, feature importances, and an example survival probability
+
+No API key required.
+
 ### Unit tests (offline)
 
 ```powershell
@@ -174,8 +191,9 @@ python -m pytest tests -q
 1. Virtual environment exists and `pip install -r requirements.txt` succeeds.
 2. `python demos\ml\01_supervised_spam.py` prints spam probability and accuracy.
 3. `python demos\langchain\02_document_loaders.py` loads `data/risk_analysis_report.txt`.
-4. `python -m pytest tests -q` passes.
-5. No secrets committed (`git status` should not include `.env`).
+4. `python exercises\exercise_05_titanic_gradient_boosting.py` prints three booster results.
+5. `python -m pytest tests -q` passes.
+6. No secrets committed (`git status` should not include `.env`).
 
 ---
 
@@ -183,7 +201,7 @@ python -m pytest tests -q
 
 | Path | Purpose |
 |------|---------|
-| `lecture_config.py` | Shared paths and `OPENAI_API_KEY` loading |
+| `lecture_config.py` | Shared paths (including Titanic CSV) and `OPENAI_API_KEY` loading |
 | `demos/ml/` | scikit-learn demos (01–03) + sklearn+LangChain combo (04) |
 | `demos/langchain/` | Memory chat, document loaders, RAG Q&A |
 | `demos/langgraph/` | Support router graph, loan decision chains |
@@ -196,10 +214,13 @@ python -m pytest tests -q
 | `exercises/exercise_04_spam_random_forest.py` | Spam random forest + importances |
 | `exercises/spam_forest_model.py` | Random forest train/predict helpers |
 | `exercises/spam_email_data.py` | Shared toy spam feature tables |
+| `exercises/exercise_05_titanic_gradient_boosting.py` | Titanic gradient boosting comparison |
+| `exercises/titanic_boosting_model.py` | Titanic load/train helpers (used by tests) |
 | `tests/test_breast_cancer_exercise.py` | Offline pytest for exercise logic |
 | `tests/test_iris_kmeans_exercise.py` | Offline pytest for Iris K-means exercise |
 | `tests/test_spam_tree_exercise.py` | Offline pytest for spam decision tree |
 | `tests/test_spam_forest_exercise.py` | Offline pytest for spam random forest |
+| `tests/test_titanic_boosting_exercise.py` | Offline pytest for Titanic gradient boosting |
 | `data/risk_analysis_report.txt` | Sample document for RAG demos |
 | `docs/` | ASCII flow diagrams |
 | `.env.example` | `OPENAI_API_KEY` template |

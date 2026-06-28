@@ -12,7 +12,7 @@ The program checks that the passenger data is legal, places the passenger in the
 
 ## Features
 
-- Loads the Titanic dataset from `titanic.csv`
+- Loads the Titanic dataset from `data/titanic.csv`
 - Validates that required columns exist
 - Cleans important dataset fields before using them
 - Collects passenger details from the user
@@ -111,7 +111,8 @@ Example:
 ```text
 .
 ├── titanic_ticket.py
-├── titanic.csv
+├── data/
+│   └── titanic.csv
 ├── ticket.txt
 └── test_titanic_ticket.md, titanic_ticket_
 ```
@@ -122,7 +123,7 @@ Make sure that:
 
 - Python is installed
 - `pandas` is installed
-- `titanic.csv` is in the same folder as the program
+- `data/titanic.csv` exists relative to the program
 
 Run the program with:
 
