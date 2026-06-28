@@ -29,7 +29,7 @@ import pytest
 import titanic_ticket as tt
 
 HERE = Path(__file__).resolve().parent
-DATASET_PATH = Path(__file__).resolve().parent / "titanic.csv"
+DATASET_PATH = Path(__file__).resolve().parent / "data" / "titanic.csv"
 OUTPUT_PATH = Path(__file__).resolve().parent / "ticket.txt"
 
 
@@ -41,7 +41,7 @@ OUTPUT_PATH = Path(__file__).resolve().parent / "ticket.txt"
 @pytest.fixture(scope="module")
 def dataset_path() -> Path:
     """Path to the real Titanic dataset."""
-    path = Path(__file__).resolve().parent / "titanic.csv"
+    path = Path(__file__).resolve().parent / "data" / "titanic.csv"
     if not path.exists():
         pytest.fail(f"titanic.csv was not found at: {path}")
     return path

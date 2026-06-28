@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 LECTURE_ROOT = Path(__file__).resolve().parent
 DATA_DIR = LECTURE_ROOT / "data"
+REPO_ROOT = LECTURE_ROOT.parents[1]
+TITANIC_CSV = REPO_ROOT / "homework" / "hw03" / "data" / "titanic.csv"
 
 
 def load_lecture_env() -> None:

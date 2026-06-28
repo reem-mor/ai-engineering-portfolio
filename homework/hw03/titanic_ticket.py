@@ -41,7 +41,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 
 # Input and output files
-DATASET_PATH = Path(__file__).resolve().parent / "titanic.csv"
+DATASET_PATH = Path(__file__).resolve().parent / "data" / "titanic.csv"
 OUTPUT_PATH = Path(__file__).resolve().parent / "ticket.txt"
 
 # Columns required from the Titanic dataset
