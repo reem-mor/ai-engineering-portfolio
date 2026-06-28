@@ -276,14 +276,14 @@ def summary(rows):
         by_sev[r["severity"]] = by_sev.get(r["severity"], 0) + 1
     print(f"\nTotal alerts: {len(rows)}")
     print(f"Window: T+0 to T+{DEMO_DURATION_SECONDS}s")
-    print(f"Severity mix:")
+    print("Severity mix:")
     for s in ["P1", "P2", "P3", "P4"]:
         n = by_sev.get(s, 0)
         pct = 100.0 * n / len(rows)
         print(f"  {s}: {n:>4} ({pct:5.1f}%)")
 
     p1s = [r for r in rows if r["severity"] == "P1"]
-    print(f"\nP1 trigger:")
+    print("\nP1 trigger:")
     for r in p1s:
         print(f"  {r['alert_id']} at T+{r['seconds_offset']}s — {r['service']} on {r['environment']}")
         print(f"    {r['title']}")

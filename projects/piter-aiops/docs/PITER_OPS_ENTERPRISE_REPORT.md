@@ -18,7 +18,7 @@
 | E2E | Skipped (`demo-polish-v1` gate) | **5/5 Playwright** at v3 |
 | Bedrock | Working on EC2 | Verified read-only; honest source labels preserved |
 
-Reference screenshots (prior session): `reference-home.png`, `reference-chat.png`, `reference-storm.png`, `current-home.png`.
+Reference screenshots (prior session): [`reference-home.png`](../screenshots/reference/reference-home.png), [`reference-chat.png`](../screenshots/reference/reference-chat.png), [`reference-storm.png`](../screenshots/reference/reference-storm.png), [`current-home.png`](../screenshots/reference/current-home.png).
 
 ---
 
