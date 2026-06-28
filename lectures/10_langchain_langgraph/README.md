@@ -4,19 +4,20 @@
 
 ## Overview
 
-This lecture connects **classical ML decision-making** (supervised, unsupervised, decision trees) with **LangChain** (memory, document loading, RAG) and **LangGraph** (stateful routing graphs).
+This lecture connects **classical ML decision-making** (supervised, unsupervised, decision trees, gradient boosting) and **deep learning** (PyTorch transfer learning) with **LangChain** (memory, document loading, RAG) and **LangGraph** (stateful routing graphs).
 
 You will:
 
 1. Train and evaluate small scikit-learn models (offline).
-2. Build LangChain pipelines for chat memory, document loading, and RAG Q&A.
-3. Route support tickets with a LangGraph `StateGraph`.
-4. Combine sklearn intent classification with LangChain RAG in one support assistant.
-5. Complete **Exercise 01**: breast cancer diagnosis predictor (pure sklearn, interactive CLI).
-6. Complete **Exercise 02**: Iris K-means clustering (pure sklearn, scatter plot).
-7. Complete **Exercise 03**: spam decision tree (pure sklearn, rule export).
-8. Complete **Exercise 04**: spam random forest (pure sklearn, feature importances).
-9. Complete **Exercise 05**: Titanic gradient boosting (XGBoost, LightGBM, CatBoost on shared hw03 dataset).
+2. Run a pretrained PyTorch MobileNetV3 classifier on a sample image (offline; downloads ImageNet weights on first run).
+3. Build LangChain pipelines for chat memory, document loading, and RAG Q&A.
+4. Route support tickets with a LangGraph `StateGraph`.
+5. Combine sklearn intent classification with LangChain RAG in one support assistant.
+6. Complete **Exercise 01**: breast cancer diagnosis predictor (pure sklearn, interactive CLI).
+7. Complete **Exercise 02**: Iris K-means clustering (pure sklearn, scatter plot).
+8. Complete **Exercise 03**: spam decision tree (pure sklearn, rule export).
+9. Complete **Exercise 04**: spam random forest (pure sklearn, feature importances).
+10. Complete **Exercise 05**: Titanic gradient boosting (XGBoost, LightGBM, CatBoost on shared hw03 dataset).
 
 ---
 
@@ -32,6 +33,7 @@ You will:
 - Iris dataset: two-feature K-means, centroid labeling by petal length, visualization
 - Toy spam tables: decision tree rules and random forest voting
 - Titanic survival: binary features + gradient boosting (XGBoost, LightGBM, CatBoost)
+- PyTorch: pretrained MobileNetV3, ImageNet top-k inference, CPU/GPU device selection
 
 ---
 
@@ -60,7 +62,7 @@ copy .env.example .env
 # Edit .env with your OPENAI_API_KEY
 ```
 
-ML demos (`demos/ml/01`–`03`) and exercises 01–05 do **not** require an API key.
+ML demos (`demos/ml/01`–`05`) and exercises 01–05 do **not** require an API key.
 
 ---
 
@@ -72,6 +74,14 @@ ML demos (`demos/ml/01`–`03`) and exercises 01–05 do **not** require an API 
 python demos\ml\01_supervised_spam.py
 python demos\ml\02_unsupervised_kmeans.py
 python demos\ml\03_decision_tree_loan.py
+python demos\ml\05_pytorch_mobilenet.py
+```
+
+The PyTorch demo loads pretrained **MobileNetV3-Small** (ImageNet), reads `data/sample.jpg` (or a path you pass on the command line), and prints top-5 label probabilities as JSON. First run downloads model weights (~10 MB).
+
+```powershell
+python demos\ml\05_pytorch_mobilenet.py
+python demos\ml\05_pytorch_mobilenet.py path\to\your\img.png
 ```
 
 ### Part 2 — LangChain (requires `OPENAI_API_KEY`)
@@ -190,10 +200,11 @@ python -m pytest tests -q
 
 1. Virtual environment exists and `pip install -r requirements.txt` succeeds.
 2. `python demos\ml\01_supervised_spam.py` prints spam probability and accuracy.
-3. `python demos\langchain\02_document_loaders.py` loads `data/risk_analysis_report.txt`.
-4. `python exercises\exercise_05_titanic_gradient_boosting.py` prints three booster results.
-5. `python -m pytest tests -q` passes.
-6. No secrets committed (`git status` should not include `.env`).
+3. `python demos\ml\05_pytorch_mobilenet.py` prints top-k ImageNet predictions.
+4. `python demos\langchain\02_document_loaders.py` loads `data/risk_analysis_report.txt`.
+5. `python exercises\exercise_05_titanic_gradient_boosting.py` prints three booster results.
+6. `python -m pytest tests -q` passes.
+7. No secrets committed (`git status` should not include `.env`).
 
 ---
 
@@ -202,7 +213,7 @@ python -m pytest tests -q
 | Path | Purpose |
 |------|---------|
 | `lecture_config.py` | Shared paths (including Titanic CSV) and `OPENAI_API_KEY` loading |
-| `demos/ml/` | scikit-learn demos (01–03) + sklearn+LangChain combo (04) |
+| `demos/ml/` | scikit-learn demos (01–03), PyTorch MobileNet (05), sklearn+LangChain combo (04) |
 | `demos/langchain/` | Memory chat, document loaders, RAG Q&A |
 | `demos/langgraph/` | Support router graph, loan decision chains |
 | `exercises/exercise_01_breast_cancer_predictor.py` | Interactive breast cancer classifier |
@@ -216,12 +227,15 @@ python -m pytest tests -q
 | `exercises/spam_email_data.py` | Shared toy spam feature tables |
 | `exercises/exercise_05_titanic_gradient_boosting.py` | Titanic gradient boosting comparison |
 | `exercises/titanic_boosting_model.py` | Titanic load/train helpers (used by tests) |
+| `exercises/mobilenet_model.py` | MobileNetV3 load/predict helpers (used by tests) |
 | `tests/test_breast_cancer_exercise.py` | Offline pytest for exercise logic |
 | `tests/test_iris_kmeans_exercise.py` | Offline pytest for Iris K-means exercise |
 | `tests/test_spam_tree_exercise.py` | Offline pytest for spam decision tree |
 | `tests/test_spam_forest_exercise.py` | Offline pytest for spam random forest |
 | `tests/test_titanic_boosting_exercise.py` | Offline pytest for Titanic gradient boosting |
+| `tests/test_mobilenet_demo.py` | Offline pytest for PyTorch MobileNet demo |
 | `data/risk_analysis_report.txt` | Sample document for RAG demos |
+| `data/sample.jpg` | Sample image for MobileNet classification demo |
 | `docs/` | ASCII flow diagrams |
 | `.env.example` | `OPENAI_API_KEY` template |
 
