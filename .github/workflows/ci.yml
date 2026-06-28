@@ -39,6 +39,8 @@ jobs:
             dir: projects/incident-assistant-rag/backend
           - area: incident-rag-bedrock
             dir: projects/incident-rag-bedrock
+          - area: langchain-langgraph-lecture
+            dir: lectures/10_langchain_langgraph
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
