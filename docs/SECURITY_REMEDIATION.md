@@ -32,7 +32,8 @@ by `.env.example`. Track them as environment configuration, not literals in trac
 
 The Amdocs lecture PDFs and handouts were removed from the working tree (see
 [`resources/MANIFEST.md`](../resources/MANIFEST.md)), but they remain in history, so `.git`
-is still large (~59 MB). To reclaim space and stop redistributing the binaries via history,
+is still large (**~229 MB** on disk as of 2026-06-29; clone size unchanged by untracking
+build artifacts alone). To reclaim space and stop redistributing the binaries via history,
 rewrite history deliberately on a fresh clone, then force-push.
 
 > ⚠️ History rewrite. Coordinate first (it changes commit hashes); take a backup clone.
@@ -78,7 +79,7 @@ locally with one of the placeholder-named services (OpenAI, Gemini, Hugging Face
 ## 5. Verification checklist
 
 - [ ] `git status` shows no `.env` / key-bearing files before any commit.
-- [ ] `.gitignore` covers `.env`, `*.pem`, `*.key`, `.playwright-mcp/`, FAISS, `*.sqlite`,
-      `node_modules`, `.venv` — confirmed.
+- [ ] `.gitignore` covers `.env`, `.cursor/mcp.json`, credential JSON, `*.pem`, `*.key`,
+      `.playwright-mcp/`, FAISS, `*.sqlite`, `node_modules`, `.venv` — confirmed.
 - [ ] PITER live AWS identifiers parameterized before public extraction.
 - [ ] (Optional) history purge run; `.git` size reduced; binaries gone from history.

@@ -15,6 +15,7 @@ backend/venv/
 backend/.venv/
 backend/.venv312/
 .venv312/
+backend/docs/architecture.png
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

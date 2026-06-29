@@ -1,6 +1,6 @@
 # =============================================================================
 # PITER AiOps — local artifacts only (secrets, caches, generated output)
-# Committed on purpose: app/static/spa/, data/, knowledge_base/, requirements*.txt
+# SPA: build with `cd frontend && npm run build` → app/static/spa/ (gitignored)
 # =============================================================================
 
 # --- Secrets & credentials (never commit) ---
@@ -40,11 +40,13 @@ build/
 *.egg
 pip-wheel-metadata/
 
-# --- Node / frontend (source lives in frontend/; SPA build is committed under app/static/spa/) ---
+# --- Node / frontend (source in frontend/; production bundle → app/static/spa/) ---
 node_modules/
 frontend/node_modules/
 frontend/.vite/
 frontend/dist/
+app/static/spa/assets/
+app/static/spa/index.html
 scripts/node_modules/
 scripts/ec2-notification.env
 

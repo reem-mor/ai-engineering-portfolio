@@ -409,7 +409,7 @@ gunicorn -b 0.0.0.0:8080 wsgi:app
 
 <br/>
 
-The production UI lives in `frontend/` (design ported from **incident-iq-compass**). Build output is written to `app/static/spa/` and served by Flask when present.
+The production UI lives in `frontend/` (design ported from **incident-iq-compass**). Build output is written to `app/static/spa/` and served by Flask when present. **`app/static/spa/` is gitignored** — run `npm run build` before Docker or production Flask.
 
 ```bash
 # Terminal 1 — API

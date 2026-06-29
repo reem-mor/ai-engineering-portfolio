@@ -97,6 +97,8 @@ Full readiness matrix: [`docs/readiness_report.md`](docs/readiness_report.md) ·
 
 ## Quick start
 
+> **SPA build:** `app/static/spa/` is **not** in version control. Run `npm run build` in `frontend/` before Docker or Flask will serve the UI.
+
 ```powershell
 cd projects/piter-aiops
 py -3.12 -m pip install -r requirements-dev.txt

@@ -87,4 +87,4 @@ Document-only deploy plan. **Do not run SSH from CI.** Execute from your worksta
 
 ## Rollback
 
-Redeploy the previous image tag or checkout commit `pre-frontend-rebuild snapshot` and rebuild. Previous SPA bundle is in git history under `app/static/spa/` on that commit.
+Redeploy the previous image tag or checkout a prior commit and rebuild. SPA bundles are **not** in version control — rebuild with `cd frontend && npm run build` from the target commit.
