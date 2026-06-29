@@ -16,7 +16,9 @@ from pydantic import BaseModel, Field
 from rapidapi_client import (
     RapidApiClient,
     RapidApiNotConfiguredError,
+    RapidApiNotFoundError,
     RapidApiSettings,
+    RapidApiUpstreamError,
 )
 
 load_dotenv()
@@ -80,9 +82,13 @@ app.add_middleware(
 class TitleRequest(BaseModel):
     title: str = Field(..., min_length=1, description="Movie or TV show title")
 
+    model_config = {"str_strip_whitespace": True}
+
 
 class CountryRequest(BaseModel):
     country_name: str = Field(..., min_length=1, description="Country name, e.g. Brazil")
+
+    model_config = {"str_strip_whitespace": True}
 
 
 class StreamingRequest(BaseModel):
@@ -91,8 +97,11 @@ class StreamingRequest(BaseModel):
         ...,
         min_length=2,
         max_length=2,
+        pattern=r"^[A-Za-z]{2}$",
         description="ISO 3166-1 alpha-2 country code, e.g. US",
     )
+
+    model_config = {"str_strip_whitespace": True}
 
 
 class ToolResponse(BaseModel):
@@ -132,14 +141,38 @@ def _handle_api_call(
             elapsed_ms,
         )
         return ToolResponse(ok=False, source=source, error=str(exc))
-    except Exception as exc:  # noqa: BLE001 — surface safe message to Open WebUI
+    except RapidApiNotFoundError as exc:
         elapsed_ms = (time.perf_counter() - started) * 1000
-        logger.exception(
-            "tool=%s ok=false error=external latency_ms=%.1f",
+        logger.warning(
+            "tool=%s ok=false error=not_found latency_ms=%.1f",
             tool_name,
             elapsed_ms,
         )
-        return ToolResponse(ok=False, source=source, error=f"External API error: {exc}")
+        return ToolResponse(ok=False, source=source, error=str(exc))
+    except RapidApiUpstreamError as exc:
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        logger.warning(
+            "tool=%s ok=false error=upstream latency_ms=%.1f",
+            tool_name,
+            elapsed_ms,
+        )
+        return ToolResponse(ok=False, source=source, error=str(exc))
+    except ValueError as exc:
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        logger.warning(
+            "tool=%s ok=false error=validation latency_ms=%.1f",
+            tool_name,
+            elapsed_ms,
+        )
+        return ToolResponse(ok=False, source=source, error=str(exc))
+    except Exception:  # noqa: BLE001 — surface safe message to Open WebUI
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        logger.exception(
+            "tool=%s ok=false error=unexpected latency_ms=%.1f",
+            tool_name,
+            elapsed_ms,
+        )
+        return ToolResponse(ok=False, source=source, error="Unexpected tool server error")
 
 
 @app.get("/health", operation_id="health", summary="Health check", tags=["meta"])

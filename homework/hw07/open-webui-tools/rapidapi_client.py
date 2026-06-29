@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -17,6 +19,8 @@ STREAMING_HOST_ENV = "RAPIDAPI_STREAMING_HOST"
 DEFAULT_OMDB_HOST = "imdb8.p.rapidapi.com"
 DEFAULT_COUNTRIES_HOST = "restcountries.p.rapidapi.com"
 DEFAULT_STREAMING_HOST = "streaming-availability.p.rapidapi.com"
+
+ISO_ALPHA2 = re.compile(r"^[A-Za-z]{2}$")
 
 _MOCK_COUNTRY_FIXTURES: dict[str, dict[str, Any]] = {
     "brazil": {
@@ -37,11 +41,25 @@ _MOCK_COUNTRY_FIXTURES: dict[str, dict[str, Any]] = {
         "region": "Europe",
         "population": 83240525,
     },
+    "united states": {
+        "name": "United States",
+        "capital": "Washington, D.C.",
+        "region": "Americas",
+        "population": 331002651,
+    },
 }
 
 
 class RapidApiNotConfiguredError(Exception):
     """Raised when RAPIDAPI_KEY is missing."""
+
+
+class RapidApiNotFoundError(Exception):
+    """Raised when upstream returns no matching records."""
+
+
+class RapidApiUpstreamError(Exception):
+    """Raised when upstream HTTP call fails."""
 
 
 def is_mock_mode() -> bool:
@@ -114,12 +132,15 @@ def _normalize_country_payload(payload: dict[str, Any] | list[Any]) -> dict[str,
 
 def _normalize_title_search(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize IMDb autocomplete and mock payloads for Open WebUI."""
-    if "results" in payload:
-        return payload
-    suggestions = payload.get("d") or payload.get("data") or payload.get("results")
-    if isinstance(suggestions, list):
+    suggestions = payload.get("results")
+    if isinstance(suggestions, list) and suggestions and isinstance(suggestions[0], dict):
+        if all(key in suggestions[0] for key in ("title",)) or len(suggestions[0]) > 1:
+            return {"results": suggestions[:5]}
+
+    raw = payload.get("d") or payload.get("data") or payload.get("results")
+    if isinstance(raw, list):
         results = []
-        for entry in suggestions[:5]:
+        for entry in raw[:5]:
             if isinstance(entry, dict):
                 results.append(entry)
             elif isinstance(entry, str):
@@ -168,8 +189,14 @@ class RapidApiClient:
             "X-RapidAPI-Host": host,
         }
         url = f"https://{host}{path}"
-        response = self._http.request(method, url, headers=headers, params=params)
-        response.raise_for_status()
+        try:
+            response = self._http.request(method, url, headers=headers, params=params)
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RapidApiUpstreamError("External API request failed") from exc
+        except httpx.HTTPError as exc:
+            raise RapidApiUpstreamError("External API request failed") from exc
+
         payload = response.json()
         if isinstance(payload, dict):
             return payload
@@ -192,7 +219,7 @@ class RapidApiClient:
             host=self._settings.omdb_host,
             method="GET",
             path="/auto-complete",
-            params={"q": title},
+            params={"q": title.strip()},
         )
         return _normalize_title_search(raw)
 
@@ -207,26 +234,34 @@ class RapidApiClient:
                 "name": country_name.strip().title(),
                 "capital": "Unknown",
                 "region": "Unknown",
+                "population": None,
                 "mock": True,
             }
         self._settings.require_live_credentials()
+        encoded = quote(slug, safe="")
         raw = self._request(
             host=self._settings.countries_host,
             method="GET",
-            path=f"/v3.1/name/{slug}",
+            path=f"/v3.1/name/{encoded}",
             params={"fields": "name,capital,region,population"},
         )
         normalized = _normalize_country_payload(raw)
+        if not normalized.get("name"):
+            raise RapidApiNotFoundError(f"No country found for: {country_name.strip()}")
         return normalized
 
     def streaming_status(self, title: str, country_code: str) -> dict[str, Any]:
         """Check streaming availability for a title in a country (ISO 3166-1 alpha-2)."""
+        code = country_code.strip().upper()
+        if not ISO_ALPHA2.match(code):
+            raise ValueError("country_code must be ISO 3166-1 alpha-2 letters")
+
         if self._settings.mock_mode:
             return {
                 "result": [
                     {
                         "title": title,
-                        "country": country_code.strip().upper(),
+                        "country": code,
                         "streamingOptions": [{"service": "netflix", "mock": True}],
                     }
                 ],
@@ -238,8 +273,8 @@ class RapidApiClient:
             method="GET",
             path="/shows/search/title",
             params={
-                "title": title,
-                "country": country_code.strip().upper(),
+                "title": title.strip(),
+                "country": code,
                 "output_language": "en",
                 "show_type": "all",
             },
