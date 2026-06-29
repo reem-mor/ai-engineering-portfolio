@@ -173,6 +173,8 @@ npx playwright test submission-screenshots.spec.ts
 npx playwright test tool-server-openapi.spec.ts   # optional OpenAPI evidence
 ```
 
+**Cloud / CPU-only CI:** Ollama chat may segfault without GPU. `start-stack.sh` also starts `scripts/mock-llm-server.py` on `:8088`; Playwright auto-configures Open WebUI to use `hw07-mock-chat` for screenshots 04 and 06. Embeddings still use Ollama `nomic-embed-text` for KB indexing.
+
 ---
 
 ## Repository layout
@@ -202,7 +204,7 @@ hw07/
 | Screenshot shows skeleton bars | Re-run Playwright; model still streaming — wait for full reply |
 | Duplicate tool servers in screenshot 05 | `docker compose down -v` then restart stack |
 | `RAPIDAPI_KEY` errors | Set key in `.env` or use `HW07_MOCK_RAPIDAPI=1` |
-| Model not found | `ollama pull llama3.2:3b` |
+| Model not found | `ollama pull llama3.2:3b` (or use mock LLM on `:8088` for Playwright) |
 
 ---
 
