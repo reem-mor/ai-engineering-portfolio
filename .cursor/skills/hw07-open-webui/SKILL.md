@@ -68,7 +68,14 @@ Playwright (stack must be running):
 
 ```bash
 cd homework/hw07/e2e
-npm install && npx playwright test submission-screenshots.spec.ts
+npm install && npx playwright test e2e-pipeline.spec.ts          # Steps 1–3 (API layer)
+npm install && npx playwright test submission-screenshots.spec.ts # Step 4 (full UI)
+```
+
+Backward smoke (curl + Playwright):
+
+```bash
+homework/hw07/scripts/e2e-smoke.sh
 ```
 
 ## Implementation rules
