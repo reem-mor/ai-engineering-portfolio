@@ -5,7 +5,7 @@ Stack: Open WebUI `0.6.15` (Docker `:3001`), Ollama `llama3.2:3b`, tool server `
 ## pytest (`open-webui-tools/tests/`)
 
 ```text
-15 passed
+17 passed
 ```
 
 Coverage highlights:

@@ -33,7 +33,7 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for flow diagrams and security notes.
 | Local Python server on `:5005` calling RapidAPI | [`open-webui-tools/tools_server.py`](open-webui-tools/tools_server.py), [`screenshots/05`](screenshots/05-tool-server-configured.png) |
 | Register tool server in Open WebUI | [`screenshots/05`](screenshots/05-tool-server-configured.png) |
 | KB + live tool chat demos | [`screenshots/04`](screenshots/04-kb-chat-answer.png), [`06`](screenshots/06-tool-chat-answer.png) |
-| Automated tests | 15 pytest tests — see [`TEST-RESULTS.md`](TEST-RESULTS.md) |
+| Automated tests | 17 pytest tests — see [`TEST-RESULTS.md`](TEST-RESULTS.md) |
 
 ## Repository layout
 

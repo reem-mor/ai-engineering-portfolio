@@ -7,6 +7,7 @@ import {
   KB_COLLECTION_NAME,
   PROMPTS,
   TOOL_ANSWER_HINTS,
+  TOOL_OPERATION_HINTS,
   TOOL_SERVER_URL,
 } from "./fixtures/prompts.js";
 import {
@@ -22,6 +23,7 @@ import {
   uploadCsvToCollection,
   waitForAssistantReply,
   waitForKnowledgeIndexed,
+  waitForToolInvocation,
 } from "./helpers/open-webui.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -79,6 +81,7 @@ test.describe("HW07 submission screenshots", () => {
 
     await enableToolsInChat(page);
     await sendChatMessage(page, PROMPTS.liveCountryCapital);
+    await waitForToolInvocation(page, TOOL_OPERATION_HINTS);
     await waitForAssistantReply(page, TOOL_ANSWER_HINTS);
     await screenshot(page, path.join(SCREENSHOT_DIR, "06-tool-chat-answer.png"));
   });
