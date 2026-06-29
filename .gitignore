@@ -28,10 +28,38 @@ build/
 node_modules/
 *.egg
 
-# Environment variables and secrets
+# Environment variables and secrets — never commit real values
 .env
 .env.*
 !.env.example
+*.env.local
+*.env.production
+*.env.development
+
+# Credential files (Kaggle CLI, GCP, OAuth exports, etc.)
+kaggle.json
+**/kaggle.json
+credentials.json
+**/credentials.json
+secrets.json
+**/secrets.json
+*.credentials
+auth.json
+**/auth.json
+**/token.json
+service-account*.json
+client_secret*.json
+google-credentials.json
+.netrc
+.npmrc
+
+# Cloud / TLS key material
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
 
 # Project-generated RAG indexes and local artifacts
 knowledge_base/faiss_index/
@@ -65,7 +93,8 @@ Thumbs.db
 .claude/
 *.swp
 
-# Cursor: shared project config is committed; local plans stay ignored
+# Cursor: rules committed; local MCP + plans stay ignored
+.cursor/mcp.json
 .cursor/plans/
 
 # Incident Assistant RAG - generated data
@@ -79,10 +108,12 @@ projects/incident-assistant-rag/data/faiss_index/*
 !projects/incident-assistant-rag/data/chunks/.gitkeep
 !projects/incident-assistant-rag/data/faiss_index/.gitkeep
 
+# ML training artifacts (CatBoost, etc.)
+catboost_info/
 
-.aws/
-*.pem
-*.key
+# Frontend SPA build output (source lives in */frontend/; rebuild with npm run build)
+**/app/static/spa/assets/
+**/app/static/spa/index.html
 
 # Large local archives
 *.tar

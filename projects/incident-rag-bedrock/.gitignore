@@ -20,3 +20,5 @@ build/
 scripts/node_modules/
 frontend/node_modules/
 frontend/.vite/
+app/static/spa/assets/
+app/static/spa/index.html
