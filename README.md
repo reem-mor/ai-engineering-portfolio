@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/badge/CI-ruff%20%2B%20pytest-success"></a>
+  <a href="https://github.com/reem-mor/amdocs-ai-course/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/reem-mor/amdocs-ai-course/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-blue">
   <img alt="Stack" src="https://img.shields.io/badge/Stack-FastAPI%20%C2%B7%20Flask%20%C2%B7%20React-009688">
   <img alt="AI" src="https://img.shields.io/badge/AI-RAG%20%C2%B7%20AWS%20Bedrock%20%C2%B7%20FAISS-purple">
@@ -48,7 +48,8 @@ The serious, standalone projects — built as production-minded systems, each in
 
 | Project | What it is | Repo |
 |---------|------------|------|
-| **PITER AiOps** | AWS Bedrock-powered incident-response platform — agentic (Bedrock Agent + Action-Group tools), RAG over runbooks, session memory, alert-storm handling and safe escalation. Flask/React, Docker. | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) <sup>*(extraction in progress; currently also at [`projects/piter-aiops/`](projects/piter-aiops/))*</sup> |
+| **PITER AiOps** | AWS Bedrock-powered incident-response platform — agentic (Bedrock Agent + Action-Group tools), RAG over runbooks, session memory, alert-storm handling and safe escalation. Flask/React, Docker. | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
+| **course-assistant-bot** | Bilingual Telegram course-ops bot — schedule, homework, RAG recommendations, admin flows. Async Python, uv, Alembic, 200+ tests. | [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
 | **HINDSIGHT** | Intelligent incident-log / document analyst with semantic search — turns operational history into searchable, grounded answers. | [reem-mor/hindsight](https://github.com/reem-mor/hindsight) |
 
 **Core stack:** Python · FastAPI / Flask · AWS Bedrock · RAG (FAISS / pgvector) · Docker ·
@@ -58,18 +59,14 @@ n8n automation · React.
 
 ## Projects in this repo
 
-These are the course projects. The agentic flagship (PITER AiOps) is the most advanced and
-is being extracted to its own repo; the other two show the RAG progression.
+These are the **course projects** kept in this archive (capstone + learning iteration). Flagship work links out above.
 
 | Project | Folder | Stack | Status |
 |---------|--------|-------|--------|
-| **IncidentIQ** — Incident Assistant RAG | [`projects/incident-assistant-rag`](projects/incident-assistant-rag/) | FastAPI · OpenAI · local FAISS · React · Docker | **Featured capstone.** Full-stack RAG for incident ops: grounded answers, no-context refusal, source transparency, tests + evaluation. |
-| **PITER AiOps** | [`projects/piter-aiops`](projects/piter-aiops/) | Flask · AWS Bedrock **Agent** · React · Docker | **Flagship.** Agent + tools + memory + escalation. Moving to [its own repo](https://github.com/reem-mor/piter-aiops). |
-| **Incident RAG (Bedrock)** | [`projects/incident-rag-bedrock`](projects/incident-rag-bedrock/) | Flask · AWS Bedrock KB · React | **Learning iteration** — the Bedrock-managed-RAG stepping-stone that PITER grew from. |
-
-There is also **[`oz_veruach_bot/`](oz_veruach_bot/)** — a standalone bilingual (HE/EN)
-Telegram assistant for the course cohort (async, SQLAlchemy + Alembic, multi-LLM, Docker,
-strict typing + 200+ tests). It's a separate product living here for now.
+| **IncidentIQ** — Incident Assistant RAG | [`projects/incident-assistant-rag`](projects/incident-assistant-rag/) | FastAPI · OpenAI · local FAISS · React · Docker | **Featured capstone** — grounded RAG, tests + evaluation |
+| **Incident RAG (Bedrock)** | [`projects/incident-rag-bedrock`](projects/incident-rag-bedrock/) | Flask · AWS Bedrock KB · React | **Learning iteration** — stepping-stone to PITER |
+| **PITER AiOps** | [`projects/piter-aiops`](projects/piter-aiops/) | — | **Pointer** → [github.com/reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
+| **course-assistant-bot** | [`course-assistant-bot`](course-assistant-bot/) | — | **Pointer** → [github.com/reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
 
 ---
 
@@ -91,13 +88,13 @@ amdocs-ai-course/
 ├── docs/                     # course docs, architecture, audit, security
 ├── resources/MANIFEST.md     # course slides/handouts live in Drive (third-party IP)
 ├── lectures/                 # 01–09 lesson write-ups + demos
-├── homework/                 # hw01–hw06
+├── homework/                 # hw01–hw07
 ├── exercises/                # standalone labs
 │
-├── oz_veruach_bot/           # standalone Telegram bot (own product)
+├── course-assistant-bot/     # pointer → github.com/reem-mor/course-assistant-bot
 └── projects/
     ├── incident-assistant-rag/   # featured capstone (FastAPI + OpenAI + FAISS)
-    ├── piter-aiops/              # flagship (Bedrock agent) — extracting to own repo
+    ├── piter-aiops/              # pointer → github.com/reem-mor/piter-aiops
     └── incident-rag-bedrock/     # Bedrock-KB learning iteration
 ```
 

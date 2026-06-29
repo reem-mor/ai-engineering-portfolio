@@ -1,67 +1,99 @@
 # AGENTS.md
 
-Canonical, cross-tool guidance for AI coding agents working in this repository
-(Claude Code, Cursor, Codex, and others). Tool-specific files source this one:
-`CLAUDE.md` includes it via `@AGENTS.md`. Keep agent guidance here — not duplicated
-across tool configs.
+Canonical guidance for **Cursor**, **Claude Code**, **Codex**, and other coding agents.
+Tool-specific files source this document — do not duplicate long sections elsewhere.
+
+**Owner context:** Re'em Mor — **AI Engineer × SRE** · production ops in regulated environments.
 
 ## What this repository is
 
-`amdocs-ai-course` is **Re'em Mor's course + learning archive** for the Amdocs / Lab17
-AI-Augmented Software Engineering program. It is *not* the home of the flagship projects —
-those live in their own repositories (see "Featured work" in the root `README.md`). Treat
-this repo as a teaching/portfolio archive: keep it lean, honest, and reproducible.
+`amdocs-ai-course` is a **course + learning archive** (Amdocs / Lab17 AI-Augmented Software
+Engineering). Flagship products extract to their own repos — see root [`README.md`](README.md)
+Featured work. Keep this tree lean, honest, and reproducible.
 
 ## Repository map
 
 | Path | Role |
 |------|------|
-| `lectures/` | Per-lesson write-ups and runnable demos (**01–11**) |
-| `homework/` | Graded assignments (**hw01–hw07**) |
-| `exercises/` | Index to runnable labs (links only — no duplicate code) |
-| `docs/` | Course docs, architecture, audit, security, [`extraction/`](docs/extraction/) runbooks |
-| `resources/` | [`MANIFEST.md`](resources/MANIFEST.md) only — third-party slides **not** redistributed |
-| `projects/` | Portfolio projects — see [`projects/README.md`](projects/README.md) |
-| `oz_veruach_bot/` | Standalone Telegram product (**extraction-ready**; do not refactor internals) |
-| `scripts/` | Repo maintenance (e.g. project extraction) |
+| `lectures/` | Lessons **01–11** — demos colocated with notes |
+| `homework/` | Assignments **hw01–hw07** |
+| `exercises/` | Lab index (links only) |
+| `docs/` | Meta-docs · [`AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) for MCP/skills/CI |
+| `resources/MANIFEST.md` | Third-party slides — **not** in repo (IP) |
+| `projects/` | [`projects/README.md`](projects/README.md) — capstone / learning iteration / pointers |
+| `course-assistant-bot/` | Pointer → [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
+| `scripts/` | Dev bootstrap, MCP launcher, project extraction |
 
-### `projects/`
+## Engineering conventions (2026)
 
-- `incident-assistant-rag/` — **Featured capstone** (FastAPI + OpenAI + local FAISS)
-- `incident-rag-bedrock/` — **Learning iteration** (Flask + Bedrock KB; ancestor of PITER)
-- `piter-aiops/` — **Flagship copy** (Bedrock Agent + RAG); [`EXTRACTION.md`](projects/piter-aiops/EXTRACTION.md)
+| Area | Standard |
+|------|----------|
+| Python | **3.12** (`.python-version`) · pydantic v2 where used |
+| Package mgmt | `pip -r requirements.txt` per folder; `uv` in extracted [course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
+| Lint | `ruff check .` — config in [`pyproject.toml`](pyproject.toml) |
+| Tests | `pytest` per project; CI in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Encoding | UTF-8 only — never UTF-16 |
+| SPA | `app/static/spa/` gitignored — `cd frontend && npm run build` before Flask/Docker |
+| Commits | Conventional commits; scoped diffs; **do not push** unless asked |
+| Secrets | Env vars / `${env:VAR}` in MCP JSON — see [secrets rule](.cursor/rules/secrets-and-mcp-security.mdc) |
 
-## Conventions
+## Agent workflow
 
-- **Python 3.12** across the repo (`.python-version`). Prefer `uv` where a project already
-  uses it (`oz_veruach_bot`); plain `pip -r requirements.txt` elsewhere.
-- **Lint/format:** `ruff` (config in root `pyproject.toml`). Run `ruff check .` before commits.
-- **Tests:** `pytest` per project. CI (`.github/workflows/ci.yml`) runs ruff + pytest.
-- **Encoding:** all text files UTF-8. Never reintroduce UTF-16.
-- **SPA builds:** `app/static/spa/` is gitignored in Flask projects — run `npm run build` in `frontend/` before Docker/Flask.
-- Keep diffs scoped and reviewable; use clear, logically grouped commits.
+1. **Read** relevant README + [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) before editing.
+2. **Audit** — understand scope; minimal diffs only in this archive (flagships live in external repos).
+3. **Implement** minimal diff; match surrounding style.
+4. **Verify** — `ruff check .` and project `pytest` for touched areas.
+5. **Report** honestly if tests fail — never claim green when red.
 
-## Secrets & security (always applies)
+### SRE-minded defaults
 
-- **Never hardcode secrets** (API keys, tokens, AWS keys) in code, configs, or MCP JSON.
-  Reference them via environment-variable interpolation (`${env:VAR}`) or a gitignored
-  `.env`. Only sanitized `.env.example` files are committed.
-- For AWS, prefer `AWS_PROFILE` over raw access keys.
-- Do not commit live infrastructure identifiers (Bedrock KB/agent IDs, EC2 instance IDs,
-  public hostnames) into public-facing docs; parameterize them.
-- See `.cursor/rules/secrets-and-mcp-security.mdc` for the full rule.
-
-## Skills
-
-The canonical agent **skill library lives in `.cursor/skills/`** (single source of truth):
-`agent-development`, `browser-use`, `excalidraw-diagram`, `frontend-design`,
-`mcp-integration`, `skill-development`. Do not fork a second copy under `.agents/`.
+- Structured errors over silent failures; log context for ops paths.
+- RAG: grounded answers, source attribution, **no-context refusal** — not hallucinated runbooks.
+- AWS: `AWS_PROFILE` + least privilege; parameterize resource IDs in docs.
+- Never run destructive prod workflows (n8n live flows, EC2 terminate) unless explicitly asked.
 
 ## MCP servers
 
-Project MCP config is in `.mcp.json` (canonical, committed). Cursor also reads
-`.cursor/mcp.json` — copy from `.mcp.json` locally; that path is **gitignored** so
-custom keys never get committed. Only integrations actually used by this repo are
-configured: `lovable`, `n8n-workflows`, `aws-api`, `bedrock-kb`, `aws-knowledge`,
-`playwright`, `kaggle`, `course-tools`. All credentials use env interpolation or
-`envFile` pointing at gitignored `.env`. Do not add servers without a usage.
+Canonical config: [`.mcp.json`](.mcp.json). Cursor may also read gitignored `.cursor/mcp.json` for local overrides.
+
+| Server | Use in this repo |
+|--------|------------------|
+| `course-tools` | Lecture 08 stdio demo |
+| `playwright` | E2E / UI capture |
+| `kaggle` | hw07 datasets |
+| `aws-knowledge` | AWS documentation |
+| `aws-api` / `bedrock-kb` | Bedrock / AWS labs & projects |
+| `n8n-workflows` | hw06 / lecture 09 |
+| `lovable` | Optional UI experiments |
+
+Bootstrap: `python scripts/run-mcp-course-tools.py` · Full catalog: [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md).
+
+**Do not add MCP servers without a concrete repo usage.**
+
+## Skills
+
+Single library: [`.cursor/skills/`](.cursor/skills/) — read `SKILL.md` before applying.
+
+| Skill | Use when |
+|-------|----------|
+| `repo-tooling` | MCP, env, CI, config file locations |
+| `mcp-integration` | New MCP server or auth debugging |
+| `agent-development` | Agents, tools, prompts |
+| `browser-use` | Playwright automation |
+| `excalidraw-diagram` | Architecture diagrams |
+| `frontend-design` | React/Vite UI |
+| `skill-development` | Authoring skills |
+
+## Dependencies
+
+See [`REQUIREMENTS.md`](REQUIREMENTS.md) — root `requirements.txt` is the **course ML stack**;
+use [`requirements-dev.txt`](requirements-dev.txt) for ruff/pytest only.
+
+## Related files
+
+| File | Purpose |
+|------|---------|
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code entry (sources this file) |
+| [`.env.example`](.env.example) | Sanitized env template |
+| [`docs/setup.md`](docs/setup.md) | Human setup guide |
+| [`.cursor/rules/`](.cursor/rules/) | Cursor agent rules |

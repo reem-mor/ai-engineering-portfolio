@@ -27,11 +27,11 @@ amdocs-ai-course/
 ├── lectures/                 # Lessons 01–11
 ├── homework/                 # Assignments hw01–hw07
 ├── exercises/                # Lab index (links into lectures/homework)
-├── oz_veruach_bot/           # Standalone product (extraction-ready)
-└── projects/                 # Capstone + iterations + flagship copy
+├── course-assistant-bot/     # Pointer → github.com/reem-mor/course-assistant-bot
+└── projects/                 # Capstone + learning iteration + pointers
     ├── incident-assistant-rag/   # Featured capstone
     ├── incident-rag-bedrock/     # Learning iteration
-    └── piter-aiops/              # Flagship copy (extraction-ready)
+    └── piter-aiops/              # Pointer → github.com/reem-mor/piter-aiops
 ```
 
 ## Learning flow
@@ -93,15 +93,15 @@ flowchart TB
 | `homework/` | Graded work + evidence | hw01–hw07; screenshots per assignment |
 | `exercises/` | Navigation index | No duplicate code |
 | `docs/` | Cross-cutting docs | Includes [`extraction/`](../extraction/) |
-| `projects/` | End-to-end systems | See [`projects/README.md`](../../projects/README.md) |
-| `oz_veruach_bot/` | Standalone Telegram bot | Extract when ready — [`EXTRACTION.md`](../../oz_veruach_bot/EXTRACTION.md) |
+| `projects/` | End-to-end systems + pointers | See [`projects/README.md`](../../projects/README.md) |
+| `course-assistant-bot/` | Pointer to Telegram bot | [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
 
 ## Extraction status
 
 | Path | Verdict | External repo |
 |------|---------|---------------|
-| `projects/piter-aiops/` | Extract when ready | `reem-mor/piter-aiops` *(not created yet)* |
-| `oz_veruach_bot/` | Extract when ready | `reem-mor/oz-veruach-bot` *(not created yet)* |
+| `projects/piter-aiops/` | **Extracted** | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
+| `oz_veruach_bot/` → `course-assistant-bot/` | **Extracted** | [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
 | HINDSIGHT | Already external | [`reem-mor/hindsight`](https://github.com/reem-mor/hindsight) |
 
 Runbooks: [`docs/extraction/README.md`](../extraction/README.md).
