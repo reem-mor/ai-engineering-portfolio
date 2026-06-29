@@ -1,0 +1,3 @@
+# HW07 runtime artifacts (gitignored)
+.hw07-tool-server.pid
+.hw07-tool-server.log

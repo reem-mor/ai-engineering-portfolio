@@ -7,5 +7,11 @@ export const PROMPTS = {
 
 export const TOOL_SERVER_URL = "http://host.docker.internal:5005";
 
-export const KB_ANSWER_HINTS = [/TV Show/i, /Movie/i, /type/i];
-export const TOOL_ANSWER_HINTS = [/Brasília/i, /Brasilia/i, /capital/i];
+/** Match assistant output only — must not appear in the user prompt text. */
+export const KB_ANSWER_HINTS = [
+  /\b6,?789\b/,
+  /6[\s,]*789/,
+  /TV Show.*Movie|Movie.*TV Show/i,
+];
+
+export const TOOL_ANSWER_HINTS = [/Brasília/i, /Brasilia/i, /212,?559,?417/];
