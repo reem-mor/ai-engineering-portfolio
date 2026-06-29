@@ -95,17 +95,6 @@ export async function openKnowledgeCollection(page: Page, name: string): Promise
   await page.waitForTimeout(800);
 }
 
-export async function ensureKnowledgeCollection(page: Page, name: string): Promise<void> {
-  await openWorkspaceKnowledge(page);
-  const marked = page.locator("div, a, button").filter({ hasText: KB_DESCRIPTION_MARKER }).first();
-  if (await marked.isVisible().catch(() => false)) {
-    await marked.click();
-    await page.waitForURL(/\/workspace\/knowledge\/[a-f0-9-]+/i, { timeout: 30_000 });
-    return;
-  }
-  await createKnowledgeCollection(page, name);
-}
-
 export async function uploadCsvToCollection(
   page: Page,
   csvPath: string,
@@ -124,24 +113,21 @@ export async function uploadCsvToCollection(
   });
 }
 
-export async function waitForKnowledgeIndexed(page: Page, timeoutMs = 120_000): Promise<void> {
+export async function waitForKnowledgeIndexed(page: Page, timeoutMs = 180_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const body = await page.locator("body").innerText();
-    if (/netflix_titles\.csv/i.test(body)) {
-      if (/(indexed|processed|ready|completed|chunks|embed|vector)/i.test(body)) {
-        return;
-      }
-      if (!/uploading|processing|pending/i.test(body)) {
-        return;
-      }
+    const hasFile = /netflix_titles\.csv/i.test(body);
+    const indexed = /(indexed|processed|ready|completed|chunks|embed|vector)/i.test(body);
+    const stillProcessing = /uploading|processing|pending|indexing/i.test(body);
+
+    if (hasFile && indexed && !stillProcessing) {
+      return;
     }
+
     await page.waitForTimeout(4000);
     await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined);
     await dismissModals(page);
-  }
-  if (/netflix_titles\.csv/i.test(await page.locator("body").innerText())) {
-    return;
   }
   throw new Error("Knowledge base indexing did not complete in time");
 }
