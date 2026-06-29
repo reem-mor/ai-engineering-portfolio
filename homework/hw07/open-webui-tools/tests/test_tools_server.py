@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from rapidapi_client import RapidApiClient, RapidApiSettings, is_mock_mode
-from tools_server import app
+from tools_server import app, refresh_client
 
 TOOL_POST_PATHS = {
     "/tools/search_title",
@@ -20,12 +20,15 @@ TOOL_POST_PATHS = {
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        refresh_client(app)
+        yield test_client
 
 
 @pytest.fixture(autouse=True)
 def disable_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "0")
+    refresh_client(app)
 
 
 def test_health_returns_ok(client: TestClient) -> None:
@@ -34,14 +37,18 @@ def test_health_returns_ok(client: TestClient) -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["rapidapi_configured"] in {"true", "false"}
-    assert body["mock_mode"] in {"true", "false"}
+    assert body["mock_mode"] == "false"
+    assert body["tools_ready"] in {"true", "false"}
 
 
 def test_health_reports_mock_mode(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "1")
+    refresh_client(app)
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["mock_mode"] == "true"
+    body = response.json()
+    assert body["mock_mode"] == "true"
+    assert body["tools_ready"] == "true"
 
 
 def test_openapi_has_three_tool_operations(client: TestClient) -> None:
@@ -77,7 +84,35 @@ def test_country_info_missing_key_returns_structured_error(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
+    refresh_client(app)
     response = client.post("/tools/country_info", json={"country_name": "Brazil"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is False
+    assert "RAPIDAPI_KEY" in (body["error"] or "")
+
+
+def test_search_title_missing_key_returns_structured_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
+    refresh_client(app)
+    response = client.post("/tools/search_title", json={"title": "Squid Game"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is False
+    assert "RAPIDAPI_KEY" in (body["error"] or "")
+
+
+def test_streaming_status_missing_key_returns_structured_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
+    refresh_client(app)
+    response = client.post(
+        "/tools/streaming_status",
+        json={"title": "Stranger Things", "country_code": "US"},
+    )
     assert response.status_code == 200
     body = response.json()
     assert body["ok"] is False
@@ -87,6 +122,7 @@ def test_country_info_missing_key_returns_structured_error(
 def test_mock_mode_country_info(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "1")
     monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
+    refresh_client(app)
     response = client.post("/tools/country_info", json={"country_name": "Brazil"})
     assert response.status_code == 200
     body = response.json()
@@ -95,10 +131,26 @@ def test_mock_mode_country_info(client: TestClient, monkeypatch: pytest.MonkeyPa
     assert body["data"]["capital"] == "Brasília"
 
 
+def test_mock_mode_streaming_status(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "1")
+    monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
+    refresh_client(app)
+    response = client.post(
+        "/tools/streaming_status",
+        json={"title": "Stranger Things", "country_code": "US"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert body["source"] == "mock"
+    assert body["data"]["result"][0]["country"] == "US"
+
+
 def test_search_title_mocked_success(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("RAPIDAPI_KEY", "test-key")
+    refresh_client(app)
 
     def fake_search(self: RapidApiClient, title: str) -> dict[str, Any]:
         assert title == "Squid Game"
@@ -124,6 +176,7 @@ def test_country_info_mocked_http_error(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("RAPIDAPI_KEY", "test-key")
+    refresh_client(app)
 
     def fake_request(
         self: RapidApiClient,
@@ -148,8 +201,9 @@ def test_country_info_mocked_http_error(
 def test_rapidapi_settings_requires_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
     monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "0")
+    settings = RapidApiSettings.from_env()
     with pytest.raises(Exception, match="RAPIDAPI_KEY"):
-        RapidApiSettings.from_env()
+        settings.require_live_credentials()
 
 
 def test_rapidapi_settings_allows_missing_key_in_mock_mode(
@@ -158,7 +212,8 @@ def test_rapidapi_settings_allows_missing_key_in_mock_mode(
     monkeypatch.delenv("RAPIDAPI_KEY", raising=False)
     monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "1")
     settings = RapidApiSettings.from_env()
-    assert settings.api_key == "mock"
+    assert settings.api_key == ""
+    assert settings.tools_ready is True
     assert is_mock_mode() is True
 
 
@@ -168,14 +223,49 @@ def test_rapidapi_client_with_mock_transport() -> None:
         omdb_host="example.test",
         countries_host="example.test",
         streaming_host="example.test",
+        mock_mode=False,
     )
 
     def handler(request: httpx.Request) -> httpx.Response:
-        payload = {"path": request.url.path, "host": request.headers.get("X-RapidAPI-Host")}
-        return httpx.Response(200, json=payload)
+        assert request.url.path == "/v3.1/name/brazil"
+        assert request.headers.get("X-RapidAPI-Host") == "example.test"
+        return httpx.Response(
+            200,
+            json=[{"name": {"common": "Brazil"}, "capital": ["Brasília"], "region": "Americas"}],
+        )
 
     transport = httpx.MockTransport(handler)
-    client = RapidApiClient(settings, transport=transport)
-    result = client.country_info("Brazil")
-    assert result["path"] == "/name/brazil"
-    assert result["host"] == "example.test"
+    with RapidApiClient(settings, transport=transport) as client:
+        result = client.country_info("Brazil")
+    assert result["name"] == "Brazil"
+    assert result["capital"] == "Brasília"
+
+
+def test_normalize_country_payload_from_list() -> None:
+    settings = RapidApiSettings(
+        api_key="test-key",
+        omdb_host="example.test",
+        countries_host="example.test",
+        streaming_host="example.test",
+        mock_mode=False,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "name": {"common": "Brazil", "official": "Federative Republic of Brazil"},
+                    "capital": ["Brasília"],
+                    "region": "Americas",
+                    "population": 212559417,
+                }
+            ],
+        )
+
+    transport = httpx.MockTransport(handler)
+    with RapidApiClient(settings, transport=transport) as client:
+        result = client.country_info("Brazil")
+    assert result["name"] == "Brazil"
+    assert result["capital"] == "Brasília"
+    assert result["region"] == "Americas"

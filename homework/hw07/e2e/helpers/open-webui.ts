@@ -204,14 +204,65 @@ export async function waitForAssistantReply(
   timeoutMs = 180_000,
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  const assistantMessages = page.locator(
+    [
+      '[data-testid="chat-message-assistant"]',
+      '.chat-assistant',
+      '[class*="assistant-message"]',
+      'div[class*="group"][class*="assistant"]',
+    ].join(", "),
+  );
+
+  let lastText = "";
+  let stablePolls = 0;
+
+  while (Date.now() < deadline) {
+    const stopButton = page.getByRole("button", { name: /stop|cancel/i });
+    const isGenerating = await stopButton.first().isVisible().catch(() => false);
+
+    const count = await assistantMessages.count();
+    if (count > 0 && !isGenerating) {
+      const latest = assistantMessages.nth(count - 1);
+      const text = (await latest.innerText()).trim();
+
+      if (text.length >= 25 && hints.some((h) => h.test(text))) {
+        if (text === lastText) {
+          stablePolls += 1;
+        } else {
+          stablePolls = 0;
+          lastText = text;
+        }
+
+        if (stablePolls >= 2) {
+          return;
+        }
+      } else {
+        stablePolls = 0;
+        lastText = text;
+      }
+    }
+
+    await page.waitForTimeout(2000);
+  }
+
+  throw new Error(`Assistant reply did not match hints: ${hints.map(String).join(", ")}`);
+}
+
+/** Wait until Open WebUI surfaces a tool call panel (proves tool path, not memorized answer). */
+export async function waitForToolInvocation(
+  page: Page,
+  hints: RegExp[],
+  timeoutMs = 120_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const body = await page.locator("body").innerText();
     if (hints.some((h) => h.test(body))) {
       return;
     }
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
   }
-  throw new Error(`Assistant reply did not match hints: ${hints.map(String).join(", ")}`);
+  throw new Error(`Tool invocation UI did not appear: ${hints.map(String).join(", ")}`);
 }
 
 export async function openToolSettings(page: Page): Promise<void> {
@@ -222,7 +273,7 @@ export async function openToolSettings(page: Page): Promise<void> {
 export async function registerToolServer(page: Page, url: string): Promise<void> {
   await openToolSettings(page);
   const existing = page.getByText(url, { exact: false });
-  if (await existing.isVisible().catch(() => false)) {
+  if ((await existing.count()) > 0) {
     return;
   }
   await page.getByText("Manage Tool Servers").locator("..").locator("button").first().click();
