@@ -44,7 +44,7 @@ Open http://localhost:3001 (auth disabled for homework stack). For a personal Op
 
 ## Step 5 — Register tool server
 
-1. **Settings → Tools → Add Tool Server**
+1. **Admin → Settings → Integrations → External Tool Servers**
 2. URL: `http://host.docker.internal:5005` (must be `http://`, not `https://`)
 3. Save — Open WebUI should discover OpenAPI tools from `/openapi.json`
 4. **Screenshot:** `screenshots/05-tool-server-configured.png`

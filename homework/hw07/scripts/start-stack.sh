@@ -111,6 +111,22 @@ echo "Starting tool server on :5005..."
   echo $! >"${PID_FILE}"
 )
 
+MOCK_LLM_PID_FILE="${HW07_ROOT}/.hw07-mock-llm.pid"
+MOCK_LLM_LOG="${HW07_ROOT}/.hw07-mock-llm.log"
+if [[ -f "${MOCK_LLM_PID_FILE}" ]]; then
+  old_mock_pid="$(cat "${MOCK_LLM_PID_FILE}")"
+  kill "${old_mock_pid}" 2>/dev/null || true
+  rm -f "${MOCK_LLM_PID_FILE}"
+fi
+echo "Starting mock LLM on :8088 (E2E fallback when Ollama chat unavailable)..."
+nohup "${PYTHON}" "${SCRIPT_DIR}/mock-llm-server.py" >"${MOCK_LLM_LOG}" 2>&1 &
+echo $! >"${MOCK_LLM_PID_FILE}"
+
+if ! wait_http_ok "http://localhost:8088/health"; then
+  echo "Mock LLM failed to start. Log tail:" >&2
+  tail -n 20 "${MOCK_LLM_LOG}" >&2 || true
+fi
+
 if ! wait_http_ok "http://localhost:5005/health"; then
   echo "Tool server failed to start. Log tail:" >&2
   tail -n 40 "${LOG_FILE}" >&2 || true
@@ -124,6 +140,7 @@ echo ""
 echo "=== Stack running ==="
 echo "  Open WebUI:        http://localhost:3001"
 echo "  Tool server docs:  http://localhost:5005/docs"
+echo "  Mock LLM (E2E):    http://localhost:8088/v1"
 echo "  Tool URL (Docker): http://host.docker.internal:5005"
 echo "  Tool server log:   ${LOG_FILE}"
 echo ""
