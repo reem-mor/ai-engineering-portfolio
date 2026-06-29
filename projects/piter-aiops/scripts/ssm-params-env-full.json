@@ -1,5 +1,0 @@
-{
-  "commands": [
-    "grep -E '^PITER_|^AWS_|^BEDROCK_|^S3_' /opt/piter-aiops/.env | sed 's/=.*$/=***/'"
-  ]
-}

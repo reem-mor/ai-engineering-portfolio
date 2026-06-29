@@ -1,7 +1,0 @@
-{
-  "commands": [
-    "docker ps -a",
-    "ls -la /opt/piter-aiops/app/static/spa/assets/",
-    "grep -E 'PITER_NOTIFICATION|PITER_ESCALATION|PITER_ENABLE|PITER_SES' /opt/piter-aiops/.env || true"
-  ]
-}

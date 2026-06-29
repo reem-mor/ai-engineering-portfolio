@@ -1,3 +1,0 @@
-# Local development and CI tests (includes production deps).
--r requirements.txt
-pytest==8.3.4
