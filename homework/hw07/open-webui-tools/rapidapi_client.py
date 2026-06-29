@@ -15,7 +15,7 @@ COUNTRIES_HOST_ENV = "RAPIDAPI_COUNTRIES_HOST"
 STREAMING_HOST_ENV = "RAPIDAPI_STREAMING_HOST"
 
 DEFAULT_OMDB_HOST = "imdb8.p.rapidapi.com"
-DEFAULT_COUNTRIES_HOST = "restcountries-v1.p.rapidapi.com"
+DEFAULT_COUNTRIES_HOST = "restcountries.p.rapidapi.com"
 DEFAULT_STREAMING_HOST = "streaming-availability.p.rapidapi.com"
 
 _MOCK_COUNTRY_FIXTURES: dict[str, dict[str, Any]] = {
@@ -55,20 +55,77 @@ class RapidApiSettings:
     omdb_host: str
     countries_host: str
     streaming_host: str
+    mock_mode: bool
 
     @classmethod
     def from_env(cls) -> RapidApiSettings:
+        mock_mode = is_mock_mode()
         api_key = os.environ.get(RAPIDAPI_KEY_ENV, "").strip()
-        if not api_key and not is_mock_mode():
-            raise RapidApiNotConfiguredError(
-                f"{RAPIDAPI_KEY_ENV} is not set. Add it to .env for live API calls."
-            )
         return cls(
-            api_key=api_key or "mock",
+            api_key=api_key,
             omdb_host=os.environ.get(OMDB_HOST_ENV, DEFAULT_OMDB_HOST).strip(),
             countries_host=os.environ.get(COUNTRIES_HOST_ENV, DEFAULT_COUNTRIES_HOST).strip(),
             streaming_host=os.environ.get(STREAMING_HOST_ENV, DEFAULT_STREAMING_HOST).strip(),
+            mock_mode=mock_mode,
         )
+
+    def require_live_credentials(self) -> None:
+        if not self.mock_mode and not self.api_key:
+            raise RapidApiNotConfiguredError(
+                f"{RAPIDAPI_KEY_ENV} is not set. Add it to .env for live API calls."
+            )
+
+    @property
+    def tools_ready(self) -> bool:
+        return self.mock_mode or bool(self.api_key)
+
+
+def _normalize_country_payload(payload: dict[str, Any] | list[Any]) -> dict[str, Any]:
+    """Map heterogeneous RapidAPI / RestCountries payloads to a stable tool schema."""
+    item: dict[str, Any]
+    if isinstance(payload, list):
+        item = payload[0] if payload else {}
+    elif isinstance(payload, dict) and isinstance(payload.get("data"), list):
+        data = payload["data"]
+        item = data[0] if data else {}
+    else:
+        item = payload if isinstance(payload, dict) else {}
+
+    name = item.get("name")
+    if isinstance(name, dict):
+        name = name.get("common") or name.get("official")
+
+    capital = item.get("capital")
+    if isinstance(capital, list):
+        capital = capital[0] if capital else None
+
+    region = item.get("region")
+    if region is None and isinstance(item.get("region"), dict):
+        region = item["region"].get("name")
+
+    population = item.get("population")
+    return {
+        "name": name or item.get("country"),
+        "capital": capital,
+        "region": region,
+        "population": population,
+    }
+
+
+def _normalize_title_search(payload: dict[str, Any]) -> dict[str, Any]:
+    """Normalize IMDb autocomplete and mock payloads for Open WebUI."""
+    if "results" in payload:
+        return payload
+    suggestions = payload.get("d") or payload.get("data") or payload.get("results")
+    if isinstance(suggestions, list):
+        results = []
+        for entry in suggestions[:5]:
+            if isinstance(entry, dict):
+                results.append(entry)
+            elif isinstance(entry, str):
+                results.append({"title": entry})
+        return {"results": results}
+    return {"results": [payload] if payload else []}
 
 
 class RapidApiClient:
@@ -84,12 +141,16 @@ class RapidApiClient:
         self._settings = settings
         self._timeout = timeout
         self._transport = transport
+        self._http = httpx.Client(timeout=self._timeout, transport=self._transport)
 
-    def _headers(self) -> dict[str, str]:
-        return {
-            "X-RapidAPI-Key": self._settings.api_key,
-            "X-RapidAPI-Host": "",
-        }
+    def close(self) -> None:
+        self._http.close()
+
+    def __enter__(self) -> RapidApiClient:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
 
     def _request(
         self,
@@ -99,20 +160,24 @@ class RapidApiClient:
         path: str,
         params: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        headers = self._headers()
-        headers["X-RapidAPI-Host"] = host
+        if self._settings.mock_mode:
+            raise RuntimeError("Live RapidAPI request attempted while mock mode is enabled")
+        self._settings.require_live_credentials()
+        headers = {
+            "X-RapidAPI-Key": self._settings.api_key,
+            "X-RapidAPI-Host": host,
+        }
         url = f"https://{host}{path}"
-        with httpx.Client(timeout=self._timeout, transport=self._transport) as client:
-            response = client.request(method, url, headers=headers, params=params)
-            response.raise_for_status()
-            payload = response.json()
-            if isinstance(payload, dict):
-                return payload
-            return {"data": payload}
+        response = self._http.request(method, url, headers=headers, params=params)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict):
+            return payload
+        return {"data": payload}
 
     def search_title(self, title: str) -> dict[str, Any]:
         """Search IMDb-style metadata for a Netflix title."""
-        if is_mock_mode():
+        if self._settings.mock_mode:
             return {
                 "results": [
                     {
@@ -122,17 +187,19 @@ class RapidApiClient:
                     }
                 ]
             }
-        return self._request(
+        self._settings.require_live_credentials()
+        raw = self._request(
             host=self._settings.omdb_host,
             method="GET",
             path="/auto-complete",
             params={"q": title},
         )
+        return _normalize_title_search(raw)
 
     def country_info(self, country_name: str) -> dict[str, Any]:
         """Fetch country facts (capital, region, population)."""
         slug = country_name.strip().lower()
-        if is_mock_mode():
+        if self._settings.mock_mode:
             fixture = _MOCK_COUNTRY_FIXTURES.get(slug)
             if fixture:
                 return {**fixture, "mock": True}
@@ -142,15 +209,19 @@ class RapidApiClient:
                 "region": "Unknown",
                 "mock": True,
             }
-        return self._request(
+        self._settings.require_live_credentials()
+        raw = self._request(
             host=self._settings.countries_host,
             method="GET",
-            path=f"/name/{slug}",
+            path=f"/v3.1/name/{slug}",
+            params={"fields": "name,capital,region,population"},
         )
+        normalized = _normalize_country_payload(raw)
+        return normalized
 
     def streaming_status(self, title: str, country_code: str) -> dict[str, Any]:
         """Check streaming availability for a title in a country (ISO 3166-1 alpha-2)."""
-        if is_mock_mode():
+        if self._settings.mock_mode:
             return {
                 "result": [
                     {
@@ -161,6 +232,7 @@ class RapidApiClient:
                 ],
                 "mock": True,
             }
+        self._settings.require_live_credentials()
         return self._request(
             host=self._settings.streaming_host,
             method="GET",
@@ -169,5 +241,6 @@ class RapidApiClient:
                 "title": title,
                 "country": country_code.strip().upper(),
                 "output_language": "en",
+                "show_type": "all",
             },
         )

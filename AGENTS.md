@@ -77,6 +77,7 @@ Single library: [`.cursor/skills/`](.cursor/skills/) — read `SKILL.md` before 
 | Skill | Use when |
 |-------|----------|
 | `repo-tooling` | MCP, env, CI, config file locations |
+| `hw07-open-webui` | Homework 07 — Open WebUI KB, local tools server, RapidAPI |
 | `mcp-integration` | New MCP server or auth debugging |
 | `agent-development` | Agents, tools, prompts |
 | `browser-use` | Playwright automation |

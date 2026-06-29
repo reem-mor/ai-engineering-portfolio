@@ -27,8 +27,16 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOT_DIR = path.resolve(__dirname, "../screenshots");
 const CSV_PATH = path.resolve(__dirname, "../data/netflix_titles.csv");
-const TOOL_SERVER_HEALTH = process.env.TOOL_SERVER_URL ?? "http://localhost:5005/health";
+const TOOL_SERVER_BASE =
+  process.env.TOOL_SERVER_BASE_URL ??
+  process.env.TOOL_SERVER_URL ??
+  "http://localhost:5005";
+const TOOL_SERVER_HEALTH = `${TOOL_SERVER_BASE.replace(/\/$/, "")}/health`;
 const OPEN_WEBUI_URL = process.env.OPEN_WEBUI_URL ?? "http://localhost:3001";
+const STACK_START_HINT =
+  process.platform === "win32"
+    ? "Run scripts/start-stack.ps1"
+    : "Run scripts/start-stack.sh";
 
 test.describe("HW07 submission screenshots", () => {
   test.beforeAll(async ({ request }) => {
@@ -36,8 +44,8 @@ test.describe("HW07 submission screenshots", () => {
       request.get(OPEN_WEBUI_URL).catch(() => null),
       request.get(TOOL_SERVER_HEALTH).catch(() => null),
     ]);
-    test.skip(!webui?.ok(), `Open WebUI not running at ${OPEN_WEBUI_URL}. Run scripts/start-stack.ps1`);
-    test.skip(!tools?.ok(), `Tool server not running. Run scripts/start-stack.ps1`);
+    test.skip(!webui?.ok(), `Open WebUI not running at ${OPEN_WEBUI_URL}. ${STACK_START_HINT}`);
+    test.skip(!tools?.ok(), `Tool server not running. ${STACK_START_HINT}`);
     const health = await tools!.json();
     expect(health.status).toBe("ok");
   });

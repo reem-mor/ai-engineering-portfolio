@@ -204,10 +204,17 @@ export async function waitForAssistantReply(
   timeoutMs = 180_000,
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  const assistantMessages = page.locator(
+    '[data-testid="chat-message-assistant"], .chat-assistant, [class*="assistant-message"]',
+  );
+
   while (Date.now() < deadline) {
-    const body = await page.locator("body").innerText();
-    if (hints.some((h) => h.test(body))) {
-      return;
+    const count = await assistantMessages.count();
+    if (count > 0) {
+      const latest = await assistantMessages.nth(count - 1).innerText();
+      if (hints.some((h) => h.test(latest))) {
+        return;
+      }
     }
     await page.waitForTimeout(3000);
   }
