@@ -8,7 +8,14 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from rapidapi_client import RapidApiClient, RapidApiSettings, is_mock_mode
+from rapidapi_client import (
+    RapidApiClient,
+    RapidApiNotConfiguredError,
+    RapidApiNotFoundError,
+    RapidApiSettings,
+    RapidApiUpstreamError,
+    is_mock_mode,
+)
 from tools_server import app, refresh_client
 
 TOOL_POST_PATHS = {
@@ -172,6 +179,35 @@ def test_streaming_status_invalid_country_code(client: TestClient) -> None:
     assert response.status_code == 422
 
 
+def test_country_info_whitespace_rejected(client: TestClient) -> None:
+    response = client.post("/tools/country_info", json={"country_name": "   "})
+    assert response.status_code == 422
+
+
+def test_search_title_whitespace_rejected(client: TestClient) -> None:
+    response = client.post("/tools/search_title", json={"title": "   "})
+    assert response.status_code == 422
+
+
+def test_streaming_status_lowercase_country_code(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HW07_MOCK_RAPIDAPI", "1")
+    refresh_client(app)
+    response = client.post(
+        "/tools/streaming_status",
+        json={"title": "Stranger Things", "country_code": "us"},
+    )
+    assert response.status_code == 200
+    assert response.json()["data"]["result"][0]["country"] == "US"
+
+
+def test_streaming_status_non_alpha_country_code(client: TestClient) -> None:
+    response = client.post(
+        "/tools/streaming_status",
+        json={"title": "Stranger Things", "country_code": "12"},
+    )
+    assert response.status_code == 422
+
+
 def test_country_info_mocked_http_error(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -186,16 +222,80 @@ def test_country_info_mocked_http_error(
         path: str,
         params: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        request = httpx.Request(method, f"https://{host}{path}")
-        response = httpx.Response(404, request=request, text="not found")
-        raise httpx.HTTPStatusError("not found", request=request, response=response)
+        raise RapidApiUpstreamError("External API request failed")
 
     monkeypatch.setattr(RapidApiClient, "_request", fake_request)
     response = client.post("/tools/country_info", json={"country_name": "Atlantis"})
     assert response.status_code == 200
     body = response.json()
     assert body["ok"] is False
-    assert "External API error" in (body["error"] or "")
+    assert body["error"] == "External API request failed"
+
+
+def test_country_info_empty_upstream_result(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAPIDAPI_KEY", "test-key")
+    refresh_client(app)
+
+    def fake_request(
+        self: RapidApiClient,
+        *,
+        host: str,
+        method: str,
+        path: str,
+        params: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        return []
+
+    monkeypatch.setattr(RapidApiClient, "_request", fake_request)
+    response = client.post("/tools/country_info", json={"country_name": "Atlantis"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is False
+    assert "No country found" in (body["error"] or "")
+
+
+def test_country_info_url_encodes_spaces() -> None:
+    settings = RapidApiSettings(
+        api_key="test-key",
+        omdb_host="example.test",
+        countries_host="example.test",
+        streaming_host="example.test",
+        mock_mode=False,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("united states")
+        return httpx.Response(
+            200,
+            json=[{"name": {"common": "United States"}, "capital": ["Washington, D.C."], "region": "Americas"}],
+        )
+
+    transport = httpx.MockTransport(handler)
+    with RapidApiClient(settings, transport=transport) as client:
+        result = client.country_info("United States")
+    assert result["name"] == "United States"
+
+
+def test_search_title_mocked_http_error(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("RAPIDAPI_KEY", "test-key")
+    refresh_client(app)
+
+    def fake_request(
+        self: RapidApiClient,
+        *,
+        host: str,
+        method: str,
+        path: str,
+        params: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        raise RapidApiUpstreamError("External API request failed")
+
+    monkeypatch.setattr(RapidApiClient, "_request", fake_request)
+    response = client.post("/tools/search_title", json={"title": "Squid Game"})
+    assert response.status_code == 200
+    assert response.json()["ok"] is False
 
 
 def test_rapidapi_settings_requires_key(monkeypatch: pytest.MonkeyPatch) -> None:

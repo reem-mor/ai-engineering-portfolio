@@ -5,7 +5,7 @@ Open WebUI runs in **Docker** on port **3001** (see [`docker-compose.yml`](../do
 
 ## Prerequisites checklist
 
-- [ ] Ollama installed and a model pulled (`ollama pull llama3.1`)
+- [ ] Ollama installed and a model pulled (`ollama pull llama3.2:3b`)
 - [ ] Docker Desktop running
 - [ ] `netflix_titles.csv` in [`../data/`](../data/)
 - [ ] Tool server running: `uvicorn tools_server:app --host 0.0.0.0 --port 5005`
@@ -56,7 +56,7 @@ Open http://localhost:3001 (auth disabled for homework stack). For a personal Op
 | Connection refused | Confirm uvicorn binds `0.0.0.0:5005`, not `127.0.0.1` only |
 | Wrong host from Docker | Use `host.docker.internal` on Windows Docker Desktop |
 | HTTPS pre-filled | Change to plain `http://` |
-| CORS errors | Tool server enables CORS for all origins by default |
+| CORS errors | Tool server allows localhost Open WebUI origins (`:3000`, `:3001`) |
 
 ## Step 6 — Live tool chat test
 
