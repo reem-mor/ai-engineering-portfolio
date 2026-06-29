@@ -1,0 +1,4 @@
+{
+  "_comment": "Copy to .cursor/mcp.json for Cursor-local overrides (gitignored). Default: use root .mcp.json — Cursor reads both.",
+  "mcpServers": {}
+}

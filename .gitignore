@@ -89,13 +89,20 @@ Thumbs.db
 
 # IDE/editor local state
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
 .claude/
 *.swp
 
-# Cursor: rules committed; local MCP + plans stay ignored
+# Cursor: rules + skills committed; local MCP overrides stay ignored
 .cursor/mcp.json
 .cursor/plans/
+!.cursor/mcp.json.example
+
+# Agent / IDE local overrides
+.mcp.json.local
+*.local.json
 
 # Incident Assistant RAG - generated data
 projects/incident-assistant-rag/data/raw/*

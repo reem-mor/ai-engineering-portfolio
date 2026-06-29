@@ -23,21 +23,23 @@
     "aws-api": {
       "command": "uvx",
       "args": ["awslabs.aws-api-mcp-server@latest"],
+      "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
         "AWS_PROFILE": "${env:AWS_PROFILE}",
-        "AWS_REGION": "${env:AWS_REGION}",
-        "FASTMCP_LOG_LEVEL": "ERROR"
+        "AWS_REGION": "${env:AWS_REGION}"
       }
     },
     "bedrock-kb": {
       "command": "uvx",
       "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
+      "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
         "AWS_PROFILE": "${env:AWS_PROFILE}",
         "AWS_REGION": "${env:AWS_REGION}",
-        "FASTMCP_LOG_LEVEL": "ERROR",
         "BEDROCK_KB_RERANKING_ENABLED": "false"
       }
     },
@@ -49,6 +51,21 @@
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"],
       "timeout": 120000
+    },
+    "kaggle": {
+      "type": "http",
+      "url": "https://www.kaggle.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:KAGGLE_API_TOKEN}"
+      }
+    },
+    "course-tools": {
+      "command": "python",
+      "args": ["${workspaceFolder}/scripts/run-mcp-course-tools.py"],
+      "timeout": 60000,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
     }
   }
 }

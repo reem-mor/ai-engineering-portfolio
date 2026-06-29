@@ -1,16 +1,26 @@
 {
-  "_comment_lovable": "Optional remote MCP (OAuth): see config/mcp.lovable.json.example and https://docs.lovable.dev/integrations/lovable-mcp-server",
+  "_comment": "Minimal MCP set for lecture 08 — full catalog in repo root .mcp.json",
+  "_setup": "Run scripts/setup-dev.ps1 from repo root, then use root .mcp.json in Cursor",
   "mcpServers": {
     "course-tools": {
-      "command": "${workspaceFolder}/lectures/08_mcp/.venv/Scripts/python.exe",
-      "args": ["${workspaceFolder}/lectures/08_mcp/server/tools_server.py"],
+      "command": "python",
+      "args": ["${workspaceFolder}/scripts/run-mcp-course-tools.py"],
+      "timeout": 60000,
       "env": {
         "PYTHONUNBUFFERED": "1"
       }
     },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.75"]
+      "args": ["-y", "@playwright/mcp@latest"],
+      "timeout": 120000
+    },
+    "kaggle": {
+      "type": "http",
+      "url": "https://www.kaggle.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:KAGGLE_API_TOKEN}"
+      }
     }
   }
 }
