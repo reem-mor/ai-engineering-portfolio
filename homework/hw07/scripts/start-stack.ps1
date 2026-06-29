@@ -52,7 +52,7 @@ Test-Command ollama
 
 $ollamaList = ollama list 2>&1
 if ($LASTEXITCODE -ne 0) {
-    throw "Ollama is not running or not installed. Start Ollama and run: ollama pull llama3.1"
+    throw "Ollama is not running or not installed. Start Ollama and run: ollama pull llama3.2:3b"
 }
 if ($ollamaList -notmatch "(?i)llama|qwen|gpt-oss") {
     Write-Warning "No chat model found in ollama list. Recommended: ollama pull llama3.2:3b"

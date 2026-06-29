@@ -15,7 +15,7 @@ else
   PYTHON="$(command -v python3)"
 fi
 
-echo "[1/4] pytest"
+echo "[1/4] pytest (expect 24 passed)"
 (cd "${TOOLS_DIR}" && "${PYTHON}" -m pytest tests -q)
 
 echo "[2/4] screenshot files"
