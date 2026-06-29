@@ -76,9 +76,8 @@ Expect: KB retrieval for dataset facts + tool call for live country data.
 ## Cleanup
 
 ```powershell
-docker stop open-webui
-docker rm open-webui
-# Optional: docker volume rm open-webui
+docker compose -f homework/hw07/docker-compose.yml down
+# Optional: docker volume rm hw07_open-webui-hw07
 ```
 
 Do not commit Open WebUI sqlite volumes or `.env` files with API keys.

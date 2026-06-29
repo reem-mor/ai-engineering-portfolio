@@ -5,15 +5,17 @@ Stack: Open WebUI `0.6.15` (Docker `:3001`), Ollama `llama3.2:3b`, tool server `
 ## pytest (`open-webui-tools/tests/`)
 
 ```text
-13 passed
+17 passed
 ```
 
 Coverage highlights:
 
-- Health + mock-mode observability
+- Health + mock-mode observability (`tools_ready` flag)
 - OpenAPI contract (3 tool POST operations, readable summaries)
 - RapidAPI client fakeable seam (`httpx.MockTransport`, monkeypatched methods)
 - Structured error responses when `RAPIDAPI_KEY` is missing
+- Mock-mode coverage for `country_info` and `streaming_status`
+- Live-shaped RestCountries v3.1 payload normalization
 
 ## API smoke
 

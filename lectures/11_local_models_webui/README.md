@@ -2,7 +2,7 @@
 
 Course lecture covering **local LLM inference**, **Open WebUI** as a browser frontend, **Knowledge Bases** (FAISS), and how **MCP** relates to tool integration.
 
-Homework implementation: [`homework/hw07/`](../../homework/hw07/).
+Homework implementation: [`homework/hw07/`](../../homework/hw07/) — see [`ARCHITECTURE.md`](../../homework/hw07/ARCHITECTURE.md) for system design.
 
 ---
 
