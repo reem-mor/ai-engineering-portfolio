@@ -218,6 +218,42 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for diagrams and security notes.
 
 ---
 
+## E2E development (build backwards)
+
+Best practice: test from **external API → local server → Web UI**, not all at once.
+
+| Step | What to test | How in this repo |
+|------|--------------|------------------|
+| **1. External API** | RapidAPI returns expected data | `curl` / mock via `HW07_MOCK_RAPIDAPI=1` |
+| **2. Local server** | `tools_server.py` endpoints work | `curl localhost:5005/tools/*`, `/docs` |
+| **3. Logging** | See requests in terminal | Structured logs in `tools_server.py` |
+| **4. Full Web UI E2E** | KB vs tool routing in chat | Playwright `submission-screenshots.spec.ts` |
+
+**One-command backward smoke:**
+
+```bash
+homework/hw07/scripts/e2e-smoke.sh
+```
+
+**Playwright API-layer E2E (no Docker required):**
+
+```bash
+cd homework/hw07/e2e
+npx playwright test e2e-pipeline.spec.ts tool-server-openapi.spec.ts
+```
+
+**Full UI E2E + screenshots 01–06 (Docker + Ollama required):**
+
+```bash
+homework/hw07/scripts/start-stack.sh --mock-rapidapi
+cd homework/hw07/e2e
+npx playwright test submission-screenshots.spec.ts
+```
+
+Watch tool server logs during Step 4 — you should see `tool=country_info ok=true` when the Web UI invokes a tool.
+
+---
+
 ## Related
 
 - Lecture 11: [`lectures/11_local_models_webui/`](../../lectures/11_local_models_webui/)
