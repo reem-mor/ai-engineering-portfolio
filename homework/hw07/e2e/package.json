@@ -1,0 +1,14 @@
+{
+  "name": "hw07-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:screenshots": "playwright test submission-screenshots.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
