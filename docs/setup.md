@@ -10,13 +10,30 @@
 
 ## Clone and base environment
 
+**Recommended (agents + humans):**
+
 ```powershell
 git clone https://github.com/reem-mor/amdocs-ai-course.git
 cd amdocs-ai-course
+.\scripts\setup-dev.ps1
+```
+
+This creates `.venv`, installs dev tools + lecture-08 MCP deps, and copies `.env.example` → `.env`.
+
+**Manual equivalent:**
+
+```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+copy .env.example .env
 ```
+
+For full lecture ML stack (torch, spacy, …): `pip install -r requirements.txt` — see [`REQUIREMENTS.md`](../REQUIREMENTS.md).
+
+## Agent / MCP tooling
+
+See **[`docs/AGENT-TOOLING.md`](AGENT-TOOLING.md)** — MCP server catalog, Cursor skills, rules, and CI matrix.
 
 ## NLTK data (lecture 04 NLP demos)
 
@@ -41,6 +58,8 @@ Typical variables:
 | `OPENAI_API_KEY` | RAG homework, capstone |
 | `GEMINI_API_KEY` | Lecture 06 Flask RAG demo, lecture 08 tool-calling demo |
 | `HF_TOKEN` | Hugging Face models in lecture demos |
+| `KAGGLE_API_TOKEN` | Kaggle MCP — dataset download for hw07 ([Kaggle Settings](https://www.kaggle.com/settings)) |
+| `RAPIDAPI_KEY` | hw07 Open WebUI tool server — live API lookups |
 
 ## Run by area
 
@@ -82,14 +101,20 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Copy the Cursor MCP template to the workspace (from repo root). **Create the lecture venv and run `pip install -r requirements.txt` first** (see [`lectures/08_mcp/README.md`](../lectures/08_mcp/README.md)):
+Copy the Cursor MCP template to the workspace (from repo root). Prefer the **root [`.mcp.json`](../.mcp.json)** — Cursor loads it automatically. For lecture-only minimal set:
 
 ```powershell
 mkdir .cursor -ErrorAction SilentlyContinue
 copy lectures\08_mcp\config\mcp.json.example .cursor\mcp.json
 ```
 
-Restart Cursor and confirm **Settings → MCP** shows `course-tools`. See [`lectures/08_mcp/README.md`](../lectures/08_mcp/README.md) for Inspector and troubleshooting.
+Or use the cross-platform launcher (after `setup-dev.ps1`):
+
+```powershell
+python scripts\run-mcp-course-tools.py
+```
+
+Restart Cursor and confirm **Settings → MCP** shows `course-tools`. See [`lectures/08_mcp/README.md`](../lectures/08_mcp/README.md) and [`docs/AGENT-TOOLING.md`](AGENT-TOOLING.md).
 
 Optional Gemini demo (not MCP):
 
@@ -97,6 +122,21 @@ Optional Gemini demo (not MCP):
 copy .env.example .env
 python demos\tool_calling_demo.py
 ```
+
+### Homework 07 — Open WebUI + live tools
+
+```powershell
+cd homework\hw07\open-webui-tools
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+copy .env.example .env
+# Set RAPIDAPI_KEY in .env; optional KAGGLE_API_TOKEN for dataset download
+uvicorn tools_server:app --host 0.0.0.0 --port 5005
+```
+
+See [`homework/hw07/README.md`](../homework/hw07/README.md) for Open WebUI Docker setup and KB upload.
+
+**MCP servers for hw07:** Root [`.mcp.json`](../.mcp.json) includes `kaggle` (HTTP) and `course-tools` (stdio). Set `KAGGLE_API_TOKEN` in your user environment before connecting.
 
 ### Capstone — IncidentIQ
 
