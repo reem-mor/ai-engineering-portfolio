@@ -100,8 +100,8 @@ def _normalize_country_payload(payload: dict[str, Any] | list[Any]) -> dict[str,
         capital = capital[0] if capital else None
 
     region = item.get("region")
-    if region is None and isinstance(item.get("region"), dict):
-        region = item["region"].get("name")
+    if isinstance(region, dict):
+        region = region.get("name")
 
     population = item.get("population")
     return {

@@ -76,7 +76,8 @@ npm install && npx playwright test submission-screenshots.spec.ts
 - Tool routes return HTTP 200 + `{ok, source, data, error}` — Open WebUI expects structured tool failures.
 - Keep sync `def` handlers + sync httpx (threadpool) unless concurrency requirements change.
 - Normalize RapidAPI payloads in `rapidapi_client.py` before returning to the model.
-- E2E `waitForAssistantReply` must match **assistant message text only**, not user prompts.
+- E2E `waitForAssistantReply` must match **assistant message text only**, not user prompts; wait until streaming completes (no skeleton bars).
+- Run `homework/hw07/scripts/validate-submission.sh` before submission.
 - Do not commit API keys, `.hw07-tool-server.pid`, or Open WebUI volumes.
 
 ## Related
