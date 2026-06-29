@@ -1,105 +1,122 @@
 # Repository Architecture
 
-This document explains how [`amdocs-ai-course`](../../) is organized and why. The layout prioritizes **reviewability** for lecturers and **portfolio clarity** for employers.
+How [`amdocs-ai-course`](../../) is organized and why. The layout prioritizes **reviewability**
+for lecturers and **portfolio clarity** for employers (2026).
 
 ## Design principles
 
 1. **Progressive complexity** — lectures → homework → projects
 2. **Runnable artifacts** — each major folder has a README with run instructions
-3. **Separation of concerns** — course slides in `resources/`, code in `lectures/` and `homework/`, capstone in `projects/`
-4. **Protected capstone** — `projects/incident-assistant-rag/` is maintained independently; root docs link to it without modifying it
+3. **Separation of concerns** — third-party IP in [`resources/MANIFEST.md`](../../resources/MANIFEST.md) only; code in `lectures/` and `homework/`; portfolio work in `projects/`
+4. **Honest framing** — flagships extract to own repos; this archive links out (see [`docs/extraction/`](../extraction/))
+5. **Generated output stays untracked** — SPA bundles, `catboost_info/`, local indexes
 
 ## Top-level layout
 
 ```text
 amdocs-ai-course/
 ├── README.md                 # Portfolio entry point
-├── LICENSE                   # MIT (original code)
+├── AGENTS.md / CLAUDE.md     # Cross-tool agent guidance
+├── LICENSE                   # MIT (own code) + IP carve-out for course material
 ├── CONTRIBUTING.md           # Homework submission workflow
-├── requirements.txt          # Course-wide Python dependencies
-├── .env.example              # Placeholder env vars (no secrets)
-├── docs/                     # Cross-cutting documentation (this folder)
-├── resources/                # PDF slides + official handouts
-├── lectures/                 # Per-lesson code and notes (01–07)
-├── homework/                 # Assignments hw01–hw05
-├── exercises/                # Index to runnable labs (no duplicate code)
-├── projects/                 # Capstone (IncidentIQ)
-└── .gitignore
+├── requirements.txt          # Course-wide Python deps (UTF-8)
+├── .mcp.json                 # Project MCP servers (env-interpolated secrets)
+├── scripts/                  # Maintenance (project extraction)
+├── docs/                     # Meta-docs, audit, extraction runbooks
+├── resources/MANIFEST.md     # Course slides/handouts (not in repo — Drive only)
+├── lectures/                 # Lessons 01–11
+├── homework/                 # Assignments hw01–hw07
+├── exercises/                # Lab index (links into lectures/homework)
+├── oz_veruach_bot/           # Standalone product (extraction-ready)
+└── projects/                 # Capstone + iterations + flagship copy
+    ├── incident-assistant-rag/   # Featured capstone
+    ├── incident-rag-bedrock/     # Learning iteration
+    └── piter-aiops/              # Flagship copy (extraction-ready)
 ```
 
 ## Learning flow
 
 ```mermaid
 flowchart TB
-  subgraph foundations [Foundations]
-    L01[Lecture 01 Jupyter]
-    L02[Lecture 02 Python]
-    L03[Lecture 03 OOP NumPy]
+  subgraph foundations [Foundations L01-L03]
+    L01[Jupyter Python]
+    L02[Python intro]
+    L03[OOP NumPy]
   end
 
-  subgraph ai_web [AI and Web]
-    L04[Lecture 04 NLP RAG]
-    L05[Lecture 05 Flask]
-    L06[Lecture 06 Flask RAG SQLite]
+  subgraph ai_web [AI and Web L04-L06]
+    L04[NLP RAG]
+    L05[Flask]
+    L06[Flask RAG SQLite]
   end
 
-  subgraph ops [Ops and Cloud]
-    L07[Lecture 07 Docker AWS]
-    HW05[Homework 05 EC2 Nginx]
+  subgraph ops_agents [Ops Agents L07-L11]
+    L07[Docker AWS]
+    L08[MCP]
+    L09[Bedrock Flows n8n]
+    L10[LangChain LangGraph]
+    L11[Local models Open WebUI]
   end
 
-  subgraph deliverables [Deliverables]
-    HW01[HW01 Notebook]
-    HW02[HW02 Python]
-    HW03[HW03 Titanic CLI]
-    HW04[HW04 RAG App WIP]
-    Capstone[incident-assistant-rag]
+  subgraph homework [Homework]
+    HW04[HW04 RAG app]
+    HW05[HW05 EC2 Nginx]
+    HW06[HW06 n8n agent]
+    HW07[HW07 Open WebUI tools]
   end
 
-  L01 --> L02 --> L03
-  L03 --> L04 --> L06
+  subgraph projects [Projects]
+    Bedrock[incident-rag-bedrock iteration]
+    Capstone[incident-assistant-rag capstone]
+    PITER[piter-aiops flagship]
+  end
+
+  L01 --> L02 --> L03 --> L04 --> L06
   L05 --> L06
   L04 --> HW04 --> Capstone
   L06 --> Capstone
   L07 --> HW05
-  L03 --> HW01
-  L02 --> HW02
-  L03 --> HW03
+  L08 --> HW07
+  L09 --> HW06
+  L10 --> HW07
+  L11 --> HW07
+  Bedrock --> PITER
+  Capstone -. independent stack .-> Capstone
 ```
 
 ## Folder responsibilities
 
-| Folder | Role | Mutability |
-|--------|------|------------|
-| `resources/` | Read-only course PDFs and DOCX/PPTX handouts | Add handouts; do not edit PDFs |
-| `lectures/` | Lesson-aligned code; demos stay near slides | Extend per lesson |
-| `homework/` | Graded assignments with evidence | One folder per HW |
-| `exercises/` | Navigation index only | README links only |
-| `docs/` | Portfolio and course meta-docs | Root-level docs only |
-| `projects/incident-assistant-rag/` | Capstone — IncidentIQ | **Do not modify from root reorg** |
+| Folder | Role | Notes |
+|--------|------|-------|
+| `resources/` | IP-safe manifest | PDFs/DOCX **not** committed — see MANIFEST |
+| `lectures/` | Lesson code + notes | 01–11; demos colocated with lessons |
+| `homework/` | Graded work + evidence | hw01–hw07; screenshots per assignment |
+| `exercises/` | Navigation index | No duplicate code |
+| `docs/` | Cross-cutting docs | Includes [`extraction/`](../extraction/) |
+| `projects/` | End-to-end systems | See [`projects/README.md`](../../projects/README.md) |
+| `oz_veruach_bot/` | Standalone Telegram bot | Extract when ready — [`EXTRACTION.md`](../../oz_veruach_bot/EXTRACTION.md) |
+
+## Extraction status
+
+| Path | Verdict | External repo |
+|------|---------|---------------|
+| `projects/piter-aiops/` | Extract when ready | `reem-mor/piter-aiops` *(not created yet)* |
+| `oz_veruach_bot/` | Extract when ready | `reem-mor/oz-veruach-bot` *(not created yet)* |
+| HINDSIGHT | Already external | [`reem-mor/hindsight`](https://github.com/reem-mor/hindsight) |
+
+Runbooks: [`docs/extraction/README.md`](../extraction/README.md).
 
 ## Documentation map
 
 | Question | Read |
 |----------|------|
 | What is this repo? | [`README.md`](../../README.md), [`course-summary.md`](../course-summary.md) |
-| How do I run things? | [`docs/setup.md`](../setup.md) |
-| Docker / AWS labs? | [`docs/docker-aws-notes.md`](../docker-aws-notes.md) |
-| RAG progression? | [`docs/rag-notes.md`](../rag-notes.md) |
-| Before submit? | [`docs/submission-checklist.md`](../submission-checklist.md) |
-| Capstone architecture? | [`projects/incident-assistant-rag/docs/`](../../projects/incident-assistant-rag/docs/) (in-project) |
-
-## Screenshot locations
-
-Root `docs/screenshots/` is an **index only**. Actual images stay with their assignments:
-
-- HW05 EC2 lab: `homework/hw05/nginx-docker-lab/screenshots/`
-- Capstone UI/API: `projects/incident-assistant-rag/screenshots/` (in-project)
-
-## Why conservative naming
-
-Lecture folders use names like `04_nlp_rag` instead of `lecture-04` to preserve existing imports, Docker paths, and README links. Renaming would add risk without improving discoverability — the root README and this file provide the map.
+| How do I run things? | [`setup.md`](../setup.md) |
+| Screenshot index | [`screenshots/README.md`](../screenshots/README.md) |
+| RAG progression | [`rag-notes.md`](../rag-notes.md) |
+| Security / history | [`SECURITY_REMEDIATION.md`](../SECURITY_REMEDIATION.md) |
+| Capstone architecture | [`projects/incident-assistant-rag/docs/`](../../projects/incident-assistant-rag/docs/) |
 
 ## Author
 
-Reem Mor — [github.com/reem-mor](https://github.com/reem-mor)
+Re'em Mor — [github.com/reem-mor](https://github.com/reem-mor)

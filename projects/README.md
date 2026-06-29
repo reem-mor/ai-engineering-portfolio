@@ -1,27 +1,36 @@
 # Course Projects
 
-This folder contains end-to-end AI engineering projects built during the Amdocs AI-Augmented Software Engineering course.
+End-to-end AI engineering work from the course archive. **Featured capstone** and **learning
+iterations** live here; the **flagship agentic stack** is extraction-ready to its own repo.
 
-## Projects
+| Project | Folder | Status | Stack | Tests |
+|---------|--------|--------|-------|-------|
+| **IncidentIQ** (capstone) | [`incident-assistant-rag/`](incident-assistant-rag/) | **Featured** — keep in archive | FastAPI · OpenAI · local FAISS · React · Docker | 90 (CI) |
+| **Incident RAG (Bedrock)** | [`incident-rag-bedrock/`](incident-rag-bedrock/) | **Learning iteration** — Bedrock KB predecessor | Flask · Bedrock KB · React | 111 (CI) |
+| **PITER AiOps** | [`piter-aiops/`](piter-aiops/) | **Extraction-ready** — flagship copy | Flask · Bedrock **Agent** · tools · React | ~325 (local) |
 
-| Project | Folder | Status | Description |
-|---------|--------|--------|-------------|
-| **IncidentIQ** (capstone) | [`incident-assistant-rag/`](incident-assistant-rag/) | Complete | Full-stack RAG for incident operations — FastAPI, React, FAISS, OpenAI, Docker, 90 pytest tests, evaluation harness |
+## External flagships (not duplicated here)
+
+| Project | Repo |
+|---------|------|
+| **HINDSIGHT** | [reem-mor/hindsight](https://github.com/reem-mor/hindsight) |
+| **PITER AiOps** (target) | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) — *repo not created yet; see [`EXTRACTION.md`](piter-aiops/EXTRACTION.md)* |
+
+Extraction runbooks: [`docs/extraction/`](../docs/extraction/).
+
+## RAG progression (honest arc)
+
+```text
+incident-rag-bedrock  →  piter-aiops
+  (managed Bedrock KB)     (Bedrock Agent + tools + memory)
+
+incident-assistant-rag  — parallel capstone track (OpenAI + local FAISS, no AWS)
+```
 
 ## Course handouts
 
-| Document | Purpose |
-|----------|---------|
-| [`resources/handouts/project_guidelines.pptx`](../resources/MANIFEST.md) | Course project requirements |
-| [`resources/handouts/mid-course-project-guidelines.docx`](../resources/MANIFEST.md) | Mid-course project guidelines |
-| [`resources/handouts/rag-application-homework-guidelines.docx`](../resources/MANIFEST.md) | Full RAG homework specification |
-
-## Capstone quick link
-
-Setup, architecture, and demo flow are documented in the capstone README (maintained inside that project):
-
-[incident-assistant-rag/README.md](incident-assistant-rag/README.md)
+Third-party assignment briefs are **not** in this repo — indexed in [`resources/MANIFEST.md`](../resources/MANIFEST.md).
 
 ## Submission
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) and [docs/submission-checklist.md](../docs/submission-checklist.md).
+[`CONTRIBUTING.md`](../CONTRIBUTING.md) · [`docs/submission-checklist.md`](../docs/submission-checklist.md)

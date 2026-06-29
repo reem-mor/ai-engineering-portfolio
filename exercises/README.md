@@ -2,6 +2,8 @@
 
 Runnable exercises and demos live next to their lectures to keep imports and paths stable. Use this page as a table of contents.
 
+Full lecture list: [`lectures/README.md`](../lectures/README.md) · Homework: [`homework/README.md`](../homework/README.md).
+
 ## NLP and RAG (Lecture 04)
 
 | Path | Description |
@@ -44,12 +46,37 @@ Setup: `pip install -r requirements.txt`, copy `config/mcp.json.example` to `.cu
 
 Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
 
+Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
+
+## Bedrock Flows & n8n (Lecture 09)
+
+| Path | Description |
+|------|-------------|
+| [`lectures/09_flows_bedrock_n8n/`](../lectures/09_flows_bedrock_n8n/) | Bedrock Flows + n8n workflow exports |
+| [`homework/hw06/`](../homework/hw06/) | Customer-support agent homework |
+
+## LangChain & LangGraph (Lecture 10)
+
+| Path | Description |
+|------|-------------|
+| [`lectures/10_langchain_langgraph/`](../lectures/10_langchain_langgraph/) | LangChain/LangGraph RAG exercises, ML demos |
+| Run tests | `pip install -r requirements.txt && pytest -q` |
+
+## Local models & Open WebUI (Lecture 11)
+
+| Path | Description |
+|------|-------------|
+| [`lectures/11_local_models_webui/`](../lectures/11_local_models_webui/) | Ollama, Open WebUI, KB concepts |
+| [`homework/hw07/`](../homework/hw07/) | Open WebUI + MCP-style tools server |
+
 ## Homework labs
 
 | Path | Description |
 |------|-------------|
 | [`homework/hw03/`](../homework/hw03/) | Titanic ticket CLI — includes pytest |
 | [`homework/hw05/nginx-docker-lab/`](../homework/hw05/nginx-docker-lab/) | EC2, Docker, Nginx hands-on lab |
+| [`homework/hw06/n8n-customer-support-agent/`](../homework/hw06/n8n-customer-support-agent/) | n8n agent workflow |
+| [`homework/hw07/open-webui-tools/`](../homework/hw07/open-webui-tools/) | FastAPI tools server for Open WebUI |
 
 ## Related documentation
 
