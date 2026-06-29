@@ -1,5 +1,8 @@
 # PITER AiOps
 
+> **Extraction-ready:** Canonical home will be [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) *(not created yet)*.
+> See [`EXTRACTION.md`](EXTRACTION.md) and [`docs/extraction/`](../../docs/extraction/).
+
 **AI-powered incident response for NOC, DevOps, and SRE teams**
 
 **P**riority · **I**nvestigation · **T**riage · **E**scalation · **R**esolution
@@ -9,7 +12,7 @@
 ![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-Agent_%2B_KB-FF9900?logo=amazonwebservices&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
-[![CI](https://github.com/reem-mor/piter-aiops/actions/workflows/ci.yml/badge.svg)](https://github.com/reem-mor/piter-aiops/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-external_repo_pending-lightgrey)](#quick-start)
 ![pytest](https://img.shields.io/badge/pytest-279_passed-brightgreen?logo=pytest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
