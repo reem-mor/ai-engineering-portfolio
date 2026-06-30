@@ -4,14 +4,14 @@
 
 ### Learning archive & capstone projects — Amdocs / Lab17 AI-Augmented Software Engineering
 
-**Production-minded AI systems · grounded RAG · agentic ops · AI Engineer × SRE**
+**AI Engineer × SRE** — production-minded systems · grounded RAG · agentic ops · deterministic safety floors
 
 [![CI](https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](#technology-stack)
-[![Tests](https://img.shields.io/badge/Tests-201%2B%20pytest-brightgreen)](#sre--devops-credibility)
+[![Tests](https://img.shields.io/badge/In--repo_tests-201%2B%20pytest-brightgreen)](#production-engineering-habits)
+[![Ecosystem](https://img.shields.io/badge/Ecosystem-650%2B%20tests%20total-blueviolet)](#featured-work)
 [![Stack](https://img.shields.io/badge/Stack-FastAPI%20%C2%B7%20Flask%20%C2%B7%20React-009688)](#technology-stack)
-[![AI](https://img.shields.io/badge/AI-RAG%20%C2%B7%20Bedrock%20%C2%B7%20Agents-purple)](#technology-stack)
-[![License](https://img.shields.io/badge/License-MIT-green)](#license)
+[![AI](https://img.shields.io/badge/AI-RAG%20%C2%B7%20Bedrock%20%C2%B7%20Agents-purple)](#skills--competencies)
 
 <p>
   <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" alt="Python">
@@ -23,11 +23,12 @@
   <img src="https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white" alt="Terraform">
   <img src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white" alt="n8n">
+  <img src="https://img.shields.io/badge/MCP-Model_Context_Protocol-6E40C9" alt="MCP">
 </p>
 
-[Summary](#project-summary) · [Structure](#repository-structure) · [Pins](#github-pin-recommendations) · [Architecture](#architecture) · [Syllabus](#syllabus) · [Journey](#end-to-end-learning-journey) · [Flagships](#flagship-repositories) · [Screenshots](#see-it-working) · [SRE](#sre--devops-credibility) · [Quick start](#quick-start) · [Docs](#documentation)
+[Employer review](#-60-second-employer-review) · [Featured work](#featured-work) · [Skills](#skills--competencies) · [Architecture](#architecture) · [Learning journey](#learning-journey) · [Curriculum](#curriculum) · [MCP & agents](#mcp--agent-tooling) · [Screenshots](#see-it-working) · [Quick start](#quick-start)
 
-**Re'em Mor** · B.Sc. CS (GPA 91) · production SRE/NOC · [github.com/reem-mor](https://github.com/reem-mor)
+**[Re'em Mor](https://github.com/reem-mor)** · B.Sc. CS (GPA 91) · Production SRE/NOC @ regulated multi-jurisdiction gaming · [Profile README](https://github.com/reem-mor/reem-mor)
 
 > Former repo name: `amdocs-ai-course` (GitHub redirects automatically)
 
@@ -35,66 +36,118 @@
 
 ---
 
-## Project summary
+## Who this is for
 
-This repository is my **honest learning archive**: lecture write-ups, homework, labs, and **in-repo capstone projects** that show how I progressed from Python fundamentals to full-stack RAG and AWS agentic systems.
-
-> **Core principle:** flagships live in **their own repos** — this archive shows the **progression and engineering habits** behind them.  
-> Third-party course slides are **not** redistributed ([`resources/MANIFEST.md`](resources/MANIFEST.md)).
-
-| Audience | Start here |
-|----------|------------|
-| **Recruiter / hiring manager** | [GitHub pins](#github-pin-recommendations) → [**PITER AiOps**](https://github.com/reem-mor/piter-aiops) |
-| **Technical reviewer** | [`projects/incident-assistant-rag/`](projects/incident-assistant-rag/) capstone |
-| **Student / self-learner** | [Quick start](#quick-start) · [`docs/SYLLABUS.md`](docs/SYLLABUS.md) · [`docs/STRUCTURE.md`](docs/STRUCTURE.md) |
+| Audience | Start here | Time |
+|----------|------------|------|
+| **Hiring manager / recruiter** | [60-second review](#-60-second-employer-review) → [**PITER AiOps**](https://github.com/reem-mor/piter-aiops) | ~2 min |
+| **Technical interviewer** | [Featured capstone](#featured-work) → [`incident-assistant-rag/`](projects/incident-assistant-rag/) → [Screenshots](#see-it-working) | ~10 min |
+| **Engineering lead (AI/SRE)** | [Skills matrix](#skills--competencies) · [RAG evolution](#rag-evolution-two-tracks) · [Production habits](#production-engineering-habits) | ~15 min |
+| **Self-learner** | [Quick start](#quick-start) · [`docs/SYLLABUS.md`](docs/SYLLABUS.md) | — |
 
 ---
 
-## Repository structure
+## ⏱ 60-second employer review
 
-**Committed tree** (what GitHub reviewers see):
+**The headline:** I build AI systems that survive production — not demos that only work on the happy path.
+
+By day I run **regulated, multi-jurisdiction infrastructure** (500+ nodes, Kubernetes, Terraform, on-call incident response). This archive shows how I applied that ops mindset to AI engineering: **grounded RAG, tool-using agents, MCP integrations, and guardrails that override LLM output when safety matters.**
+
+**Review in this order:**
+
+1. **[PITER AiOps](https://github.com/reem-mor/piter-aiops)** — flagship Bedrock Agent + RAG incident platform · **325+ tests**
+2. **[IncidentIQ capstone](projects/incident-assistant-rag/)** — full-stack grounded RAG in this repo · **90 tests · eval 5/5**
+3. **[course-assistant-bot](https://github.com/reem-mor/course-assistant-bot)** — production Telegram bot · **224 tests · mypy strict**
+4. **[HINDSIGHT](https://github.com/reem-mor/hindsight)** — document intelligence pipeline · n8n + Gemini + FastAPI
+5. **This repo** — honest progression from Python → RAG → agents/MCP with CI evidence
+
+---
+
+## What I learned & practiced
+
+Four stages, each with **runnable artifacts** — not slide-only coursework.
+
+| Stage | Topics mastered | Key deliverables | Outcome |
+|-------|-----------------|------------------|---------|
+| **1 — Foundations** | Python 3.12, OOP, NumPy, pytest | hw01–03, lectures 01–03 | Typed, tested Python baseline |
+| **2 — RAG & Web** | Embeddings, FAISS, chunking, Flask/FastAPI | hw04 scaffold → [**IncidentIQ**](projects/incident-assistant-rag/) | Grounded answers + source citation + **no-context refusal** |
+| **3 — Ops & Agents** | Docker, EC2, MCP, n8n, Bedrock, LangGraph, Open WebUI | hw05–07, lectures 07–11 | Containerized labs, agent workflows, tool servers |
+| **4 — Capstone & Flagships** | Bedrock KB → Agent, extraction to standalone repos | [PITER](https://github.com/reem-mor/piter-aiops), [bot](https://github.com/reem-mor/course-assistant-bot), [HINDSIGHT](https://github.com/reem-mor/hindsight) | Production-minded systems with CI, Docker, guardrails |
+
+**Engineering principles repeated across every project:**
+
+- Deterministic safety floors — scoring, thresholds, and eligibility in code, not LLM prose
+- No-context refusal — fixed response when retrieval misses; no wasted LLM calls
+- Structured errors, health endpoints, secrets via env vars only
+- pytest + ruff in CI; externals mocked in tests
+
+---
+
+## Featured work
+
+![IncidentIQ — grounded RAG chat with source citations](projects/incident-assistant-rag/screenshots/06_frontend_rag_chat_grounded.png)
+
+### External flagships (lead with these)
+
+| Project | What it does | Stack | Tests |
+|---------|--------------|-------|-------|
+| **[PITER AiOps](https://github.com/reem-mor/piter-aiops)** | Agentic incident-response for NOC/SRE: Bedrock Agent + RAG, 4 Lambda action groups, session memory, safe escalation previews | AWS Bedrock · RAG · Lambda · Flask · React · Docker | **325+** |
+| **[HINDSIGHT](https://github.com/reem-mor/hindsight)** | Incident-log / document intelligence: ingest → LLM extract → deterministic enrich → semantic search | n8n · FastAPI · Gemini · Supabase / pgvector | CI |
+| **[course-assistant-bot](https://github.com/reem-mor/course-assistant-bot)** | Bilingual (HE/EN) Telegram course-ops: schedule, homework, RAG recommendations, admin FSM flows | Python · uv · SQLAlchemy/Alembic · LangGraph · Docker | **224** |
+
+Pointers & clone steps: [`flagships/README.md`](flagships/README.md) · Profile pins: [`docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md`](docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md)
+
+### In-repo projects (stepping stones)
+
+| Project | What it does | Stack | Tests |
+|---------|--------------|-------|-------|
+| **[IncidentIQ](projects/incident-assistant-rag/)** | Full-stack incident assistant: upload runbooks → FAISS index → grounded chat with citations and confidence scores | FastAPI · OpenAI · FAISS · React · Docker | **90** · eval **5/5** |
+| **[Incident RAG (Bedrock)](projects/incident-rag-bedrock/)** | Managed Bedrock Knowledge Base iteration — same incident domain, AWS-native retrieval | Flask · Bedrock KB · React · EC2 | **111** |
+
+**RAG progression (honest arc):**
 
 ```text
-docs/  lectures/  homework/  exercises/  projects/  flagships/  resources/  scripts/
+Track A (OpenAI + local FAISS):  L04 → L06 → hw04 → incident-assistant-rag (capstone)
+Track B (AWS Bedrock):           L09 → incident-rag-bedrock → piter-aiops (flagship Agent)
 ```
-
-| Folder | Role |
-|--------|------|
-| `lectures/` | Lessons 01–11 — demos colocated with notes |
-| `homework/` | Assignments hw01–07 — evidence colocated |
-| `projects/` | In-repo capstone + Bedrock iteration only |
-| `flagships/` | Pointers → external production repos |
-| `docs/` | Syllabus, setup, architecture, agent tooling |
-
-Full map (including local-only folders): [`docs/STRUCTURE.md`](docs/STRUCTURE.md)
-
-Clean local clutter (`.venv` caches, old PITER copy): `.\scripts\clean-workspace.ps1`
 
 ---
 
-## GitHub pin recommendations
+## Skills & competencies
 
-Pin these on your profile review — order matters for first impressions:
+| Domain | Skills | Evidence in this repo |
+|--------|--------|----------------------|
+| **RAG & retrieval** | Embeddings, FAISS, chunking, similarity thresholds, evaluation harness, source attribution | [IncidentIQ](projects/incident-assistant-rag/) · [Bedrock iteration](projects/incident-rag-bedrock/) |
+| **LLM applications** | Grounded generation, refusal paths, prompt + tool design, multi-LLM routing | Capstone · [hw06 n8n agent](homework/hw06/n8n-customer-support-agent/) · [bot](https://github.com/reem-mor/course-assistant-bot) |
+| **Agents & orchestration** | AWS Bedrock Agent, LangChain/LangGraph, n8n workflows, MCP tool servers | [PITER](https://github.com/reem-mor/piter-aiops) · L08–11 · [hw07 tools](homework/hw07/open-webui-tools/) |
+| **Backend** | FastAPI, Flask, async Python, pydantic v2, REST APIs, OpenAPI | Capstone · lectures 05–06 · hw07 FastAPI server |
+| **Frontend** | React, TypeScript, Vite, ops consoles | Capstone · [PITER frontend](https://github.com/reem-mor/piter-aiops) |
+| **SRE & DevOps** | Docker Compose, EC2 labs, Nginx, health checks, CI/CD, secrets hygiene | [hw05](homework/hw05/nginx-docker-lab/) · [CI](.github/workflows/ci.yml) · `.env.example` |
+| **Quality** | pytest (mocked externals), ruff, structured logging, idempotent scripts | **201+** in-repo tests · 4 CI matrices |
+| **Agent dev tooling** | MCP server wiring, Cursor skills/rules, cross-tool AGENTS.md | [`.mcp.json`](.mcp.json) · [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) |
 
-| Pin | Repository | Why |
-|-----|------------|-----|
-| 1 | [**piter-aiops**](https://github.com/reem-mor/piter-aiops) | Flagship — Bedrock Agent + RAG + tools + safe escalation |
-| 2 | [**hindsight**](https://github.com/reem-mor/hindsight) | SecOps document pipeline · semantic search |
-| 3 | [**course-assistant-bot**](https://github.com/reem-mor/course-assistant-bot) | Production Telegram bot · uv · 224 tests |
-| 4 | **ai-engineering-portfolio** (this repo) | Honest learning arc + featured capstone |
+<details>
+<summary><b>Technology stack</b> — full list</summary>
 
-Setup commands: [`docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md`](docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md) · Pointer index: [`flagships/README.md`](flagships/README.md)
+| Area | Technologies |
+|------|--------------|
+| Languages | Python 3.12 |
+| Web | FastAPI, Flask, React, TypeScript, Vite |
+| AI | OpenAI, FAISS, AWS Bedrock KB/Agent, LangChain, LangGraph, Ollama |
+| Data | SQLite, Postgres, pgvector, Google Sheets (HINDSIGHT) |
+| Ops | Docker, EC2, n8n, MCP, Kubernetes & Terraform (production day-job context) |
+| Quality | ruff, pytest, GitHub Actions |
+
+</details>
 
 ---
 
 ## Architecture
 
-Colour-coded ecosystem — **archive (learning) → capstones in-repo → external flagships**:
+Colour-coded ecosystem — **curriculum → in-repo capstones → external flagships**:
 
-![IncidentIQ — RAG chat with grounded sources](projects/incident-assistant-rag/screenshots/06_frontend_rag_chat_grounded.png)
-
-<details>
-<summary><b>Interactive portfolio map</b> — mermaid</summary>
+<details open>
+<summary><b>Portfolio ecosystem map</b> — interactive mermaid</summary>
 
 ```mermaid
 flowchart TB
@@ -125,33 +178,47 @@ flowchart TB
 
 | Layer | Location | Role |
 |-------|----------|------|
-| 🔵 **Curriculum** | `lectures/`, `homework/`, `exercises/` | Authored notes + runnable demos |
-| 🟣 **Capstone** | `projects/incident-assistant-rag/` | Featured RAG app — 90 tests, evaluation harness |
-| 🟣 **Iteration** | `projects/incident-rag-bedrock/` | Bedrock KB stepping-stone → PITER |
-| 🟠 **Flagships** | `flagships/` | Pointers to external repos |
-| 🩷 **Meta** | `docs/`, `AGENTS.md`, `.mcp.json` | Setup, syllabus, agent tooling |
+| **Curriculum** | `lectures/`, `homework/`, `exercises/` | Authored notes + runnable demos |
+| **Capstone** | `projects/incident-assistant-rag/` | Featured RAG app — 90 tests, evaluation harness |
+| **Iteration** | `projects/incident-rag-bedrock/` | Bedrock KB stepping-stone → PITER |
+| **Flagships** | `flagships/` | Pointers to external production repos |
+| **Meta** | `docs/`, `AGENTS.md`, `.mcp.json` | Setup, syllabus, agent/MCP tooling |
 
-Map: [`docs/architecture/repository-architecture.md`](docs/architecture/repository-architecture.md)
+Deep dive: [`docs/architecture/repository-architecture.md`](docs/architecture/repository-architecture.md)
 
----
+### RAG evolution — two tracks
 
-## Use cases
+<details open>
+<summary><b>Compare retrieval architectures</b> — mermaid</summary>
 
-| # | Scenario | Where |
-|---|----------|-------|
-| 1 | Review **course progression** (Python → RAG → agents) | [`docs/SYLLABUS.md`](docs/SYLLABUS.md) |
-| 2 | Run **featured capstone** locally (Docker) | `projects/incident-assistant-rag/` |
-| 3 | Compare **OpenAI+FAISS** vs **Bedrock KB** vs **Bedrock Agent** | capstone · bedrock iteration · [PITER](https://github.com/reem-mor/piter-aiops) |
-| 4 | Reproduce **CI** (ruff + pytest) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
-| 5 | Study **MCP / agent tooling** setup | [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) |
-| 6 | Audit **portfolio hygiene** | [`docs/AUDIT_2026.md`](docs/AUDIT_2026.md) (historical; see banner) |
+```mermaid
+flowchart LR
+  subgraph trackA [Track A — Local FAISS]
+    A1[Upload PDF] --> A2[Chunk + embed]
+    A2 --> A3[FAISS index]
+    A3 --> A4[Similarity search]
+    A4 --> A5{Above threshold?}
+    A5 -->|yes| A6[OpenAI chat + sources]
+    A5 -->|no| A7[Fixed refusal]
+  end
+  subgraph trackB [Track B — AWS Bedrock]
+    B1[S3 corpus] --> B2[Bedrock KB sync]
+    B2 --> B3[RetrieveAndGenerate]
+    B3 --> B4{Confidence OK?}
+    B4 -->|yes| B5[Grounded answer]
+    B4 -->|no| B6[Refusal]
+    B2 --> B7[Bedrock Agent + Lambda tools]
+    B7 --> B8[PITER AiOps]
+  end
+  trackA --> CAP[incident-assistant-rag]
+  trackB --> BED[incident-rag-bedrock]
+  BED --> B8
+```
 
----
-
-## End-to-end flow
+</details>
 
 <details>
-<summary><b>Capstone RAG path</b> — upload → index → grounded chat</summary>
+<summary><b>Capstone request flow</b> — upload → index → grounded chat</summary>
 
 ```mermaid
 sequenceDiagram
@@ -173,73 +240,18 @@ sequenceDiagram
     LLM-->>API: Grounded answer
     API-->>UI: Answer + sources + scores
   else no context
-    API-->>UI: Fixed refusal (no LLM call)
+    API-->>UI: Fixed refusal — no LLM call
   end
 ```
 
-Full capstone docs: [`projects/incident-assistant-rag/README.md`](projects/incident-assistant-rag/README.md)
-
-</details>
-
-<details>
-<summary><b>RAG evolution track</b> — two honest paths</summary>
-
-```text
-Track A (OpenAI + local FAISS):
-  L04 demos → L06 Flask RAG → hw04 (target) → incident-assistant-rag (capstone)
-
-Track B (AWS Bedrock):
-  L09 Bedrock Flows → incident-rag-bedrock (iteration) → piter-aiops (flagship Agent)
-```
-
 </details>
 
 ---
 
-## Syllabus
+## Learning journey
 
-Full curriculum: [`docs/SYLLABUS.md`](docs/SYLLABUS.md)
-
-<details>
-<summary><b>Lectures 01–11</b> — topics & skills</summary>
-
-| # | Topic | Path | Skills |
-|---|-------|------|--------|
-| 01 | Jupyter & Python basics | `lectures/01_jupyter_python_basics/` | Python |
-| 02 | Python foundations | `lectures/02_python_intro/` | Python |
-| 03 | OOP & NumPy | `lectures/03_oop_numpy/` | Python, NumPy |
-| 04 | NLP, embeddings, FAISS, RAG | `lectures/04_nlp_rag/` | RAG, NLP |
-| 05 | Flask web development | `lectures/05_flask_intro/` | Flask, Docker |
-| 06 | Flask + SQLite + RAG | `lectures/06_flask_advanced_rag/` | RAG, SQLite |
-| 07 | Docker & AWS EC2 | `lectures/07_docker_aws/` | Docker, AWS, SRE |
-| 08 | Model Context Protocol | `lectures/08_mcp/` | MCP, agents |
-| 09 | Bedrock Flows & n8n | `lectures/09_flows_bedrock_n8n/` | Bedrock, n8n |
-| 10 | LangChain & LangGraph | `lectures/10_langchain_langgraph/` | LangChain, ML |
-| 11 | Local models & Open WebUI | `lectures/11_local_models_webui/` | Ollama, MCP |
-
-</details>
-
-<details>
-<summary><b>Homework hw01–hw07</b> — assignments & status</summary>
-
-| HW | Topic | Status | Path |
-|----|-------|--------|------|
-| hw01 | Jupyter intro | Complete | `homework/hw01/` |
-| hw02 | Python foundations | Complete | `homework/hw02/` |
-| hw03 | OOP / Titanic CLI | Complete | `homework/hw03/` |
-| hw04 | RAG web app | **Scaffold** — see capstone | `homework/hw04/` |
-| hw05 | EC2 / Docker / Nginx | Complete | `homework/hw05/` |
-| hw06 | n8n customer-support agent | Complete | `homework/hw06/` |
-| hw07 | Open WebUI + MCP tools | Complete | `homework/hw07/` |
-
-</details>
-
----
-
-## End-to-end learning journey
-
-<details>
-<summary><b>Four-stage colored flow</b> — mermaid</summary>
+<details open>
+<summary><b>Four-stage colored flow</b> — lectures + homework → capstone → flagships</summary>
 
 ```mermaid
 flowchart TB
@@ -307,55 +319,103 @@ Source: [`docs/diagrams/learning-path.mermaid`](docs/diagrams/learning-path.merm
 
 </details>
 
-| Stage | Topics | Path |
-|-------|--------|------|
-| Foundations | Python, OOP, NumPy | `lectures/01`–`03`, `homework/hw01`–`03` |
-| RAG & web | Embeddings, FAISS, Flask | `lectures/04`–`06`, `homework/hw04` |
-| Ops & agents | Docker, MCP, n8n, Bedrock, LangGraph | `lectures/07`–`11`, `homework/hw05`–`07` |
-| Capstone | Full-stack grounded RAG | `projects/incident-assistant-rag/` |
+---
 
-Index: [`lectures/README.md`](lectures/README.md) · [`homework/README.md`](homework/README.md) · [`exercises/README.md`](exercises/README.md)
+## Curriculum
+
+Full map: [`docs/SYLLABUS.md`](docs/SYLLABUS.md) · [`lectures/README.md`](lectures/README.md) · [`homework/README.md`](homework/README.md)
+
+<details>
+<summary><b>Lectures 01–11</b> — topics & skills</summary>
+
+| # | Topic | Path | Skills gained |
+|---|-------|------|---------------|
+| 01 | Jupyter & Python basics | `lectures/01_jupyter_python_basics/` | Python, notebooks |
+| 02 | Python foundations | `lectures/02_python_intro/` | Functions, I/O, data structures |
+| 03 | OOP & NumPy | `lectures/03_oop_numpy/` | Classes, arrays |
+| 04 | NLP, embeddings, FAISS, RAG | `lectures/04_nlp_rag/` | Embeddings, vector search, RAG |
+| 05 | Flask web development | `lectures/05_flask_intro/` | Flask, Docker |
+| 06 | Flask + SQLite + RAG | `lectures/06_flask_advanced_rag/` | REST API, FAISS chat UI |
+| 07 | Docker & AWS EC2 | `lectures/07_docker_aws/` | Containers, EC2, architecture diagrams |
+| 08 | Model Context Protocol | `lectures/08_mcp/` | MCP stdio servers, tool-calling |
+| 09 | Bedrock Flows & n8n | `lectures/09_flows_bedrock_n8n/` | Bedrock, workflow automation |
+| 10 | LangChain & LangGraph | `lectures/10_langchain_langgraph/` | Agent memory, routing, graphs |
+| 11 | Local models & Open WebUI | `lectures/11_local_models_webui/` | Ollama, local KB → hw07 |
+
+</details>
+
+<details>
+<summary><b>Homework hw01–hw07</b> — assignments & evidence</summary>
+
+| HW | Topic | Status | Evidence |
+|----|-------|--------|----------|
+| hw01 | Jupyter intro | Complete | Notebook |
+| hw02 | Python foundations | Complete | Scripts + exercises |
+| hw03 | OOP / Titanic CLI | Complete | pytest |
+| hw04 | RAG web app | Scaffold — full impl in capstone | Docker scaffold |
+| hw05 | EC2 / Docker / Nginx | Complete | [Screenshots](homework/hw05/nginx-docker-lab/screenshots/) |
+| hw06 | n8n customer-support agent | Complete | [Workflow + guardrails](homework/hw06/n8n-customer-support-agent/) |
+| hw07 | Open WebUI + MCP tools | Complete | [Screenshots](homework/hw07/screenshots/) · Playwright e2e |
+
+</details>
 
 ---
 
-## Tools & integrations
+## MCP & agent tooling
 
-### In this archive
+This repo is configured for **AI-assisted development** — MCP servers, Cursor skills, and cross-tool agent guidance (`AGENTS.md`).
 
-| Tool | Purpose |
-|------|---------|
-| **pytest + ruff** | CI quality gate |
-| **MCP servers** | [`.mcp.json`](.mcp.json) — 8 servers (see below) |
-| **Docker Compose** | Capstone + lecture demos |
-| **FAISS / OpenAI** | Local RAG capstone |
-| **Bedrock KB / Agent** | Learning iteration + external PITER |
+<details open>
+<summary><b>MCP ecosystem</b> — how agents connect to course tooling</summary>
 
-Agent bootstrap: [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) · [`scripts/setup-dev.ps1`](scripts/setup-dev.ps1)
+```mermaid
+flowchart LR
+  subgraph ide [Agent IDEs]
+    Cursor[Cursor]
+    Claude[Claude Code]
+  end
+  subgraph mcp [MCP layer — .mcp.json]
+    CT[course-tools]
+    PW[playwright]
+    KG[kaggle]
+    AWK[aws-knowledge]
+    AWA[aws-api]
+    BKB[bedrock-kb]
+    N8N[n8n-workflows]
+    LOV[lovable]
+  end
+  subgraph use [Used for]
+    L08[Lecture 08 demo]
+    E2E[hw07 UI capture]
+    DS[hw07 datasets]
+    DOC[AWS docs Q&A]
+    BR[Bedrock KB labs]
+    HW6[hw06 workflows]
+  end
+  Cursor --> mcp
+  Claude --> mcp
+  CT --> L08
+  PW --> E2E
+  KG --> DS
+  AWK --> DOC
+  BKB --> BR
+  N8N --> HW6
+```
 
-### MCP catalog (committed config)
+</details>
 
-| Server | Use |
-|--------|-----|
-| `course-tools` | Lecture 08 stdio demo |
+| Server | Use in this repo |
+|--------|------------------|
+| `course-tools` | Lecture 08 stdio MCP demo |
 | `playwright` | E2E / UI capture (hw07) |
-| `kaggle` | hw07 datasets |
-| `aws-knowledge` | AWS documentation |
+| `kaggle` | hw07 Netflix dataset |
+| `aws-knowledge` | AWS documentation Q&A |
 | `aws-api` | AWS API operations |
 | `bedrock-kb` | Bedrock Knowledge Base retrieval |
-| `n8n-workflows` | hw06 / lecture 09 |
+| `n8n-workflows` | hw06 / lecture 09 automation |
 | `lovable` | Optional UI experiments |
 
----
-
-## Flagship repositories
-
-Standalone repos — pointers and clone steps: [`flagships/README.md`](flagships/README.md)
-
-| Project | One line | Repository |
-|---------|----------|------------|
-| **PITER AiOps** | Bedrock Agent + RAG + tools · incident triage · safe escalation | [**piter-aiops**](https://github.com/reem-mor/piter-aiops) |
-| **HINDSIGHT** | SecOps document pipeline · Gemini extraction · deterministic enrich | [**hindsight**](https://github.com/reem-mor/hindsight) |
-| **course-assistant-bot** | Bilingual Telegram cohort bot · uv · 224 tests | [**course-assistant-bot**](https://github.com/reem-mor/course-assistant-bot) |
+Bootstrap: [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) · [`scripts/setup-dev.ps1`](scripts/setup-dev.ps1) · [`.mcp.json`](.mcp.json)
 
 ---
 
@@ -371,7 +431,7 @@ Standalone repos — pointers and clone steps: [`flagships/README.md`](flagships
 |:---:|:---:|
 | [![11](projects/incident-assistant-rag/screenshots/11_backend_tests_90_passed_pytest.png)](projects/incident-assistant-rag/screenshots/11_backend_tests_90_passed_pytest.png) | [![12](projects/incident-assistant-rag/screenshots/12_backend_evaluation_5_of_5.png)](projects/incident-assistant-rag/screenshots/12_backend_evaluation_5_of_5.png) |
 
-Architecture PNG: [`projects/incident-assistant-rag/docs/architecture.png`](projects/incident-assistant-rag/docs/architecture.png)
+Architecture: [`projects/incident-assistant-rag/docs/architecture.png`](projects/incident-assistant-rag/docs/architecture.png)
 
 ### Bedrock learning iteration
 
@@ -379,7 +439,7 @@ Architecture PNG: [`projects/incident-assistant-rag/docs/architecture.png`](proj
 |:---:|:---:|:---:|:---:|
 | [![kb](projects/incident-rag-bedrock/screenshots/01_bedrock_kb_overview.png)](projects/incident-rag-bedrock/screenshots/01_bedrock_kb_overview.png) | [![answer](projects/incident-rag-bedrock/screenshots/08_app_question_and_answer.png)](projects/incident-rag-bedrock/screenshots/08_app_question_and_answer.png) | [![refusal](projects/incident-rag-bedrock/screenshots/09_app_refusal_or_low_confidence.png)](projects/incident-rag-bedrock/screenshots/09_app_refusal_or_low_confidence.png) | [![tests](projects/incident-rag-bedrock/screenshots/11_pytest_passed.png)](projects/incident-rag-bedrock/screenshots/11_pytest_passed.png) |
 
-### Ops homework highlights
+### Ops & agent homework
 
 | hw05 EC2 + Docker + Nginx | hw06 n8n agent | hw07 Open WebUI KB | hw07 tool server |
 |:---:|:---:|:---:|:---:|
@@ -387,36 +447,45 @@ Architecture PNG: [`projects/incident-assistant-rag/docs/architecture.png`](proj
 
 ### External flagships
 
-Screenshots live in each repo's README — [**PITER**](https://github.com/reem-mor/piter-aiops#see-it-working) · [**HINDSIGHT**](https://github.com/reem-mor/hindsight#-see-it-working) · [**bot**](https://github.com/reem-mor/course-assistant-bot#see-it-working)
+Screenshots in each repo — [**PITER**](https://github.com/reem-mor/piter-aiops#see-it-working) · [**HINDSIGHT**](https://github.com/reem-mor/hindsight#-see-it-working) · [**bot**](https://github.com/reem-mor/course-assistant-bot#see-it-working)
+
+More: [`docs/screenshots/README.md`](docs/screenshots/README.md)
 
 ---
 
-## SRE & DevOps credibility
+## Production engineering habits
 
-Production habits backed by repo evidence — not demo-only AI:
+Ops-minded patterns backed by repo evidence — not demo-only AI:
 
 | Signal | Where |
 |--------|-------|
-| CI gate (ruff + 4 pytest matrices) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
-| Health / deep checks | capstone `/health` endpoints |
-| No-context refusal (deterministic) | capstone + bedrock iteration |
-| RAG evaluation harness | capstone eval 5/5 screenshot |
-| Docker Compose reproducibility | capstone, hw07 |
+| CI gate — ruff + **4 pytest matrices** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Health / deep checks | Capstone `/health` endpoints |
+| No-context refusal (deterministic) | Capstone + Bedrock iteration |
+| RAG evaluation harness | Capstone eval **5/5** |
+| Docker Compose reproducibility | Capstone, hw07 |
 | Secrets hygiene | [`.env.example`](.env.example), MCP `${env:VAR}` |
-| Incident-domain corpus | shared runbook samples across projects |
+| Incident-domain corpus | Shared runbook samples across projects |
 | EC2 / container ops lab | [`homework/hw05/nginx-docker-lab/`](homework/hw05/nginx-docker-lab/) |
+| Guardrails in n8n agent | Input guardrails + agent prompt — [hw06](homework/hw06/n8n-customer-support-agent/) |
 
 ---
 
-## Technology stack
+## Repository structure
 
-| Area | Technologies in archive |
-|------|-------------------------|
-| Languages | Python 3.12 |
-| Web | FastAPI, Flask, React, Vite |
-| AI | OpenAI, FAISS, AWS Bedrock KB/Agent, LangChain, LangGraph |
-| Ops | Docker, EC2 labs, n8n, MCP, Kubernetes & Terraform (production context) |
-| Quality | ruff, pytest, GitHub Actions |
+```text
+docs/  lectures/  homework/  exercises/  projects/  flagships/  resources/  scripts/
+```
+
+| Folder | Role |
+|--------|------|
+| `lectures/` | Lessons 01–11 — demos colocated with notes |
+| `homework/` | Assignments hw01–07 — evidence colocated |
+| `projects/` | In-repo capstone + Bedrock iteration |
+| `flagships/` | Pointers → external production repos |
+| `docs/` | Syllabus, setup, architecture, agent tooling |
+
+Full map: [`docs/STRUCTURE.md`](docs/STRUCTURE.md) · Clean local clutter: `.\scripts\clean-workspace.ps1`
 
 ---
 
@@ -433,6 +502,7 @@ pip install -r requirements-dev.txt
 
 ```bash
 cd projects/incident-assistant-rag && docker compose up --build
+# → http://localhost:8080
 ```
 
 **CI parity:**
@@ -445,7 +515,7 @@ cd homework/hw07/open-webui-tools && pip install -r requirements.txt && pytest -
 ruff check .
 ```
 
-Human setup: [`docs/setup.md`](docs/setup.md)
+Human setup: [`docs/setup.md`](docs/setup.md) · Agent bootstrap: [`scripts/setup-dev.ps1`](scripts/setup-dev.ps1)
 
 ---
 
@@ -453,20 +523,17 @@ Human setup: [`docs/setup.md`](docs/setup.md)
 
 | Doc | Contents |
 |-----|----------|
-| [`docs/README.md`](docs/README.md) | **Documentation hub** — start here for all meta-docs |
-| [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | Repository layout (committed vs local-only) |
-| [`docs/SYLLABUS.md`](docs/SYLLABUS.md) | Full curriculum map (lectures + homework + projects) |
+| [`docs/README.md`](docs/README.md) | Documentation hub |
+| [`docs/SYLLABUS.md`](docs/SYLLABUS.md) | Full curriculum map |
+| [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | Repository layout |
 | [`flagships/README.md`](flagships/README.md) | External repo pointers + pin order |
-| [`docs/setup.md`](docs/setup.md) | Clone, venv, per-project deps |
 | [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) | MCP, skills, CI matrix |
-| [`docs/AUDIT_2026.md`](docs/AUDIT_2026.md) | Employer-readiness audit (historical) |
-| [`docs/SECURITY_REMEDIATION.md`](docs/SECURITY_REMEDIATION.md) | Secrets hygiene |
-| [`docs/extraction/`](docs/extraction/) | Flagship extraction runbooks |
-| [`docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md`](docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md) | Profile README + pins |
+| [`docs/setup.md`](docs/setup.md) | Clone, venv, per-project deps |
+| [`docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md`](docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md) | Profile README + GitHub pins |
 | [`AGENTS.md`](AGENTS.md) | Cross-tool agent guidance |
 
 ---
 
 ## License
 
-MIT for original code — [`LICENSE`](LICENSE). Course slides/handouts: [`resources/MANIFEST.md`](resources/MANIFEST.md) only.
+MIT for original code — [`LICENSE`](LICENSE). Course slides/handouts: [`resources/MANIFEST.md`](resources/MANIFEST.md) only (instructor IP — not redistributed).
