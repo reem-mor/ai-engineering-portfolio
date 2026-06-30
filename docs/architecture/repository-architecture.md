@@ -1,7 +1,6 @@
 # Repository Architecture
 
-How [`amdocs-ai-course`](../../) is organized and why. The layout prioritizes **reviewability**
-for lecturers and **portfolio clarity** for employers (2026).
+How [`ai-engineering-portfolio`](../../) is organized and why.
 
 ## Design principles
 
@@ -14,7 +13,7 @@ for lecturers and **portfolio clarity** for employers (2026).
 ## Top-level layout
 
 ```text
-amdocs-ai-course/
+ai-engineering-portfolio/
 ├── README.md                 # Portfolio entry point
 ├── AGENTS.md / CLAUDE.md     # Cross-tool agent guidance
 ├── LICENSE                   # MIT (own code) + IP carve-out for course material

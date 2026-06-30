@@ -5,6 +5,7 @@
 | | |
 |---|---|
 | **Repo** | [github.com/reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
+| **Archive** | [ai-engineering-portfolio](https://github.com/reem-mor/ai-engineering-portfolio) |
 | **What** | Bilingual (HE/EN) Telegram course-ops bot — schedule, recordings, homework, RAG recommendations, admin flows |
 | **Stack** | Python 3.12 · uv · SQLAlchemy/Alembic · multi-LLM · Docker · strict typing · 200+ mocked tests |
 

@@ -13,8 +13,8 @@
 **Recommended (agents + humans):**
 
 ```powershell
-git clone https://github.com/reem-mor/amdocs-ai-course.git
-cd amdocs-ai-course
+git clone https://github.com/reem-mor/ai-engineering-portfolio.git
+cd ai-engineering-portfolio
 .\scripts\setup-dev.ps1
 ```
 
