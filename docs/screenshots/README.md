@@ -2,6 +2,13 @@
 
 This folder does not duplicate screenshot assets. It points reviewers to evidence stored with each assignment or project.
 
+## Featured work heroes (root README)
+
+**Location:** [`featured/`](featured/)
+
+Curated hero images for the root [`README.md`](../../README.md) **Featured work** section — PITER, HINDSIGHT, IncidentIQ, Bedrock, course-assistant-bot architecture. Regenerate GitHub captures: `node scripts/capture-featured-previews.mjs`.
+
+---
 ## Homework 05 — EC2 / Docker / Nginx lab
 
 **Location:** [`homework/hw05/nginx-docker-lab/screenshots/`](../../homework/hw05/nginx-docker-lab/screenshots/)

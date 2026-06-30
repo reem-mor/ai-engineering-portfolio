@@ -7,10 +7,10 @@
 **AI Engineer × SRE** — production-minded systems · grounded RAG · agentic ops · deterministic safety floors
 
 [![CI](https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](#technology-stack)
+[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](#skills--competencies)
 [![Tests](https://img.shields.io/badge/In--repo_tests-201%2B%20pytest-brightgreen)](#production-engineering-habits)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-650%2B%20tests%20total-blueviolet)](#featured-work)
-[![Stack](https://img.shields.io/badge/Stack-FastAPI%20%C2%B7%20Flask%20%C2%B7%20React-009688)](#technology-stack)
+[![Stack](https://img.shields.io/badge/Stack-FastAPI%20%C2%B7%20Flask%20%C2%B7%20React-009688)](#skills--competencies)
 [![AI](https://img.shields.io/badge/AI-RAG%20%C2%B7%20Bedrock%20%C2%B7%20Agents-purple)](#skills--competencies)
 
 <p>
@@ -26,7 +26,7 @@
   <img src="https://img.shields.io/badge/MCP-Model_Context_Protocol-6E40C9" alt="MCP">
 </p>
 
-[Employer review](#-60-second-employer-review) · [Featured work](#featured-work) · [Skills](#skills--competencies) · [Architecture](#architecture) · [Learning journey](#learning-journey) · [Curriculum](#curriculum) · [MCP & agents](#mcp--agent-tooling) · [Screenshots](#see-it-working) · [Quick start](#quick-start)
+[Employer review](#-60-second-employer-review) · [Featured work](#featured-work) · [Skills](#skills--competencies) · [Architecture](#architecture) · [Learning journey](#learning-journey) · [Curriculum](#curriculum) · [MCP & agents](#mcp--agent-tooling) · [Evidence gallery](#evidence-gallery) · [Quick start](#quick-start)
 
 **[Re'em Mor](https://github.com/reem-mor)** · B.Sc. CS (GPA 91) · Production SRE/NOC @ regulated multi-jurisdiction gaming · [Profile README](https://github.com/reem-mor/reem-mor)
 
@@ -41,8 +41,8 @@
 | Audience | Start here | Time |
 |----------|------------|------|
 | **Hiring manager / recruiter** | [60-second review](#-60-second-employer-review) → [**PITER AiOps**](https://github.com/reem-mor/piter-aiops) | ~2 min |
-| **Technical interviewer** | [Featured capstone](#featured-work) → [`incident-assistant-rag/`](projects/incident-assistant-rag/) → [Screenshots](#see-it-working) | ~10 min |
-| **Engineering lead (AI/SRE)** | [Skills matrix](#skills--competencies) · [RAG evolution](#rag-evolution-two-tracks) · [Production habits](#production-engineering-habits) | ~15 min |
+| **Technical interviewer** | [Featured work](#featured-work) → [`incident-assistant-rag/`](projects/incident-assistant-rag/) → [Evidence gallery](#evidence-gallery) | ~10 min |
+| **Engineering lead (AI/SRE)** | [Skills matrix](#skills--competencies) · [RAG evolution](#rag-evolution--two-tracks) · [Production habits](#production-engineering-habits) | ~15 min |
 | **Self-learner** | [Quick start](#quick-start) · [`docs/SYLLABUS.md`](docs/SYLLABUS.md) | — |
 
 ---
@@ -85,24 +85,89 @@ Four stages, each with **runnable artifacts** — not slide-only coursework.
 
 ## Featured work
 
-![IncidentIQ — grounded RAG chat with source citations](projects/incident-assistant-rag/screenshots/06_frontend_rag_chat_grounded.png)
+Production-minded AI systems — each with **screenshot evidence**, stack, and test counts. Pin order: [flagships README](flagships/README.md).
 
-### External flagships (lead with these)
+---
 
-| Project | What it does | Stack | Tests |
-|---------|--------------|-------|-------|
-| **[PITER AiOps](https://github.com/reem-mor/piter-aiops)** | Agentic incident-response for NOC/SRE: Bedrock Agent + RAG, 4 Lambda action groups, session memory, safe escalation previews | AWS Bedrock · RAG · Lambda · Flask · React · Docker | **325+** |
-| **[HINDSIGHT](https://github.com/reem-mor/hindsight)** | Incident-log / document intelligence: ingest → LLM extract → deterministic enrich → semantic search | n8n · FastAPI · Gemini · Supabase / pgvector | CI |
-| **[course-assistant-bot](https://github.com/reem-mor/course-assistant-bot)** | Bilingual (HE/EN) Telegram course-ops: schedule, homework, RAG recommendations, admin FSM flows | Python · uv · SQLAlchemy/Alembic · LangGraph · Docker | **224** |
+### 🛰️ [PITER AiOps](https://github.com/reem-mor/piter-aiops) — flagship · **325+ tests**
 
-Pointers & clone steps: [`flagships/README.md`](flagships/README.md) · Profile pins: [`docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md`](docs/portfolio/GITHUB_PROFILE_PLAYBOOK.md)
+<a href="https://github.com/reem-mor/piter-aiops"><img src="docs/screenshots/featured/piter-investigation-triage.png" alt="PITER AiOps — investigation detail with triage and RAG citations" width="100%"/></a>
 
-### In-repo projects (stepping stones)
+| | |
+|---|---|
+| **What it does** | Agentic incident-response for NOC/SRE: Bedrock Agent + RAG over runbooks, 4 Lambda action groups, session memory, **safe escalation previews** (humans decide). |
+| **Stack** | AWS Bedrock · RAG · Lambda · Flask · React · Docker |
+| **Highlights** | Alert storm → P1 triage → RAG citations → correlation chain → escalation preview |
 
-| Project | What it does | Stack | Tests |
-|---------|--------------|-------|-------|
-| **[IncidentIQ](projects/incident-assistant-rag/)** | Full-stack incident assistant: upload runbooks → FAISS index → grounded chat with citations and confidence scores | FastAPI · OpenAI · FAISS · React · Docker | **90** · eval **5/5** |
-| **[Incident RAG (Bedrock)](projects/incident-rag-bedrock/)** | Managed Bedrock Knowledge Base iteration — same incident domain, AWS-native retrieval | Flask · Bedrock KB · React · EC2 | **111** |
+<p align="center">
+  <a href="https://github.com/reem-mor/piter-aiops"><img src="docs/screenshots/featured/piter-rag-citations.png" alt="PITER — RAG citations" width="49%"/></a>
+  <a href="https://github.com/reem-mor/piter-aiops#see-it-working"><img src="docs/screenshots/featured/piter-see-it-working.png" alt="PITER — demo gallery" width="49%"/></a>
+</p>
+
+---
+
+### 🧠 [IncidentIQ](projects/incident-assistant-rag/) — in-repo capstone · **90 tests · eval 5/5**
+
+<a href="projects/incident-assistant-rag/"><img src="docs/screenshots/featured/incidentiq-rag-chat.png" alt="IncidentIQ — grounded RAG chat with source citations and confidence badges" width="100%"/></a>
+
+| | |
+|---|---|
+| **What it does** | Full-stack incident assistant: upload runbooks → FAISS index → grounded chat with **source citations**, confidence scores, and **fixed refusal** when retrieval misses. |
+| **Stack** | FastAPI · OpenAI · FAISS · React · Docker |
+| **Highlights** | Deterministic no-context refusal · RAG eval harness · Swagger API · incident analysis panel |
+
+<p align="center">
+  <a href="projects/incident-assistant-rag/"><img src="projects/incident-assistant-rag/screenshots/07_frontend_rag_chat_irrelevant.png" alt="IncidentIQ — no-context refusal" width="32%"/></a>
+  <a href="projects/incident-assistant-rag/"><img src="projects/incident-assistant-rag/screenshots/08_frontend_incident_analysis.png" alt="IncidentIQ — incident analysis" width="32%"/></a>
+  <a href="projects/incident-assistant-rag/"><img src="projects/incident-assistant-rag/screenshots/12_backend_evaluation_5_of_5.png" alt="IncidentIQ — RAG evaluation 5/5" width="32%"/></a>
+</p>
+
+---
+
+### 🔎 [HINDSIGHT](https://github.com/reem-mor/hindsight) — document intelligence pipeline
+
+<a href="https://github.com/reem-mor/hindsight"><img src="docs/screenshots/featured/hindsight-workflow.png" alt="HINDSIGHT — n8n cloud workflow canvas" width="100%"/></a>
+
+| | |
+|---|---|
+| **What it does** | Ingests ops documents → Gemini extraction → **deterministic enrichment** → semantic search over incident history. Region-aware routing for SEV1/confidential alerts. |
+| **Stack** | n8n · FastAPI · Gemini · Supabase / pgvector |
+| **Highlights** | Cloud + local Docker · daily digest workflow · form intake → pipeline → email/Sheets |
+
+<p align="center">
+  <a href="https://github.com/reem-mor/hindsight"><img src="docs/screenshots/featured/hindsight-dashboard.png" alt="HINDSIGHT — pipeline dashboard" width="49%"/></a>
+  <a href="https://github.com/reem-mor/hindsight"><img src="https://raw.githubusercontent.com/reem-mor/hindsight/main/docs/architecture.png" alt="HINDSIGHT — architecture" width="49%"/></a>
+</p>
+
+---
+
+### 🤖 [course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) — production Telegram bot · **224 tests**
+
+<a href="https://github.com/reem-mor/course-assistant-bot"><img src="docs/screenshots/featured/course-bot-architecture.png" alt="course-assistant-bot — LangGraph router architecture" width="100%"/></a>
+
+| | |
+|---|---|
+| **What it does** | Bilingual (HE/EN) Telegram course-ops: schedule, recordings, homework submission, RAG recommendations, admin FSM flows. **LLM classifies; code enforces rules.** |
+| **Stack** | Python · uv · SQLAlchemy/Alembic · LangGraph · Docker · mypy strict |
+| **Highlights** | Async PTB v21 · all externals mocked in CI · Alembic migrations · multi-LLM routing |
+
+---
+
+### ⚡ [Incident RAG (Bedrock)](projects/incident-rag-bedrock/) — AWS KB iteration · **111 tests**
+
+<a href="projects/incident-rag-bedrock/"><img src="docs/screenshots/featured/bedrock-grounded-answer.png" alt="Bedrock KB — grounded answer with citations" width="100%"/></a>
+
+| | |
+|---|---|
+| **What it does** | Same incident domain as IncidentIQ, using **managed Bedrock Knowledge Base** — stepping stone to PITER Agent. |
+| **Stack** | Flask · Bedrock KB · React · EC2 |
+| **Highlights** | RetrieveAndGenerate · refusal on low confidence · EC2 deployment evidence |
+
+<p align="center">
+  <a href="projects/incident-rag-bedrock/"><img src="projects/incident-rag-bedrock/screenshots/01_bedrock_kb_overview.png" alt="Bedrock KB overview" width="32%"/></a>
+  <a href="projects/incident-rag-bedrock/"><img src="projects/incident-rag-bedrock/screenshots/09_app_refusal_or_low_confidence.png" alt="Bedrock refusal" width="32%"/></a>
+  <a href="projects/incident-rag-bedrock/"><img src="projects/incident-rag-bedrock/screenshots/11_pytest_passed.png" alt="Bedrock pytest 111" width="32%"/></a>
+</p>
 
 **RAG progression (honest arc):**
 
@@ -110,6 +175,8 @@ Pointers & clone steps: [`flagships/README.md`](flagships/README.md) · Profile 
 Track A (OpenAI + local FAISS):  L04 → L06 → hw04 → incident-assistant-rag (capstone)
 Track B (AWS Bedrock):           L09 → incident-rag-bedrock → piter-aiops (flagship Agent)
 ```
+
+Hero image sources: [`docs/screenshots/featured/`](docs/screenshots/featured/) · Regenerate: `node scripts/capture-featured-previews.mjs`
 
 ---
 
@@ -419,9 +486,11 @@ Bootstrap: [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) · [`scripts/setup-d
 
 ---
 
-## See it working
+## Evidence gallery
 
-### Featured capstone — IncidentIQ
+Detailed captures beyond the [featured heroes](#featured-work) above — homework labs, API surface, and test output.
+
+### IncidentIQ — full walkthrough
 
 | API (Swagger) | KB index | Grounded chat | Refusal (no context) |
 |:---:|:---:|:---:|:---:|
@@ -445,11 +514,11 @@ Architecture: [`projects/incident-assistant-rag/docs/architecture.png`](projects
 |:---:|:---:|:---:|:---:|
 | [![ec2](homework/hw05/nginx-docker-lab/screenshots/01-ec2-instance-and-security-group.png)](homework/hw05/nginx-docker-lab/screenshots/01-ec2-instance-and-security-group.png) | [![n8n](homework/hw06/n8n-customer-support-agent/screenshots/01_full_workflow.png)](homework/hw06/n8n-customer-support-agent/screenshots/01_full_workflow.png) | [![kb](homework/hw07/screenshots/03-kb-indexed.png)](homework/hw07/screenshots/03-kb-indexed.png) | [![tools](homework/hw07/screenshots/00-tool-server-openapi.png)](homework/hw07/screenshots/00-tool-server-openapi.png) |
 
-### External flagships
+### External flagships — more in each repo
 
-Screenshots in each repo — [**PITER**](https://github.com/reem-mor/piter-aiops#see-it-working) · [**HINDSIGHT**](https://github.com/reem-mor/hindsight#-see-it-working) · [**bot**](https://github.com/reem-mor/course-assistant-bot#see-it-working)
+[**PITER**](https://github.com/reem-mor/piter-aiops#see-it-working) · [**HINDSIGHT**](https://github.com/reem-mor/hindsight#-see-it-working) · [**course-assistant-bot**](https://github.com/reem-mor/course-assistant-bot#documentation)
 
-More: [`docs/screenshots/README.md`](docs/screenshots/README.md)
+Index: [`docs/screenshots/README.md`](docs/screenshots/README.md) · Hero captures: [`docs/screenshots/featured/`](docs/screenshots/featured/)
 
 ---
 
