@@ -20,8 +20,8 @@ Featured work. Keep this tree lean, honest, and reproducible.
 | `exercises/` | Lab index (links only) |
 | `docs/` | Meta-docs · [`AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) for MCP/skills/CI |
 | `resources/MANIFEST.md` | Third-party slides — **not** in repo (IP) |
-| `projects/` | [`projects/README.md`](projects/README.md) — capstone / learning iteration / pointers |
-| `course-assistant-bot/` | Pointer → [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
+| `projects/` | [`projects/README.md`](projects/README.md) — capstone / learning iteration |
+| `flagships/` | [`flagships/README.md`](flagships/README.md) — pointers to external repos (PITER, HINDSIGHT, bot) |
 | `scripts/` | Dev bootstrap, MCP launcher, project extraction |
 
 ## Engineering conventions (2026)

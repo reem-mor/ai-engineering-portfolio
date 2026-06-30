@@ -1,15 +1,16 @@
 # Course Projects
 
 End-to-end AI engineering work from the course archive. **Featured capstone** and **learning
-iteration** live here; **flagship products** link out to their own repos.
+iteration** live here; **flagship products** link out via [`flagships/`](../flagships/).
 
 | Project | Folder | Status | Stack | Tests |
 |---------|--------|--------|-------|-------|
 | **IncidentIQ** (capstone) | [`incident-assistant-rag/`](incident-assistant-rag/) | **Featured** — in archive | FastAPI · OpenAI · local FAISS · React · Docker | 90 (CI) |
 | **Incident RAG (Bedrock)** | [`incident-rag-bedrock/`](incident-rag-bedrock/) | **Learning iteration** | Flask · Bedrock KB · React | 111 (CI) |
-| **PITER AiOps** | [`piter-aiops/`](piter-aiops/) | **Pointer** → external repo | Flask · Bedrock **Agent** · tools · React | ~325 (external CI) |
 
 ## External flagships
+
+All pointers and clone instructions: [`flagships/README.md`](../flagships/README.md)
 
 | Project | Repo |
 |---------|------|
@@ -17,7 +18,9 @@ iteration** live here; **flagship products** link out to their own repos.
 | **course-assistant-bot** | [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
 | **HINDSIGHT** | [reem-mor/hindsight](https://github.com/reem-mor/hindsight) |
 
-Extraction runbooks: [`docs/extraction/`](../docs/extraction/).
+Legacy redirect: removed — use [`flagships/piter-aiops/`](../flagships/piter-aiops/) only.
+
+Extraction runbooks: [`docs/extraction/`](../docs/extraction/)
 
 ## RAG progression (honest arc)
 

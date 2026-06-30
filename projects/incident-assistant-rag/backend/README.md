@@ -23,7 +23,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 From `backend/scripts/`:
 
-- `dev_local.ps1` — uses course venv at `%USERPROFILE%\amdocs-ai-course\.venv`
+- `dev_local.ps1` — uses repo-root `.venv` at `ai-engineering-portfolio/.venv`
 - `check_health.ps1` — curls `/api/health`
 
 ## Environment

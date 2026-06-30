@@ -1,5 +1,7 @@
 # Portfolio Audit 2026 — `amdocs-ai-course`
 
+> **Historical audit (2026-06-27).** Many items below are **resolved** — CI, AGENTS.md, resources manifest-only, README reframed, flagships in [`flagships/`](../flagships/). See [`README.md`](../README.md) and [`docs/SYLLABUS.md`](SYLLABUS.md) for current state.
+
 > **Read-only audit.** This document changes nothing in the repo. It is the approval
 > artifact for the cleanup work that follows (Prompts 2–4 of the overhaul plan).
 > Author context: **Re'em Mor — "AI Engineer × SRE"**, targeting 2026 AI-engineering roles.

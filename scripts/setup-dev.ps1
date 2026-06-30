@@ -36,4 +36,6 @@ Done. Next:
   .\.venv\Scripts\Activate.ps1
   ruff check .
   See docs/AGENT-TOOLING.md for MCP setup (.mcp.json at repo root).
+  Optional: .\scripts\clean-workspace.ps1  (remove local caches / old flagship copies)
+  Layout: docs/STRUCTURE.md
 "@

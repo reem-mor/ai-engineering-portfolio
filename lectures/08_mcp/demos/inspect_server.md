@@ -30,5 +30,5 @@ cd lectures\08_mcp
 If the server fails to start, set `command` in `.cursor/mcp.json` to the full path of your lecture venv Python, for example:
 
 ```json
-"command": "C:/dev/amdocs-ai-course/lectures/08_mcp/.venv/Scripts/python.exe"
+"command": "C:/dev/ai-engineering-portfolio/lectures/08_mcp/.venv/Scripts/python.exe"
 ```

@@ -39,9 +39,9 @@ Includes Swagger API surface, RAG chat (grounded and irrelevant questions), inci
 
 See the in-project [`screenshots/README.md`](../../projects/incident-assistant-rag/screenshots/README.md) for captions.
 
-## PITER AiOps (flagship copy in archive)
+## PITER AiOps (external flagship)
 
-**Location:** [`projects/piter-aiops/screenshots/final/`](../../projects/piter-aiops/screenshots/final/)
+**Location:** [github.com/reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops#see-it-working) · in-archive pointer: [`flagships/piter-aiops/`](../../flagships/piter-aiops/)
 
 Curated demo captures: dashboard, alert storm, RAG citations, escalation, live checks.
 

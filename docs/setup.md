@@ -154,4 +154,16 @@ Follow [`projects/incident-assistant-rag/README.md`](../projects/incident-assist
 | Missing NLTK corpora | Run the NLTK download command above |
 | API errors in RAG demos | Check `.env` keys and model names |
 | MCP server not connecting in Cursor | Copy `mcp.json.example` to `.cursor/mcp.json`; use venv Python path on Windows |
-| Docker build fails on hw04 | hw04 app code is still in progress — Dockerfile exists as a starter |
+| Docker build fails on hw04 | hw04 is scaffold-only — full RAG lives in [`projects/incident-assistant-rag/`](../projects/incident-assistant-rag/) |
+| VS Code shows many extra folders | Local caches + old copies — run `.\scripts\clean-workspace.ps1`; copy [`.vscode/settings.json.example`](../.vscode/settings.json.example) to hide clutter |
+| `projects/piter-aiops/` reappeared | Do not develop PITER here — clone [github.com/reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) separately |
+
+## Workspace hygiene
+
+After cloning or switching branches, remove local-only artifacts:
+
+```powershell
+.\scripts\clean-workspace.ps1
+```
+
+See [`docs/STRUCTURE.md`](STRUCTURE.md) for committed vs gitignored folders.

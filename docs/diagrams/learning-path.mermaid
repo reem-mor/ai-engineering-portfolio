@@ -1,9 +1,59 @@
-flowchart LR
-  Python[Python Foundations] --> Data[OOP NumPy Validation]
-  Data --> Web[Flask Web Apps]
-  Web --> DB[SQLite Persistence]
-  DB --> RAG[RAG and FAISS]
-  RAG --> FullStack[FastAPI React]
-  FullStack --> Docker[Docker Compose]
-  Docker --> Cloud[AWS EC2 Lab]
-  Cloud --> Portfolio[Production Portfolio]
+flowchart TB
+  subgraph stage1 [Stage 1 Foundations]
+    L01[L01 Jupyter Python]
+    L02[L02 Python intro]
+    L03[L03 OOP NumPy]
+    HW01[hw01 Jupyter]
+    HW02[hw02 Python scripts]
+    HW03[hw03 Titanic CLI]
+    L01 --> L02 --> L03
+    L01 --> HW01
+    L02 --> HW02
+    L03 --> HW03
+  end
+
+  subgraph stage2 [Stage 2 RAG and Web]
+    L04[L04 NLP FAISS RAG]
+    L05[L05 Flask]
+    L06[L06 Flask SQLite RAG]
+    HW04[hw04 RAG app]
+    L04 --> L05 --> L06
+    L04 --> HW04
+    L06 --> HW04
+  end
+
+  subgraph stage3 [Stage 3 Ops and Agents]
+    L07[L07 Docker AWS]
+    L08[L08 MCP]
+    L09[L09 Bedrock n8n]
+    L10[L10 LangChain LangGraph]
+    L11[L11 Open WebUI]
+    HW05[hw05 EC2 Nginx]
+    HW06[hw06 n8n agent]
+    HW07[hw07 Open WebUI tools]
+    L07 --> HW05
+    L09 --> HW06
+    L08 --> L11
+    L11 --> HW07
+    L10 --> HW07
+  end
+
+  subgraph stage4 [Stage 4 Capstone and Flagships]
+    CAP[incident-assistant-rag]
+    BED[incident-rag-bedrock]
+    PITER[piter-aiops external]
+    HW04 -.-> CAP
+    L06 -.-> CAP
+    BED -.-> PITER
+  end
+
+  stage1 --> stage2 --> stage3 --> stage4
+
+  classDef foundations fill:#11233a,stroke:#3b82f6,color:#cfe0ff
+  classDef rag fill:#1a2e1a,stroke:#22c55e,color:#dcfce7
+  classDef ops fill:#2a2010,stroke:#f59e0b,color:#ffe6bf
+  classDef cap fill:#1e1430,stroke:#a855f7,color:#e6d6ff
+  class L01,L02,L03,HW01,HW02,HW03 foundations
+  class L04,L05,L06,HW04 rag
+  class L07,L08,L09,L10,L11,HW05,HW06,HW07 ops
+  class CAP,BED,PITER cap

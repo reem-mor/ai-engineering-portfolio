@@ -9,7 +9,7 @@
 | **What** | AWS Bedrock incident-response — Agent + RAG + tools + safe escalation |
 | **Stack** | Flask · React · Bedrock Agent · Lambda action groups · Docker · 300+ tests |
 
-Former path in this archive: full `projects/piter-aiops/` tree (removed after extraction).
+Former path in this archive: `projects/piter-aiops/` (removed after extraction).
 
 ```bash
 git clone https://github.com/reem-mor/piter-aiops.git
@@ -18,3 +18,5 @@ py -3.12 -m pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 docker compose up --build
 ```
+
+Index: [`flagships/README.md`](../README.md)

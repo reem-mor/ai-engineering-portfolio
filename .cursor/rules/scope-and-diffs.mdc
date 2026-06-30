@@ -9,7 +9,7 @@ alwaysApply: true
 
 - Fix only what the task requires; no drive-by refactors or style churn.
 - Match existing naming, types, and comment density in each folder.
-- Do not modify `oz_veruach_bot/` or flagship project **logic** unless explicitly requested.
+- Do not modify external flagship repos ([`flagships/`](../flagships/)) or capstone **logic** unless explicitly requested.
 
 ## Git
 

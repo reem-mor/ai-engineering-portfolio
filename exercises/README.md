@@ -46,8 +46,6 @@ Setup: `pip install -r requirements.txt`, copy `config/mcp.json.example` to `.cu
 
 Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
 
-Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
-
 ## Bedrock Flows & n8n (Lecture 09)
 
 | Path | Description |

@@ -110,7 +110,7 @@ The template uses the lecture venv Python at `lectures/08_mcp/.venv/Scripts/pyth
 **Windows fallback:** If the venv path fails, set `command` to the full path of your lecture venv Python:
 
 ```json
-"command": "C:/dev/amdocs-ai-course/lectures/08_mcp/.venv/Scripts/python.exe"
+"command": "C:/dev/ai-engineering-portfolio/lectures/08_mcp/.venv/Scripts/python.exe"
 ```
 
 ---
