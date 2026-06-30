@@ -90,6 +90,8 @@ Profile → **Customize your pins** → select up to 6, in this order:
 
 Pins are the first thing a reviewer scans — lead with the flagships.
 
+**Profile README:** Featured Projects also links [HaMadrich](https://github.com/LielMaoz/HaMadrich) — collaborative full-stack project (external org repo, not pinned).
+
 ---
 
 ## 5. Social preview + final polish (per flagship repo)
