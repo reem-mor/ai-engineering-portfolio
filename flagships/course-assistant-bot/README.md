@@ -17,3 +17,5 @@ cd course-assistant-bot
 uv sync --extra dev && cp .env.example .env
 uv run pytest -q
 ```
+
+Index: [`flagships/README.md`](../README.md)

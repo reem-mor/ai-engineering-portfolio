@@ -1,6 +1,10 @@
 # Homework 04 — Full RAG Application
 
-**Status:** In progress
+**Status:** Scaffold only — **capstone reference:** [`projects/incident-assistant-rag/`](../../projects/incident-assistant-rag/)
+
+The graded handout targets a standalone RAG web app. The full implementation lives in the
+**IncidentIQ capstone** (FastAPI + OpenAI + FAISS + React, 90 tests). This folder keeps the
+original Docker scaffold for syllabus traceability.
 
 ## Assignment
 
@@ -26,19 +30,17 @@ hw04/
     └── .dockerignore
 ```
 
-Application source (`app.py`, `requirements.txt`, templates, data pipeline) is not yet committed.
+Application source (`app.py`, `requirements.txt`, templates, data pipeline) is not committed here.
 
-## Suggested next steps
+## Where to review the full implementation
 
-1. Scaffold Flask or FastAPI app under `my-rag-app/`
-2. Add `requirements.txt` matching Dockerfile `COPY` expectations
-3. Implement FAISS indexing and RAG query endpoint
-4. Add README run instructions and validation questions
-5. Run through [`docs/submission-checklist.md`](../../docs/submission-checklist.md)
+| Deliverable | Location |
+|-------------|----------|
+| **IncidentIQ capstone** | [`projects/incident-assistant-rag/`](../../projects/incident-assistant-rag/) |
+| Flask RAG reference (lecture) | [`lectures/06_flask_advanced_rag/`](../../lectures/06_flask_advanced_rag/) |
+| RAG progression notes | [`docs/rag-notes.md`](../../docs/rag-notes.md) |
 
 ## Related course material
 
 - Lecture demos: [`lectures/04_nlp_rag/`](../../lectures/04_nlp_rag/)
-- Flask RAG reference: [`lectures/06_flask_advanced_rag/`](../../lectures/06_flask_advanced_rag/)
-- RAG notes: [`docs/rag-notes.md`](../../docs/rag-notes.md)
-- Capstone reference (read-only): [`projects/incident-assistant-rag/`](../../projects/incident-assistant-rag/)
+- Submission checklist: [`docs/submission-checklist.md`](../../docs/submission-checklist.md)

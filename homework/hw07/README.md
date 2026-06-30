@@ -1,7 +1,7 @@
 # Homework 07 — Open WebUI KB + Live Tools (Interactive Guide)
 
-> **GitHub path:** https://github.com/reem-mor/amdocs-ai-course/tree/main/homework/hw07  
-> **Architecture deep-dive:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Submit:** [`SUBMISSION.md`](SUBMISSION.md)
+> **GitHub path:** https://github.com/reem-mor/ai-engineering-portfolio/tree/main/homework/hw07  
+> **Architecture deep-dive:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`DESIGN-SPEC.md`](DESIGN-SPEC.md) · **Submit:** [`SUBMISSION.md`](SUBMISSION.md)
 
 Build a **local AI assistant** (Open WebUI + Ollama) that answers from a **Kaggle CSV Knowledge Base** and calls **live RapidAPI tools** through your own Python server.
 

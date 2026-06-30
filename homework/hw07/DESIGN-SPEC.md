@@ -1,7 +1,7 @@
 # HW07 — Open WebUI Knowledge Base + Live Tools Server
 
 **Date:** 2026-06-28  
-**Status:** Approved for implementation
+**Status:** Implemented — see [`SUBMISSION.md`](SUBMISSION.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
 ## Summary
 
@@ -83,7 +83,7 @@ Lecture 08 implements **stdio MCP** for Cursor. HW07 implements **HTTP OpenAPI**
 
 ## References
 
-- [`homework/hw07/README.md`](../../homework/hw07/README.md)
+- [`homework/hw07/README.md`](README.md)
 - [`lectures/11_local_models_webui/README.md`](../../lectures/11_local_models_webui/README.md)
 - [Open WebUI tool servers](https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/)
 - [Kaggle MCP docs](https://www.kaggle.com/docs/mcp)

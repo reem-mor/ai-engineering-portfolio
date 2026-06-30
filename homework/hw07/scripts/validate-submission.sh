@@ -54,5 +54,5 @@ echo "  Verify 06-tool-chat-answer.png shows country_info tool call + Brasília 
 echo "  Verify 05-tool-server-configured.png has ONE tool server entry (reset Docker volume if duplicated)."
 
 echo ""
-echo "GitHub path: https://github.com/reem-mor/amdocs-ai-course/tree/main/homework/hw07"
+echo "GitHub path: https://github.com/reem-mor/ai-engineering-portfolio/tree/main/homework/hw07"
 echo "=== Validation complete ==="

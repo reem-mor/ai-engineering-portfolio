@@ -8,7 +8,7 @@
 *built on **Amazon Bedrock · Flask · boto3 · React · Docker · EC2**.*
 
 > **Archive label — learning iteration:** This project is the **Bedrock-managed-RAG stepping-stone**
-> that [`projects/piter-aiops/`](../piter-aiops/) grew from. Kept for progression evidence, not as
+> that [`flagships/piter-aiops/`](../../flagships/piter-aiops/) evolved from. Kept for progression evidence, not as
 > the flagship. For the agentic production stack, see PITER (extraction-ready) or HINDSIGHT externally.
 
 <br/>

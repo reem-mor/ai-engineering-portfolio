@@ -41,7 +41,7 @@ rewrite history deliberately on a fresh clone, then force-push.
 ### Option A — git-filter-repo (recommended)
 
 ```bash
-git clone https://github.com/reem-mor/amdocs-ai-course.git amdocs-clean
+git clone https://github.com/reem-mor/ai-engineering-portfolio.git ai-engineering-portfolio-clean
 cd amdocs-clean
 pip install git-filter-repo
 
@@ -54,7 +54,7 @@ git filter-repo --invert-paths \
 # Also drop the accidentally-committed Playwright snapshots from history:
 git filter-repo --invert-paths --path .playwright-mcp
 
-git remote add origin https://github.com/reem-mor/amdocs-ai-course.git
+git remote add origin https://github.com/reem-mor/ai-engineering-portfolio.git
 git push --force-with-lease --all origin
 git push --force-with-lease --tags origin
 ```

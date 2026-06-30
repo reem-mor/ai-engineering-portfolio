@@ -1,5 +1,5 @@
 # Root tooling config for the course/learning archive.
-# Per-project apps (oz_veruach_bot, projects/*) keep their own configs; this file
+# Per-project apps (flagships external, projects/*) keep their own configs; this file
 # provides a baseline ruff lint config and the CI entry point for the kept areas.
 
 [tool.ruff]
@@ -16,9 +16,6 @@ extend-exclude = [
     "**/static",
     "**/archive",
     "**/legacy-htmx",
-    # PITER is the flagship and is extracted to its own repo (with its own CI);
-    # the archive does not lint it here.
-    "projects/piter-aiops",
 ]
 
 [tool.ruff.lint]

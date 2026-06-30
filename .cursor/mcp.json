@@ -9,7 +9,10 @@
     },
     "n8n-workflows": {
       "command": "npx",
-      "args": ["-y", "n8n-mcp"],
+      "args": [
+        "-y",
+        "n8n-mcp"
+      ],
       "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
@@ -20,7 +23,9 @@
     },
     "aws-api": {
       "command": "uvx",
-      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "args": [
+        "awslabs.aws-api-mcp-server@latest"
+      ],
       "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
@@ -29,7 +34,9 @@
     },
     "bedrock-kb": {
       "command": "uvx",
-      "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
+      "args": [
+        "awslabs.bedrock-kb-retrieval-mcp-server@latest"
+      ],
       "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
@@ -41,11 +48,6 @@
       "type": "http",
       "url": "https://knowledge-mcp.global.api.aws"
     },
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"],
-      "timeout": 120000
-    },
     "kaggle": {
       "type": "http",
       "url": "https://www.kaggle.com/mcp",
@@ -55,7 +57,9 @@
     },
     "course-tools": {
       "command": "${workspaceFolder}/lectures/08_mcp/.venv/Scripts/python.exe",
-      "args": ["${workspaceFolder}/lectures/08_mcp/server/tools_server.py"],
+      "args": [
+        "${workspaceFolder}/lectures/08_mcp/server/tools_server.py"
+      ],
       "env": {
         "PYTHONUNBUFFERED": "1"
       }

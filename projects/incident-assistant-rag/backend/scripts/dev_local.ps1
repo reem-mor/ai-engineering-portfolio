@@ -1,12 +1,17 @@
 #!/usr/bin/env pwsh
-# Run from Cursor / PowerShell — uses USERPROFILE only (handles names with apostrophes).
+# Run from Cursor / PowerShell — prefers repo-root .venv, then falls back to python on PATH.
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location -LiteralPath $Root
 
-$VenvPy = Join-Path $env:USERPROFILE "amdocs-ai-course\.venv\Scripts\python.exe"
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")
+$VenvPy = Join-Path $RepoRoot ".venv\Scripts\python.exe"
+
 if (-not (Test-Path -LiteralPath $VenvPy)) {
-    Write-Error "Venv Python not found: $VenvPy"
+    $VenvPy = (Get-Command python -ErrorAction SilentlyContinue).Source
+}
+if (-not $VenvPy) {
+    Write-Error "Python not found. Create repo venv: python -m venv .venv (from $RepoRoot)"
     exit 1
 }
 

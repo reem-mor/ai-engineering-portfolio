@@ -42,7 +42,7 @@ Verify:
 
 ### Optional: course-wide venv
 
-If you use the repo-root venv at `%USERPROFILE%\amdocs-ai-course\.venv`:
+If you use the repo-root venv at `ai-engineering-portfolio/.venv`:
 
 ```powershell
 cd backend\scripts

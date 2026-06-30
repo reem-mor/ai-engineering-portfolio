@@ -10,5 +10,24 @@
   },
   "ruff.lint.args": [],
   "files.eol": "\n",
-  "files.encoding": "utf8"
+  "files.encoding": "utf8",
+  "files.exclude": {
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/.mypy_cache": true,
+    "**/__pycache__": true,
+    "**/catboost_info": true,
+    "**/.firecrawl": true,
+    "**/.playwright-mcp": true,
+    "**/.agents": true,
+    "data": true,
+    "projects/piter-aiops": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/node_modules": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "projects/piter-aiops": true
+  }
 }

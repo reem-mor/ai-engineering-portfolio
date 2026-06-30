@@ -1,6 +1,6 @@
 # Submission — HW07
 
-**GitHub solution:** https://github.com/reem-mor/amdocs-ai-course/tree/main/homework/hw07
+**GitHub solution:** https://github.com/reem-mor/ai-engineering-portfolio/tree/main/homework/hw07
 
 Interactive setup guide: [`README.md`](README.md)
 
@@ -11,7 +11,7 @@ Interactive setup guide: [`README.md`](README.md)
 **Body:**
 
 ```
-GitHub: https://github.com/reem-mor/amdocs-ai-course/tree/main/homework/hw07
+GitHub: https://github.com/reem-mor/ai-engineering-portfolio/tree/main/homework/hw07
 
 Stack: Open WebUI (Docker :3001) + Ollama llama3.2:3b + FastAPI tool server (:5005)
 Dataset: netflix_titles.csv indexed as #netflix-shows

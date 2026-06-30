@@ -84,6 +84,15 @@ Thumbs.db
 # Firecrawl CLI cache
 .firecrawl/
 
+# Duplicate agent skill mirror (canonical library: .cursor/skills/)
+.agents/
+
+# Root-level local data stores (Chroma, etc.) — project data lives in */data/ subfolders
+/data/
+
+# Extracted flagship — full tree must not reappear under projects/
+projects/piter-aiops/
+
 # Playwright MCP session snapshots (generated browser a11y dumps)
 .playwright-mcp/
 
@@ -127,3 +136,4 @@ catboost_info/
 *.tar.gz
 *.zip
 projects/piter-aiops/*.tar
+flagships/**/var/

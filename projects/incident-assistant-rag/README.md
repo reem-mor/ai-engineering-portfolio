@@ -401,8 +401,8 @@ And the deliberate failure case — irrelevant questions trigger the no-context 
 ### 1. Clone & enter the project
 
 ```powershell
-git clone https://github.com/reem-mor/amdocs-ai-course.git
-cd amdocs-ai-course\projects\incident-assistant-rag
+git clone https://github.com/reem-mor/ai-engineering-portfolio.git
+cd ai-engineering-portfolio\projects\incident-assistant-rag
 ```
 
 ### 2. Backend (FastAPI)
