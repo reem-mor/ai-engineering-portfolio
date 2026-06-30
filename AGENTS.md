@@ -7,7 +7,7 @@ Tool-specific files source this document — do not duplicate long sections else
 
 ## What this repository is
 
-`amdocs-ai-course` is a **course + learning archive** (Amdocs / Lab17 AI-Augmented Software
+`ai-engineering-portfolio` is a **course + learning archive** (Amdocs / Lab17 AI-Augmented Software
 Engineering). Flagship products extract to their own repos — see root [`README.md`](README.md)
 Featured work. Keep this tree lean, honest, and reproducible.
 

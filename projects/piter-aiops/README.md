@@ -5,7 +5,8 @@
 | | |
 |---|---|
 | **Repo** | [github.com/reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
-| **What** | AWS Bedrock-powered incident-response platform — agentic (Bedrock Agent + Action-Group tools), RAG over runbooks, session memory, alert-storm handling, safe escalation |
+| **Archive** | [ai-engineering-portfolio](https://github.com/reem-mor/ai-engineering-portfolio) |
+| **What** | AWS Bedrock incident-response — Agent + RAG + tools + safe escalation |
 | **Stack** | Flask · React · Bedrock Agent · Lambda action groups · Docker · 300+ tests |
 
 Former path in this archive: full `projects/piter-aiops/` tree (removed after extraction).
@@ -13,9 +14,7 @@ Former path in this archive: full `projects/piter-aiops/` tree (removed after ex
 ```bash
 git clone https://github.com/reem-mor/piter-aiops.git
 cd piter-aiops
-python -m venv .venv && .\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt && cp .env.example .env
-pytest -q
+py -3.12 -m pip install -r requirements-dev.txt
+cd frontend && npm ci && npm run build && cd ..
+docker compose up --build
 ```
-
-Extraction runbook: [`docs/extraction/piter-aiops/`](../../docs/extraction/piter-aiops/).

@@ -1,181 +1,141 @@
-# amdocs-ai-course — AI Engineering Coursework & Learning Archive
+# AI Engineering Portfolio
 
 <p align="center">
-  <strong>Re'em Mor — AI Engineer × SRE.</strong><br>
-  Production SRE/NOC background in regulated environments, now building AI systems
-  that hold up in production.
+  <strong>Re'em Mor — AI Engineer × SRE</strong><br>
+  Production NOC/SRE in regulated environments → building grounded AI systems that survive on-call.
 </p>
 
 <p align="center">
-  <a href="#featured-work">Featured work</a> ·
-  <a href="#what-this-repo-is">What this is</a> ·
-  <a href="#repository-map">Repository map</a> ·
-  <a href="#projects-in-this-repo">Projects</a> ·
-  <a href="#course-milestones">Milestones</a> ·
+  <a href="#start-here">Start here</a> ·
+  <a href="#flagship-repos">Flagships</a> ·
+  <a href="#in-this-archive">In this archive</a> ·
+  <a href="#learning-path">Learning path</a> ·
   <a href="#quick-start">Quick start</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/reem-mor/amdocs-ai-course/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/reem-mor/amdocs-ai-course/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.12-blue">
+  <a href="https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/reem-mor/ai-engineering-portfolio/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-blue">
   <img alt="Stack" src="https://img.shields.io/badge/Stack-FastAPI%20%C2%B7%20Flask%20%C2%B7%20React-009688">
-  <img alt="AI" src="https://img.shields.io/badge/AI-RAG%20%C2%B7%20AWS%20Bedrock%20%C2%B7%20FAISS-purple">
+  <img alt="AI" src="https://img.shields.io/badge/AI-RAG%20%C2%B7%20Bedrock%20%C2%B7%20Agents-purple">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
----
-
-## What this repo is
-
-This repository is my **learning archive** for the Amdocs / Lab17 **AI-Augmented Software
-Engineering** course: lecture write-ups, homework, labs, and the course projects that grew
-out of them — from Python fundamentals to full-stack RAG applications, Docker, and AWS.
-
-It is a *teaching and portfolio archive*, kept lean and honest. **My flagship projects live
-in their own repositories** — see Featured work below. Use this repo to see the progression
-and the engineering habits behind the flagships.
-
-**About me:** B.Sc. Computer Science (The Open University of Israel, GPA 91, finishing now);
-production SRE/NOC experience in regulated, multi-jurisdiction online-gaming environments
-(alert triage, incident response, production DB ops). Bilingual EN/HE.
-GitHub: [github.com/reem-mor](https://github.com/reem-mor).
+> **Former name:** `amdocs-ai-course` — renamed for portfolio clarity. Same content: lectures, homework, and capstone projects from the Amdocs / Lab17 **AI-Augmented Software Engineering** program.
 
 ---
 
-## Featured work
+## Start here
 
-The serious, standalone projects — built as production-minded systems, each in its own repo:
+| If you are… | Go to |
+|-------------|-------|
+| **Recruiter / hiring manager** | [Flagship repos](#flagship-repos) below — start with **PITER AiOps** |
+| **Reviewer checking course work** | [In this archive](#in-this-archive) → [`projects/incident-assistant-rag`](projects/incident-assistant-rag/) |
+| **Cloning to learn** | [Quick start](#quick-start) · [`docs/setup.md`](docs/setup.md) |
 
-| Project | What it is | Repo |
-|---------|------------|------|
-| **PITER AiOps** | AWS Bedrock-powered incident-response platform — agentic (Bedrock Agent + Action-Group tools), RAG over runbooks, session memory, alert-storm handling and safe escalation. Flask/React, Docker. | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
-| **course-assistant-bot** | Bilingual Telegram course-ops bot — schedule, homework, RAG recommendations, admin flows. Async Python, uv, Alembic, 200+ tests. | [reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
-| **HINDSIGHT** | Intelligent incident-log / document analyst with semantic search — turns operational history into searchable, grounded answers. | [reem-mor/hindsight](https://github.com/reem-mor/hindsight) |
-
-**Core stack:** Python · FastAPI / Flask · AWS Bedrock · RAG (FAISS / pgvector) · Docker ·
-n8n automation · React.
+**About me:** B.Sc. CS (Open University of Israel, GPA 91) · production SRE/NOC (regulated multi-jurisdiction gaming) · bilingual EN/HE · [github.com/reem-mor](https://github.com/reem-mor)
 
 ---
 
-## Projects in this repo
+## Flagship repos
 
-These are the **course projects** kept in this archive (capstone + learning iteration). Flagship work links out above.
+Standalone, production-minded systems — each with CI, tests, and docs:
 
-| Project | Folder | Stack | Status |
-|---------|--------|-------|--------|
-| **IncidentIQ** — Incident Assistant RAG | [`projects/incident-assistant-rag`](projects/incident-assistant-rag/) | FastAPI · OpenAI · local FAISS · React · Docker | **Featured capstone** — grounded RAG, tests + evaluation |
-| **Incident RAG (Bedrock)** | [`projects/incident-rag-bedrock`](projects/incident-rag-bedrock/) | Flask · AWS Bedrock KB · React | **Learning iteration** — stepping-stone to PITER |
-| **PITER AiOps** | [`projects/piter-aiops`](projects/piter-aiops/) | — | **Pointer** → [github.com/reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |
-| **course-assistant-bot** | [`course-assistant-bot`](course-assistant-bot/) | — | **Pointer** → [github.com/reem-mor/course-assistant-bot](https://github.com/reem-mor/course-assistant-bot) |
+| Project | One line | Repository |
+|---------|----------|------------|
+| **PITER AiOps** | Bedrock Agent + RAG + tools for incident triage & safe escalation | [**piter-aiops**](https://github.com/reem-mor/piter-aiops) |
+| **HINDSIGHT** | Semantic search over incident logs & ops documents | [**hindsight**](https://github.com/reem-mor/hindsight) |
+| **course-assistant-bot** | Bilingual Telegram cohort bot — schedule, homework, RAG, admin | [**course-assistant-bot**](https://github.com/reem-mor/course-assistant-bot) |
 
----
-
-## Repository map
-
-```text
-amdocs-ai-course/
-├── README.md                 # you are here
-├── AGENTS.md                 # canonical cross-tool agent guidance
-├── CLAUDE.md                 # sources @AGENTS.md
-├── LICENSE                   # MIT (own code) + IP carve-out for course material
-├── CONTRIBUTING.md           # homework/submission workflow
-├── requirements.txt          # root deps (UTF-8)
-├── .mcp.json                 # project MCP servers (only what's used)
-│
-├── .github/workflows/ci.yml  # ruff + pytest
-├── pyproject.toml            # root ruff config
-│
-├── docs/                     # course docs, architecture, audit, security
-├── resources/MANIFEST.md     # course slides/handouts live in Drive (third-party IP)
-├── lectures/                 # 01–09 lesson write-ups + demos
-├── homework/                 # hw01–hw07
-├── exercises/                # standalone labs
-│
-├── course-assistant-bot/     # pointer → github.com/reem-mor/course-assistant-bot
-└── projects/
-    ├── incident-assistant-rag/   # featured capstone (FastAPI + OpenAI + FAISS)
-    ├── piter-aiops/              # pointer → github.com/reem-mor/piter-aiops
-    └── incident-rag-bedrock/     # Bedrock-KB learning iteration
+```mermaid
+flowchart LR
+  Archive[This archive] --> Capstone[incident-assistant-rag]
+  Archive --> BedrockIter[incident-rag-bedrock]
+  BedrockIter -.->|evolved into| PITER[piter-aiops repo]
+  Archive --> Bot[course-assistant-bot repo]
 ```
 
 ---
 
-## Course milestones
+## In this archive
 
-| Lesson | Focus | Portfolio value |
-|--------|-------|-----------------|
-| 01 | Jupyter & Python basics | Clear technical communication and Python fundamentals |
-| 02 | Python foundations | Functions, data structures, validation, control flow |
-| 03 | OOP & NumPy | Classes, arrays, numerical foundations |
-| 04 | NLP & RAG foundations | Tokenization, embeddings, semantic search, FAISS, LLM APIs |
-| 05 | Flask web development | Routes, forms, Jinja2, static files |
-| 06 | SQLite & RAG web app | CRUD, session memory, FAISS, async UI |
-| 07 | Docker & AWS EC2 | Images, containers, Dockerfile, EC2, SSH, Nginx, Security Groups |
-| 08 | Model Context Protocol (MCP) | Stdio MCP server, FastMCP tools, MCP Inspector |
-| 09 | Bedrock Flows & n8n | Managed agent flows + n8n automation workflows |
-| Project | Full-stack AI system | End-to-end delivery: FastAPI/React, FAISS/Bedrock, Docker, tests, docs |
+Course-authored work kept here (not duplicated in flagships):
+
+| Project | Path | Notes |
+|---------|------|-------|
+| **IncidentIQ** (capstone) | [`projects/incident-assistant-rag/`](projects/incident-assistant-rag/) | FastAPI · OpenAI · FAISS · React · Docker · 90 tests |
+| **Bedrock RAG iteration** | [`projects/incident-rag-bedrock/`](projects/incident-rag-bedrock/) | Learning step before PITER · 111 tests |
+| **Pointers** | [`projects/piter-aiops/`](projects/piter-aiops/) · [`course-assistant-bot/`](course-assistant-bot/) | Link to external repos |
+
+<details>
+<summary><strong>Repository tree</strong></summary>
+
+```text
+ai-engineering-portfolio/
+├── lectures/          # Lessons 01–11 + demos
+├── homework/            # hw01–hw07
+├── exercises/           # Lab index
+├── projects/
+│   ├── incident-assistant-rag/   # featured capstone
+│   ├── incident-rag-bedrock/     # Bedrock KB iteration
+│   └── piter-aiops/              # → external repo pointer
+├── course-assistant-bot/         # → external repo pointer
+├── docs/              # setup, audit, agent tooling, extraction
+└── AGENTS.md          # cross-tool agent guidance
+```
+
+</details>
 
 ---
 
-## Skills demonstrated
+## Learning path
 
-| Category | Skills |
-|----------|--------|
-| AI Engineering | RAG, embeddings, FAISS, AWS Bedrock (KB + Agent), prompt grounding, no-context refusal, source attribution, agentic tools |
-| Backend | Python, FastAPI, Flask, REST APIs, Pydantic, error handling |
-| Frontend | React, TypeScript, Vite, operational UIs |
-| Data | SQLite, pgvector, CRUD, conversation memory, metadata |
-| DevOps / SRE | Docker, Docker Compose, Nginx, AWS EC2, SSH, Security Groups, incident-ops thinking |
-| Quality | pytest, evaluation harnesses, CI (ruff + pytest), documentation |
-| Security | `.env` separation, `.gitignore`/`.dockerignore`, env-interpolated secrets, no key exposure |
+| Stage | Topics | Where |
+|-------|--------|-------|
+| Foundations | Python, OOP, NumPy | `lectures/01`–`03` |
+| RAG & web | Embeddings, FAISS, Flask | `lectures/04`–`06`, `homework/hw04` |
+| Ops & agents | Docker, EC2, MCP, n8n, Bedrock | `lectures/07`–`11`, `homework/hw05`–`hw07` |
+| Capstone | Full-stack grounded RAG | `projects/incident-assistant-rag/` |
+
+Full milestone table: [`lectures/README.md`](lectures/README.md)
 
 ---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/reem-mor/amdocs-ai-course.git
-cd amdocs-ai-course
-python -m venv .venv && source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+git clone https://github.com/reem-mor/ai-engineering-portfolio.git
+cd ai-engineering-portfolio
+python -m venv .venv && .\.venv\Scripts\Activate.ps1   # or source .venv/bin/activate
+pip install -r requirements-dev.txt
 ```
 
-Each project and most lectures are self-contained — `cd` into one and follow its README.
-Copy `.env.example` to `.env` where a project needs keys (never commit `.env`).
-
-**Run the featured capstone:**
+**Featured capstone (Docker):**
 
 ```bash
-cd projects/incident-assistant-rag
-docker compose up --build
+cd projects/incident-assistant-rag && docker compose up --build
 ```
 
-**Run the offline test suites (what CI runs):**
+**CI parity (offline tests):**
 
 ```bash
 cd projects/incident-assistant-rag/backend && pip install -r requirements.txt && pytest -q
 cd projects/incident-rag-bedrock && pip install -r requirements.txt && pytest -q
 ```
 
+Agent/MCP setup: [`docs/AGENT-TOOLING.md`](docs/AGENT-TOOLING.md) · Human setup: [`docs/setup.md`](docs/setup.md)
+
 ---
 
 ## Quality & security
 
-- Per-project READMEs with setup and usage.
-- Secrets via environment variables; `.env` gitignored, only `.env.example` committed.
-- MCP/credential config uses env interpolation and AWS named profiles — no hardcoded keys.
-- Docker + `.dockerignore` for clean builds.
-- CI (ruff + pytest) on the kept Python areas.
-- Grounded RAG behavior with source transparency and no-context refusal in the projects.
-
-A full employer-readiness audit lives in [`docs/AUDIT_2026.md`](docs/AUDIT_2026.md);
-security/history remediation notes in
-[`docs/SECURITY_REMEDIATION.md`](docs/SECURITY_REMEDIATION.md).
+- Secrets via `.env` only — [`docs/SECURITY_REMEDIATION.md`](docs/SECURITY_REMEDIATION.md)
+- CI: ruff + pytest ([`.github/workflows/ci.yml`](.github/workflows/ci.yml))
+- Employer audit: [`docs/AUDIT_2026.md`](docs/AUDIT_2026.md)
+- Grounded RAG: source attribution + no-context refusal in capstone projects
 
 ---
 
 ## License
 
-Original code is licensed under the [MIT License](LICENSE). Course slides, PPTX, and DOCX
-handouts are Amdocs/Lab17 educational materials and are **not redistributed here** — see
-[`resources/MANIFEST.md`](resources/MANIFEST.md). Do not commit secrets or credentials.
+MIT for original code — [`LICENSE`](LICENSE). Third-party course slides are **not** in this repo ([`resources/MANIFEST.md`](resources/MANIFEST.md)).

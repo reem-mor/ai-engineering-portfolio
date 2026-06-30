@@ -48,7 +48,7 @@ existing ops workflows.
 |---------|------------|---|
 | **🛰️ [PITER AiOps](https://github.com/reem-mor/piter-aiops)** | AWS **Bedrock agent + RAG** incident-response platform — triage, investigation, similar-incident retrieval, and **safe escalation** over your runbooks. Flask/React, Docker, tested. | *Flagship* |
 | **🔎 [HINDSIGHT](https://github.com/reem-mor/hindsight)** | Intelligent incident-log / document analyst with **semantic search** — turns operational history into grounded, searchable answers. | |
-| **📚 [amdocs-ai-course](https://github.com/reem-mor/amdocs-ai-course)** | My AI-Augmented Software Engineering learning archive — the progression from Python → RAG → full-stack AI, with a featured capstone (FastAPI + OpenAI + FAISS). | *Archive* |
+| **📚 [ai-engineering-portfolio](https://github.com/reem-mor/ai-engineering-portfolio)** | AI-Augmented Software Engineering learning archive — Python → RAG → full-stack AI, featured capstone. | *Archive* |
 
 ---
 
