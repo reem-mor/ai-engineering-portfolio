@@ -44,11 +44,15 @@ existing ops workflows.
 
 ### Featured projects
 
-| Project | What it is | |
-|---------|------------|---|
-| **🛰️ [PITER AiOps](https://github.com/reem-mor/piter-aiops)** | AWS **Bedrock agent + RAG** incident-response platform — triage, investigation, similar-incident retrieval, and **safe escalation** over your runbooks. Flask/React, Docker, tested. | *Flagship* |
-| **🔎 [HINDSIGHT](https://github.com/reem-mor/hindsight)** | Intelligent incident-log / document analyst with **semantic search** — turns operational history into grounded, searchable answers. | |
-| **📚 [ai-engineering-portfolio](https://github.com/reem-mor/ai-engineering-portfolio)** | AI-Augmented Software Engineering learning archive — Python → RAG → full-stack AI, featured capstone. | *Archive* |
+| Project | What it does | Stack |
+| --- | --- | --- |
+| **🛰️ [PITER AiOps](https://github.com/reem-mor/piter-aiops)** | Agentic incident-response platform for NOC/SRE: Bedrock Agent + RAG over runbooks, 4 Lambda action groups, deterministic guardrails, safe escalation previews. **325+ pytest tests.** | AWS Bedrock · RAG · Lambda · Flask · React · Docker |
+| **🔎 [HINDSIGHT](https://github.com/reem-mor/hindsight)** | Incident-log / document intelligence pipeline: ingests ops documents, LLM extraction + deterministic enrichment, semantic search over operational history. | n8n · FastAPI · Gemini · Supabase / pgvector |
+| **🎯 [HaMadrich](https://github.com/LielMaoz/HaMadrich)** | Full-stack training management platform: role-based access, JWT auth, professional content library, admin drill management, Google Drive integration. | Next.js · TypeScript · PostgreSQL · JWT · Tailwind · shadcn/ui |
+| **🤖 [course-assistant-bot](https://github.com/reem-mor/course-assistant-bot)** | Bilingual (HE/EN) Telegram course-ops bot: schedule, recordings, homework submission, RAG recommendations, admin flows. Deterministic routing; LLM classifies, code enforces rules. **224 tests.** | Python · uv · SQLAlchemy/Alembic · LangGraph · Docker |
+| **📚 [ai-engineering-portfolio](https://github.com/reem-mor/ai-engineering-portfolio)** | AI-Augmented Software Engineering learning archive — Python → RAG → agents/MCP; capstone projects and homework evidence (where PITER and the bot began). | Python · FastAPI · React · AWS · pytest · CI |
+
+*Also: [n8n Automation Suite](https://github.com/reem-mor/ai-engineering-portfolio/tree/main/homework/hw06/n8n-customer-support-agent) (Slack ↔ escalation bridge, guardrails, dead-letter handling) · [System Health Checker](https://github.com/reem-mor/system-health-checker) · [DevOps Journey](https://github.com/reem-mor/devops-journey)*
 
 ---
 
