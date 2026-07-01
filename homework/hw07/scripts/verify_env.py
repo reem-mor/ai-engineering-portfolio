@@ -9,32 +9,46 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from env_loader import load_hw07_env  # noqa: E402
 
-OPTIONAL = ("RAPIDAPI_KEY", "RAPIDAPI_CVE_HOST", "OWUI_URL", "KAGGLE_API_TOKEN")
+REQUIRED = ("RAPIDAPI_KEY",)
+OPTIONAL = (
+    "RAPIDAPI_JOBS_HOST",
+    "RAPIDAPI_JOBS_BASE_URL",
+    "KAGGLE_API_TOKEN",
+    "OWUI_URL",
+    "OWUI_KNOWLEDGE_ID",
+    "OWUI_FILE_ID",
+)
+
+
+def _set(name: str) -> bool:
+    return bool(os.getenv(name, "").strip())
 
 
 def main() -> int:
     load_hw07_env()
 
-    api_key = os.getenv("OWUI_API_KEY", "").strip()
-    email = os.getenv("OWUI_EMAIL", "").strip()
-    password = os.getenv("OWUI_PASSWORD", "").strip()
-    if not api_key and not (email and password):
-        print("MISSING: set OWUI_API_KEY or both OWUI_EMAIL and OWUI_PASSWORD in repo root .env")
-        return 1
+    exit_code = 0
 
-    print("OK: Open WebUI auth configured")
+    for name in REQUIRED:
+        if _set(name):
+            print(f"OK:   {name} set")
+        else:
+            print(f"MISS: {name} — required for live job search (repo root .env)")
+            exit_code = 1
+
+    if _set("OWUI_API_KEY") or (_set("OWUI_EMAIL") and _set("OWUI_PASSWORD")):
+        print("OK:   Open WebUI auth set (OWUI_API_KEY or OWUI_EMAIL+OWUI_PASSWORD)")
+    else:
+        print("MISS: Open WebUI auth — set OWUI_API_KEY or OWUI_EMAIL+OWUI_PASSWORD")
+        exit_code = 1
+
+    if not _set("KAGGLE_API_TOKEN"):
+        print("WARN: KAGGLE_API_TOKEN not set — dataset download will need manual step")
+
     for name in OPTIONAL:
-        status = "set" if os.getenv(name, "").strip() else "not set"
-        print(f"  {name}: {status}")
+        print(f"      {name}: {'set' if _set(name) else 'not set'}")
 
-    rapid_key = os.getenv("RAPIDAPI_KEY", "").strip()
-    rapid_cve_host = os.getenv("RAPIDAPI_CVE_HOST", "").strip()
-    if rapid_key and not rapid_cve_host:
-        print("WARN: RAPIDAPI_KEY set but RAPIDAPI_CVE_HOST missing — tool server uses CVEDB fallback")
-    elif rapid_cve_host and not rapid_key:
-        print("WARN: RAPIDAPI_CVE_HOST set but RAPIDAPI_KEY missing — tool server uses CVEDB fallback")
-
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":
