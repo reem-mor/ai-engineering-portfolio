@@ -35,6 +35,22 @@ def test_find_knowledge_by_name_missing() -> None:
     assert kid is None
 
 
+def test_find_knowledge_by_name_paginated_response() -> None:
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "items": [{"name": "CVE Intelligence", "id": "kb-paged"}],
+        "total": 1,
+    }
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("owui_kb_setup.requests.get", return_value=mock_response):
+        kid = owui_kb_setup.find_knowledge_by_name(
+            "http://localhost:3000", "sk-test", "CVE Intelligence"
+        )
+
+    assert kid == "kb-paged"
+
+
 def test_create_knowledge_reuses_existing() -> None:
     with patch("owui_kb_setup.find_knowledge_by_name", return_value="kb-existing"):
         kid = owui_kb_setup.create_knowledge(
@@ -63,6 +79,8 @@ def test_main_missing_api_key(tmp_path, monkeypatch) -> None:
     csv_path = tmp_path / "test.csv"
     csv_path.write_text("cve_id,cvss\nCVE-2020-1,5.0\n", encoding="utf-8")
     monkeypatch.delenv("OWUI_API_KEY", raising=False)
+    monkeypatch.delenv("OWUI_EMAIL", raising=False)
+    monkeypatch.delenv("OWUI_PASSWORD", raising=False)
     monkeypatch.setattr(
         "sys.argv",
         ["owui_kb_setup.py", "--csv", str(csv_path), "--name", "Test KB"],

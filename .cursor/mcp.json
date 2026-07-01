@@ -1,5 +1,5 @@
 {
-  "_comment": "Cursor loads THIS file. Reload after edits. HTTP rapidapi needs RAPIDAPI_* in Windows user env — run: python scripts/sync_mcp_env_to_user.py",
+  "_comment": "rapidapi MUST use stdio mcp-remote (HTTP type shows no tools). Reload Cursor after edits.",
   "mcpServers": {
     "playwright": {
       "command": "npx",
@@ -16,17 +16,17 @@
     "openwebui": {
       "command": "${workspaceFolder}/.venv/Scripts/python.exe",
       "args": ["${workspaceFolder}/scripts/run-mcp-openwebui.py"],
-      "timeout": 120000,
+      "timeout": 180000,
       "env": {
         "PYTHONUNBUFFERED": "1"
       }
     },
     "rapidapi": {
-      "type": "http",
-      "url": "https://mcp.rapidapi.com",
-      "headers": {
-        "x-api-host": "${env:RAPIDAPI_HOST}",
-        "x-api-key": "${env:RAPIDAPI_KEY}"
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/scripts/run-mcp-rapidapi.py"],
+      "timeout": 180000,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
       }
     },
     "course-tools": {
