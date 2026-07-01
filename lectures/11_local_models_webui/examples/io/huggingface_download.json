@@ -1,0 +1,14 @@
+{
+  "interface": "huggingface_hub",
+  "input": {
+    "repo_id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+    "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "env": ["HF_TOKEN"]
+  },
+  "output": {
+    "cache_path_pattern": "~/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct-GGUF/snapshots/<rev>/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "size_bytes": 1117320736
+  },
+  "script": "scripts/download_qwen36.py",
+  "notes": "Set HF_TOKEN in repo-root .env for gated models and faster downloads."
+}

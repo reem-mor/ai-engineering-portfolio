@@ -1,0 +1,22 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+  "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "interface": "llama-cpp-python",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "If 3x + 7 = 22, what is x? Show your reasoning step by step."
+      }
+    ],
+    "max_tokens": 250,
+    "temperature": 0.2
+  },
+  "output": {
+    "message_keys": ["role", "content"],
+    "content": "Step-by-step solution ending with x = 5 (inline in content; no reasoning_content field).",
+    "reasoning_content": null
+  },
+  "usage": {"prompt_tokens": 52, "completion_tokens": 206, "total_tokens": 258},
+  "notes": "Ask for steps in the prompt; reasoning is mixed into content, not split."
+}

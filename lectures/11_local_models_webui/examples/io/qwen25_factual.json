@@ -1,0 +1,19 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+  "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "interface": "llama-cpp-python",
+  "input": {
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ],
+    "max_tokens": 100,
+    "n_gpu_layers": 999
+  },
+  "output": {
+    "message_keys": ["role", "content"],
+    "content": "The capital of France is Paris.",
+    "reasoning_content": null
+  },
+  "usage": {"prompt_tokens": 36, "completion_tokens": 7, "total_tokens": 43},
+  "notes": "Qwen2.5 has no separate thinking channel; use n_gpu_layers>0 on Intel Arc (CPU repack may crash)."
+}

@@ -164,6 +164,8 @@ python e2e\capture_screenshots.py --skip-warmup --kb-ready
 
 Resume partial capture: `python e2e\capture_screenshots.py --no-clean --skip-warmup --from-step 3`
 
+Step 3 fallback (API chat, faster on 3B): `python e2e\capture_kb_answer.py` then `--from-step 4`
+
 ---
 
 ## Demo questions
@@ -233,7 +235,7 @@ Submission evidence in `screenshots/`:
 | **1. KB (Web UI)** | Kaggle CSV → Workspace → Knowledge → `ai-job-postings` (no Python in KB path) |
 | **2. Local Python server** | `tools_server.py` on `:5005` — `GET /health`, `POST /jobs/search` → JSearch (RapidAPI) |
 | **3. Web UI Tool** | `openwebui_tool.py` → `search_live_jobs(role, location)` calls `host.docker.internal:5005` |
-| **System prompt** | Model preset rules: KB for historical CSV questions; tool for live hiring |
+| **System prompt** | [`prompts/system_prompt.md`](prompts/system_prompt.md) — KB for historical CSV; tool for live hiring |
 | **Model** | `llama3.2:3b` via Ollama — Function Calling = **Native**, tool `hw07_live_job_search` enabled |
 
 ---
@@ -245,8 +247,10 @@ Submission evidence in `screenshots/`:
 | `docker-compose.yml` | Ollama + Open WebUI |
 | `tools_server.py` | FastAPI on `:5005` — `/health`, `/jobs/search` |
 | `openwebui_tool.py` | Paste into Workspace → Tools |
+| `prompts/system_prompt.md` | Model preset system prompt (auto-applied by E2E) |
 | `jsearch_client.py` | JSearch RapidAPI client (mockable) |
-| `data/download_dataset.py` | Kaggle → `data/job_postings.csv` |
+| `scripts/reset_webui_password.py` | Normalize admin@localhost.com / admin for E2E API auth |
+| `scripts/verify_env.py` | Env var presence check (no secret values) |
 | `tests/test_tools_server.py` | pytest (mock mode + edge cases) |
 | `e2e/capture_screenshots.py` | Playwright evidence |
 | `screenshots/` | Submission PNGs |
@@ -261,10 +265,12 @@ Submission evidence in `screenshots/`:
 | Tool server unreachable from UI | Use `host.docker.internal:5005`; `extra_hosts` in compose |
 | Empty JSearch results | Try broader query; check RapidAPI quota |
 | JSearch 404 / `Endpoint '/search' does not exist` | Subscribe to JSearch on RapidAPI; use that app's `RAPIDAPI_KEY` in `.env` |
-| Port 5005 already in use | `curl http://127.0.0.1:5005/health` or stop the old process before starting another |
+| Port 3000 already in use | Stop other `open-webui` container: `docker stop open-webui`; then `docker compose up -d` in `homework/hw07` |
+| API sign-in fails (400) | Run `python scripts/reset_webui_password.py` after stack is healthy; ensure `WEBUI_SECRET_KEY` is set in [`docker-compose.yml`](docker-compose.yml) |
 | Slow KB index | ~12K rows; wait for FAISS completion; check indexing logs in Open WebUI |
 | Screenshot automation timeout | Resume: `python e2e\capture_screenshots.py --no-clean --skip-warmup --from-step N` or capture manually per checklist above |
 | `llama3.2:3b not found` | Run `docker exec hw07-ollama ollama pull llama3.2:3b` |
+| Qwen3.6 in Open WebUI | Start host `llama-server` on `:8080` (`lectures/11_local_models_webui/scripts/start_llama_server.ps1`); Admin → Connections → OpenAI API → `http://host.docker.internal:8080/v1` (no key). Keep Ollama for embeddings + hw07 tools. |
 
 ---
 

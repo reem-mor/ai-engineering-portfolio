@@ -1,0 +1,23 @@
+{
+  "model": "Qwen/Qwen3-1.7B-GGUF",
+  "filename": "Qwen3-1.7B-Q8_0.gguf",
+  "interface": "llama-cpp-python",
+  "input": {
+    "messages": [
+      {"role": "user", "content": "If 3x + 7 = 22, what is x?"}
+    ],
+    "max_tokens": 800,
+    "temperature": 0.6,
+    "top_p": 0.95
+  },
+  "output": {
+    "message_keys": ["role", "content"],
+    "raw_content_contains": ["redacted_thinking tags in model output"],
+    "parsed": {
+      "reasoning_content": "Internal chain-of-thought (subtract 7, divide by 3, x=5).",
+      "content": "Formatted final answer with x = 5."
+    }
+  },
+  "usage": {"prompt_tokens": 24, "completion_tokens": 800, "total_tokens": 824},
+  "notes": "Hybrid thinking model: parse think/answer blocks from content, or use llama-server --reasoning-format deepseek for reasoning_content field."
+}

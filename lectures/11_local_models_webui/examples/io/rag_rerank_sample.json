@@ -1,0 +1,31 @@
+{
+  "interface": "local-rag-rerank",
+  "input": {
+    "query": "What port does llama-server use?",
+    "doc": "data/local_models_kb.txt",
+    "retrieve_k": 10,
+    "top_k": 3,
+    "threshold": 0.35
+  },
+  "output": {
+    "chunks_before_rerank": [
+      {
+        "content": "llama-server exposes an OpenAI-compatible API on port 8080 on the host.",
+        "source": "local_models_kb.txt",
+        "bi_score": 0.72,
+        "rerank_score": null
+      }
+    ],
+    "chunks_after_rerank": [
+      {
+        "content": "llama-server exposes an OpenAI-compatible API on port 8080 on the host.",
+        "source": "local_models_kb.txt",
+        "bi_score": 0.72,
+        "rerank_score": 8.41
+      }
+    ],
+    "used_context": true,
+    "answer": "llama-server uses port 8080 on the host."
+  },
+  "notes": "Run main.py --retrieve-only for retrieval/rerank only; full RAG needs scripts/start_llama_server.ps1."
+}

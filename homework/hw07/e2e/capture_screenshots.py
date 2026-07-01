@@ -29,6 +29,7 @@ from e2e.open_webui_client import OpenWebUIClient
 from e2e.open_webui_helpers import (
     dismiss_modals,
     ensure_authenticated,
+    extract_auth_token,
     goto_path,
     attach_knowledge_collection,
     open_model_settings,
@@ -119,11 +120,19 @@ def check_preconditions() -> str:
 
 
 def setup_via_api(
-    csv_path: Path, *, refresh_kb: bool = False, skip_kb_upload: bool = False
+    csv_path: Path,
+    *,
+    refresh_kb: bool = False,
+    skip_kb_upload: bool = False,
+    auth_token: str | None = None,
 ) -> OpenWebUIClient:
     client = OpenWebUIClient(OPEN_WEBUI_URL)
-    user = client.sign_in()
-    print(f"Signed in as {user.get('email')} ({user.get('role')})")
+    if auth_token:
+        client.set_token(auth_token)
+        print("Authenticated via browser session token")
+    else:
+        user = client.sign_in()
+        print(f"Signed in as {user.get('email')} ({user.get('role')})")
 
     model = client.ensure_chat_model()
     print(f"Ollama model ready: {model}")
@@ -165,6 +174,18 @@ def clean_screenshots() -> None:
         png.unlink()
 
 
+def bootstrap_auth_token(*, headless: bool = True) -> str | None:
+    """Obtain API token via Playwright UI session (works when sign-in form is hidden)."""
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=headless)
+        page = browser.new_page(viewport={"width": 1920, "height": 1080})
+        page.goto(OPEN_WEBUI_URL, wait_until="domcontentloaded")
+        dismiss_modals(page)
+        token = ensure_authenticated(page) or extract_auth_token(page)
+        browser.close()
+        return token
+
+
 def capture_all(
     headless: bool = True,
     *,
@@ -187,10 +208,12 @@ def capture_all(
     if not skip_warmup and from_step <= 3:
         warmup_ollama()
 
+    auth_token = bootstrap_auth_token(headless=headless)
     client = setup_via_api(
         CSV_PATH,
         refresh_kb=refresh_kb and from_step <= 2 and not kb_ready,
         skip_kb_upload=kb_ready or from_step >= 3,
+        auth_token=auth_token,
     )
 
     with sync_playwright() as playwright:
@@ -307,7 +330,13 @@ def main() -> int:
             check_preconditions()
             if not args.skip_warmup:
                 warmup_ollama()
-            client = setup_via_api(CSV_PATH, refresh_kb=args.refresh_kb, skip_kb_upload=False)
+            auth_token = bootstrap_auth_token(headless=True)
+            client = setup_via_api(
+                CSV_PATH,
+                refresh_kb=args.refresh_kb,
+                skip_kb_upload=False,
+                auth_token=auth_token,
+            )
             client.close()
             print("Setup complete.")
             return 0

@@ -1,0 +1,19 @@
+Lecture 11 — Local Models Knowledge Base
+
+Open WebUI runs on port 3000 in the homework hw07 Docker stack. It provides browser chat, knowledge bases, and tool integration for local LLM workflows.
+
+Ollama runs inside the hw07 Docker container on internal port 11434. Open WebUI connects to Ollama for lightweight chat with llama3.2:3b and for knowledge-base embeddings with nomic-embed-text.
+
+llama-server exposes an OpenAI-compatible API on port 8080 on the host. Start it with scripts/start_llama_server.ps1 from the lecture folder. Open WebUI can connect to http://host.docker.internal:8080/v1 with no API key for Qwen3.6 text generation.
+
+The recommended Qwen3.6 local model is unsloth/Qwen3.6-27B-MTP-GGUF. On Intel Arc shared VRAM, use the UD-Q4_K_XL quant (~17 GB), not the BF16 split files.
+
+RAG (Retrieval-Augmented Generation) improves local LLM answers by retrieving relevant document chunks before generation. A common pattern is retrieve-wide, rerank-narrow: first fetch many candidates with a fast bi-encoder and FAISS, then rerank the top candidates with a cross-encoder for better precision.
+
+RAGAS is used in this lecture to evaluate RAG quality with metrics such as faithfulness and answer relevancy. Run demos/ragas_eval_smoke.py with --dry-run for CI-safe validation or --eval when OPENAI_API_KEY is available.
+
+The hw07 tool server listens on host port 5005 and provides live JSearch job listings to Open WebUI via host.docker.internal:5005.
+
+For Qwen3 fast factual Q&A, disable thinking with chat_template_kwargs enable_thinking false or append /no_think to the user message when using llama-cpp-python or llama-server.
+
+Vision with Qwen3.6 requires the mmproj projector file and MTMDChatHandler in llama-cpp-python. MTP speed mode and vision mode should not be mixed in the same server profile.

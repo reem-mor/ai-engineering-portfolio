@@ -78,6 +78,7 @@ Single library: [`.cursor/skills/`](.cursor/skills/) — read `SKILL.md` before 
 |-------|----------|
 | `repo-tooling` | MCP, env, CI, config file locations |
 | `hw07-open-webui` | Homework 07 — Open WebUI KB, local tools server, RapidAPI |
+| `local-models` | Qwen3.6, llama-cpp-python, Ollama/Open WebUI, Intel Arc tuning |
 | `mcp-integration` | New MCP server or auth debugging |
 | `agent-development` | Agents, tools, prompts |
 | `browser-use` | Playwright automation |

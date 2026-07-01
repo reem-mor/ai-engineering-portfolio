@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from pathlib import Path
 from typing import Any
@@ -42,15 +43,36 @@ class OpenWebUIClient:
             raise RuntimeError("Not authenticated — call sign_in() first")
         return {"Authorization": f"Bearer {self.token}"}
 
+    def set_token(self, token: str) -> None:
+        self.token = token.strip()
+
     def sign_in(
         self,
-        email: str = OPEN_WEBUI_EMAIL,
-        password: str = OPEN_WEBUI_PASSWORD,
+        email: str | None = None,
+        password: str | None = None,
     ) -> dict[str, Any]:
+        api_key = os.environ.get("OPEN_WEBUI_API_KEY", "").strip()
+        if api_key:
+            self.set_token(api_key.removeprefix("Bearer ").strip())
+            return {"token": self.token}
+
+        email = email or os.environ.get("OPEN_WEBUI_EMAIL", OPEN_WEBUI_EMAIL)
+        password = password or os.environ.get("OPEN_WEBUI_PASSWORD", OPEN_WEBUI_PASSWORD)
+
         response = self._client.post(
             "/api/v1/auths/signin",
             json={"email": email, "password": password},
         )
+        if response.status_code == 400:
+            signup = self._client.post(
+                "/api/v1/auths/signup",
+                json={"email": email, "password": password, "name": "HW07 Admin"},
+            )
+            if signup.status_code == 200:
+                body = signup.json()
+                self.token = body["token"]
+                return body
+
         response.raise_for_status()
         body = response.json()
         self.token = body["token"]
