@@ -1,43 +1,42 @@
+# hw07 — Open WebUI + Ollama stack with RAG settings as env vars.
+# Verify RAG_* / ENABLE_* names against current Open WebUI docs — unknown vars are ignored.
+
 services:
   ollama:
     image: ollama/ollama:latest
     container_name: hw07-ollama
+    ports:
+      - "11434:11434"
     volumes:
       - ollama-hw07:/root/.ollama
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
 
   open-webui:
-    # Pin latest stable — https://github.com/open-webui/open-webui/releases
-    image: ghcr.io/open-webui/open-webui:v0.10.1
+    image: ghcr.io/open-webui/open-webui:main
     container_name: hw07-open-webui
+    depends_on:
+      - ollama
     ports:
       - "3000:8080"
-    environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-      WEBUI_AUTH: "true"
-      WEBUI_SECRET_KEY: hw07-local-dev-secret-change-in-prod
-      ENABLE_SIGNUP: "true"
-      ENABLE_OLLAMA_API: "true"
-    volumes:
-      - open-webui-hw07:/app/backend/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      ollama:
-        condition: service_healthy
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_SECRET_KEY: hw07-local-dev-secret-change-in-prod
+      RAG_EMBEDDING_ENGINE: ollama
+      RAG_EMBEDDING_MODEL: nomic-embed-text
+      RAG_TEXT_SPLITTER: token
+      CHUNK_SIZE: "700"
+      CHUNK_OVERLAP: "100"
+      ENABLE_RAG_HYBRID_SEARCH: "true"
+      RAG_RERANKING_MODEL: BAAI/bge-reranker-v2-m3
+      RAG_TOP_K: "5"
+      RAG_RELEVANCE_THRESHOLD: "0.15"
+      RAG_SYSTEM_CONTEXT: "true"
+      ENABLE_KB_EXEC: "true"
+    volumes:
+      - open-webui-hw07:/app/backend/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 45s
 
 volumes:
   ollama-hw07:
