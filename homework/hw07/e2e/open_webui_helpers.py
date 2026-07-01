@@ -92,6 +92,26 @@ def goto_path(page: Page, path: str) -> None:
     ensure_authenticated(page)
 
 
+def inject_auth_token(page: Page, token: str) -> None:
+    """Seed Open WebUI browser session from API JWT (Playwright E2E)."""
+    if not token:
+        return
+    page.goto(OPEN_WEBUI_URL, wait_until="domcontentloaded")
+    page.evaluate("(t) => localStorage.setItem('token', t)", token)
+    page.context.add_cookies(
+        [
+            {
+                "name": "token",
+                "value": token,
+                "domain": "localhost",
+                "path": "/",
+            }
+        ]
+    )
+    page.goto(OPEN_WEBUI_URL, wait_until="domcontentloaded")
+    dismiss_modals(page)
+
+
 def extract_auth_token(page: Page) -> str | None:
     """Read JWT/API token from browser storage after UI login."""
     token = page.evaluate(
