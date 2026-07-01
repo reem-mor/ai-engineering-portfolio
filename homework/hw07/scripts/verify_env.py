@@ -10,32 +10,50 @@ from dotenv import load_dotenv
 HW07_ROOT = Path(__file__).resolve().parent.parent
 REPO_ROOT = HW07_ROOT.parent.parent
 
-REQUIRED_FOR_KB = ("OWUI_API_KEY",)
-OPTIONAL = ("RAPIDAPI_KEY", "RAPIDAPI_HOST", "OWUI_URL", "KAGGLE_API_TOKEN")
+REQUIRED = ("RAPIDAPI_KEY",)
+OWUI_AUTH = ("OWUI_API_KEY", "OWUI_EMAIL")  # need API key OR email(+password)
+OPTIONAL = (
+    "RAPIDAPI_JOBS_HOST",
+    "RAPIDAPI_JOBS_BASE_URL",
+    "KAGGLE_API_TOKEN",
+    "OWUI_URL",
+    "OWUI_PASSWORD",
+    "OWUI_KNOWLEDGE_ID",
+    "OWUI_FILE_ID",
+)
+
+
+def _set(name: str) -> bool:
+    return bool(os.getenv(name, "").strip())
 
 
 def main() -> int:
-    load_dotenv(HW07_ROOT / ".env")
+    # Root .env is canonical (loaded first — wins); hw07/.env is optional defaults.
     load_dotenv(REPO_ROOT / ".env")
+    load_dotenv(HW07_ROOT / ".env")
 
-    missing = [name for name in REQUIRED_FOR_KB if not os.getenv(name, "").strip()]
-    if missing:
-        print("MISSING (required for KB upload):", ", ".join(missing))
-        return 1
+    exit_code = 0
 
-    print("OK: OWUI_API_KEY set")
+    for name in REQUIRED:
+        if _set(name):
+            print(f"OK:   {name} set")
+        else:
+            print(f"MISS: {name} — required for live job search (repo root .env)")
+            exit_code = 1
+
+    if _set("OWUI_API_KEY") or (_set("OWUI_EMAIL") and _set("OWUI_PASSWORD")):
+        print("OK:   Open WebUI auth set (OWUI_API_KEY or OWUI_EMAIL+OWUI_PASSWORD)")
+    else:
+        print("MISS: Open WebUI auth — set OWUI_API_KEY or OWUI_EMAIL+OWUI_PASSWORD")
+        exit_code = 1
+
+    if not _set("KAGGLE_API_TOKEN"):
+        print("WARN: KAGGLE_API_TOKEN not set — dataset download will need manual step")
+
     for name in OPTIONAL:
-        status = "set" if os.getenv(name, "").strip() else "not set"
-        print(f"  {name}: {status}")
+        print(f"      {name}: {'set' if _set(name) else 'not set'}")
 
-    rapid_key = os.getenv("RAPIDAPI_KEY", "").strip()
-    rapid_host = os.getenv("RAPIDAPI_HOST", "").strip()
-    if rapid_key and not rapid_host:
-        print("WARN: RAPIDAPI_KEY set but RAPIDAPI_HOST missing — tool server uses CVEDB fallback")
-    elif rapid_host and not rapid_key:
-        print("WARN: RAPIDAPI_HOST set but RAPIDAPI_KEY missing — tool server uses CVEDB fallback")
-
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

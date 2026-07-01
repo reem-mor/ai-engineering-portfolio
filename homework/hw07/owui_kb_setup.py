@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Create an Open WebUI knowledge base and upload a CSV (idempotent).
+"""Create/update the hw07 Open WebUI knowledge base and upload the AI jobs CSV.
 
-Usage (PowerShell):
-    $env:OWUI_URL     = "http://localhost:3000"
-    $env:OWUI_API_KEY = "sk-..."
-    python owui_kb_setup.py --csv .\\data\\cve.csv --name "CVE Intelligence" `
-        --description "Historical CVE / CVSS records for RAG"
+Idempotent: reuses an existing KB by name and replaces a same-named file
+instead of duplicating it. Polls file processing status after upload.
+
+Auth (from repo root .env — canonical): OWUI_API_KEY, or OWUI_EMAIL +
+OWUI_PASSWORD (signs in via /api/v1/auths/signin). Secrets are never printed.
+
+Usage:
+    python owui_kb_setup.py                       # defaults: data/ai_jobs.csv
+    python owui_kb_setup.py --write-env           # also sync KB/file IDs to root .env
 """
 
 from __future__ import annotations
@@ -13,19 +17,70 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
+from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+HW07_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = HW07_ROOT.parent.parent
+
+KB_NAME = "AI Job Market Intelligence Dataset"
+KB_DESCRIPTION = (
+    "Kaggle AI job-market dataset (titles, salaries, skills, locations, "
+    "experience levels) for RAG — static/historical questions."
+)
+DEFAULT_CSV = HW07_ROOT / "data" / "ai_jobs.csv"
+POLL_INTERVAL_S = 3
+POLL_TIMEOUT_S = 300
 
 
-def _headers(api_key: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {api_key}"}
+def _load_env() -> None:
+    # Root .env is canonical (loaded first — wins); hw07/.env is optional local defaults.
+    load_dotenv(REPO_ROOT / ".env")
+    load_dotenv(HW07_ROOT / ".env")
 
 
-def find_knowledge_by_name(base: str, api_key: str, name: str) -> str | None:
-    """Return the id of an existing KB with this name, or None."""
-    response = requests.get(
-        f"{base}/api/v1/knowledge/", headers=_headers(api_key), timeout=30
+def _headers(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def sign_in(base: str, email: str, password: str) -> str:
+    """Sign in with email/password and return a bearer token."""
+    response = requests.post(
+        f"{base}/api/v1/auths/signin",
+        json={"email": email, "password": password},
+        timeout=30,
     )
+    response.raise_for_status()
+    token = response.json().get("token", "")
+    if not token:
+        raise RuntimeError("Sign-in succeeded but Open WebUI returned no token.")
+    return token
+
+
+def get_token(base: str) -> str:
+    """Resolve an auth token: OWUI_API_KEY first, else OWUI_EMAIL/OWUI_PASSWORD."""
+    api_key = os.getenv("OWUI_API_KEY", "").strip()
+    if api_key:
+        print("[auth] using OWUI_API_KEY")
+        return api_key
+    email = os.getenv("OWUI_EMAIL", "").strip()
+    password = os.getenv("OWUI_PASSWORD", "").strip()
+    if email and password:
+        token = sign_in(base, email, password)
+        print(f"[auth] signed in as {email} — OK")
+        return token
+    raise RuntimeError(
+        "No Open WebUI credentials: set OWUI_API_KEY, or OWUI_EMAIL + OWUI_PASSWORD, "
+        "in the repo root .env."
+    )
+
+
+def find_knowledge_by_name(base: str, token: str, name: str) -> str | None:
+    """Return the id of an existing KB with this name, or None."""
+    response = requests.get(f"{base}/api/v1/knowledge/", headers=_headers(token), timeout=30)
     response.raise_for_status()
     for kb in response.json():
         if kb.get("name") == name:
@@ -33,98 +88,179 @@ def find_knowledge_by_name(base: str, api_key: str, name: str) -> str | None:
     return None
 
 
-def create_knowledge(base: str, api_key: str, name: str, description: str) -> str:
+def create_knowledge(base: str, token: str, name: str, description: str) -> str:
     """Create a KB (or reuse one with the same name) and return its id."""
-    existing = find_knowledge_by_name(base, api_key, name)
+    existing = find_knowledge_by_name(base, token, name)
     if existing:
-        print(f"[=] Knowledge base '{name}' already exists (id={existing}); reusing.")
+        print(f"[kb] '{name}' already exists (id={existing}); reusing.")
         return existing
     response = requests.post(
         f"{base}/api/v1/knowledge/create",
-        headers={**_headers(api_key), "Content-Type": "application/json"},
+        headers={**_headers(token), "Content-Type": "application/json"},
         json={"name": name, "description": description},
         timeout=30,
     )
     response.raise_for_status()
     kid = response.json()["id"]
-    print(f"[+] Created knowledge base '{name}' (id={kid}).")
+    print(f"[kb] created '{name}' (id={kid}).")
     return kid
 
 
-def upload_file(base: str, api_key: str, csv_path: str) -> str:
+def get_knowledge_files(base: str, token: str, knowledge_id: str) -> list[dict]:
+    """Return the files currently attached to a KB."""
+    response = requests.get(
+        f"{base}/api/v1/knowledge/{knowledge_id}", headers=_headers(token), timeout=30
+    )
+    response.raise_for_status()
+    return response.json().get("files") or []
+
+
+def upload_file(base: str, token: str, csv_path: Path) -> str:
     """Upload a file to Open WebUI and return its file id."""
-    with open(csv_path, "rb") as handle:
-        files = {"file": (os.path.basename(csv_path), handle, "text/csv")}
+    with csv_path.open("rb") as handle:
+        files = {"file": (csv_path.name, handle, "text/csv")}
         response = requests.post(
-            f"{base}/api/v1/files/",
-            headers=_headers(api_key),
-            files=files,
-            timeout=120,
+            f"{base}/api/v1/files/", headers=_headers(token), files=files, timeout=300
         )
     response.raise_for_status()
     fid = response.json()["id"]
-    print(f"[+] Uploaded '{csv_path}' (file_id={fid}).")
+    print(f"[upload] '{csv_path.name}' uploaded — OK (file_id={fid})")
     return fid
 
 
-def add_file_to_knowledge(base: str, api_key: str, knowledge_id: str, file_id: str) -> None:
-    """Attach an uploaded file to a knowledge base (triggers indexing)."""
+def wait_for_file_processed(base: str, token: str, file_id: str) -> str:
+    """Poll the uploaded file until Open WebUI finishes extracting/processing it."""
+    deadline = time.monotonic() + POLL_TIMEOUT_S
+    last_status = "unknown"
+    while time.monotonic() < deadline:
+        response = requests.get(
+            f"{base}/api/v1/files/{file_id}", headers=_headers(token), timeout=30
+        )
+        response.raise_for_status()
+        payload = response.json()
+        last_status = (payload.get("data") or {}).get("status") or payload.get("status") or ""
+        content = (payload.get("data") or {}).get("content")
+        if last_status in ("completed", "processed") or content:
+            print(f"[processing] file {file_id}: {last_status or 'content extracted'} — OK")
+            return last_status or "completed"
+        if last_status in ("failed", "error"):
+            raise RuntimeError(f"Open WebUI failed to process file {file_id}.")
+        print(f"[processing] file {file_id}: {last_status or 'pending'} ... waiting")
+        time.sleep(POLL_INTERVAL_S)
+    raise TimeoutError(
+        f"File {file_id} not processed within {POLL_TIMEOUT_S}s (last status: {last_status})."
+    )
+
+
+def remove_file_from_knowledge(base: str, token: str, knowledge_id: str, file_id: str) -> None:
     response = requests.post(
-        f"{base}/api/v1/knowledge/{knowledge_id}/file/add",
-        headers={**_headers(api_key), "Content-Type": "application/json"},
+        f"{base}/api/v1/knowledge/{knowledge_id}/file/remove",
+        headers={**_headers(token), "Content-Type": "application/json"},
         json={"file_id": file_id},
         timeout=120,
     )
     response.raise_for_status()
-    print(f"[+] Attached file {file_id} to knowledge base {knowledge_id}.")
+    print(f"[kb] removed stale file {file_id} from KB {knowledge_id}.")
+
+
+def add_file_to_knowledge(base: str, token: str, knowledge_id: str, file_id: str) -> None:
+    """Attach an uploaded file to a knowledge base (triggers indexing)."""
+    response = requests.post(
+        f"{base}/api/v1/knowledge/{knowledge_id}/file/add",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"file_id": file_id},
+        timeout=300,
+    )
+    response.raise_for_status()
+    print(f"[kb] attached file {file_id} to KB {knowledge_id} — indexing triggered.")
+
+
+def upsert_env(path: Path, updates: dict[str, str]) -> None:
+    """Update or append KEY=VALUE lines in an env file without touching others."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    seen: set[str] = set()
+    out: list[str] = []
+    for line in lines:
+        key = line.split("=", 1)[0].strip() if "=" in line else ""
+        if key in updates and not line.lstrip().startswith("#"):
+            out.append(f"{key}={updates[key]}")
+            seen.add(key)
+        else:
+            out.append(line)
+    out.extend(f"{key}={value}" for key, value in updates.items() if key not in seen)
+    path.write_text("\n".join(out).rstrip() + "\n", encoding="utf-8")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create an Open WebUI KB and upload a CSV.")
-    parser.add_argument("--csv", required=True, help="Path to the CSV file to upload.")
-    parser.add_argument("--name", required=True, help="Knowledge base name.")
-    parser.add_argument("--description", default="", help="Knowledge base description.")
+    _load_env()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--csv", default=str(DEFAULT_CSV), help="CSV to upload.")
+    parser.add_argument("--name", default=KB_NAME, help="Knowledge base name.")
+    parser.add_argument("--description", default=KB_DESCRIPTION)
+    parser.add_argument("--url", default=os.getenv("OWUI_URL", "http://localhost:3000"))
     parser.add_argument(
-        "--url",
-        default=os.getenv("OWUI_URL", "http://localhost:3000"),
-        help="Open WebUI base URL (or set OWUI_URL).",
+        "--replace", action="store_true",
+        help="Replace an already-attached file with the same name.",
     )
     parser.add_argument(
-        "--api-key",
-        default=os.getenv("OWUI_API_KEY", ""),
-        help="Open WebUI API key (or set OWUI_API_KEY).",
+        "--write-env", action="store_true",
+        help="Write OWUI_KNOWLEDGE_ID / OWUI_FILE_ID into the repo root .env.",
     )
     args = parser.parse_args()
 
     base = args.url.rstrip("/")
-    if not args.api_key:
+    csv_path = Path(args.csv)
+    if not csv_path.is_file():
         print(
-            "ERROR: set OWUI_API_KEY env var or pass --api-key "
-            "(Open WebUI > Settings > Account > API Keys).",
+            f"ERROR: CSV not found: {csv_path}. "
+            "Run data/download_dataset.py then data/validate_dataset.py first.",
             file=sys.stderr,
         )
-        return 2
-    if not os.path.isfile(args.csv):
-        print(f"ERROR: CSV not found: {args.csv}", file=sys.stderr)
         return 2
 
     try:
-        kid = create_knowledge(base, args.api_key, args.name, args.description)
-        fid = upload_file(base, args.api_key, args.csv)
-        add_file_to_knowledge(base, args.api_key, kid, fid)
+        token = get_token(base)
+        kid = create_knowledge(base, token, args.name, args.description)
+
+        existing_files = get_knowledge_files(base, token, kid)
+        same_name = [
+            f for f in existing_files
+            if (f.get("meta") or {}).get("name") == csv_path.name
+            or (f.get("filename") == csv_path.name)
+        ]
+        if same_name and not args.replace:
+            fid = same_name[0]["id"]
+            print(f"[kb] '{csv_path.name}' already attached (file_id={fid}); use --replace to re-upload.")
+        else:
+            for stale in same_name:
+                remove_file_from_knowledge(base, token, kid, stale["id"])
+            fid = upload_file(base, token, csv_path)
+            wait_for_file_processed(base, token, fid)
+            add_file_to_knowledge(base, token, kid, fid)
+
+        files = get_knowledge_files(base, token, kid)
+        print(f"[kb] verification: KB id={kid}, file count={len(files)}")
+        if not any(f.get("id") == fid for f in files):
+            print("ERROR: uploaded file is not attached to the KB.", file=sys.stderr)
+            return 1
     except requests.HTTPError as exc:
-        body = exc.response.text[:500] if exc.response is not None else ""
-        print(f"ERROR: {exc}\n{body}", file=sys.stderr)
-        print(
-            f"Tip: confirm endpoint paths at {base}/docs if your OWUI version differs.",
-            file=sys.stderr,
-        )
+        body = exc.response.text[:300] if exc.response is not None else ""
+        print(f"ERROR: Open WebUI API error: {exc}\n{body}", file=sys.stderr)
+        print(f"Tip: confirm endpoint paths at {base}/docs if your OWUI version differs.",
+              file=sys.stderr)
         return 1
     except requests.RequestException as exc:
-        print(f"ERROR: request failed: {exc}", file=sys.stderr)
+        print(f"ERROR: cannot reach Open WebUI at {base}: {exc}", file=sys.stderr)
+        return 1
+    except (RuntimeError, TimeoutError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
-    print(f"\nDone. KB id: {kid}")
+    if args.write_env:
+        upsert_env(REPO_ROOT / ".env", {"OWUI_KNOWLEDGE_ID": kid, "OWUI_FILE_ID": fid})
+        print("[env] OWUI_KNOWLEDGE_ID / OWUI_FILE_ID synced to repo root .env")
+
+    print(f"\nDone. KB '{args.name}' ready (id={kid}, file_id={fid}).")
     print("Next: attach this KB to a tool-capable model in Workspace > Models.")
     return 0
 

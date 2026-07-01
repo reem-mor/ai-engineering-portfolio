@@ -58,9 +58,9 @@ Typical variables:
 | `OPENAI_API_KEY` | RAG homework, capstone |
 | `GEMINI_API_KEY` | Lecture 06 Flask RAG demo, lecture 08 tool-calling demo |
 | `HF_TOKEN` | Hugging Face models in lecture demos |
-| `KAGGLE_API_TOKEN` | Kaggle MCP — CVE dataset download for hw07 ([Kaggle Settings](https://www.kaggle.com/settings)) |
-| `RAPIDAPI_KEY` / `RAPIDAPI_HOST` | hw07 live CVE lookups via RapidAPI (optional — Shodan CVEDB fallback) |
-| `OWUI_API_KEY` | hw07 KB upload script (`owui_kb_setup.py`) |
+| `KAGGLE_API_TOKEN` | Kaggle MCP — AI job-market dataset download for hw07 ([Kaggle Settings](https://www.kaggle.com/settings)) |
+| `RAPIDAPI_KEY` / `RAPIDAPI_JOBS_HOST` | hw07 live job search via RapidAPI (JSearch) |
+| `OWUI_API_KEY` or `OWUI_EMAIL`+`OWUI_PASSWORD` | hw07 KB upload script (`owui_kb_setup.py`) |
 
 ## Run by area
 
@@ -124,16 +124,17 @@ copy .env.example .env
 python demos\tool_calling_demo.py
 ```
 
-### Homework 07 — Open WebUI + CVE tool server
+### Homework 07 — AI Job Market Intelligence Assistant
 
 ```powershell
 cd homework\hw07
 pip install -r requirements.txt
-copy .env.example .env
-# Set OWUI_API_KEY; optional RAPIDAPI_KEY + RAPIDAPI_HOST (or use Shodan CVEDB fallback)
+# Secrets in repo root .env: RAPIDAPI_KEY, RAPIDAPI_JOBS_HOST, KAGGLE_API_TOKEN,
+# OWUI_EMAIL + OWUI_PASSWORD (or OWUI_API_KEY)
 docker compose up -d
 python data\download_dataset.py
-python owui_kb_setup.py --csv .\data\cve.csv --name "CVE Intelligence" --description "Historical CVE records"
+python data\validate_dataset.py
+python owui_kb_setup.py --write-env
 python -m uvicorn tools_server:app --host 0.0.0.0 --port 5005
 ```
 

@@ -38,6 +38,19 @@ services:
       - open-webui-hw07:/app/backend/data
     restart: unless-stopped
 
+  # Optional: run the hw07 tool server in Docker instead of on the host.
+  # Start with: docker compose --profile tools up -d
+  # Secrets come from the repo root .env (never baked into the image).
+  tool-server:
+    build: .
+    container_name: hw07-tool-server
+    profiles: ["tools"]
+    ports:
+      - "5005:5005"
+    env_file:
+      - ../../.env
+    restart: unless-stopped
+
 volumes:
   ollama-hw07:
   open-webui-hw07:
