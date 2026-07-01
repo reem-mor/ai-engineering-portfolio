@@ -23,6 +23,14 @@ if (-not (Test-Path (Join-Path $Lec08 ".venv"))) {
 }
 & (Join-Path $Lec08 ".venv\Scripts\pip.exe") install -r (Join-Path $Lec08 "requirements.txt")
 
+Write-Host "==> Playwright MCP + Chromium (browser automation / hw07 E2E)"
+if (Get-Command npx -ErrorAction SilentlyContinue) {
+    npx -y @playwright/mcp@latest --help | Out-Null
+    npx -y playwright install chromium
+} else {
+    Write-Warning "Node.js/npx not found — install Node 18+ for Playwright MCP (.mcp.json)."
+}
+
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
     Write-Host "Created .env from .env.example — fill in your keys locally."

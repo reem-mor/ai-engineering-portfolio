@@ -1,4 +1,4 @@
 {
-  "_comment": "Copy to .cursor/mcp.json for Cursor-local overrides (gitignored). Default: use root .mcp.json — Cursor reads both.",
+  "_comment": "Optional local MCP overrides (gitignored). Default server list: ../.mcp.json (includes playwright, kaggle, aws-api, course-tools). Copy blocks here only to override — never hardcode API keys.",
   "mcpServers": {}
 }

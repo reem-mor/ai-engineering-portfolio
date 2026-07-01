@@ -11,7 +11,7 @@ Graded assignments for the AI-Augmented Software Engineering course. Each folder
 | [`hw04/`](hw04/) | RAG web app | Scaffold — see capstone | Docker lab under `my-rag-app/` |
 | [`hw05/`](hw05/) | EC2 / Docker / Nginx | [`nginx-docker-lab/screenshots/`](hw05/nginx-docker-lab/screenshots/) |
 | [`hw06/`](hw06/) | n8n customer-support agent | [`n8n-customer-support-agent/`](hw06/n8n-customer-support-agent/) |
-| [`hw07/`](hw07/) | Open WebUI + MCP tools | [`screenshots/`](hw07/screenshots/), [`SUBMISSION.md`](hw07/SUBMISSION.md) |
+| [`hw07/`](hw07/) | Open WebUI KB + live tools | [`screenshots/`](hw07/screenshots/) · pytest |
 
 Submission workflow: [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 

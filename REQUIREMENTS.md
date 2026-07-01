@@ -19,7 +19,7 @@ How Python dependencies are organized in this archive (2026).
 | CI lint | `pip install ruff` (see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) |
 | CI tests | Each matrix dir's `requirements.txt` |
 | [`lectures/08_mcp/`](../lectures/08_mcp/requirements.txt) | MCP demo server (`course-tools` MCP) |
-| [`homework/hw07/open-webui-tools/`](../homework/hw07/open-webui-tools/requirements.txt) | hw07 tools server |
+| [`homework/hw07/`](homework/hw07/) | Open WebUI + live tools server | [`requirements.txt`](homework/hw07/requirements.txt) |
 | [`projects/incident-assistant-rag/backend/`](../projects/incident-assistant-rag/backend/requirements.txt) | Capstone API |
 | [`projects/incident-rag-bedrock/`](../projects/incident-rag-bedrock/requirements.txt) | Bedrock iteration |
 | **PITER AiOps** (external) | [reem-mor/piter-aiops](https://github.com/reem-mor/piter-aiops) |

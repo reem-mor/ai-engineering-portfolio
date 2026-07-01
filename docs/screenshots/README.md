@@ -32,11 +32,11 @@ Write-up: [`homework/hw05/nginx-docker-lab/SUBMISSION.md`](../../homework/hw05/n
 
 Workflow, agent/guardrails config, Gmail sends, and Slack escalation captures.
 
-## Homework 07 — Open WebUI + MCP tools
+## Homework 07 — Open WebUI + live tools
 
 **Location:** [`homework/hw07/screenshots/`](../../homework/hw07/screenshots/)
 
-Knowledge-base setup, CSV upload, indexing, tool-server config, and chat answers. Write-up: [`homework/hw07/SUBMISSION.md`](../../homework/hw07/SUBMISSION.md).
+Knowledge-base setup, tool registration, and chat answers. Write-up: [`homework/hw07/README.md`](../../homework/hw07/README.md).
 
 ## Capstone — IncidentIQ
 

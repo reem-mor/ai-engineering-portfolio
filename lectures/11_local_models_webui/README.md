@@ -2,7 +2,7 @@
 
 Course lecture covering **local LLM inference**, **Open WebUI** as a browser frontend, **Knowledge Bases** (FAISS), and how **MCP** relates to tool integration.
 
-Homework implementation: [`homework/hw07/`](../../homework/hw07/) — see [`ARCHITECTURE.md`](../../homework/hw07/ARCHITECTURE.md) for system design.
+Homework implementation: [`homework/hw07/`](../../homework/hw07/) — see [`README.md`](../../homework/hw07/README.md) for setup.
 
 ---
 
@@ -44,7 +44,7 @@ docker run -d -p 3000:8080 -v open-webui:/app/backend/data --name open-webui ghc
 Both let models call external functions. MCP standardizes tool discovery for AI IDEs; Open WebUI expects **OpenAPI-compatible HTTP servers** (see [`open-webui/openapi-servers`](https://github.com/open-webui/openapi-servers)).
 
 Lecture 08 in this repo implements **stdio MCP** for Cursor: [`lectures/08_mcp/`](../08_mcp/).  
-Homework 07 implements an **HTTP tool server** for Open WebUI: [`homework/hw07/open-webui-tools/`](../../homework/hw07/open-webui-tools/).
+Homework 07 implements an **HTTP tool server** + Web UI Tool for Open WebUI: [`homework/hw07/`](../../homework/hw07/).
 
 ---
 

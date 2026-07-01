@@ -1,6 +1,6 @@
-# Portfolio Audit 2026 — `amdocs-ai-course`
+# Portfolio Audit 2026 — `ai-engineering-portfolio`
 
-> **Historical audit (2026-06-27).** Many items below are **resolved** — CI, AGENTS.md, resources manifest-only, README reframed, flagships in [`flagships/`](../flagships/). See [`README.md`](../README.md) and [`docs/SYLLABUS.md`](SYLLABUS.md) for current state.
+> **Historical audit (2026-06-27).** Many items below are **resolved** — CI, AGENTS.md, resources manifest-only, README reframed, flagships in [`flagships/`](../flagships/), repo renamed from `amdocs-ai-course` (GitHub redirects). See [`README.md`](../README.md) and [`docs/SYLLABUS.md`](SYLLABUS.md) for current state.
 
 > **Read-only audit.** This document changes nothing in the repo. It is the approval
 > artifact for the cleanup work that follows (Prompts 2–4 of the overhaul plan).
@@ -44,7 +44,7 @@
 
 | Item | Verdict | Rationale |
 |------|---------|-----------|
-| Repo name `amdocs-ai-course` | **KEEP (decide once)** | Recognizable as coursework; GitHub auto-redirects if later renamed to e.g. `ai-engineering-coursework`. Low value to rename — the bigger lever is reframing the README, not the slug. |
+| Repo name `ai-engineering-portfolio` | **DONE** | Renamed from `amdocs-ai-course`; GitHub redirects old URLs. Clone: `github.com/reem-mor/ai-engineering-portfolio`. |
 | Repo description / topics | **FIX (manual)** | Add description + topics (`ai-engineering`, `rag`, `aws-bedrock`, `llm`, `sre`, `python`, `docker`). Manual GitHub step. |
 | README framing | **FIX** | Currently frames repo as a single-flagship portfolio. Re-frame as **course + learning archive** that links OUT to flagship repos (PITER AiOps, HINDSIGHT). Lead with "AI Engineer × SRE". |
 
@@ -192,10 +192,10 @@ env / `.env.example`** before PITER is extracted to a public repo.
 
 ---
 
-## Proposed target repository tree (cleaned `amdocs-ai-course`)
+## Proposed target repository tree (cleaned `ai-engineering-portfolio`)
 
 ```text
-amdocs-ai-course/                      # "Course + learning archive" — flagships link OUT
+ai-engineering-portfolio/              # "Course + learning archive" — flagships link OUT
 ├── README.md                          # Reframed: AI Engineer × SRE + repo map + Featured work (links out)
 ├── AGENTS.md                          # Canonical cross-tool agent guidance (NEW)
 ├── CLAUDE.md                          # Thin: `@AGENTS.md` (NEW)
@@ -244,7 +244,7 @@ amdocs-ai-course/                      # "Course + learning archive" — flagshi
 
 PITER is **extraction-clean** (no local filesystem coupling; only S3-prefix defaults). Plan:
 
-**Phase A — make it standalone-ready (PR on `amdocs-ai-course`):**
+**Phase A — make it standalone-ready (PR on `ai-engineering-portfolio`):**
 - Polished top-level README (AI Engineer × SRE framing; what PITER is: AWS Bedrock
   incident-response platform — agent + RAG, Flask/React, Docker), architecture diagram,
   screenshots.
@@ -257,7 +257,7 @@ PITER is **extraction-clean** (no local filesystem coupling; only S3-prefix defa
 ```bash
 gh repo create reem-mor/piter-aiops --public \
   --description "AI-powered incident-response platform: AWS Bedrock agent + RAG, Flask/React, Docker."
-git clone https://github.com/reem-mor/amdocs-ai-course.git piter-extract && cd piter-extract
+git clone https://github.com/reem-mor/ai-engineering-portfolio.git piter-extract && cd piter-extract
 pip install git-filter-repo
 git filter-repo --path projects/piter-aiops/ --path-rename projects/piter-aiops/:
 git remote add origin https://github.com/reem-mor/piter-aiops.git

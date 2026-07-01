@@ -126,12 +126,11 @@ python demos\tool_calling_demo.py
 ### Homework 07 — Open WebUI + live tools
 
 ```powershell
-cd homework\hw07\open-webui-tools
-python -m venv .venv
-.\.venv\Scripts\pip install -r requirements.txt
+cd homework\hw07
+pip install -r requirements.txt
 copy .env.example .env
-# Set RAPIDAPI_KEY in .env; optional KAGGLE_API_TOKEN for dataset download
-uvicorn tools_server:app --host 0.0.0.0 --port 5005
+# Set RAPIDAPI_KEY in .env; optional KAGGLE credentials for dataset download
+python -m uvicorn tools_server:app --host 0.0.0.0 --port 5005
 ```
 
 See [`homework/hw07/README.md`](../homework/hw07/README.md) for Open WebUI Docker setup and KB upload.
