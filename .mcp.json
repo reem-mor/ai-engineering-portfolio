@@ -59,6 +59,22 @@
         "Authorization": "Bearer ${env:KAGGLE_API_TOKEN}"
       }
     },
+    "openwebui": {
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/scripts/run-mcp-openwebui.py"],
+      "timeout": 120000,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "rapidapi": {
+      "type": "http",
+      "url": "https://mcp.rapidapi.com",
+      "headers": {
+        "x-api-host": "${env:RAPIDAPI_HOST}",
+        "x-api-key": "${env:RAPIDAPI_KEY}"
+      }
+    },
     "course-tools": {
       "command": "python",
       "args": ["${workspaceFolder}/scripts/run-mcp-course-tools.py"],

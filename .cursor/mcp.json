@@ -1,53 +1,6 @@
 {
-  "_comment": "Local overrides only. Canonical servers: ../.mcp.json at repo root. Never commit API keys here.",
+  "_comment": "Cursor loads THIS file. Reload after edits. HTTP rapidapi needs RAPIDAPI_* in Windows user env — run: python scripts/sync_mcp_env_to_user.py",
   "mcpServers": {
-    "lovable": {
-      "type": "http",
-      "url": "https://mcp.lovable.dev",
-      "auth": {
-        "CLIENT_ID": "${env:LOVABLE_CLIENT_ID}"
-      }
-    },
-    "n8n-workflows": {
-      "command": "npx",
-      "args": ["-y", "n8n-mcp"],
-      "envFile": "${workspaceFolder}/.env",
-      "timeout": 120000,
-      "env": {
-        "MCP_MODE": "stdio",
-        "LOG_LEVEL": "error",
-        "DISABLE_CONSOLE_OUTPUT": "true",
-        "N8N_API_URL": "${env:N8N_API_URL}",
-        "N8N_API_KEY": "${env:N8N_API_KEY}"
-      }
-    },
-    "aws-api": {
-      "command": "uvx",
-      "args": ["awslabs.aws-api-mcp-server@latest"],
-      "envFile": "${workspaceFolder}/.env",
-      "timeout": 120000,
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_PROFILE": "${env:AWS_PROFILE}",
-        "AWS_REGION": "${env:AWS_REGION}"
-      }
-    },
-    "bedrock-kb": {
-      "command": "uvx",
-      "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
-      "envFile": "${workspaceFolder}/.env",
-      "timeout": 120000,
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_PROFILE": "${env:AWS_PROFILE}",
-        "AWS_REGION": "${env:AWS_REGION}",
-        "BEDROCK_KB_RERANKING_ENABLED": "false"
-      }
-    },
-    "aws-knowledge": {
-      "type": "http",
-      "url": "https://knowledge-mcp.global.api.aws"
-    },
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"],
@@ -60,8 +13,24 @@
         "Authorization": "Bearer ${env:KAGGLE_API_TOKEN}"
       }
     },
+    "openwebui": {
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/scripts/run-mcp-openwebui.py"],
+      "timeout": 120000,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "rapidapi": {
+      "type": "http",
+      "url": "https://mcp.rapidapi.com",
+      "headers": {
+        "x-api-host": "${env:RAPIDAPI_HOST}",
+        "x-api-key": "${env:RAPIDAPI_KEY}"
+      }
+    },
     "course-tools": {
-      "command": "python",
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
       "args": ["${workspaceFolder}/scripts/run-mcp-course-tools.py"],
       "timeout": 60000,
       "env": {

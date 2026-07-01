@@ -25,13 +25,21 @@ This creates root `.venv`, installs `requirements-dev.txt`, copies `.env.example
 
 | Config file | Role |
 |-------------|------|
-| [`.mcp.json`](../.mcp.json) | **Canonical** committed server list |
-| `.cursor/mcp.json` | Optional local overrides (gitignored) |
-| [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) | Empty override template |
+| **`.cursor/mcp.json`** | **What Cursor actually loads** (project-scoped; gitignored — copy from example below) |
+| [`.mcp.json`](../.mcp.json) | Canonical list for **Claude Code** / docs / team reference (committed) |
+| [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) | Template pointer — hw07 servers live in `.cursor/mcp.json` after setup |
 
-Cursor loads project MCP from `.mcp.json` at repo root. Restart the IDE after changes.
+**Important:** Editing only `.mcp.json` at repo root does **not** update Cursor. Copy or sync servers into `.cursor/mcp.json`, then **Developer: Reload Window** (or restart Cursor).
 
-**Verify:** Settings → MCP — servers should show green. Run lecture 08 tests: `cd lectures/08_mcp && pytest -q`.
+Quick hw07 bootstrap:
+
+```powershell
+# From repo root — copies hw07 MCP block into .cursor/mcp.json (safe; uses ${env:...} only)
+Copy-Item .cursor\mcp.json.example .cursor\mcp.json -ErrorAction SilentlyContinue
+# Then paste the mcpServers block from homework/hw07/mcp.json.example OR run setup-dev.ps1
+```
+
+**Verify:** Settings → **Tools & MCP** — `kaggle`, `openwebui`, `rapidapi`, `playwright` should appear. Red = missing env var or server failed to start.
 
 ## MCP server catalog
 
@@ -42,6 +50,8 @@ Only servers with a real use in this repo are configured. Do not add unused inte
 | `course-tools` | stdio | Lecture 08 demo (`get_weather`, `get_joke`) | lecture 08 venv via [`scripts/run-mcp-course-tools.py`](../scripts/run-mcp-course-tools.py) |
 | `playwright` | stdio | Browser automation, hw07/e2e, UI capture | Node 18+ |
 | `kaggle` | HTTP | hw07 dataset access | `KAGGLE_API_TOKEN` |
+| `openwebui` | stdio | hw07 KB upload / OWUI automation | `OWUI_URL`, `OWUI_API_KEY` in repo `.env` (launcher maps to `OPENWEBUI_*`) |
+| `rapidapi` | stdio | RapidAPI marketplace MCP bridge | `RAPIDAPI_KEY`, `RAPIDAPI_HOST` in repo `.env` |
 | `aws-knowledge` | HTTP | AWS docs Q&A (no auth) | — |
 | `aws-api` | stdio | AWS API calls via profile | `AWS_PROFILE`, `AWS_REGION` |
 | `bedrock-kb` | stdio | Bedrock KB retrieval demos | `AWS_PROFILE`, optional `BEDROCK_KB_ID` |

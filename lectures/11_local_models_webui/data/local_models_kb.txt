@@ -12,7 +12,7 @@ RAG (Retrieval-Augmented Generation) improves local LLM answers by retrieving re
 
 RAGAS is used in this lecture to evaluate RAG quality with metrics such as faithfulness and answer relevancy. Run demos/ragas_eval_smoke.py with --dry-run for CI-safe validation or --eval when OPENAI_API_KEY is available.
 
-The hw07 tool server listens on host port 5005 and provides live JSearch job listings to Open WebUI via host.docker.internal:5005.
+The hw07 tool server listens on host port 5005 and provides live CVE lookups to Open WebUI via OpenAPI at host.docker.internal:5005/openapi.json. Without RapidAPI credentials it falls back to Shodan CVEDB.
 
 For Qwen3 fast factual Q&A, disable thinking with chat_template_kwargs enable_thinking false or append /no_think to the user message when using llama-cpp-python or llama-server.
 
