@@ -1,0 +1,19 @@
+{
+  "model": "Qwen/Qwen3-1.7B-GGUF",
+  "filename": "Qwen3-1.7B-Q8_0.gguf",
+  "interface": "llama-cpp-python",
+  "input": {
+    "messages": [
+      {"role": "user", "content": "What is the capital of France? /no_think"}
+    ],
+    "max_tokens": 80,
+    "temperature": 0.7
+  },
+  "output": {
+    "message_keys": ["role", "content"],
+    "content": "The capital of France is Paris.",
+    "reasoning_content": null
+  },
+  "usage": {"prompt_tokens": 19, "completion_tokens": 11, "total_tokens": 30},
+  "notes": "Best practice for fast Q&A: append /no_think or use chat_template_kwargs.enable_thinking=false via llama-server."
+}

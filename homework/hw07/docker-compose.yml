@@ -20,7 +20,9 @@ services:
       - "3000:8080"
     environment:
       OLLAMA_BASE_URL: http://ollama:11434
-      WEBUI_AUTH: "false"
+      WEBUI_AUTH: "true"
+      WEBUI_SECRET_KEY: hw07-local-dev-secret-change-in-prod
+      ENABLE_SIGNUP: "true"
       ENABLE_OLLAMA_API: "true"
     volumes:
       - open-webui-hw07:/app/backend/data

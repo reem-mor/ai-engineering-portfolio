@@ -1,0 +1,21 @@
+{
+  "interface": "llama-server (llama_cpp.server)",
+  "endpoint": "http://127.0.0.1:8080/v1/chat/completions",
+  "input": {
+    "model": "Qwen3-1.7B-Q8_0.gguf",
+    "messages": [{"role": "user", "content": "What is the capital of France?"}],
+    "max_tokens": 80,
+    "chat_template_kwargs": {"enable_thinking": false}
+  },
+  "output": {
+    "message_keys": ["role", "content"],
+    "content": "The capital of France is Paris."
+  },
+  "start_command": "scripts/start_llama_server.ps1",
+  "openai_client": {
+    "base_url": "http://127.0.0.1:8080/v1",
+    "api_key": "none",
+    "extra_body": {"chat_template_kwargs": {"enable_thinking": false}}
+  },
+  "notes": "Use extra_body for enable_thinking — not a standard OpenAI parameter."
+}

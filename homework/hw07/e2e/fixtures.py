@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_HW07_ROOT = Path(__file__).resolve().parent.parent
+if str(_HW07_ROOT) not in sys.path:
+    sys.path.insert(0, str(_HW07_ROOT))
+
+from prompts import load_system_prompt
+
 KB_COLLECTION_NAME = "ai-job-postings"
 KB_DESCRIPTION = (
     "Data science & AI job postings (Kaggle) — titles, companies, locations for RAG chat"
@@ -20,6 +29,21 @@ PROMPT_KB_SKILLS = (
 PROMPT_LIVE_JOBS = (
     "Use the search_live_jobs tool: what DevOps or AI engineer jobs "
     "are open in Israel right now? List employer names and job titles."
+)
+
+PROMPT_HYBRID_SKILLS_THEN_LIVE = (
+    "Based on the #ai-job-postings knowledge base, what skills should I learn for AI roles? "
+    "Then use search_live_jobs to find current openings in Israel for those skills."
+)
+
+PROMPT_HYBRID_COMPARE = (
+    "Compare the uploaded job market data in #ai-job-postings with live AI Engineer jobs in Israel "
+    "using search_live_jobs."
+)
+
+PROMPT_HYBRID_KB_AND_TOOL = (
+    "Use the Knowledge Base for historical dataset insights and search_live_jobs for current listings: "
+    "summarize top skills from the CSV, then search live Machine Learning Engineer jobs in Israel."
 )
 
 KB_ANSWER_HINTS = [
@@ -41,13 +65,7 @@ TOOL_ANSWER_HINTS = [
     r"DevOps|AI Engineer|Machine Learning",
 ]
 
-SYSTEM_PROMPT = """You are an AI career assistant for homework 07.
-
-Rules:
-1. For questions about job titles, companies, or locations in the uploaded Kaggle job-postings CSV, use the #ai-job-postings knowledge base only. Cite specific titles or employers from retrieved chunks.
-2. For current/live hiring (open roles, employers hiring now, today's listings), call the search_live_jobs tool with clear role keywords and location (default Israel).
-3. Do not invent employers or job titles. If the KB has no match, say so. If the tool returns no listings, say so.
-4. Keep answers concise and structured (bullets or numbered lists)."""
+SYSTEM_PROMPT = load_system_prompt()
 
 OPEN_WEBUI_EMAIL = "admin@localhost.com"
 OPEN_WEBUI_PASSWORD = "admin"

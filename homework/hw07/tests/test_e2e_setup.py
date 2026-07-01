@@ -48,4 +48,4 @@ def test_model_preset_native_tools(api_client: OpenWebUIClient) -> None:
     assert preset["params"]["function_calling"] == "native"
     assert TOOL_ID in preset["meta"]["toolIds"]
     system = preset.get("params", {}).get("system") or preset.get("meta", {}).get("system")
-    assert system and "knowledge base" in system.lower()
+    assert system and "search_live_jobs" in system

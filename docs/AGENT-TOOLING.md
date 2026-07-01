@@ -48,6 +48,8 @@ Only servers with a real use in this repo are configured. Do not add unused inte
 | `n8n-workflows` | stdio | hw06 / lecture 09 automation | `N8N_API_URL`, `N8N_API_KEY` |
 | `lovable` | HTTP | UI prototyping (optional) | `LOVABLE_CLIENT_ID` |
 
+**Hugging Face (Cursor plugin):** Not in `.mcp.json` — enable the **Hugging Face** MCP plugin in Cursor Settings. Tools: `hub_repo_details`, `hf_doc_search`, `hf_whoami`. Requires `HF_TOKEN` in `.env` or user environment. Used for lecture 11 model discovery and hw07 dataset repos.
+
 Launcher for stdio course server (cross-platform):
 
 ```bash
@@ -61,6 +63,8 @@ Read the matching `SKILL.md` before using a capability:
 | Skill | When |
 |-------|------|
 | `repo-tooling` | MCP setup, CI, env, which config file to edit |
+| `local-models` | Qwen3.6, llama-cpp-python, Ollama/Open WebUI, Intel Arc tuning |
+| `hw07-open-webui` | Homework 07 Docker stack, KB, tool server |
 | `mcp-integration` | Adding or debugging MCP servers |
 | `agent-development` | Building agents, system prompts, tool design |
 | `browser-use` | Playwright / browser automation |

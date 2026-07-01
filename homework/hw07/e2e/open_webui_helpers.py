@@ -92,13 +92,33 @@ def goto_path(page: Page, path: str) -> None:
     ensure_authenticated(page)
 
 
-def ensure_authenticated(page: Page) -> None:
+def extract_auth_token(page: Page) -> str | None:
+    """Read JWT/API token from browser storage after UI login."""
+    token = page.evaluate(
+        """() => {
+        for (const key of ['token', 'jwt', 'access_token', 'auth_token']) {
+            const value = localStorage.getItem(key);
+            if (value && value.length > 10) return value;
+        }
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            const value = localStorage.getItem(key);
+            if (value && value.startsWith('eyJ')) return value;
+        }
+        return null;
+    }"""
+    )
+    return token if isinstance(token, str) and token.strip() else None
+
+
+def ensure_authenticated(page: Page) -> str | None:
     sign_in = page.get_by_role("button", name=re.compile(r"^sign in$", re.I))
     try:
         if not sign_in.is_visible(timeout=1000):
-            return
+            return extract_auth_token(page)
     except Exception:
-        return
+        return extract_auth_token(page)
 
     email = os.environ.get("OPEN_WEBUI_EMAIL", OPEN_WEBUI_EMAIL)
     password = os.environ.get("OPEN_WEBUI_PASSWORD", OPEN_WEBUI_PASSWORD)
@@ -107,6 +127,7 @@ def ensure_authenticated(page: Page) -> None:
     sign_in.click()
     page.wait_for_load_state("networkidle")
     dismiss_modals(page)
+    return extract_auth_token(page)
 
 
 def upload_csv_to_collection(page: Page, csv_path: str, collection_name: str, csv_name: str) -> None:

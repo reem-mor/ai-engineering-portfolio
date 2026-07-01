@@ -137,6 +137,17 @@ See [`homework/hw07/README.md`](../homework/hw07/README.md) for Open WebUI Docke
 
 **MCP servers for hw07:** Root [`.mcp.json`](../.mcp.json) includes `kaggle` (HTTP) and `course-tools` (stdio). Set `KAGGLE_API_TOKEN` in your user environment before connecting.
 
+### Lecture 11 — Local models (Qwen3.6 + llama.cpp)
+
+```powershell
+.\.venv\Scripts\pip.exe install -r lectures/11_local_models_webui/requirements.txt `
+  --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+.\lectures\11_local_models_webui\scripts\download_qwen36.ps1
+.\lectures\11_local_models_webui\scripts\start_llama_server.ps1
+```
+
+Set `HF_TOKEN` in `.env`. Skill: [`.cursor/skills/local-models/SKILL.md`](../.cursor/skills/local-models/SKILL.md). Full guide: [`lectures/11_local_models_webui/README.md`](../lectures/11_local_models_webui/README.md).
+
 ### Capstone — IncidentIQ
 
 ```powershell

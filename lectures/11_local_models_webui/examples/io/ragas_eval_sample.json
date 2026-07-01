@@ -1,0 +1,33 @@
+{
+  "interface": "ragas",
+  "input": {
+    "samples": [
+      {
+        "user_input": "What is the capital of France?",
+        "retrieved_contexts": [
+          "France is a country in Western Europe. Its capital and largest city is Paris."
+        ],
+        "response": "The capital of France is Paris.",
+        "reference": "Paris is the capital of France."
+      },
+      {
+        "user_input": "If 3x + 7 = 22, what is x?",
+        "retrieved_contexts": [
+          "To solve linear equations, isolate the variable by performing inverse operations on both sides."
+        ],
+        "response": "Subtract 7 from both sides: 3x = 15. Divide by 3: x = 5.",
+        "reference": "x = 5"
+      }
+    ],
+    "metrics": ["faithfulness", "answer_relevancy"],
+    "llm": "OPENAI_API_KEY (gpt-4o-mini) or local llama-server"
+  },
+  "output": {
+    "scores_example": {
+      "faithfulness": 0.85,
+      "answer_relevancy": 0.92
+    },
+    "shape": "pandas DataFrame with per-sample metric columns"
+  },
+  "notes": "Run demos/ragas_eval_smoke.py --dry-run to validate dataset without LLM calls."
+}
