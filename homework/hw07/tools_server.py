@@ -1,7 +1,7 @@
 """Open WebUI OpenAPI tool server for hw07 — live AI job-market search.
 
 Upstream: a job-search API on RapidAPI (JSearch by default).
-Secrets/config come from the repo root `.env` (see _load_env):
+Secrets/config come from the repo root `.env` (see env_loader):
     RAPIDAPI_KEY            — RapidAPI key (never printed, never committed)
     RAPIDAPI_JOBS_HOST      — e.g. jsearch.p.rapidapi.com
     RAPIDAPI_JOBS_BASE_URL  — optional; defaults to https://<RAPIDAPI_JOBS_HOST>
@@ -11,6 +11,7 @@ Run:
 
 Register in Open WebUI (Admin > Settings > External Tools > OpenAPI):
     http://host.docker.internal:5005/openapi.json   # OWUI in Docker
+    http://tool-server:5005/openapi.json            # OWUI + tool server via compose
     http://localhost:5005/openapi.json              # OWUI on host
 """
 
@@ -18,20 +19,14 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 
 import httpx
-from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
-HW07_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = HW07_ROOT.parent.parent
+from env_loader import load_hw07_env
 
-# Root .env is canonical (loaded first — wins); hw07/.env holds optional
-# local non-secret defaults only.
-load_dotenv(REPO_ROOT / ".env")
-load_dotenv(HW07_ROOT / ".env")
+load_hw07_env()
 
 TIMEOUT = float(os.getenv("TOOLS_HTTP_TIMEOUT", "15"))
 DEFAULT_JOBS_HOST = "jsearch.p.rapidapi.com"

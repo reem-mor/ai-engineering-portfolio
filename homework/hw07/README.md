@@ -39,12 +39,18 @@ without code changes to the key handling.
 | [`tools_server.py`](tools_server.py) | FastAPI on :5005 — `/health`, `/jobs/search`, `/jobs/company`, `/jobs/skills` |
 | [`owui_kb_setup.py`](owui_kb_setup.py) | Idempotent KB create/upload/attach + processing polling + `--write-env` |
 | [`owui_tool_ai_jobs.py`](owui_tool_ai_jobs.py) | Open WebUI tool `ai_job_market_live_search` (paste into Workspace > Tools) |
+| [`env_loader.py`](env_loader.py) | Shared env loading — repo root `.env` first, hw07 `.env` fills gaps |
 | [`data/download_dataset.py`](data/download_dataset.py) | Kaggle download → `data/ai_jobs.csv` |
 | [`data/validate_dataset.py`](data/validate_dataset.py) | Validates rows/columns/topic before upload |
-| [`prompts/system_prompt.md`](prompts/system_prompt.md) | Model system prompt |
-| [`TEST_QUESTIONS.md`](TEST_QUESTIONS.md) | Demo/test matrix with expected behaviors |
+| [`prompts/system_prompt.md`](prompts/system_prompt.md) | Model system prompt (raw text, loaded by bootstrap) |
+| [`scripts/bootstrap_owui.py`](scripts/bootstrap_owui.py) | One-shot OWUI setup: KB + tool-server registration + custom model |
+| [`scripts/verify_tool_server.py`](scripts/verify_tool_server.py) | Health + live/negative endpoint verification |
+| [`scripts/run_demo_chats.py`](scripts/run_demo_chats.py) | Runs demo Q&A via OWUI API, writes `TEST_RESULTS.md` |
+| [`scripts/capture_screenshots.py`](scripts/capture_screenshots.py) | Playwright submission screenshots |
 | [`scripts/run_all_checks.py`](scripts/run_all_checks.py) | One-shot validation (syntax, dataset, pytest, health, live, KB, secret scan) |
-| [`docker-compose.yml`](docker-compose.yml) | hw07-open-webui + hw07-ollama (+ optional hw07-tool-server) |
+| [`TEST_QUESTIONS.md`](TEST_QUESTIONS.md) | Demo/test matrix with expected behaviors |
+| [`SUBMISSION.md`](SUBMISSION.md) | Submission summary + reproduce steps |
+| [`docker-compose.yml`](docker-compose.yml) | hw07-open-webui + hw07-ollama + hw07-tool-server |
 | [`screenshots/`](screenshots/README.md) | Required submission screenshots |
 
 ## Environment (root `.env` is canonical)
@@ -65,7 +71,7 @@ then optional non-secret defaults from `homework/hw07/.env`. Never commit either
 ## Quickstart (Windows, from `homework\hw07`)
 
 ```powershell
-# 1. Stack (Open WebUI :3000 + Ollama)
+# 1. Stack (Open WebUI :3000 + Ollama + tool server :5005)
 docker compose up -d
 docker exec hw07-ollama ollama pull nomic-embed-text
 docker exec hw07-ollama ollama pull llama3.1
@@ -78,23 +84,30 @@ pip install -r requirements.txt
 python data\download_dataset.py
 python data\validate_dataset.py
 
-# 4. Knowledge base (creates "AI Job Market Intelligence Dataset", polls indexing)
-python owui_kb_setup.py --write-env
+# 4. One-shot OWUI setup: KB + tool registration + custom model
+python scripts\bootstrap_owui.py
 
-# 5. Tool server
-uvicorn tools_server:app --host 0.0.0.0 --port 5005 --reload
-curl http://localhost:5005/health
+# 5. Verify
+python scripts\verify_tool_server.py
 curl "http://localhost:5005/jobs/search?query=ai%20engineer&location=Israel"
 ```
 
-Tool server in Docker instead: `docker compose --profile tools up -d`
-(container `hw07-tool-server`; from OWUI's container use `http://tool-server:5005`).
+The tool server runs as compose service `hw07-tool-server`
+([`Dockerfile.tool-server`](Dockerfile.tool-server)); to run it on the host
+instead use `uvicorn tools_server:app --host 0.0.0.0 --port 5005 --reload`
+and set `HW07_TOOL_URL=http://host.docker.internal:5005/openapi.json`.
 
 ## Open WebUI wiring
 
+`scripts/bootstrap_owui.py` does all of this via the REST API (KB upload,
+tool-server registration at `http://tool-server:5005/openapi.json`, custom
+model `ai-job-market-assistant` with the system prompt + native function
+calling). Manual alternative:
+
 1. **Tool** — either:
    - *OpenAPI (preferred):* Admin > Settings > External Tools > add
-     `http://host.docker.internal:5005/openapi.json`, or
+     `http://tool-server:5005/openapi.json` (or
+     `http://host.docker.internal:5005/openapi.json` for a host-run server), or
    - *Workspace tool:* Workspace > Tools > create `ai_job_market_live_search`,
      paste [`owui_tool_ai_jobs.py`](owui_tool_ai_jobs.py).
 2. **Model** — Workspace > Models > pick a tool-capable model (`llama3.1`):
