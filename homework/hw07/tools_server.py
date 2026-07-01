@@ -1,7 +1,10 @@
-"""Open WebUI OpenAPI tool server for hw07 — live CVE lookups.
+"""Open WebUI OpenAPI tool server for hw07 — live AI job-market search.
 
-Primary source: RapidAPI CVE product (RAPIDAPI_KEY + RAPIDAPI_HOST in .env).
-Fallback: Shodan CVEDB (https://cvedb.shodan.io) — free, no key.
+Upstream: a job-search API on RapidAPI (JSearch by default).
+Secrets/config come from the repo root `.env` (see _load_env):
+    RAPIDAPI_KEY            — RapidAPI key (never printed, never committed)
+    RAPIDAPI_JOBS_HOST      — e.g. jsearch.p.rapidapi.com
+    RAPIDAPI_JOBS_BASE_URL  — optional; defaults to https://<RAPIDAPI_JOBS_HOST>
 
 Run:
     uvicorn tools_server:app --host 0.0.0.0 --port 5005 --reload
@@ -13,129 +16,224 @@ Register in Open WebUI (Admin > Settings > External Tools > OpenAPI):
 
 from __future__ import annotations
 
+import json
 import os
-import re
+from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
 
-load_dotenv()
+HW07_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = HW07_ROOT.parent.parent
+
+# Root .env is canonical (loaded first — wins); hw07/.env holds optional
+# local non-secret defaults only.
+load_dotenv(REPO_ROOT / ".env")
+load_dotenv(HW07_ROOT / ".env")
 
 TIMEOUT = float(os.getenv("TOOLS_HTTP_TIMEOUT", "15"))
-
-
-def _rapidapi_config() -> tuple[str, str]:
-    """Read RapidAPI credentials at call time (testable via env patching)."""
-    return (
-        os.getenv("RAPIDAPI_KEY", "").strip(),
-        os.getenv("RAPIDAPI_HOST", "").strip(),
-    )
-
-CVE_ID_PATTERN = re.compile(r"^CVE-\d{4}-\d{4,}$", re.IGNORECASE)
+DEFAULT_JOBS_HOST = "jsearch.p.rapidapi.com"
+MAX_QUERY_LEN = 200
+MAX_RESULTS = 10
 
 app = FastAPI(
-    title="CVE Intelligence Tool Server",
-    description="Live CVE / vulnerability lookups for the Open WebUI assistant.",
-    version="1.0.0",
+    title="AI Job Market Live Search Tool Server",
+    description=(
+        "Live AI / ML / DevOps / SRE / software job search for the Open WebUI "
+        "assistant, backed by a RapidAPI job-search provider (JSearch)."
+    ),
+    version="2.0.0",
 )
 
 
-def validate_cve_id(raw: str) -> str:
-    """Normalize and validate a CVE identifier."""
-    cve_id = raw.strip().upper()
-    if not cve_id:
-        raise HTTPException(status_code=422, detail="CVE ID must not be empty.")
-    if not CVE_ID_PATTERN.match(cve_id):
-        raise HTTPException(
-            status_code=422,
-            detail=f"Invalid CVE ID format: {raw!r}. Expected CVE-YYYY-NNNN.",
-        )
-    return cve_id
+def _rapidapi_config() -> tuple[str, str, str]:
+    """Read RapidAPI credentials at call time (testable via env patching)."""
+    key = os.getenv("RAPIDAPI_KEY", "").strip()
+    host = os.getenv("RAPIDAPI_JOBS_HOST", "").strip() or DEFAULT_JOBS_HOST
+    base_url = os.getenv("RAPIDAPI_JOBS_BASE_URL", "").strip() or f"https://{host}"
+    return key, host, base_url.rstrip("/")
 
 
-def normalize_cve(data: dict) -> dict:
-    """Return a compact, model-friendly subset of CVE fields."""
-    refs = data.get("references") or []
-    if isinstance(refs, dict):
-        refs = list(refs.values())
+def _payload(
+    query: str,
+    results: list[dict],
+    source: str,
+    error: str | None = None,
+    status_code: int = 200,
+) -> JSONResponse:
+    """Uniform response envelope: source / query / count / results / error."""
+    body: dict = {
+        "source": source,
+        "query": query,
+        "count": len(results),
+        "results": results,
+    }
+    if error:
+        body["error"] = error
+    return JSONResponse(status_code=status_code, content=body)
+
+
+def _validate_term(value: str, name: str, max_len: int = MAX_QUERY_LEN) -> str | None:
+    """Return an error message if the term is unusable, else None."""
+    if not value or not value.strip():
+        return f"Parameter '{name}' must not be empty."
+    if len(value) > max_len:
+        return f"Parameter '{name}' too long (max {max_len} characters)."
+    return None
+
+
+def normalize_job(raw: dict) -> dict:
+    """Compact, model-friendly subset of a JSearch job record."""
+    city = raw.get("job_city") or ""
+    country = raw.get("job_country") or ""
+    location = ", ".join(part for part in (city, country) if part)
+    salary = None
+    if raw.get("job_min_salary") or raw.get("job_max_salary"):
+        salary = {
+            "min": raw.get("job_min_salary"),
+            "max": raw.get("job_max_salary"),
+            "currency": raw.get("job_salary_currency"),
+            "period": raw.get("job_salary_period"),
+        }
+    description = (raw.get("job_description") or "").strip()
     return {
-        "cve_id": data.get("cve_id") or data.get("id"),
-        "summary": data.get("summary") or data.get("description"),
-        "cvss": data.get("cvss") or data.get("cvss_v3") or data.get("cvss_v2"),
-        "epss": data.get("epss"),
-        "kev": data.get("kev"),
-        "published": data.get("published_time") or data.get("published"),
-        "references": list(refs)[:5],
-        "source": data.get("_source", "unknown"),
+        "title": raw.get("job_title"),
+        "company": raw.get("employer_name"),
+        "location": location or None,
+        "remote": raw.get("job_is_remote"),
+        "employment_type": raw.get("job_employment_type"),
+        "posted_at": raw.get("job_posted_at_datetime_utc"),
+        "salary": salary,
+        "apply_link": raw.get("job_apply_link"),
+        "description_snippet": description[:400] or None,
     }
 
 
-async def fetch_rapidapi(cve_id: str) -> dict | None:
-    """Query the configured RapidAPI CVE product, or None if not configured."""
-    api_key, api_host = _rapidapi_config()
-    if not (api_key and api_host):
-        return None
-    url = f"https://{api_host}/cve/{cve_id}"
+async def fetch_jobs(search_query: str) -> list[dict]:
+    """Call the RapidAPI job-search provider; raise httpx errors to the caller."""
+    api_key, api_host, base_url = _rapidapi_config()
     headers = {"x-rapidapi-key": api_key, "x-rapidapi-host": api_host}
+    params = {"query": search_query, "page": "1", "num_pages": "1"}
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        response = await client.get(url, headers=headers)
+        response = await client.get(f"{base_url}/search", headers=headers, params=params)
         response.raise_for_status()
-        payload = response.json()
-        payload["_source"] = "rapidapi"
-        return payload
+        data = response.json().get("data") or []
+    return [normalize_job(job) for job in data[:MAX_RESULTS]]
 
 
-async def fetch_cvedb(cve_id: str) -> dict:
-    """Shodan CVEDB — free, no key, updated daily."""
-    url = f"https://cvedb.shodan.io/cve/{cve_id}"
-    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        response = await client.get(url)
-        response.raise_for_status()
-        payload = response.json()
-        payload["_source"] = "cvedb"
-        return payload
+async def _search(query: str, search_query: str, source_label: str) -> JSONResponse:
+    """Shared upstream-call wrapper with clean, secret-free error handling."""
+    api_key, _, _ = _rapidapi_config()
+    if not api_key:
+        return _payload(
+            query,
+            [],
+            source_label,
+            error=(
+                "RAPIDAPI_KEY is not configured. Set it in the repo root .env "
+                "(never hardcode or commit it)."
+            ),
+            status_code=503,
+        )
+    try:
+        results = await fetch_jobs(search_query)
+    except httpx.TimeoutException:
+        return _payload(
+            query,
+            [],
+            source_label,
+            error=f"Upstream RapidAPI request timed out after {TIMEOUT:.0f}s.",
+            status_code=504,
+        )
+    except httpx.HTTPStatusError as exc:
+        return _payload(
+            query,
+            [],
+            source_label,
+            error=(
+                f"Upstream RapidAPI error (HTTP {exc.response.status_code}). "
+                "Check RAPIDAPI_JOBS_HOST and your RapidAPI subscription."
+            ),
+            status_code=502,
+        )
+    except httpx.HTTPError:
+        return _payload(
+            query,
+            [],
+            source_label,
+            error="Could not reach the RapidAPI job-search provider (network error).",
+            status_code=502,
+        )
+    return _payload(query, results, source_label)
 
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness check; reports which upstream source is configured."""
-    api_key, api_host = _rapidapi_config()
+    """Liveness check; reports upstream configuration without exposing secrets."""
+    api_key, api_host, _ = _rapidapi_config()
     return {
         "status": "ok",
-        "source": "rapidapi" if api_host else "cvedb",
-        "rapidapi_configured": bool(api_key and api_host),
+        "source": f"rapidapi:{api_host}",
+        "rapidapi_configured": bool(api_key),
     }
 
 
-@app.get("/cve/{cve_id}", operation_id="lookup_cve")
-async def lookup_cve(cve_id: str) -> dict:
-    """Look up live details for a CVE ID (e.g. CVE-2021-44228).
+@app.get("/jobs/search", operation_id="search_jobs")
+async def search_jobs(
+    query: str = Query("", description="Job search terms, e.g. 'AI engineer'."),
+    location: str = Query("", description="Optional location, e.g. 'Israel' or 'Tel Aviv'."),
+) -> JSONResponse:
+    """Search current live job postings by role/keywords and optional location.
 
-    Returns CVSS, EPSS, KEV status, publication date, and references.
-    Use for CURRENT risk questions; use the knowledge base for historical dataset queries.
+    Use for CURRENT market questions ("open AI Engineer jobs in Israel now");
+    use the knowledge base for questions about the static Kaggle dataset.
     """
-    normalized_id = validate_cve_id(cve_id)
-    data: dict | None = None
+    error = _validate_term(query, "query")
+    if error:
+        return _payload(query, [], "rapidapi", error=error, status_code=422)
+    location = location.strip()
+    if location and len(location) > 100:
+        return _payload(
+            query, [], "rapidapi",
+            error="Parameter 'location' too long (max 100 characters).",
+            status_code=422,
+        )
+    search_query = f"{query.strip()} jobs in {location}" if location else f"{query.strip()} jobs"
+    return await _search(query.strip(), search_query, "rapidapi")
 
-    try:
-        data = await fetch_rapidapi(normalized_id)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code != 404:
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail=f"Upstream error for {normalized_id}.",
-            ) from exc
 
-    if data is None:
-        try:
-            data = await fetch_cvedb(normalized_id)
-        except httpx.HTTPStatusError as exc:
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail=f"CVE not found: {normalized_id}.",
-            ) from exc
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=502, detail="CVE lookup failed.") from exc
+@app.get("/jobs/company", operation_id="search_jobs_by_company")
+async def search_jobs_by_company(
+    company: str = Query("", description="Company name, e.g. 'Google'."),
+) -> JSONResponse:
+    """Search current live job postings at a specific company."""
+    error = _validate_term(company, "company")
+    if error:
+        return _payload(company, [], "rapidapi", error=error, status_code=422)
+    company = company.strip()
+    response = await _search(company, f"jobs at {company}", "rapidapi")
+    if response.status_code != 200:
+        return response
+    body = json.loads(bytes(response.body))
+    needle = company.lower()
+    # Prefer exact employer matches; keep the raw upstream list if none match.
+    matched = [
+        job for job in body["results"] if needle in (job.get("company") or "").lower()
+    ]
+    body["results"] = matched or body["results"]
+    body["count"] = len(body["results"])
+    return JSONResponse(status_code=200, content=body)
 
-    return normalize_cve(data)
+
+@app.get("/jobs/skills", operation_id="search_jobs_by_skill")
+async def search_jobs_by_skill(
+    skill: str = Query("", description="Skill keyword, e.g. 'Python' or 'Kubernetes'."),
+) -> JSONResponse:
+    """Search current live job postings that mention a specific skill."""
+    error = _validate_term(skill, "skill")
+    if error:
+        return _payload(skill, [], "rapidapi", error=error, status_code=422)
+    skill = skill.strip()
+    return await _search(skill, f"{skill} jobs", "rapidapi")

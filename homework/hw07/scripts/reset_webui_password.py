@@ -6,7 +6,7 @@ import argparse
 import subprocess
 import sys
 
-DEFAULT_CONTAINER = "open-webui"
+DEFAULT_CONTAINER = "hw07-open-webui"
 DEFAULT_EMAIL = "admin@localhost.com"
 DEFAULT_PASSWORD = "admin"
 
