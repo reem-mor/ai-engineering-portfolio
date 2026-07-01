@@ -154,7 +154,11 @@ Chat prompt: *“Use search_live_jobs: what DevOps or AI engineer jobs are open 
 ### 6. Tests + screenshots
 
 ```powershell
+# Terminal B — tool server required for E2E + Playwright tests:
+.\scripts\start_tool_server.ps1 -MockRapidApi
+
 python -m pytest tests\ -q -m "not live"
+```
 # Full submission workflow (setup + all 9 screenshots):
 .\scripts\run_submission.ps1
 # Or manually:
