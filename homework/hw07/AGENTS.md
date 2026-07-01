@@ -1,36 +1,46 @@
-# AGENTS.md — CVE Intelligence Assistant (Open WebUI + RAG + live tool)
+# AGENTS.md — AI Job Market Intelligence Assistant (hw07)
 
-Context for the Cursor agent working in `homework/hw07/`. Read before acting.
+Context for coding agents working in `homework/hw07/`. Read before acting.
 
 ## Goal
 
-Three-part Open WebUI build for course HW07:
+Three-part Open WebUI build:
 
-1. **Knowledge Base** — Kaggle CVE CSV indexed as an OWUI knowledge base (static / historical).
-2. **Tool server** — `tools_server.py`, local FastAPI calling a live CVE API.
-3. **Web UI tool** — tool server registered in OWUI via OpenAPI for *live* CVE questions.
+1. **Knowledge Base** — Kaggle AI job-market CSV (`data/ai_jobs.csv`) indexed as
+   OWUI KB **"AI Job Market Intelligence Dataset"** (static dataset questions).
+2. **Tool server** — `tools_server.py` on :5005, live job search via RapidAPI
+   (JSearch) — `/jobs/search`, `/jobs/company`, `/jobs/skills`.
+3. **Web UI tool** — `ai_job_market_live_search` (OpenAPI registration or
+   `owui_tool_ai_jobs.py`) for *live* job-market questions.
 
-Graded contrast: **KB = historical dataset questions; tool = current-risk questions** about the same CVE.
+Graded contrast: **KB = static Kaggle dataset; tool = current live postings.**
 
 ## Build order
 
-1. Use `kaggle` MCP (or `python data/download_dataset.py`) to get a CVE CSV → `./data/cve.csv`.
-2. Fill `.env` from `.env.example` (ask user for keys; never invent them).
-3. Create KB + upload CSV: prefer `openwebui` MCP; else run `owui_kb_setup.py`.
-4. Run tool server: `uvicorn tools_server:app --host 0.0.0.0 --port 5005 --reload`.
-   Verify `GET /health` and `GET /cve/CVE-2021-44228`.
-5. Guide user to register OpenAPI tool in OWUI and attach KB to a tool-capable model.
+1. `python data/download_dataset.py` → `data/ai_jobs.csv`, then
+   `python data/validate_dataset.py` (must pass before upload).
+2. Secrets in **repo root `.env` only** (`RAPIDAPI_KEY`, `RAPIDAPI_JOBS_HOST`,
+   `KAGGLE_API_TOKEN`, `OWUI_EMAIL`/`OWUI_PASSWORD` or `OWUI_API_KEY`).
+3. `python owui_kb_setup.py --write-env` — idempotent, polls indexing status.
+4. `uvicorn tools_server:app --host 0.0.0.0 --port 5005` — verify `/health`
+   and `/jobs/search?query=ai engineer&location=Israel`.
+5. Register tool in OWUI, attach KB + system prompt to a tool-capable model.
+6. `python scripts/run_all_checks.py` before claiming done.
 
 ## Rules / guardrails
 
-- **Secrets only in `.env`.** Never hardcode keys; never commit `.env`.
-- **`owui_kb_setup.py` is idempotent** — reuses existing KB by name.
-- **Networking:** OWUI in Docker → tool server at `http://host.docker.internal:5005`, NOT `localhost`.
-- **RAG tuning** is in `docker-compose.yml` env vars, not admin clicks.
+- **Secrets only in the repo root `.env`.** Never hardcode, print, or commit keys.
+- **Topic lock:** dataset must stay AI job-market — `validate_dataset.py`
+  rejects CVE/NVD or unrelated data. No silent fallback datasets/APIs.
+- **Networking:** OWUI in Docker reaches the host tool server at
+  `http://host.docker.internal:5005`, NOT `localhost`.
 - **Endpoint drift:** if OWUI REST 4xxs, check `http://localhost:3000/docs`.
-- **No destructive OWUI ops** (delete KB/users/chats) without explicit confirmation.
+- **No destructive OWUI/Docker ops** (delete KBs, unrelated containers —
+  e.g. hindsight) without explicit confirmation.
+- Tests must stay offline-safe (mocked HTTP) — CI has no live keys.
 
 ## Demo
 
-- KB:   "What CVEs in my dataset affected Apache Struts, and what were their CVSS scores?"
-- Tool: "What is the current EPSS score and KEV status for CVE-2021-44228?"
+- KB:    "What are the most common AI job titles in the Kaggle dataset?"
+- Tool:  "Search live AI Engineer jobs in Israel."
+- Mixed: "Compare the Kaggle dataset trends with live AI Engineer jobs in Israel."

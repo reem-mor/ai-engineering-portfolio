@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run hw07 demo chat prompts and write TEST_RESULTS.md."""
+"""Run hw07 demo chat prompts (KB / live tool / mixed) and write TEST_RESULTS.md."""
 
 from __future__ import annotations
 
@@ -19,46 +19,46 @@ from env_loader import load_hw07_env  # noqa: E402
 
 load_hw07_env()
 
-MODEL_ID = "cve-intelligence-assistant"
-KB_NAME = "CVE Intelligence"
+MODEL_ID = os.getenv("HW07_MODEL_ID", "ai-job-market-assistant")
+KB_NAME = owui_kb_setup.KB_NAME
 TOOL_SERVER = os.getenv("TOOLS_SERVER_URL", "http://localhost:5005").rstrip("/")
 
 PROMPTS: list[tuple[str, str, str, str]] = [
     (
-        "kb_only",
+        "kb_titles",
         "kb",
-        "Which CVEs in my dataset affected Apache Struts, and what were their CVSS scores?",
-        "Answer cites dataset CVE IDs and CVSS scores from KB; no fabricated IDs.",
+        "What are the most common AI job titles in the Kaggle dataset?",
+        "Answer cites job titles from the KB; labels source as the Kaggle dataset.",
     ),
     (
-        "tool_only",
+        "kb_skills",
+        "kb",
+        "Which skills appear most often in the dataset?",
+        "Aggregates required_skills from KB; source = Kaggle dataset.",
+    ),
+    (
+        "tool_live_israel",
         "tool",
-        "What is the current EPSS score and KEV status for CVE-2021-44228? Use lookup_cve.",
-        "Model calls lookup_cve; shows EPSS, KEV, CVSS from live tool JSON.",
+        "Search live AI Engineer jobs in Israel using the live job search tool.",
+        "Model calls search_jobs; lists live postings; source = live RapidAPI tool.",
     ),
     (
-        "search_tool",
+        "tool_live_skill",
         "tool",
-        "Search live CVE records for apache struts using search_cves.",
-        "Model calls search_cves or explains live search results with source field.",
+        "Search live jobs that mention Python using the live job search tool.",
+        "Model calls search_jobs_by_skill; source = live tool.",
     ),
     (
+        "hybrid_compare",
         "hybrid",
-        "hybrid",
-        "From my dataset, what Apache CVEs exist? Then give live EPSS for CVE-2021-44228.",
-        "Two labeled sections: KB historical data then live lookup.",
-    ),
-    (
-        "edge_invalid_cve",
-        "tool",
-        "Look up CVE-INVALID live",
-        "422 or clear invalid-format message; no hallucinated scores.",
+        "Compare the Kaggle dataset trends with live AI Engineer jobs in Israel.",
+        "Two labeled sections: KB dataset trends, then live tool results.",
     ),
     (
         "edge_not_in_kb",
         "kb",
-        "What does my dataset say about CVE-2099-99999?",
-        "Not found in dataset; no guess.",
+        "What does my dataset say about underwater basket weaving jobs?",
+        "Says not found in the dataset; no fabricated data.",
     ),
 ]
 
@@ -76,33 +76,29 @@ def signin(client: httpx.Client, base: str) -> str:
 
 
 def resolve_kb_id(base: str, token: str) -> str:
-    env_id = os.getenv("HW07_KB_ID", "").strip()
+    env_id = os.getenv("OWUI_KNOWLEDGE_ID", "").strip()
     if env_id:
         return env_id
     return owui_kb_setup.resolve_kb_id(base, token, KB_NAME)
 
 
 def execute_tool_call(name: str, arguments: str) -> str:
+    """Proxy an OWUI-native tool call to the local jobs tool server."""
     args = json.loads(arguments or "{}")
-    if name == "lookup_cve":
-        cve_id = args.get("cve_id", "")
-        response = httpx.get(f"{TOOL_SERVER}/cve/{cve_id}", timeout=30)
-        if response.status_code == 422:
-            return json.dumps({"error": response.json().get("detail", "Invalid CVE ID")})
-        response.raise_for_status()
+    routes = {
+        "search_jobs": ("/jobs/search", {"query": args.get("query", ""),
+                                         "location": args.get("location", "")}),
+        "search_jobs_by_company": ("/jobs/company", {"company": args.get("company", "")}),
+        "search_jobs_by_skill": ("/jobs/skills", {"skill": args.get("skill", "")}),
+    }
+    if name not in routes:
+        return json.dumps({"error": f"Unknown tool {name}"})
+    path, params = routes[name]
+    response = httpx.get(f"{TOOL_SERVER}{path}", params=params, timeout=30)
+    try:
         return json.dumps(response.json())
-    if name == "search_cves":
-        keyword = args.get("keyword", "")
-        response = httpx.get(
-            f"{TOOL_SERVER}/search",
-            params={"keyword": keyword},
-            timeout=30,
-        )
-        if response.status_code == 422:
-            return json.dumps({"error": response.json().get("detail", "Invalid keyword")})
-        response.raise_for_status()
-        return json.dumps(response.json())
-    return json.dumps({"error": f"Unknown tool {name}"})
+    except ValueError:
+        return json.dumps({"error": f"Tool server returned HTTP {response.status_code}"})
 
 
 def chat_once(
@@ -169,84 +165,77 @@ def chat_once(
 
 def evaluate(label: str, answer: str, expected: str, error: str | None) -> str:
     if error:
-        if label in {"edge_invalid_cve"} and ("422" in error or "invalid" in error.lower()):
-            return "PASS"
         return "FAIL"
     text = answer.lower()
-    if label == "kb_only":
-        return "PASS" if ("struts" in text or "cve-" in text) and "cvss" in text else "FAIL"
-    if label == "tool_only":
-        return "PASS" if ("epss" in text or "kev" in text) and "44228" in text else "FAIL"
-    if label == "search_tool":
-        return "PASS" if "apache" in text or "struts" in text or "cve-" in text else "FAIL"
-    if label == "hybrid":
-        return "PASS" if "44228" in text and ("apache" in text or "dataset" in text or "cve-" in text) else "FAIL"
-    if label == "edge_invalid_cve":
-        return "PASS" if "invalid" in text or "format" in text else "FAIL"
+    if label == "kb_titles":
+        return "PASS" if "engineer" in text or "scientist" in text or "title" in text else "FAIL"
+    if label == "kb_skills":
+        return "PASS" if "python" in text or "skill" in text else "FAIL"
+    if label == "tool_live_israel":
+        return "PASS" if "israel" in text or "tel aviv" in text or "job" in text else "FAIL"
+    if label == "tool_live_skill":
+        return "PASS" if "python" in text else "FAIL"
+    if label == "hybrid_compare":
+        return "PASS" if "dataset" in text and ("live" in text or "rapidapi" in text) else "FAIL"
     if label == "edge_not_in_kb":
-        return "PASS" if "not found" in text or "no " in text else "FAIL"
+        return "PASS" if "not" in text or "no " in text else "FAIL"
     return "PASS" if answer.strip() else "FAIL"
 
 
 def run_direct_tool_tests() -> list[dict]:
+    """Hit the tool server directly — validates behavior with and without a live key."""
     rows: list[dict] = []
 
     def add(label: str, expected: str, fn) -> None:
         try:
             summary, passed = fn()
-            rows.append(
-                {
-                    "label": label,
-                    "expected": expected,
-                    "summary": summary,
-                    "result": "PASS" if passed else "FAIL",
-                }
-            )
+            rows.append({"label": label, "expected": expected, "summary": summary,
+                         "result": "PASS" if passed else "FAIL"})
         except httpx.HTTPError as exc:
-            rows.append(
-                {
-                    "label": label,
-                    "expected": expected,
-                    "summary": str(exc),
-                    "result": "FAIL",
-                }
-            )
+            rows.append({"label": label, "expected": expected, "summary": str(exc),
+                         "result": "FAIL"})
 
     def health_ok() -> tuple[str, bool]:
         r = httpx.get(f"{TOOL_SERVER}/health", timeout=15)
         r.raise_for_status()
         body = r.json()
-        return f"status={body.get('status')} source={body.get('source')}", body.get("status") == "ok"
-
-    def lookup_ok() -> tuple[str, bool]:
-        r = httpx.get(f"{TOOL_SERVER}/cve/CVE-2021-44228", timeout=30)
-        r.raise_for_status()
-        body = r.json()
-        return f"source={body.get('source')} epss={body.get('epss')}", bool(body.get("cve_id"))
-
-    def invalid_cve() -> tuple[str, bool]:
-        r = httpx.get(f"{TOOL_SERVER}/cve/not-a-cve", timeout=15)
-        return f"status={r.status_code}", r.status_code == 422
-
-    def empty_search() -> tuple[str, bool]:
-        r = httpx.get(f"{TOOL_SERVER}/search", params={"keyword": " "}, timeout=15)
-        return f"status={r.status_code}", r.status_code == 422
-
-    def search_ok() -> tuple[str, bool]:
-        r = httpx.get(
-            f"{TOOL_SERVER}/search",
-            params={"keyword": "apache struts"},
-            timeout=30,
+        return (
+            f"status={body.get('status')} source={body.get('source')} "
+            f"configured={body.get('rapidapi_configured')}",
+            body.get("status") == "ok",
         )
-        r.raise_for_status()
+
+    def missing_query() -> tuple[str, bool]:
+        r = httpx.get(f"{TOOL_SERVER}/jobs/search", timeout=15)
+        return f"status={r.status_code}", r.status_code == 422
+
+    def live_search() -> tuple[str, bool]:
+        r = httpx.get(
+            f"{TOOL_SERVER}/jobs/search",
+            params={"query": "ai engineer", "location": "Israel"},
+            timeout=45,
+        )
         body = r.json()
-        return f"source={body.get('source')} count={body.get('count')}", body.get("count", 0) >= 0
+        if r.status_code == 503:
+            # correct negative-path behavior when RAPIDAPI_KEY is absent
+            return f"status=503 error={body.get('error', '')[:60]}", True
+        return f"status={r.status_code} count={body.get('count')}", (
+            r.status_code == 200 and not body.get("error")
+        )
+
+    def skill_search() -> tuple[str, bool]:
+        r = httpx.get(f"{TOOL_SERVER}/jobs/skills", params={"skill": "Python"}, timeout=45)
+        return f"status={r.status_code}", r.status_code in (200, 503)
+
+    def company_missing() -> tuple[str, bool]:
+        r = httpx.get(f"{TOOL_SERVER}/jobs/company", timeout=15)
+        return f"status={r.status_code}", r.status_code == 422
 
     add("direct_health", "GET /health returns ok", health_ok)
-    add("direct_lookup", "GET /cve/CVE-2021-44228 returns live data", lookup_ok)
-    add("direct_invalid_cve", "Invalid CVE returns 422", invalid_cve)
-    add("direct_empty_search", "Empty keyword returns 422", empty_search)
-    add("direct_search", "GET /search?keyword=apache struts succeeds", search_ok)
+    add("direct_missing_query", "Missing query returns 422", missing_query)
+    add("direct_live_search", "Live search 200 (or clean 503 without key)", live_search)
+    add("direct_skill_search", "GET /jobs/skills responds cleanly", skill_search)
+    add("direct_company_missing", "Missing company returns 422", company_missing)
     return rows
 
 

@@ -1,4 +1,4 @@
-# hw07 — Open WebUI + Ollama stack with RAG settings as env vars.
+# hw07 — Open WebUI + Ollama + tool server stack with RAG settings as env vars.
 # Verify RAG_* / ENABLE_* names against current Open WebUI docs — unknown vars are ignored.
 
 services:
@@ -40,6 +40,8 @@ services:
       - open-webui-hw07:/app/backend/data
     restart: unless-stopped
 
+  # Tool server (live job search). Secrets come from the repo root .env —
+  # never baked into the image. From OWUI use http://tool-server:5005.
   tool-server:
     build:
       context: .

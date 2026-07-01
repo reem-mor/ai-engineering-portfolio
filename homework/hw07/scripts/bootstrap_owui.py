@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap hw07 OWUI: KB upload, tool server, custom model (JWT auth)."""
+"""Bootstrap hw07 OWUI: KB upload, tool-server registration, custom model (JWT auth)."""
 
 from __future__ import annotations
 
@@ -19,9 +19,12 @@ from sync_env_from_services import _upsert_env  # noqa: E402
 
 load_hw07_env()
 
-KB_NAME = "CVE Intelligence"
-TOOL_URL = "http://tool-server:5005/openapi.json"
-MODEL_ID = "cve-intelligence-assistant"
+KB_NAME = owui_kb_setup.KB_NAME
+# From dockerized OWUI: tool server runs as compose service `tool-server`.
+# Override with HW07_TOOL_URL=http://host.docker.internal:5005/openapi.json
+# when running the tool server on the host instead.
+TOOL_URL = os.getenv("HW07_TOOL_URL", "http://tool-server:5005/openapi.json")
+MODEL_ID = os.getenv("HW07_MODEL_ID", "ai-job-market-assistant")
 
 
 def signin(client: httpx.Client, base: str) -> str:
@@ -38,31 +41,33 @@ def signin(client: httpx.Client, base: str) -> str:
 
 def main() -> int:
     base = os.getenv("OWUI_URL", "http://localhost:3000").rstrip("/")
-    csv_path = str(HW07 / "data" / "cve.csv")
+    csv_path = HW07 / "data" / "ai_jobs.csv"
     prompt = (HW07 / "prompts" / "system_prompt.md").read_text(encoding="utf-8")
+
+    if not csv_path.is_file():
+        print(
+            f"ERROR: {csv_path} missing — run data/download_dataset.py and "
+            "data/validate_dataset.py first.",
+            file=sys.stderr,
+        )
+        return 2
 
     with httpx.Client(timeout=120.0) as client:
         token = signin(client, base)
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
         kid = owui_kb_setup.create_knowledge(
-            base, token, KB_NAME, "Historical CVE / CVSS records for RAG"
+            base, token, KB_NAME, owui_kb_setup.KB_DESCRIPTION
         )
-        try:
-            fid = owui_kb_setup.upload_file(base, token, csv_path, knowledge_id=kid)
-            owui_kb_setup.wait_for_file_processed(base, token, fid)
-            files = owui_kb_setup.list_kb_files(base, token, kid)
-            if not files:
-                owui_kb_setup.add_file_to_knowledge(base, token, kid, fid)
-            owui_kb_setup.wait_for_kb_files(base, token, kid)
-            print(f"KB id: {kid} (CSV attached file_id={fid})")
-        except Exception as exc:
-            print(f"KB id: {kid} (upload issue: {exc})")
-            raise
+        fid = owui_kb_setup.upload_file(base, token, csv_path, knowledge_id=kid)
+        owui_kb_setup.wait_for_file_processed(base, token, fid)
+        if not owui_kb_setup.get_knowledge_files(base, token, kid):
+            owui_kb_setup.add_file_to_knowledge(base, token, kid, fid)
+        owui_kb_setup.wait_for_kb_files(base, token, kid)
+        print(f"KB id: {kid} (CSV attached file_id={fid})")
 
-        _upsert_env(REPO_ROOT / ".env", {"HW07_KB_ID": kid, "OWUI_URL": base})
-        _upsert_env(HW07 / ".env", {"HW07_KB_ID": kid})
-        print(f"HW07_KB_ID={kid} saved to repo root .env")
+        _upsert_env(REPO_ROOT / ".env", {"OWUI_KNOWLEDGE_ID": kid, "OWUI_FILE_ID": fid})
+        print("OWUI_KNOWLEDGE_ID / OWUI_FILE_ID saved to repo root .env")
 
         openapi = client.get("http://localhost:5005/openapi.json").json()
         conn = {
@@ -72,8 +77,8 @@ def main() -> int:
             "auth_type": "none",
             "config": {"enable": True},
             "info": {
-                "title": openapi.get("info", {}).get("title", "CVE Tool"),
-                "version": openapi.get("info", {}).get("version", "1.0.0"),
+                "title": openapi.get("info", {}).get("title", "AI Job Market Tool"),
+                "version": openapi.get("info", {}).get("version", "2.0.0"),
             },
         }
         client.post(
@@ -86,10 +91,10 @@ def main() -> int:
         model = {
             "id": MODEL_ID,
             "base_model_id": os.getenv("OWUI_BASE_MODEL", "llama3.1:latest"),
-            "name": "CVE Intelligence Assistant",
+            "name": "AI Job Market Intelligence Assistant",
             "meta": {
                 "profile_image_url": "/static/favicon.png",
-                "description": "HW07 CVE KB + live lookup_cve tool",
+                "description": "HW07 AI jobs KB + live job-search tool",
                 "toolIds": ["server:0"],
                 "knowledge": [kid],
                 "system": prompt,

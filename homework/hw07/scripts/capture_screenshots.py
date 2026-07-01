@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture HW07 submission screenshots (00-08) via Playwright."""
+"""Capture HW07 submission screenshots (see screenshots/README.md) via Playwright."""
 
 from __future__ import annotations
 
@@ -24,23 +24,24 @@ load_hw07_env()
 SHOTS = HW07 / "screenshots"
 
 OWUI_URL = os.getenv("OWUI_URL", "http://localhost:3000").rstrip("/")
+TOOL_SERVER = os.getenv("TOOLS_SERVER_URL", "http://localhost:5005").rstrip("/")
 EMAIL = os.getenv("OWUI_EMAIL", "")
 PASSWORD = os.getenv("OWUI_PASSWORD", "")
-MODEL_ID = "cve-intelligence-assistant"
-KB_NAME = "CVE Intelligence"
+MODEL_ID = os.getenv("HW07_MODEL_ID", "ai-job-market-assistant")
+KB_NAME = owui_kb_setup.KB_NAME
 
 
 def resolve_kb_id() -> str:
-    env_id = os.getenv("HW07_KB_ID", "").strip()
+    env_id = os.getenv("OWUI_KNOWLEDGE_ID", "").strip()
     if env_id:
         return env_id
-    token = owui_kb_setup.signin_token(OWUI_URL, EMAIL, PASSWORD)
+    token = owui_kb_setup.sign_in(OWUI_URL, EMAIL, PASSWORD)
     return owui_kb_setup.resolve_kb_id(OWUI_URL, token, KB_NAME)
 
 
 def login(page) -> None:
     if not EMAIL:
-        raise RuntimeError("Set OWUI_EMAIL in homework/hw07/.env")
+        raise RuntimeError("Set OWUI_EMAIL in the repo root .env")
     page.goto(f"{OWUI_URL}/auth", wait_until="networkidle")
     if page.locator('input[type="email"], input[name="email"]').count():
         page.fill('input[type="email"], input[name="email"]', EMAIL)
@@ -66,28 +67,36 @@ def shot(page, name: str, *, full_page: bool = True) -> None:
     print(f"[+] {path.name}")
 
 
-def capture_tool_openapi(page) -> None:
-    page.goto("http://localhost:5005/docs", wait_until="networkidle")
-    shot(page, "00-tool-server-openapi.png")
+def capture_home(page) -> None:
+    page.goto(OWUI_URL, wait_until="networkidle")
+    page.wait_for_timeout(1500)
+    shot(page, "01-open-webui-home.png")
 
 
 def capture_kb(page, kb_id: str) -> None:
+    page.goto(f"{OWUI_URL}/workspace/knowledge", wait_until="networkidle")
+    page.wait_for_timeout(2000)
+    shot(page, "02-kb-page.png")
     page.goto(f"{OWUI_URL}/workspace/knowledge/{kb_id}", wait_until="networkidle")
     page.wait_for_timeout(2000)
-    shot(page, "01-kb-upload.png")
-    shot(page, "02-kb-indexed.png")
-
-
-def capture_tool_registered(page) -> None:
-    page.goto(f"{OWUI_URL}/admin/settings/tools", wait_until="networkidle")
-    page.wait_for_timeout(2000)
-    shot(page, "04-tool-registered.png")
+    shot(page, "03-kb-file-indexed.png")
 
 
 def capture_model_settings(page) -> None:
     page.goto(f"{OWUI_URL}/workspace/models/edit?id={MODEL_ID}", wait_until="networkidle")
     page.wait_for_timeout(2000)
-    shot(page, "06-model-system-prompt.png", full_page=True)
+    shot(page, "04-model-system-prompt.png", full_page=True)
+
+
+def capture_tool_registered(page) -> None:
+    page.goto(f"{OWUI_URL}/admin/settings/tools", wait_until="networkidle")
+    page.wait_for_timeout(2000)
+    shot(page, "05-tool-config.png")
+
+
+def capture_tool_server_health(page) -> None:
+    page.goto(f"{TOOL_SERVER}/health", wait_until="networkidle")
+    shot(page, "06-tool-server-health.png", full_page=False)
 
 
 def chat_and_shot(page, prompt: str, filename: str, *, wait_s: int = 180) -> None:
@@ -98,7 +107,7 @@ def chat_and_shot(page, prompt: str, filename: str, *, wait_s: int = 180) -> Non
     page.keyboard.press("Enter")
     deadline = time.time() + wait_s
     while time.time() < deadline:
-        if page.locator("text=lookup_cve").count() and filename == "05-tool-function-io.png":
+        if page.locator("text=search_jobs").count() and filename == "08-live-tool-question.png":
             break
         if page.locator(".prose, .markdown-prose").last.count():
             text = page.locator(".prose, .markdown-prose").last.inner_text()
@@ -127,7 +136,7 @@ def capture_docker(page) -> None:
     tmp = SHOTS / "_docker.html"
     tmp.write_text(html, encoding="utf-8")
     page.goto(tmp.as_uri(), wait_until="load")
-    shot(page, "08-docker-healthy.png", full_page=False)
+    shot(page, "11-docker-status.png", full_page=False)
     tmp.unlink(missing_ok=True)
 
 
@@ -153,28 +162,29 @@ def main() -> int:
         page = context.new_page()
 
         try:
-            capture_tool_openapi(page)
+            capture_tool_server_health(page)
             login(page)
+            capture_home(page)
             capture_kb(page, kb_id)
-            capture_tool_registered(page)
             capture_model_settings(page)
+            capture_tool_registered(page)
 
             chat_and_shot(
                 page,
-                "Which CVEs in my dataset affected Apache Struts, and what were their CVSS scores?",
-                "03-kb-answer.png",
+                "What are the most common AI job titles in the Kaggle dataset?",
+                "07-kb-question.png",
                 wait_s=300,
             )
             chat_and_shot(
                 page,
-                "What is the current EPSS score and KEV status for CVE-2021-44228? Use lookup_cve.",
-                "05-tool-function-io.png",
+                "Search live AI Engineer jobs in Israel using the live job search tool.",
+                "08-live-tool-question.png",
                 wait_s=300,
             )
             chat_and_shot(
                 page,
-                "What is the current EPSS score and KEV status for CVE-2021-44228?",
-                "07-live-tool-answer.png",
+                "Compare the Kaggle dataset trends with live AI Engineer jobs in Israel.",
+                "09-mixed-question.png",
                 wait_s=300,
             )
             capture_docker(page)

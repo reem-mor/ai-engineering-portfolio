@@ -36,7 +36,7 @@ Quick hw07 bootstrap:
 ```powershell
 # From repo root — copies hw07 MCP block into .cursor/mcp.json (safe; uses ${env:...} only)
 Copy-Item .cursor\mcp.json.example .cursor\mcp.json -ErrorAction SilentlyContinue
-# Then paste the mcpServers block from homework/hw07/mcp.json.example OR run setup-dev.ps1
+# Then add any local-only server overrides OR run setup-dev.ps1
 ```
 
 **Verify:** Settings → **Tools & MCP** — `kaggle`, `openwebui`, `rapidapi`, `playwright` should appear. Red = missing env var or server failed to start.
