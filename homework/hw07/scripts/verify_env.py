@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-HW07_ROOT = Path(__file__).resolve().parent.parent
-REPO_ROOT = HW07_ROOT.parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from env_loader import load_hw07_env  # noqa: E402
 
 REQUIRED = ("RAPIDAPI_KEY",)
-OWUI_AUTH = ("OWUI_API_KEY", "OWUI_EMAIL")  # need API key OR email(+password)
 OPTIONAL = (
     "RAPIDAPI_JOBS_HOST",
     "RAPIDAPI_JOBS_BASE_URL",
     "KAGGLE_API_TOKEN",
     "OWUI_URL",
-    "OWUI_PASSWORD",
     "OWUI_KNOWLEDGE_ID",
     "OWUI_FILE_ID",
 )
@@ -28,9 +25,7 @@ def _set(name: str) -> bool:
 
 
 def main() -> int:
-    # Root .env is canonical (loaded first — wins); hw07/.env is optional defaults.
-    load_dotenv(REPO_ROOT / ".env")
-    load_dotenv(HW07_ROOT / ".env")
+    load_hw07_env()
 
     exit_code = 0
 

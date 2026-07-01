@@ -4,8 +4,9 @@
 Idempotent: reuses an existing KB by name and replaces a same-named file
 instead of duplicating it. Polls file processing status after upload.
 
-Auth (from repo root .env — canonical): OWUI_API_KEY, or OWUI_EMAIL +
-OWUI_PASSWORD (signs in via /api/v1/auths/signin). Secrets are never printed.
+Auth (from repo root .env — canonical): OWUI_API_KEY (probed, with JWT
+fallback), or OWUI_EMAIL + OWUI_PASSWORD via /api/v1/auths/signin.
+Secrets are never printed.
 
 Usage:
     python owui_kb_setup.py                       # defaults: data/ai_jobs.csv
@@ -21,7 +22,10 @@ import time
 from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
+
+from env_loader import load_hw07_env
+
+load_hw07_env()
 
 HW07_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = HW07_ROOT.parent.parent
@@ -33,13 +37,7 @@ KB_DESCRIPTION = (
 )
 DEFAULT_CSV = HW07_ROOT / "data" / "ai_jobs.csv"
 POLL_INTERVAL_S = 3
-POLL_TIMEOUT_S = 300
-
-
-def _load_env() -> None:
-    # Root .env is canonical (loaded first — wins); hw07/.env is optional local defaults.
-    load_dotenv(REPO_ROOT / ".env")
-    load_dotenv(HW07_ROOT / ".env")
+POLL_TIMEOUT_S = 600
 
 
 def _headers(token: str) -> dict[str, str]:
@@ -61,13 +59,19 @@ def sign_in(base: str, email: str, password: str) -> str:
 
 
 def get_token(base: str) -> str:
-    """Resolve an auth token: OWUI_API_KEY first, else OWUI_EMAIL/OWUI_PASSWORD."""
-    api_key = os.getenv("OWUI_API_KEY", "").strip()
-    if api_key:
-        print("[auth] using OWUI_API_KEY")
-        return api_key
+    """Resolve an auth token: probe OWUI_API_KEY first, else OWUI_EMAIL/OWUI_PASSWORD."""
     email = os.getenv("OWUI_EMAIL", "").strip()
     password = os.getenv("OWUI_PASSWORD", "").strip()
+
+    api_key = os.getenv("OWUI_API_KEY", "").strip()
+    if api_key:
+        probe = requests.get(f"{base}/api/v1/knowledge/", headers=_headers(api_key), timeout=15)
+        if probe.status_code != 401:
+            probe.raise_for_status()
+            print("[auth] using OWUI_API_KEY")
+            return api_key
+        print("[auth] OWUI_API_KEY rejected (401); falling back to JWT sign-in.")
+
     if email and password:
         token = sign_in(base, email, password)
         print(f"[auth] signed in as {email} — OK")
@@ -78,11 +82,22 @@ def get_token(base: str) -> str:
     )
 
 
+def _knowledge_items(payload: list | dict) -> list[dict]:
+    """Normalize OWUI knowledge list responses (flat list or paginated {items})."""
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        items = payload.get("items")
+        if isinstance(items, list):
+            return items
+    return []
+
+
 def find_knowledge_by_name(base: str, token: str, name: str) -> str | None:
     """Return the id of an existing KB with this name, or None."""
     response = requests.get(f"{base}/api/v1/knowledge/", headers=_headers(token), timeout=30)
     response.raise_for_status()
-    for kb in response.json():
+    for kb in _knowledge_items(response.json()):
         if kb.get("name") == name:
             return kb.get("id")
     return None
@@ -115,12 +130,21 @@ def get_knowledge_files(base: str, token: str, knowledge_id: str) -> list[dict]:
     return response.json().get("files") or []
 
 
-def upload_file(base: str, token: str, csv_path: Path) -> str:
-    """Upload a file to Open WebUI and return its file id."""
+def upload_file(base: str, token: str, csv_path: Path, knowledge_id: str | None = None) -> str:
+    """Upload a file to Open WebUI and return its file id.
+
+    When knowledge_id is set, OWUI auto-links and indexes into that KB.
+    Uses text/plain for CSV to avoid empty-content extraction failures.
+    """
     with csv_path.open("rb") as handle:
-        files = {"file": (csv_path.name, handle, "text/csv")}
+        files = {"file": (csv_path.name, handle, "text/plain")}
+        data = {"knowledge_id": knowledge_id} if knowledge_id else None
         response = requests.post(
-            f"{base}/api/v1/files/", headers=_headers(token), files=files, timeout=300
+            f"{base}/api/v1/files/",
+            headers=_headers(token),
+            files=files,
+            data=data,
+            timeout=600,
         )
     response.raise_for_status()
     fid = response.json()["id"]
@@ -169,10 +193,40 @@ def add_file_to_knowledge(base: str, token: str, knowledge_id: str, file_id: str
         f"{base}/api/v1/knowledge/{knowledge_id}/file/add",
         headers={**_headers(token), "Content-Type": "application/json"},
         json={"file_id": file_id},
-        timeout=300,
+        timeout=600,
     )
     response.raise_for_status()
     print(f"[kb] attached file {file_id} to KB {knowledge_id} — indexing triggered.")
+
+
+def wait_for_kb_files(
+    base: str,
+    token: str,
+    knowledge_id: str,
+    *,
+    min_files: int = 1,
+    timeout: int = 300,
+    poll_interval: int = 5,
+) -> int:
+    """Poll until the KB has at least min_files attached; return file count."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        count = len(get_knowledge_files(base, token, knowledge_id))
+        print(f"[kb] {knowledge_id}: {count} file(s) attached.")
+        if count >= min_files:
+            return count
+        time.sleep(poll_interval)
+    raise TimeoutError(
+        f"KB {knowledge_id} did not reach {min_files} file(s) within {timeout}s."
+    )
+
+
+def resolve_kb_id(base: str, token: str, name: str = KB_NAME) -> str:
+    """Return KB id by name or raise if missing (used by demo/screenshot scripts)."""
+    kid = find_knowledge_by_name(base, token, name)
+    if not kid:
+        raise RuntimeError(f"Knowledge base '{name}' not found — run owui_kb_setup.py first.")
+    return kid
 
 
 def upsert_env(path: Path, updates: dict[str, str]) -> None:
@@ -192,7 +246,6 @@ def upsert_env(path: Path, updates: dict[str, str]) -> None:
 
 
 def main() -> int:
-    _load_env()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--csv", default=str(DEFAULT_CSV), help="CSV to upload.")
     parser.add_argument("--name", default=KB_NAME, help="Knowledge base name.")
@@ -230,13 +283,18 @@ def main() -> int:
         ]
         if same_name and not args.replace:
             fid = same_name[0]["id"]
-            print(f"[kb] '{csv_path.name}' already attached (file_id={fid}); use --replace to re-upload.")
+            print(
+                f"[kb] '{csv_path.name}' already attached (file_id={fid}); "
+                "use --replace to re-upload."
+            )
         else:
             for stale in same_name:
                 remove_file_from_knowledge(base, token, kid, stale["id"])
-            fid = upload_file(base, token, csv_path)
+            fid = upload_file(base, token, csv_path, knowledge_id=kid)
             wait_for_file_processed(base, token, fid)
-            add_file_to_knowledge(base, token, kid, fid)
+            if not any(f.get("id") == fid for f in get_knowledge_files(base, token, kid)):
+                # knowledge_id auto-link not supported on this OWUI version — attach explicitly
+                add_file_to_knowledge(base, token, kid, fid)
 
         files = get_knowledge_files(base, token, kid)
         print(f"[kb] verification: KB id={kid}, file count={len(files)}")

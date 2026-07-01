@@ -32,6 +32,14 @@ def test_find_knowledge_by_name_returns_id() -> None:
         assert owui_kb_setup.find_knowledge_by_name(BASE, "sk-test", KB_NAME) == "kb-123"
 
 
+def test_find_knowledge_by_name_paginated_response() -> None:
+    with patch(
+        "owui_kb_setup.requests.get",
+        return_value=_response({"items": [{"name": KB_NAME, "id": "kb-page"}], "total": 1}),
+    ):
+        assert owui_kb_setup.find_knowledge_by_name(BASE, "sk-test", KB_NAME) == "kb-page"
+
+
 def test_find_knowledge_by_name_missing() -> None:
     with patch(
         "owui_kb_setup.requests.get",
@@ -55,7 +63,23 @@ def test_create_knowledge_creates_new() -> None:
 
 def test_get_token_prefers_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OWUI_API_KEY", "sk-from-env")
-    assert owui_kb_setup.get_token(BASE) == "sk-from-env"
+    probe = _response([])
+    probe.status_code = 200
+    with patch("owui_kb_setup.requests.get", return_value=probe):
+        assert owui_kb_setup.get_token(BASE) == "sk-from-env"
+
+
+def test_get_token_falls_back_to_signin_on_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OWUI_API_KEY", "sk-stale")
+    monkeypatch.setenv("OWUI_EMAIL", "user@example.com")
+    monkeypatch.setenv("OWUI_PASSWORD", "secret")
+    probe = _response({})
+    probe.status_code = 401
+    with (
+        patch("owui_kb_setup.requests.get", return_value=probe),
+        patch("owui_kb_setup.requests.post", return_value=_response({"token": "jwt-new"})),
+    ):
+        assert owui_kb_setup.get_token(BASE) == "jwt-new"
 
 
 def test_get_token_signs_in_with_email(monkeypatch: pytest.MonkeyPatch) -> None:

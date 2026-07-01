@@ -1,4 +1,4 @@
-# hw07 — Open WebUI + Ollama stack with RAG settings as env vars.
+# hw07 — Open WebUI + Ollama + tool server stack with RAG settings as env vars.
 # Verify RAG_* / ENABLE_* names against current Open WebUI docs — unknown vars are ignored.
 
 services:
@@ -16,6 +16,7 @@ services:
     container_name: hw07-open-webui
     depends_on:
       - ollama
+      - tool-server
     ports:
       - "3000:8080"
     extra_hosts:
@@ -28,27 +29,31 @@ services:
       RAG_TEXT_SPLITTER: token
       CHUNK_SIZE: "700"
       CHUNK_OVERLAP: "100"
-      ENABLE_RAG_HYBRID_SEARCH: "true"
-      RAG_RERANKING_MODEL: BAAI/bge-reranker-v2-m3
+      ENABLE_RAG_HYBRID_SEARCH: "false"
       RAG_TOP_K: "5"
       RAG_RELEVANCE_THRESHOLD: "0.15"
       RAG_SYSTEM_CONTEXT: "true"
       ENABLE_KB_EXEC: "true"
+      ENABLE_API_KEYS: "true"
+      USER_PERMISSIONS_FEATURES_API_KEYS: "true"
     volumes:
       - open-webui-hw07:/app/backend/data
     restart: unless-stopped
 
-  # Optional: run the hw07 tool server in Docker instead of on the host.
-  # Start with: docker compose --profile tools up -d
-  # Secrets come from the repo root .env (never baked into the image).
+  # Tool server (live job search). Secrets come from the repo root .env —
+  # never baked into the image. From OWUI use http://tool-server:5005.
   tool-server:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.tool-server
     container_name: hw07-tool-server
-    profiles: ["tools"]
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     ports:
       - "5005:5005"
-    env_file:
-      - ../../.env
     restart: unless-stopped
 
 volumes:
