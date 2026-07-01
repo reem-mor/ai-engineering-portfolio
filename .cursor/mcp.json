@@ -1,4 +1,5 @@
 {
+  "_comment": "Local overrides only. Canonical servers: ../.mcp.json at repo root. Never commit API keys here.",
   "mcpServers": {
     "lovable": {
       "type": "http",
@@ -9,44 +10,48 @@
     },
     "n8n-workflows": {
       "command": "npx",
-      "args": [
-        "-y",
-        "n8n-mcp"
-      ],
+      "args": ["-y", "n8n-mcp"],
       "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
         "MCP_MODE": "stdio",
         "LOG_LEVEL": "error",
-        "DISABLE_CONSOLE_OUTPUT": "true"
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "${env:N8N_API_URL}",
+        "N8N_API_KEY": "${env:N8N_API_KEY}"
       }
     },
     "aws-api": {
       "command": "uvx",
-      "args": [
-        "awslabs.aws-api-mcp-server@latest"
-      ],
-      "envFile": "${workspaceFolder}/.env",
-      "timeout": 120000,
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
-    "bedrock-kb": {
-      "command": "uvx",
-      "args": [
-        "awslabs.bedrock-kb-retrieval-mcp-server@latest"
-      ],
+      "args": ["awslabs.aws-api-mcp-server@latest"],
       "envFile": "${workspaceFolder}/.env",
       "timeout": 120000,
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_PROFILE": "${env:AWS_PROFILE}",
+        "AWS_REGION": "${env:AWS_REGION}"
+      }
+    },
+    "bedrock-kb": {
+      "command": "uvx",
+      "args": ["awslabs.bedrock-kb-retrieval-mcp-server@latest"],
+      "envFile": "${workspaceFolder}/.env",
+      "timeout": 120000,
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_PROFILE": "${env:AWS_PROFILE}",
+        "AWS_REGION": "${env:AWS_REGION}",
         "BEDROCK_KB_RERANKING_ENABLED": "false"
       }
     },
     "aws-knowledge": {
       "type": "http",
       "url": "https://knowledge-mcp.global.api.aws"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "timeout": 120000
     },
     "kaggle": {
       "type": "http",
@@ -56,10 +61,9 @@
       }
     },
     "course-tools": {
-      "command": "${workspaceFolder}/lectures/08_mcp/.venv/Scripts/python.exe",
-      "args": [
-        "${workspaceFolder}/lectures/08_mcp/server/tools_server.py"
-      ],
+      "command": "python",
+      "args": ["${workspaceFolder}/scripts/run-mcp-course-tools.py"],
+      "timeout": 60000,
       "env": {
         "PYTHONUNBUFFERED": "1"
       }

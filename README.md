@@ -186,7 +186,7 @@ Hero image sources: [`docs/screenshots/featured/`](docs/screenshots/featured/) �
 |--------|--------|----------------------|
 | **RAG & retrieval** | Embeddings, FAISS, chunking, similarity thresholds, evaluation harness, source attribution | [IncidentIQ](projects/incident-assistant-rag/) · [Bedrock iteration](projects/incident-rag-bedrock/) |
 | **LLM applications** | Grounded generation, refusal paths, prompt + tool design, multi-LLM routing | Capstone · [hw06 n8n agent](homework/hw06/n8n-customer-support-agent/) · [bot](https://github.com/reem-mor/course-assistant-bot) |
-| **Agents & orchestration** | AWS Bedrock Agent, LangChain/LangGraph, n8n workflows, MCP tool servers | [PITER](https://github.com/reem-mor/piter-aiops) · L08–11 · [hw07 tools](homework/hw07/open-webui-tools/) |
+| **Agents & orchestration** | AWS Bedrock Agent, LangChain/LangGraph, n8n workflows, MCP tool servers | [PITER](https://github.com/reem-mor/piter-aiops) · L08–11 · [hw07 tools](homework/hw07/) |
 | **Backend** | FastAPI, Flask, async Python, pydantic v2, REST APIs, OpenAPI | Capstone · lectures 05–06 · hw07 FastAPI server |
 | **Frontend** | React, TypeScript, Vite, ops consoles | Capstone · [PITER frontend](https://github.com/reem-mor/piter-aiops) |
 | **SRE & DevOps** | Docker Compose, EC2 labs, Nginx, health checks, CI/CD, secrets hygiene | [hw05](homework/hw05/nginx-docker-lab/) · [CI](.github/workflows/ci.yml) · `.env.example` |
@@ -580,7 +580,7 @@ cd projects/incident-assistant-rag && docker compose up --build
 cd projects/incident-assistant-rag/backend && pip install -r requirements.txt && pytest -q
 cd projects/incident-rag-bedrock && pip install -r requirements.txt && pytest -q
 cd lectures/10_langchain_langgraph && pip install -r requirements.txt && pytest -q
-cd homework/hw07/open-webui-tools && pip install -r requirements.txt && pytest -q
+cd homework/hw07 && pip install -r requirements.txt && pytest -q
 ruff check .
 ```
 

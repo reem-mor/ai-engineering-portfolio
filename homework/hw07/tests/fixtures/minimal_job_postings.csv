@@ -1,0 +1,6 @@
+job_id,job_title,job_location,job_employment_type,job_summary
+1,Data Scientist,Tel Aviv,Full-time,"Python SQL machine learning TensorFlow PyTorch statistics"
+2,Machine Learning Engineer,Remote,Full-time,"Python AWS Docker Kubernetes MLOps LLM fine-tuning"
+3,DevOps Engineer,Herzliya,Full-time,"Linux CI/CD Terraform Ansible AWS Azure monitoring"
+4,AI Engineer,Jerusalem,Full-time,"Python LangChain RAG vector databases OpenAI Bedrock"
+5,Data Engineer,Haifa,Full-time,"Spark Airflow PostgreSQL ETL Python cloud data pipelines"

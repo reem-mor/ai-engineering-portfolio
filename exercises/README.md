@@ -74,7 +74,7 @@ Run tests: `python -m pytest tests -q` from `lectures/08_mcp`.
 | [`homework/hw03/`](../homework/hw03/) | Titanic ticket CLI — includes pytest |
 | [`homework/hw05/nginx-docker-lab/`](../homework/hw05/nginx-docker-lab/) | EC2, Docker, Nginx hands-on lab |
 | [`homework/hw06/n8n-customer-support-agent/`](../homework/hw06/n8n-customer-support-agent/) | n8n agent workflow |
-| [`homework/hw07/open-webui-tools/`](../homework/hw07/open-webui-tools/) | FastAPI tools server for Open WebUI |
+| [`homework/hw07/`](../homework/hw07/) | FastAPI tools server + Open WebUI Tool for hw07 |
 
 ## Related documentation
 

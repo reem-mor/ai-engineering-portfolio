@@ -101,3 +101,4 @@ Full matrix: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 | Kaggle 401 | Regenerate token at kaggle.com/settings |
 | n8n timeout | Check `N8N_API_URL` ends without trailing path; key scopes |
 | Secrets in git status | Never commit `.env` / `.cursor/mcp.json` — see security rule |
+| Playwright MCP red / no tools | Install Node 18+; run `npx -y @playwright/mcp@latest --help`; `npx playwright install chromium`; restart Cursor |

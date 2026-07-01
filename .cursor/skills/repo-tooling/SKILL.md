@@ -17,7 +17,7 @@ When the user asks about MCP setup, Cursor/Claude config, CI, `.env`, skills, or
 - `projects/incident-assistant-rag/backend`
 - `projects/incident-rag-bedrock`
 - `lectures/10_langchain_langgraph`
-- `homework/hw07/open-webui-tools` — skill: [`.cursor/skills/hw07-open-webui/SKILL.md`](../hw07-open-webui/SKILL.md)
+- `homework/hw07` — skill: [`.cursor/skills/hw07-open-webui/SKILL.md`](../hw07-open-webui/SKILL.md)
 
 Always run `ruff check .` before claiming a change is ready.
 

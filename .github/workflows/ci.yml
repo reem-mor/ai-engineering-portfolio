@@ -42,8 +42,8 @@ jobs:
             dir: projects/incident-rag-bedrock
           - area: langchain-langgraph-lecture
             dir: lectures/10_langchain_langgraph
-          - area: hw07-open-webui-tools
-            dir: homework/hw07/open-webui-tools
+          - area: hw07-tools-server
+            dir: homework/hw07
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

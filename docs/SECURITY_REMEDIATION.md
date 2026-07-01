@@ -42,7 +42,7 @@ rewrite history deliberately on a fresh clone, then force-push.
 
 ```bash
 git clone https://github.com/reem-mor/ai-engineering-portfolio.git ai-engineering-portfolio-clean
-cd amdocs-clean
+cd ai-engineering-portfolio-clean
 pip install git-filter-repo
 
 # Drop the course-material binaries from ALL history:

@@ -15,7 +15,6 @@ const OUT = path.join(ROOT, "docs", "screenshots", "featured");
 
 const playwrightCandidates = [
   path.join(ROOT, "projects", "incident-assistant-rag", "frontend", "node_modules", "playwright", "index.mjs"),
-  path.join(ROOT, "homework", "hw07", "node_modules", "playwright", "index.mjs"),
 ];
 
 function resolvePlaywright() {
