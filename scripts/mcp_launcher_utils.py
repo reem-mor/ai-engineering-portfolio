@@ -55,3 +55,15 @@ def resolve_npx() -> str:
         if found:
             return found
     raise RuntimeError("npx not found on PATH — install Node.js 18+")
+
+
+def launch_npx(args: list[str], env: dict[str, str] | None = None) -> None:
+    """Run npx as MCP stdio server. On Windows, subprocess (npx.cmd); on Unix, exec."""
+    import subprocess
+
+    npx = resolve_npx()
+    cmd = [npx, *args]
+    run_env = env or os.environ.copy()
+    if sys.platform == "win32":
+        raise SystemExit(subprocess.call(cmd, env=run_env))
+    os.execve(npx, cmd, run_env)

@@ -6,7 +6,7 @@ import argparse
 import subprocess
 import sys
 
-DEFAULT_CONTAINER = "open-webui"
+DEFAULT_CONTAINER = "hw07-open-webui"
 DEFAULT_EMAIL = "admin@localhost.com"
 DEFAULT_PASSWORD = "admin"
 
@@ -17,14 +17,14 @@ def _bcrypt_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def reset_auth(container: str, email: str, password: str) -> None:
+def reset_auth(container: str, email: str, password: str, name: str) -> None:
     password_hash = _bcrypt_hash(password)
     code = (
         "import sqlite3\n"
         "conn = sqlite3.connect('/app/backend/data/webui.db')\n"
         "cur = conn.cursor()\n"
         f"cur.execute('UPDATE auth SET email=?, password=?, active=1', ({email!r}, {password_hash!r}))\n"
-        f"cur.execute('UPDATE user SET email=?, name=?', ({email!r}, 'HW07 Admin'))\n"
+        f"cur.execute('UPDATE user SET email=?, name=?', ({email!r}, {name!r}))\n"
         "conn.commit()\n"
         "conn.close()\n"
         "print('ok')\n"
@@ -44,9 +44,10 @@ def main() -> int:
     parser.add_argument("--container", default=DEFAULT_CONTAINER)
     parser.add_argument("--email", default=DEFAULT_EMAIL)
     parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser.add_argument("--name", default="Re'em Mor")
     args = parser.parse_args()
     try:
-        reset_auth(args.container, args.email, args.password)
+        reset_auth(args.container, args.email, args.password, args.name)
     except RuntimeError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1

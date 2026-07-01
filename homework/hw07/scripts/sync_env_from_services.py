@@ -9,10 +9,10 @@ import sys
 from pathlib import Path
 
 import httpx
-from dotenv import dotenv_values, load_dotenv
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-HW07_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from env_loader import HW07_ROOT, REPO_ROOT, load_hw07_env  # noqa: E402
+
 ENV_FILES = (REPO_ROOT / ".env", HW07_ROOT / ".env")
 
 
@@ -65,53 +65,53 @@ def create_owui_api_key(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sync OWUI API key into .env files.")
+    load_hw07_env()
+
+    parser = argparse.ArgumentParser(description="Sync OWUI API key into repo root .env.")
     parser.add_argument("--url", default=os.getenv("OWUI_URL", "http://localhost:3000"))
     parser.add_argument("--email", default=os.getenv("OWUI_EMAIL", "admin@localhost.com"))
     parser.add_argument("--password", default=os.getenv("OWUI_PASSWORD", "admin"))
     parser.add_argument("--skip-owui", action="store_true", help="Only sync existing env vars.")
     args = parser.parse_args()
 
-    load_dotenv(REPO_ROOT / ".env")
-    load_dotenv(HW07_ROOT / ".env")
-
     updates: dict[str, str] = {
         "OWUI_URL": args.url.rstrip("/"),
     }
 
-    existing = dotenv_values(REPO_ROOT / ".env")
-    rapid_key = (existing.get("RAPIDAPI_KEY") or os.getenv("RAPIDAPI_KEY") or "").strip()
-    rapid_host = (existing.get("RAPIDAPI_HOST") or os.getenv("RAPIDAPI_HOST") or "").strip()
-
-    if rapid_key:
-        updates["RAPIDAPI_KEY"] = rapid_key
-    if rapid_host:
-        updates["RAPIDAPI_HOST"] = rapid_host
+    existing_key = os.getenv("RAPIDAPI_KEY", "").strip()
+    existing_cve_host = os.getenv("RAPIDAPI_CVE_HOST", "").strip()
+    if existing_key:
+        updates["RAPIDAPI_KEY"] = existing_key
+    if existing_cve_host:
+        updates["RAPIDAPI_CVE_HOST"] = existing_cve_host
 
     if not args.skip_owui:
         try:
             api_key = create_owui_api_key(args.url, args.email, args.password)
             updates["OWUI_API_KEY"] = api_key
         except httpx.HTTPError as exc:
-            print(f"ERROR: Open WebUI API key creation failed: {exc}", file=sys.stderr)
-            return 1
+            print(
+                f"WARN: Open WebUI API key creation failed ({exc}). "
+                "JWT sign-in still works for bootstrap scripts.",
+                file=sys.stderr,
+            )
         except RuntimeError as exc:
-            print(f"ERROR: {exc}", file=sys.stderr)
-            return 1
+            print(f"WARN: {exc}", file=sys.stderr)
 
     owui_key = updates.get("OWUI_API_KEY") or os.getenv("OWUI_API_KEY", "").strip()
     if not owui_key and not args.skip_owui:
-        print("ERROR: OWUI_API_KEY missing after sync.", file=sys.stderr)
-        return 1
+        print("WARN: OWUI_API_KEY not refreshed — use JWT (OWUI_EMAIL/PASSWORD) for scripts.")
 
-    for env_path in ENV_FILES:
-        _upsert_env(env_path, updates)
+    _upsert_env(REPO_ROOT / ".env", updates)
+    local_only = {k: v for k, v in updates.items() if k == "HW07_KB_ID"}
+    if local_only:
+        _upsert_env(HW07_ROOT / ".env", local_only)
 
-    print(f"OK: synced hw07 env vars to {REPO_ROOT / '.env'} and {HW07_ROOT / '.env'}")
+    print(f"OK: synced hw07 env vars to {REPO_ROOT / '.env'}")
     print(f"  OWUI_URL={updates['OWUI_URL']}")
     print(f"  OWUI_API_KEY={'set' if owui_key else 'unchanged'}")
-    print(f"  RAPIDAPI_KEY={'set' if rapid_key else 'missing'}")
-    print(f"  RAPIDAPI_HOST={rapid_host or '(empty — tools_server uses Shodan CVEDB fallback)'}")
+    print(f"  RAPIDAPI_KEY={'set' if existing_key else 'missing'}")
+    print(f"  RAPIDAPI_CVE_HOST={existing_cve_host or '(empty — tools_server uses CVEDB fallback)'}")
     return 0
 
 

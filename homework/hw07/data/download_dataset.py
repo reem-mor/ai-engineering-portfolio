@@ -2,23 +2,64 @@
 
 from __future__ import annotations
 
+import argparse
+import csv
 import os
 import shutil
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from env_loader import HW07_ROOT, load_hw07_env
 
-# NVD-style CVE records with CVSS scores — adjust if you pick a different dataset via MCP.
+# Preferred Kaggle dataset for submission.
 DATASET = "satyabrata/nvd-vulnerabilities"
 TARGET = Path(__file__).resolve().parent / "cve.csv"
-HW07_ROOT = Path(__file__).resolve().parent.parent
-REPO_ROOT = HW07_ROOT.parent.parent
+
+COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "cve_id": ("cve_id", "cve", "id", "CVE ID", "cveId"),
+    "description": ("description", "summary", "desc", "vulnerability_description"),
+    "cvss": ("cvss", "cvss_score", "cvss_v3", "baseScore", "cvss3"),
+    "published": ("published", "published_date", "publishedDate", "pub_date", "date"),
+    "keyword": ("keyword", "keywords", "product", "vendor", "cpe", "affected_product"),
+}
 
 
-def _load_env() -> None:
-    load_dotenv(HW07_ROOT / ".env")
-    load_dotenv(REPO_ROOT / ".env")
+def _pick_column(fieldnames: list[str], aliases: tuple[str, ...]) -> str | None:
+    lower_map = {name.lower(): name for name in fieldnames}
+    for alias in aliases:
+        if alias.lower() in lower_map:
+            return lower_map[alias.lower()]
+    return None
+
+
+def normalize_csv(source: Path, destination: Path) -> None:
+    """Map Kaggle/NVD CSV columns to hw07 required schema."""
+    with source.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError("CSV has no header row")
+        mapping = {
+            required: _pick_column(reader.fieldnames, aliases)
+            for required, aliases in COLUMN_ALIASES.items()
+        }
+        missing = [key for key, col in mapping.items() if not col]
+        if missing:
+            raise ValueError(
+                f"Cannot map columns {missing}; found: {', '.join(reader.fieldnames)}"
+            )
+        rows: list[dict[str, str]] = []
+        for row in reader:
+            out = {key: (row.get(mapping[key]) or "").strip() for key in mapping}
+            if out["cve_id"]:
+                if not out["keyword"]:
+                    out["keyword"] = "unknown"
+                rows.append(out)
+
+    with destination.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(COLUMN_ALIASES.keys()))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def _configure_kaggle_credentials() -> None:
@@ -50,10 +91,18 @@ def _configure_kaggle_credentials() -> None:
 
 
 def main() -> int:
-    _load_env()
+    parser = argparse.ArgumentParser(description="Download Kaggle CVE CSV for hw07.")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-download even if data/cve.csv already exists.",
+    )
+    args = parser.parse_args()
+    load_hw07_env()
 
-    if TARGET.is_file() and TARGET.stat().st_size > 0:
+    if TARGET.is_file() and TARGET.stat().st_size > 0 and not args.force:
         print(f"SKIP: {TARGET} already exists ({TARGET.stat().st_size} bytes)")
+        print("Use --force to re-download from Kaggle.")
         return 0
 
     _configure_kaggle_credentials()
@@ -78,8 +127,12 @@ def main() -> int:
     if len(csv_files) > 1:
         print(f"NOTE: Multiple CSVs found; using {source.name}")
 
-    shutil.copy2(source, TARGET)
-    print(f"OK: wrote {TARGET} ({TARGET.stat().st_size} bytes)")
+    try:
+        normalize_csv(source, TARGET)
+    except ValueError as exc:
+        print(f"ERROR: column normalization failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"OK: wrote normalized {TARGET} ({TARGET.stat().st_size} bytes)")
 
     shutil.rmtree(tmp_dir, ignore_errors=True)
     return 0

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch RapidAPI MCP — loads .env, then execs mcp-remote (stdio goes direct to Cursor)."""
+"""Launch RapidAPI MCP via mcp-remote stdio (required for tools to appear in Cursor)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from mcp_launcher_utils import ensure_repo_venv, load_repo_env, resolve_npx  # noqa: E402
+from mcp_launcher_utils import ensure_repo_venv, launch_npx, load_repo_env  # noqa: E402
 
 ensure_repo_venv()
 load_repo_env(ROOT)
@@ -26,22 +26,18 @@ def main() -> None:
         )
         raise SystemExit(1)
 
-    npx = resolve_npx()
-    env = os.environ.copy()
-    # Replace this process so Cursor stdio connects directly to mcp-remote (no Python middleman).
-    os.execve(
-        npx,
+    # Pin version that matches Cursor's mcp-remote client (see MCP server logs).
+    launch_npx(
         [
-            npx,
             "-y",
-            "mcp-remote@latest",
+            "mcp-remote@0.1.37",
             "https://mcp.rapidapi.com",
             "--header",
             f"x-api-host: {api_host}",
             "--header",
             f"x-api-key: {api_key}",
         ],
-        env,
+        env=os.environ.copy(),
     )
 
 

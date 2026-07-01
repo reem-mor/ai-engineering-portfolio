@@ -68,11 +68,11 @@
       }
     },
     "rapidapi": {
-      "type": "http",
-      "url": "https://mcp.rapidapi.com",
-      "headers": {
-        "x-api-host": "${env:RAPIDAPI_HOST}",
-        "x-api-key": "${env:RAPIDAPI_KEY}"
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/scripts/run-mcp-rapidapi.py"],
+      "timeout": 180000,
+      "env": {
+        "PYTHONUNBUFFERED": "1"
       }
     },
     "course-tools": {
