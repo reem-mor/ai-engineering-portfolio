@@ -98,19 +98,19 @@ Use these 5 questions to validate the homework requirements.
 
 | # | Demo name | Input | Expected output | Validates | Proof |
 |---|---|---|---|---|---|
-| 1 | KB dataset columns | `#netflix-shows-kb From the uploaded Netflix CSV, list the dataset name and 5 columns. Answer shortly.` | Identifies the Netflix Shows dataset and lists columns such as `show_id`, `type`, `title`, `country`, and `duration`. | KB upload and indexing | [proof](docs/screenshots/01-kb-dataset-columns.svg) |
-| 2 | KB India titles | `#netflix-shows-kb Return 3 Netflix title names from India that are found in the uploaded CSV. Answer only with title names.` | Returns real title names from `netflix_titles.csv` where the country contains India. It should not invent missing titles. | KB retrieval | [proof](docs/screenshots/02-kb-india-titles.svg) |
-| 3 | Tool Japan currency | `What currency is used in Japan? Answer shortly.` | Calls `Netflix Country Info` and returns Japan country data. Expected currency: `JPY`. Expected ISO code: `JP`. | Tool-only flow | [proof](docs/screenshots/03-tool-japan-currency.svg) |
-| 4 | KB plus tool Japan answer | `#netflix-shows-kb Show 3 Netflix titles from Japan and tell me Japan's currency.` | Uses the KB for Netflix titles from Japan and the tool for live country data. Expected currency: `JPY`. | Combined KB plus tool flow | [proof](docs/screenshots/04-combined-japan-titles-currency.svg) |
-| 5 | Atlantis not found | `What country details do you have for Atlantis?` | Returns a clear not-found response and does not invent fake country data. | Edge-case handling | [proof](docs/screenshots/05-edge-atlantis-not-found.svg) |
+| 1 | KB dataset columns | `#netflix-shows-kb From the uploaded Netflix CSV, list the dataset name and 5 columns. Answer shortly.` | Identifies the Netflix Shows dataset and lists columns such as `show_id`, `type`, `title`, `country`, and `duration`. | KB upload and indexing | [proof](docs/screenshots/01-kb-dataset-columns.png) |
+| 2 | KB India titles | `#netflix-shows-kb Return 3 Netflix title names from India that are found in the uploaded CSV. Answer only with title names.` | Returns real title names from `netflix_titles.csv` where the country contains India. It should not invent missing titles. | KB retrieval | [proof](docs/screenshots/02-kb-india-titles.png) |
+| 3 | Tool Japan currency | `What currency is used in Japan? Answer shortly.` | Calls `Netflix Country Info` and returns Japan country data. Expected currency: `JPY`. Expected ISO code: `JP`. | Tool-only flow | [proof](docs/screenshots/03-tool-japan-currency.png) |
+| 4 | KB plus tool Japan answer | `#netflix-shows-kb Show 3 Netflix titles from Japan and tell me Japan's currency.` | Uses the KB for Netflix titles from Japan and the tool for live country data. Expected currency: `JPY`. | Combined KB plus tool flow | [proof](docs/screenshots/04-combined-japan-titles-currency.png) |
+| 5 | Atlantis not found | `What country details do you have for Atlantis?` | Returns a clear not-found response and does not invent fake country data. | Edge-case handling | [proof](docs/screenshots/05-edge-atlantis-not-found.png) |
 
 ## Screenshot evidence
 
 | Evidence | File |
 |---|---|
-| Knowledge Base exists in Workspace Knowledge | [06-workspace-knowledge.svg](docs/screenshots/06-workspace-knowledge.svg) |
-| System prompt configured in Open WebUI | [07-system-prompt.svg](docs/screenshots/07-system-prompt.svg) |
-| Netflix Country Info tool configured in Open WebUI | [08-country-tool-config.svg](docs/screenshots/08-country-tool-config.svg) |
+| Knowledge Base exists in Workspace Knowledge | [06-workspace-knowledge.png](docs/screenshots/06-workspace-knowledge.png) |
+| System prompt configured in Open WebUI | [07-system-prompt.png](docs/screenshots/07-system-prompt.png) |
+| Netflix Country Info tool configured in Open WebUI | [08-country-tool-config.png](docs/screenshots/08-country-tool-config.png) |
 
 For KB questions, the chat should show:
 
@@ -164,14 +164,14 @@ hw07-openwebui/
 │   └── netflix_titles.csv
 └── docs/
     └── screenshots/
-        ├── 01-kb-dataset-columns.svg
-        ├── 02-kb-india-titles.svg
-        ├── 03-tool-japan-currency.svg
-        ├── 04-combined-japan-titles-currency.svg
-        ├── 05-edge-atlantis-not-found.svg
-        ├── 06-workspace-knowledge.svg
-        ├── 07-system-prompt.svg
-        └── 08-country-tool-config.svg
+        ├── 01-kb-dataset-columns.png
+        ├── 02-kb-india-titles.png
+        ├── 03-tool-japan-currency.png
+        ├── 04-combined-japan-titles-currency.png
+        ├── 05-edge-atlantis-not-found.png
+        ├── 06-workspace-knowledge.png
+        ├── 07-system-prompt.png
+        └── 08-country-tool-config.png
 ```
 </details>
 
