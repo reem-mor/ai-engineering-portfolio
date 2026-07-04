@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for MCP launcher scripts (venv re-exec + .env load without dotenv)."""
+"""Shared helpers for MCP launcher scripts (venv re-exec + .env loading)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ def repo_root(start: Path | None = None) -> Path:
 
 
 def ensure_repo_venv() -> None:
-    """Re-exec with repo .venv Python when Cursor invokes system python."""
+    """Re-exec with repo .venv Python when Cursor invokes system Python."""
     root = repo_root(Path(__file__))
     candidates = [
         root / ".venv" / "Scripts" / "python.exe",
@@ -27,7 +27,7 @@ def ensure_repo_venv() -> None:
 
 
 def load_env_file(path: Path) -> None:
-    """Load KEY=VALUE lines into os.environ (does not override existing keys)."""
+    """Load KEY=VALUE lines into os.environ without overriding existing keys."""
     if not path.is_file():
         return
     for raw in path.read_text(encoding="utf-8").splitlines():
@@ -44,7 +44,7 @@ def load_env_file(path: Path) -> None:
 def load_repo_env(root: Path | None = None) -> None:
     base = root or repo_root(Path(__file__))
     load_env_file(base / ".env")
-    load_env_file(base / "homework" / "hw07" / ".env")
+    load_env_file(base / "homework" / "hw07-openwebui" / ".env")
 
 
 def resolve_npx() -> str:
@@ -54,7 +54,7 @@ def resolve_npx() -> str:
         found = shutil.which(name)
         if found:
             return found
-    raise RuntimeError("npx not found on PATH — install Node.js 18+")
+    raise RuntimeError("npx not found on PATH - install Node.js 18+")
 
 
 def launch_npx(args: list[str], env: dict[str, str] | None = None) -> None:

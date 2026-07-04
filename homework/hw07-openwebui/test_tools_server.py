@@ -70,6 +70,15 @@ class TestCountryEndpoint:
         assert data["success"] is False
         assert "RAPIDAPI_KEY" in data["error"]
 
+    @patch("tools_server.RAPIDAPI_KEY", "Your_RapidAPI_Key_Here")
+    def test_placeholder_api_key_is_missing(self):
+        response = client.get("/country/France")
+        assert response.status_code == 500
+
+        data = response.get_json()
+        assert data["success"] is False
+        assert "RAPIDAPI_KEY" in data["error"]
+
     @patch("tools_server.RAPIDAPI_KEY", "fake_key")
     @patch("tools_server.httpx.get")
     def test_country_api_timeout(self, mock_get):
@@ -133,7 +142,7 @@ class TestCountryEndpoint:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
-            {"name": "Côte d'Ivoire", "iso2": "CI"}
+            {"name": "Cote D'Ivoire (Ivory Coast)", "iso2": "CI"}
         ]
         mock_get.return_value = mock_response
 
@@ -142,7 +151,7 @@ class TestCountryEndpoint:
 
         data = response.get_json()
         assert data["success"] is True
-        assert data["data"]["name"] == "Côte d'Ivoire"
+        assert data["data"]["name"] == "Cote D'Ivoire (Ivory Coast)"
 
     @patch("tools_server.RAPIDAPI_KEY", "fake_key")
     @patch("tools_server.httpx.get")
@@ -154,7 +163,7 @@ class TestCountryEndpoint:
 
         data = response.get_json()
         assert data["success"] is False
-        assert "unexpected failure" in data["error"]
+        assert data["error"] == "Unexpected error while calling external API"
 
 
 class TestGeneralEdgeCases:
