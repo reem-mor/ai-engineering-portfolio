@@ -13,7 +13,6 @@ app = Flask(__name__)
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 # Host header MUST match the API host in the request URL below, or RapidAPI 401s.
 RAPIDAPI_HOST = "country-state-city-search-rest-api.p.rapidapi.com"
-
 _PLACEHOLDER_KEYS = {"", "your_rapidapi_key_here"}
 
 

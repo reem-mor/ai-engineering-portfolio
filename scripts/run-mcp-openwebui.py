@@ -20,7 +20,7 @@ def main() -> None:
     url = (
         os.getenv("OPENWEBUI_URL")
         or os.getenv("OWUI_URL")
-        or "http://localhost:8080"
+        or "http://localhost:3000"
     ).strip()
     api_key = (os.getenv("OPENWEBUI_API_KEY") or os.getenv("OWUI_API_KEY") or "").strip()
 
