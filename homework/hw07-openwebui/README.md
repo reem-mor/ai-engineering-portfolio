@@ -85,7 +85,7 @@ The tool's URL is a **Valve** (tool settings ⚙️ in Open WebUI — no code ed
 
 | Endpoint | Returns |
 |---|---|
-| `GET /health` | `{"status": "ok"}` liveness check |
+| `GET /health` | `{"status": "ok", "server": "tools_server", "port": 5005}` liveness check |
 | `GET /country/<name>` | Country facts — case-insensitive, accent-tolerant (`fran` → France, `Côte d'Ivoire` works) |
 
 Errors come back as structured JSON: missing API key → `500`, unknown country → `404`, upstream timeout → `503`, upstream `401/429/500` passed through.

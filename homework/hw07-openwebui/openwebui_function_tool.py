@@ -41,9 +41,17 @@ class Tools:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
+            error = f"HTTP error: {e.response.status_code}"
+            try:
+                body = e.response.json()
+                if isinstance(body, dict) and body.get("error"):
+                    error = body["error"]
+            except ValueError:
+                pass
             return {
                 "success": False,
-                "error": f"HTTP error: {e.response.status_code}",
+                "error": error,
+                "status_code": e.response.status_code,
                 "country": country,
             }
         except Exception as e:

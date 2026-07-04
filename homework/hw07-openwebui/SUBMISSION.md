@@ -11,7 +11,7 @@ Verified state before submitting:
 ```text
 python -m pytest -v   → 15 passed
 ruff check .          → all checks passed
-GET /health           → {"status": "ok"}
+GET /health           → {"status": "ok", "server": "tools_server", "port": 5005}
 ```
 
 ## Screenshots (8)
