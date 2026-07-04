@@ -43,7 +43,7 @@ jobs:
           - area: langchain-langgraph-lecture
             dir: lectures/10_langchain_langgraph
           - area: hw07-tools-server
-            dir: homework/hw07
+            dir: homework/hw07-openwebui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
