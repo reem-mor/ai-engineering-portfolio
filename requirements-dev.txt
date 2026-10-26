@@ -3,5 +3,5 @@
 # Course ML stack lives in requirements.txt — do not merge blindly.
 
 ruff>=0.9.0
-pytest>=8.0.0
+pytest>=9.1.1
 pytest-asyncio>=0.24.0
