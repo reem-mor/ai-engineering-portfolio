@@ -1,3 +1,9 @@
+> **Learning archive, not the flagship application.** This repository documents AI engineering training, experiments, and capstones. For current standalone engineering projects, start with [PETER PAN](https://github.com/reem-mor/peter-pan), [HINDSIGHT](https://github.com/reem-mor/hindsight), or [Course Assistant Bot](https://github.com/reem-mor/course-assistant-bot).
+>
+> Historical metrics, diagrams, and project descriptions below reflect their original context. Refer to each standalone repository and current CI for up-to-date implementation evidence.
+
+---
+
 <div align="center">
 
 # AI Engineering Portfolio
